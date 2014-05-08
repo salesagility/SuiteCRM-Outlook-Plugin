@@ -1,5 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <assemblyIdentity name="SuiteCRMOutlookAddIn, PublicKeyToken=48e1c7cb2dda95a6" />
-  <loaderSettings generateLogFile="true" shadowCopyEnabled="true" privileges="user" configFileName="App.config" />
-</configuration>

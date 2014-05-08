@@ -35,14 +35,11 @@ namespace SuiteCRMClient
     
     public static class clsSuiteCRMHelper
     {
-        public static StreamWriter log;
-
         public static string InstallationPath { get; set; }
 
         public static string SessionID { get; set; }
 
-        public static string userId = "";
-
+        
         public static eModuleList GetModules()
         {
             object data = new
@@ -54,15 +51,21 @@ namespace SuiteCRMClient
 
         public static string GetUserId()
         {
-            if (userId != "")
+            try
             {
+                string userId = "";
                 object data = new
                 {
                     @session = SessionID
                 };
-                userId = clsGlobals.GetResponse<string>("get_user_id", data);                 
+                userId = clsGlobals.GetResponse<string>("get_user_id", data);
+                return userId;
             }
-            return userId;
+            catch (Exception ex)
+            {
+                ex.Data.Clear();
+                return "";
+            }
         }
 
         public static string ArchiveEmail(eNameValue[] Data)
@@ -293,13 +296,16 @@ namespace SuiteCRMClient
             return hashtable;
         }
 
-        public static void LoadLogFileLocation()
+        public static void WriteLog(string strLog)
         {
+            StreamWriter log;
             FileStream fileStream = null;
-            string logFilePath = clsSuiteCRMHelper.InstallationPath + "\\Logs\\";
-            logFilePath = logFilePath + "Log-" + System.DateTime.Today.ToString("MM-dd-yyyy") + "." + "txt";
             DirectoryInfo logDirInfo = null;
-            FileInfo logFileInfo = new FileInfo(logFilePath);
+            FileInfo logFileInfo;
+            
+            string logFilePath = clsSuiteCRMHelper.InstallationPath + "\\Logs\\";
+            logFilePath = logFilePath + "Log-" + System.DateTime.Today.ToString("MM-dd-yyyy") + "." + "txt";            
+            logFileInfo = new FileInfo(logFilePath);
             logDirInfo = new DirectoryInfo(logFileInfo.DirectoryName);
             if (!logDirInfo.Exists) logDirInfo.Create();
             if (!logFileInfo.Exists)
@@ -311,10 +317,8 @@ namespace SuiteCRMClient
                 fileStream = new FileStream(logFilePath, FileMode.Append);
             }
             log = new StreamWriter(fileStream);
-        }
-        public static void AddLogLine(string strInp)
-        {
-            log.WriteLine(strInp);
-        }
+            log.WriteLine(strLog);
+            log.Close();
+        }        
     }
 }

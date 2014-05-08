@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui" onLoad="Ribbon_Load">
+  <ribbon>
+    <tabs>
+      <tab idMso="TabAddIns" label="SuiteCRM">
+        <group id="SuiteCRMGroup"
+               label="SuiteCRM">
+          <button id="btnAddressBook" getImage="GetImage" label="Address Book" size="large" onAction ="btnAddressBook_Action"/>
+          <button id="btnSettings" getImage="GetImage" label="Settings" size="large" onAction ="btnSettings_Action"/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
+

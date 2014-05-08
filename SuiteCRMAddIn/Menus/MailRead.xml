@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load">
+  <ribbon>
+    <tabs>
+      <tab idMso="TabAddIns" label="SuiteCRM">
+        <group id="SuiteCRMGroup"
+               label="SuiteCRM">
+          <button id="btnArchive" getImage="GetImage" label="Archive" size="large" onAction ="btnArchive_Action"/>
+          <button id="btnSettings" getImage="GetImage" label="Settings" size="large" onAction ="btnSettings_Action"/>
+        </group>
+      </tab>
+    </tabs>    
+  </ribbon>
+  <contextMenus>
+    <contextMenu idMso="ContextMenuMailItem">
+      <button id="btnArchive1" getImage="GetImage" label="SuiteCRM Arcive" onAction="btnArchive_Action"/>
+    </contextMenu>
+    <contextMenu idMso="ContextMenuMultipleItems">
+      <button id="btnArchive2" getImage="GetImage" label="SuiteCRM Arcive" onAction="btnArchive_Action"/>
+    </contextMenu>
+  </contextMenus>
+
+</customUI>
+
+
+
