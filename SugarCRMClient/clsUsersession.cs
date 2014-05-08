@@ -99,6 +99,15 @@ namespace SuiteCRMClient
             }
             catch (Exception ex)
             {
+                string strLog;
+                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                strLog += "clsUsersession.Login method General Exception:\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------\n";
+                 clsSuiteCRMHelper.WriteLog(strLog);                
                 throw ex;
             }
             
@@ -120,6 +129,15 @@ namespace SuiteCRMClient
             }
             catch (Exception ex)
             {
+                string strLog;
+                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                strLog += "clsUsersession.LogOut method General Exception:\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------\n";                
+                 clsSuiteCRMHelper.WriteLog(strLog);
                 ex.Data.Clear();
             }
         }

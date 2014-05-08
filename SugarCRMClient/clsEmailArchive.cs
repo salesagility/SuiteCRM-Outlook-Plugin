@@ -38,9 +38,9 @@ namespace SuiteCRMClient
         public string Body { get; set; }
         public string HTMLBody { get; set; }
         public string CC { get; set; }
-        public List<clsEmailAttachments> Attachments { get; set; }        
+        public List<clsEmailAttachments> Attachments { get; set; }
         public int ArchiveType { get; set; } //1-Manual, 2-Inbound, 3-Sent
-
+        public object contactData;
 
         public clsUsersession SugarCRMUserSession;
 
@@ -56,6 +56,10 @@ namespace SuiteCRMClient
         }
         private ArrayList GetValidContactIDs(string strExcludedEmails = "")
         {
+            string strUserID = clsSuiteCRMHelper.GetUserId();
+            if (strUserID == "")
+                SugarCRMUserSession.Login();
+
             ArrayList arrRet = new ArrayList();
             ArrayList arrCheckedList = new ArrayList();
             string strEmails = "";
@@ -66,47 +70,63 @@ namespace SuiteCRMClient
             //    strEmails = From;
             //else if (ArchiveType == 3)
             //    strEmails = To;
-
             if (strEmails != "")
             {
-                foreach (string strEmail in strEmails.Split(';'))
+                try
                 {
-                    if (arrCheckedList.Contains(strEmail))
-                        continue;
-
-                    // To check Excluded Emails
-                    if (strExcludedEmails != "")
-                    {                        
-                        string strMails = strExcludedEmails;
-                        string[] arrMails = strMails.Split(',',';','\n',':',' ','\t');
-                        foreach (string strSplitEmails in arrMails)
-                        {
-                            if (strEmail.Trim().ToUpper() == strSplitEmails.Trim().ToUpper())
-                            {
-                                return new ArrayList();
-                            }
-                        }                        
-                    }
-
-                    object contactData = new
+                    foreach (string strEmail in strEmails.Split(';'))
                     {
-                        @session=SugarCRMUserSession.id,
-                        @module_name = "Contacts",
-                        @query = GetContactIDQuery(strEmail),
-                        @order_by = "",
-                        @offset = 0,
-                        @select_fields = new string[] { "id" },
-                        @max_results = 1
-                    };
-                    var contactReturn = clsGlobals.GetResponse<RESTObjects.eContacts>("get_entry_list", contactData);
+                        if (arrCheckedList.Contains(strEmail))
+                            continue;
 
-                    if (contactReturn.entry_list.Count > 0)
-                        arrRet.Add(contactReturn.entry_list[0].id);
-                    arrCheckedList.Add(strEmail);
+                        // To check Excluded Emails
+                        if (strExcludedEmails != "")
+                        {
+                            string strMails = strExcludedEmails;
+                            string[] arrMails = strMails.Split(',', ';', '\n', ':', ' ', '\t');
+                            foreach (string strSplitEmails in arrMails)
+                            {
+                                if (strEmail.Trim().ToUpper() == strSplitEmails.Trim().ToUpper())
+                                {
+                                    return new ArrayList();
+                                }
+                            }
+                        }
+
+                        contactData = new
+                          {
+                              @session = SugarCRMUserSession.id,
+                              @module_name = "Contacts",
+                              @query = GetContactIDQuery(strEmail),
+                              @order_by = "",
+                              @offset = 0,
+                              @select_fields = new string[] { "id" },
+                              @max_results = 1
+                          };
+                        var contactReturn = clsGlobals.GetResponse<RESTObjects.eContacts>("get_entry_list", contactData);
+
+                        if (contactReturn.entry_list.Count > 0)
+                            arrRet.Add(contactReturn.entry_list[0].id);
+                        arrCheckedList.Add(strEmail);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    string strLog;
+                    strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                    strLog += "clsEmailArchive.GetValidContactIDs method General Exception:\n";
+                    strLog += "Message:" + ex.Message + "\n";
+                    strLog += "Source:" + ex.Source + "\n";
+                    strLog += "StackTrace:" + ex.StackTrace + "\n";
+                    strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                    strLog += "Inputs:" + "\n";
+                    strLog += "Data:" + contactData.ToString() + "\n";
+                    strLog += "-------------------------------------------------------------------------\n";
+                    clsSuiteCRMHelper.WriteLog(strLog);
+
+                    throw ex;
                 }
             }
-
-
             return arrRet;
         }
 
@@ -115,7 +135,7 @@ namespace SuiteCRMClient
             return "contacts.id in (SELECT eabr.bean_id FROM email_addr_bean_rel eabr JOIN email_addresses ea ON (ea.id = eabr.email_address_id) WHERE eabr.deleted=0 and ea.email_address = '" + strEmail + "')";
         }
 
-        public void Save(string strExcludedEmails="")
+        public void Save(string strExcludedEmails = "")
         {
             try
             {
@@ -129,7 +149,8 @@ namespace SuiteCRMClient
                     emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject });
                     emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body });
                     emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = HTMLBody });
-
+                    emailData.Add(new RESTObjects.eNameValue() { name = "assigned_user_id", value = clsSuiteCRMHelper.GetUserId() });
+                    emailData.Add(new RESTObjects.eNameValue() { name = "status", value = "archived" });
                     object contactData = new
                     {
                         @session = SugarCRMUserSession.id,
@@ -198,21 +219,20 @@ namespace SuiteCRMClient
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.LoadLogFileLocation();
-                clsSuiteCRMHelper.AddLogLine("------------------" + System.DateTime.Now.ToString() + "-----------------");
-                clsSuiteCRMHelper.AddLogLine("clsEmailArchive.Save method General Exception:");
-                clsSuiteCRMHelper.AddLogLine("Message:" + ex.Message);
-                clsSuiteCRMHelper.AddLogLine("Source:" + ex.Source);
-                clsSuiteCRMHelper.AddLogLine("StackTrace:" + ex.StackTrace);
-                clsSuiteCRMHelper.AddLogLine("Data:" + ex.Data.ToString());
-                clsSuiteCRMHelper.AddLogLine("HResult:" + ex.HResult.ToString());
-                clsSuiteCRMHelper.AddLogLine("Inputs:");
-                clsSuiteCRMHelper.AddLogLine("Data:" + this.ToString());
-                clsSuiteCRMHelper.AddLogLine("-------------------------------------------------------------------------");
-                clsSuiteCRMHelper.log.Close();
+                string strLog;
+                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                strLog += "clsEmailArchive.Save method General Exception:\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "Inputs:" + "\n";
+                strLog += "Data:" + this.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
                 throw ex;
             }
         }
-       
+
     }
 }

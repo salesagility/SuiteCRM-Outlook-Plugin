@@ -50,20 +50,19 @@ namespace SuiteCRMClient
 
         public static string CreateFormattedPostRequest(string method, object parameters)
         {
-            JsonSerializer serializer = new JsonSerializer();
-            serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
-            serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-            serializer.StringEscapeHandling = StringEscapeHandling.EscapeHtml;
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
+                serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+                serializer.StringEscapeHandling = StringEscapeHandling.EscapeHtml;
 
-            StringBuilder buffer = new StringBuilder();
+                StringBuilder buffer = new StringBuilder();
 
-            StringWriter swriter = new StringWriter(buffer);
-            serializer.Serialize(swriter, parameters);
-           
-            string ret = "method=" + method;
-            ret += "&input_type=JSON&response_type=JSON&rest_data=" + buffer.ToString();
+                StringWriter swriter = new StringWriter(buffer);
+                serializer.Serialize(swriter, parameters);
 
-            return ret;
+                string ret = "method=" + method;
+                ret += "&input_type=JSON&response_type=JSON&rest_data=" + buffer.ToString();  
+                return ret;
         }
 
         public static T GetResponse<T>(string strMethod, object objInput, byte[] strFileContent = null)
@@ -86,18 +85,18 @@ namespace SuiteCRMClient
                 {
                     if (response.StatusCode != HttpStatusCode.OK)
                     {
-                        clsSuiteCRMHelper.LoadLogFileLocation();
-                        clsSuiteCRMHelper.AddLogLine("------------------" + System.DateTime.Now.ToString() + "-----------------");
-                        clsSuiteCRMHelper.AddLogLine("GetResponse method Webserver Exception:");
-                        clsSuiteCRMHelper.AddLogLine("Status Description:" + response.StatusDescription);
-                        clsSuiteCRMHelper.AddLogLine("Status Code:" + response.StatusCode);
-                        clsSuiteCRMHelper.AddLogLine("Method:" + response.Method);
-                        clsSuiteCRMHelper.AddLogLine("Response URI:" + response.ResponseUri.ToString());
-                        clsSuiteCRMHelper.AddLogLine("Inputs:");
-                        clsSuiteCRMHelper.AddLogLine("Method:" + strMethod);
-                        clsSuiteCRMHelper.AddLogLine("Data:" + objInput.ToString());
-                        clsSuiteCRMHelper.AddLogLine("-------------------------------------------------------------------------");
-                        clsSuiteCRMHelper.log.Close();
+                        string strLog;
+                        strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                        strLog +="GetResponse method Webserver Exception:" + "\n";
+                        strLog +="Status Description:" + response.StatusDescription + "\n";
+                        strLog +="Status Code:" + response.StatusCode + "\n";
+                        strLog +="Method:" + response.Method + "\n";
+                        strLog +="Response URI:" + response.ResponseUri.ToString() + "\n";
+                        strLog +="Inputs:" + "\n";
+                        strLog +="Method:" + strMethod + "\n";
+                        strLog +="Data:" + objInput.ToString() + "\n";
+                        strLog +="-------------------------------------------------------------------------" + "\n";
+                         clsSuiteCRMHelper.WriteLog(strLog);
                         throw new Exception(response.StatusDescription);
                        
                     }
@@ -115,19 +114,19 @@ namespace SuiteCRMClient
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.LoadLogFileLocation();
-                clsSuiteCRMHelper.AddLogLine("------------------" + System.DateTime.Now.ToString() + "-----------------");
-                clsSuiteCRMHelper.AddLogLine("GetResponse method General Exception:");
-                clsSuiteCRMHelper.AddLogLine("Message:" + ex.Message);
-                clsSuiteCRMHelper.AddLogLine("Source:" + ex.Source);
-                clsSuiteCRMHelper.AddLogLine("StackTrace:" + ex.StackTrace);
-                clsSuiteCRMHelper.AddLogLine("Data:" + ex.Data.ToString());
-                clsSuiteCRMHelper.AddLogLine("HResult:" + ex.HResult.ToString());
-                clsSuiteCRMHelper.AddLogLine("Inputs:");
-                clsSuiteCRMHelper.AddLogLine("Method:" + strMethod);
-                clsSuiteCRMHelper.AddLogLine("Data:" + objInput.ToString());
-                clsSuiteCRMHelper.AddLogLine("-------------------------------------------------------------------------");
-                clsSuiteCRMHelper.log.Close();
+                string strLog;
+                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                strLog +="GetResponse method General Exception:" + "\n";
+                strLog +="Message:" + ex.Message + "\n";
+                strLog +="Source:" + ex.Source + "\n";
+                strLog +="StackTrace:" + ex.StackTrace + "\n";
+                strLog +="Data:" + ex.Data.ToString() + "\n";
+                strLog +="HResult:" + ex.HResult.ToString() + "\n";
+                strLog +="Inputs:" + "\n";
+                strLog +="Method:" + strMethod + "\n";
+                strLog +="Data:" + objInput.ToString() + "\n";
+                strLog +="-------------------------------------------------------------------------" + "\n";
+                 clsSuiteCRMHelper.WriteLog(strLog);
                 throw ex;
             }
         }
