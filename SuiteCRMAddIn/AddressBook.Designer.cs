@@ -81,15 +81,13 @@ namespace SuiteCRMAddIn
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.cbMyItems = new System.Windows.Forms.CheckBox();
             this.btnSearch = new System.Windows.Forms.Button();
-            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.btnFinish = new System.Windows.Forms.ToolStripButton();
-            this.btnCancel = new System.Windows.Forms.ToolStripButton();
+            this.btnFinish = new System.Windows.Forms.Button();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBoxBCC.SuspendLayout();
             this.groupBoxCC.SuspendLayout();
             this.groupBoxTo.SuspendLayout();
             this.groupBoxSearch.SuspendLayout();
-            this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBox1
@@ -105,7 +103,7 @@ namespace SuiteCRMAddIn
             this.groupBox1.Controls.Add(this.groupBoxCC);
             this.groupBox1.Controls.Add(this.groupBoxTo);
             this.groupBox1.Controls.Add(this.groupBoxSearch);
-            this.groupBox1.Location = new System.Drawing.Point(7, 40);
+            this.groupBox1.Location = new System.Drawing.Point(6, 1);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(596, 357);
             this.groupBox1.TabIndex = 0;
@@ -343,6 +341,8 @@ namespace SuiteCRMAddIn
             this.txtSearch.Name = "txtSearch";
             this.txtSearch.Size = new System.Drawing.Size(308, 20);
             this.txtSearch.TabIndex = 3;
+            this.txtSearch.Enter += new System.EventHandler(this.txtSearch_Enter);
+            this.txtSearch.Leave += new System.EventHandler(this.txtSearch_Leave);
             // 
             // cbMyItems
             // 
@@ -356,67 +356,53 @@ namespace SuiteCRMAddIn
             // 
             // btnSearch
             // 
-            this.btnSearch.Image = ((System.Drawing.Image)(resources.GetObject("btnSearch.Image")));
-            this.btnSearch.Location = new System.Drawing.Point(439, 15);
+            this.btnSearch.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnSearch.Location = new System.Drawing.Point(450, 18);
             this.btnSearch.Name = "btnSearch";
-            this.btnSearch.Size = new System.Drawing.Size(35, 29);
+            this.btnSearch.Size = new System.Drawing.Size(75, 23);
             this.btnSearch.TabIndex = 1;
+            this.btnSearch.Text = "&Search";
             this.btnSearch.UseVisualStyleBackColor = true;
             this.btnSearch.Click += new System.EventHandler(this.btnSearch_Click);
             // 
-            // toolStrip1
-            // 
-            this.toolStrip1.AutoSize = false;
-            this.toolStrip1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.toolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
-            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.btnFinish,
-            this.btnCancel});
-            this.toolStrip1.Location = new System.Drawing.Point(0, 0);
-            this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(608, 38);
-            this.toolStrip1.Stretch = true;
-            this.toolStrip1.TabIndex = 9;
-            this.toolStrip1.Text = "toolStrip1";
-            // 
             // btnFinish
             // 
-            this.btnFinish.AutoSize = false;
-            this.btnFinish.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnFinish.Image = ((System.Drawing.Image)(resources.GetObject("btnFinish.Image")));
-            this.btnFinish.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btnFinish.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnFinish.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnFinish.Location = new System.Drawing.Point(446, 364);
             this.btnFinish.Name = "btnFinish";
-            this.btnFinish.Size = new System.Drawing.Size(36, 36);
-            this.btnFinish.Text = "Finish";
-            this.btnFinish.ToolTipText = "Finish";
+            this.btnFinish.Size = new System.Drawing.Size(75, 23);
+            this.btnFinish.TabIndex = 1;
+            this.btnFinish.Text = "&Finish";
+            this.btnFinish.UseVisualStyleBackColor = true;
             this.btnFinish.Click += new System.EventHandler(this.btnFinish_Click);
             // 
             // btnCancel
             // 
-            this.btnCancel.AutoSize = false;
-            this.btnCancel.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnCancel.Image = ((System.Drawing.Image)(resources.GetObject("btnCancel.Image")));
-            this.btnCancel.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btnCancel.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.btnCancel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCancel.Location = new System.Drawing.Point(527, 364);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(36, 36);
-            this.btnCancel.Text = "Cancel";
-            this.btnCancel.ToolTipText = "Cancel";
+            this.btnCancel.Size = new System.Drawing.Size(75, 23);
+            this.btnCancel.TabIndex = 2;
+            this.btnCancel.Text = "&Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // frmAddressBook
             // 
+            this.AcceptButton = this.btnFinish;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(608, 402);
-            this.Controls.Add(this.toolStrip1);
+            this.CancelButton = this.btnCancel;
+            this.ClientSize = new System.Drawing.Size(608, 392);
+            this.Controls.Add(this.btnCancel);
+            this.Controls.Add(this.btnFinish);
             this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(624, 441);
+            this.MaximumSize = new System.Drawing.Size(624, 431);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(624, 441);
+            this.MinimumSize = new System.Drawing.Size(624, 431);
             this.Name = "frmAddressBook";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SuiteCRM Address Book";
@@ -428,8 +414,6 @@ namespace SuiteCRMAddIn
             this.groupBoxTo.ResumeLayout(false);
             this.groupBoxSearch.ResumeLayout(false);
             this.groupBoxSearch.PerformLayout();
-            this.toolStrip1.ResumeLayout(false);
-            this.toolStrip1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -466,8 +450,7 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.CheckBox cbMyItems;
         private System.Windows.Forms.Button btnSearch;
         private System.Windows.Forms.TextBox txtSearch;
-        private System.Windows.Forms.ToolStrip toolStrip1;
-        private System.Windows.Forms.ToolStripButton btnFinish;
-        private System.Windows.Forms.ToolStripButton btnCancel;
+        private System.Windows.Forms.Button btnFinish;
+        private System.Windows.Forms.Button btnCancel;
     }
 }

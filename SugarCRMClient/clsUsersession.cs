@@ -32,41 +32,32 @@ using System.IO;
 using Newtonsoft.Json;
 using System.Windows.Forms;
 using System.Collections;
+using System.Globalization;
+using SuiteCRMClient.RESTObjects;
 
 namespace SuiteCRMClient
 {
 
     public class clsUsersession
     {      
-        public string SugarCRMUsername { get; set; }
-        public string SugarCRMPassword { get; set; }
+        public string SuiteCRMUsername { get; set; }
+        public string SuiteCRMPassword { get; set; }
+        public string LDAPKey { get; set; }
+        public string LDAPIV = "password";
         public bool AwaitingAuthentication { get; set; }
 
         public string id { get; set; }
         
-        public clsUsersession(string URL, string Username, string Password)
+        public clsUsersession(string URL, string Username, string Password, string strLDAPKey)
         {
             if (URL != "")
             {
-                clsGlobals.SugarCRMURL = new Uri(URL);
-                SugarCRMUsername = Username;
-                SugarCRMPassword = Password;
-            }
+                clsGlobals.SuiteCRMURL = new Uri(URL);
+                SuiteCRMUsername = Username;
+                SuiteCRMPassword = Password;
+                LDAPKey = strLDAPKey;
+            }           
             id = "";            
-        }
-
-        public void Test()
-        {
-            object searchByModuleData = new
-            {
-                @session = id,
-                @search_string = "SNT",
-                @modules = new string[] { "Accounts", "Bugs", "Cases", "Contacts", "Leads", "Opportunities", "Project", "ProjectTask", "Quotes" },
-                @max_results=1000,
-                @assigned_user_id = "admin"              
-            };
-            var searchReturn = clsGlobals.GetResponse<RESTObjects.Login>("search_by_module", searchByModuleData);
-
         }
 
         public void Login()
@@ -79,26 +70,29 @@ namespace SuiteCRMClient
                 {
                     @user_auth = new
                     {
-                        @user_name = SugarCRMUsername,
-                        @password = GetMD5Hash(SugarCRMPassword, false)
+                        @user_name = SuiteCRMUsername,
+                        @password = GetMD5Hash(SuiteCRMPassword, false)
                     }
                 };
                 var loginReturn = clsGlobals.GetResponse<RESTObjects.Login>("login", loginData);
                 if (loginReturn.ErrorName != null)
                 {
                     id = "";
+                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
                     throw new Exception(loginReturn.ErrorDescription);
                 }
                 else
                 {
                     id = loginReturn.SessionID;
-                    SuiteCRMClient.clsSuiteCRMHelper.SessionID = id;
+                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
                 }
 
                 AwaitingAuthentication = false;
             }
             catch (Exception ex)
             {
+                id = "";
+                SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
                 string strLog;
                 strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
                 strLog += "clsUsersession.Login method General Exception:\n";
@@ -113,6 +107,57 @@ namespace SuiteCRMClient
             
         }
 
+        public void AuthenticateLDAP()
+        {
+            try
+            {
+                AwaitingAuthentication = true;
+                byte[] buffer = new MD5CryptoServiceProvider().ComputeHash(Encoding.UTF8.GetBytes(LDAPKey));
+                StringBuilder builder = new StringBuilder();
+                foreach (byte num in buffer)
+                {
+                    builder.Append(num.ToString("x2", CultureInfo.InvariantCulture));
+                }
+                TripleDES edes = new TripleDESCryptoServiceProvider
+                {
+                    Mode = CipherMode.CBC,
+                    Key = Encoding.UTF8.GetBytes(builder.ToString(0, 0x18)),
+                    IV = Encoding.UTF8.GetBytes(LDAPIV),
+                    Padding = PaddingMode.Zeros
+                };
+                byte[] buffer2 = edes.CreateEncryptor().TransformFinalBlock(Encoding.UTF8.GetBytes(SuiteCRMUsername), 0, Encoding.UTF8.GetByteCount(SuiteCRMPassword));
+                StringBuilder builder2 = new StringBuilder();
+                foreach (byte num2 in buffer2)
+                {
+                    builder2.Append(num2.ToString("x2", CultureInfo.InvariantCulture));
+                }
+                object loginData = new
+                {
+                    @user_auth = new
+                    {
+                        @user_name = SuiteCRMUsername,
+                        @password = builder2.ToString()
+                    }
+                };
+                eSetEntryResult _result = SuiteCRMClient.clsGlobals.GetResponse<eSetEntryResult>("login", loginData);
+                if (int.Parse(_result.error.number) != 0)
+                {
+                    id = "";
+                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+                    throw new Exception(_result.error.description);
+                }
+                id = _result.id;
+                SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+
+                AwaitingAuthentication = false;
+            }
+            catch (Exception ex)
+            {
+                id = "";
+                SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+                throw ex;
+            }
+        }
         
         public void LogOut()
         {
@@ -141,7 +186,6 @@ namespace SuiteCRMClient
                 ex.Data.Clear();
             }
         }
-
 
         public static string GetMD5Hash(string value, bool upperCase)
         {

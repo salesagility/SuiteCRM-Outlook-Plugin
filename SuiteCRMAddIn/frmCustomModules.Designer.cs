@@ -60,10 +60,8 @@ namespace SuiteCRMAddIn
             this.lstViewAvailableModules = new ListViewEx.ListViewEx();
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.btnSave = new System.Windows.Forms.ToolStripButton();
-            this.btnCancel = new System.Windows.Forms.ToolStripButton();
-            this.toolStrip1.SuspendLayout();
+            this.btnSave = new System.Windows.Forms.Button();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // lstViewAvailableModules
@@ -74,10 +72,10 @@ namespace SuiteCRMAddIn
             this.lstViewAvailableModules.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader2,
             this.columnHeader3});
-            this.lstViewAvailableModules.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.lstViewAvailableModules.Dock = System.Windows.Forms.DockStyle.Top;
             this.lstViewAvailableModules.DoubleClickActivation = false;
             this.lstViewAvailableModules.FullRowSelect = true;
-            this.lstViewAvailableModules.Location = new System.Drawing.Point(0, 41);
+            this.lstViewAvailableModules.Location = new System.Drawing.Point(0, 0);
             this.lstViewAvailableModules.Name = "lstViewAvailableModules";
             this.lstViewAvailableModules.Size = new System.Drawing.Size(315, 250);
             this.lstViewAvailableModules.TabIndex = 4;
@@ -94,78 +92,61 @@ namespace SuiteCRMAddIn
             this.columnHeader3.Text = "Display Name";
             this.columnHeader3.Width = 152;
             // 
-            // toolStrip1
-            // 
-            this.toolStrip1.AutoSize = false;
-            this.toolStrip1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.toolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
-            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.btnSave,
-            this.btnCancel});
-            this.toolStrip1.Location = new System.Drawing.Point(0, 0);
-            this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(315, 38);
-            this.toolStrip1.Stretch = true;
-            this.toolStrip1.TabIndex = 5;
-            this.toolStrip1.Text = "toolStrip1";
-            // 
             // btnSave
             // 
-            this.btnSave.AutoSize = false;
-            this.btnSave.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnSave.Image = ((System.Drawing.Image)(resources.GetObject("btnSave.Image")));
-            this.btnSave.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btnSave.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnSave.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnSave.Location = new System.Drawing.Point(153, 255);
             this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(36, 36);
-            this.btnSave.Text = "Save";
-            this.btnSave.ToolTipText = "Save";
-            this.btnSave.Click += new System.EventHandler(this.buttonSaveClose_Click);
+            this.btnSave.Size = new System.Drawing.Size(75, 23);
+            this.btnSave.TabIndex = 5;
+            this.btnSave.Text = "&Save";
+            this.btnSave.UseVisualStyleBackColor = true;
+            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
             // btnCancel
             // 
-            this.btnCancel.AutoSize = false;
-            this.btnCancel.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnCancel.Image = ((System.Drawing.Image)(resources.GetObject("btnCancel.Image")));
-            this.btnCancel.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btnCancel.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.btnCancel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCancel.Location = new System.Drawing.Point(234, 255);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(36, 36);
-            this.btnCancel.Text = "Cancel";
-            this.btnCancel.ToolTipText = "Cancel";
+            this.btnCancel.Size = new System.Drawing.Size(75, 23);
+            this.btnCancel.TabIndex = 6;
+            this.btnCancel.Text = "&Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // frmCustomModules
             // 
+            this.AcceptButton = this.btnSave;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(315, 291);
-            this.Controls.Add(this.toolStrip1);
+            this.CancelButton = this.btnCancel;
+            this.ClientSize = new System.Drawing.Size(315, 282);
+            this.Controls.Add(this.btnCancel);
+            this.Controls.Add(this.btnSave);
             this.Controls.Add(this.lstViewAvailableModules);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(331, 330);
+            this.MaximumSize = new System.Drawing.Size(331, 321);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(331, 330);
+            this.MinimumSize = new System.Drawing.Size(331, 321);
             this.Name = "frmCustomModules";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SuiteCRM Custom Modules";
             this.Load += new System.EventHandler(this.frmCustomModules_Load);
-            this.toolStrip1.ResumeLayout(false);
-            this.toolStrip1.PerformLayout();
             this.ResumeLayout(false);
 
         }
 
         #endregion
 
-        private ToolStrip toolStrip1;
-        private ToolStripButton btnSave;
-        private ToolStripButton btnCancel;
+        private Button btnSave;
+        private Button btnCancel;
 
-        
+
+
 
     }
 }

@@ -4,5 +4,6 @@
     <PublishUrlHistory>publish\</PublishUrlHistory>
     <InstallUrlHistory />
     <SupportUrlHistory />
+    <ProjectView>ProjectFiles</ProjectView>
   </PropertyGroup>
 </Project>

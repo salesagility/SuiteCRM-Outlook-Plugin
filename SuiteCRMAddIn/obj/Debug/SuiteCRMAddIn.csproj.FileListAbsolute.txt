@@ -1,0 +1,65 @@
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.csprojResolveAssemblyReference.cache
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmAddressBook.resources
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmArchive.resources
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmCustomModules.resources
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmSettings.resources
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.Properties.Resources.resources
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.csproj.GenerateResource.Cache
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.pdb
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.manifest
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.vsto
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\ListViewEx.dll
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Common.v4.0.Utilities.dll
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\SugarCRMClient.dll
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\Newtonsoft.Json.dll
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\SugarCRMClient.pdb
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Common.v4.0.Utilities.xml
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Outlook.v4.0.Utilities.xml
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.dll
+C:\Greg\SuiteCRMOutlookAddIn\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.pdb
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.pdb
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.manifest
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.vsto
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\ListViewEx.dll
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Common.v4.0.Utilities.dll
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SugarCRMClient.dll
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Newtonsoft.Json.dll
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SugarCRMClient.pdb
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Common.v4.0.Utilities.xml
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Outlook.v4.0.Utilities.xml
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.csprojResolveAssemblyReference.cache
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmAddressBook.resources
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmArchive.resources
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmCustomModules.resources
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmSettings.resources
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.Properties.Resources.resources
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.csproj.GenerateResource.Cache
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.dll
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.pdb
+C:\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.config
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.config
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.pdb
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.manifest
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.vsto
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\ListViewEx.dll
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Common.v4.0.Utilities.dll
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SugarCRMClient.dll
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Newtonsoft.Json.dll
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SugarCRMClient.pdb
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Common.v4.0.Utilities.xml
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Outlook.v4.0.Utilities.xml
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.csprojResolveAssemblyReference.cache
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmAddressBook.resources
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmArchive.resources
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmCustomModules.resources
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.frmSettings.resources
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.Properties.Resources.resources
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.csproj.GenerateResource.Cache
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.dll
+D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\obj\Debug\SuiteCRMAddIn.pdb

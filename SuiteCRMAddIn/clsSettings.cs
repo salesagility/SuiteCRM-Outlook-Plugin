@@ -81,123 +81,123 @@ namespace SuiteCRMAddIn
             }
         }
         [DefaultSettingValue("False"), UserScopedSetting, DebuggerNonUserCode]
-        public bool archive_attachments_default
+        public bool ArchiveAttachmentsDefault
         {
             get
             {
-                return (bool)this["archive_attachments_default"];
+                return (bool)this["ArchiveAttachmentsDefault"];
             }
             set
             {
-                this["archive_attachments_default"] = value;
+                this["ArchiveAttachmentsDefault"] = value;
             }
         }
         [DebuggerNonUserCode, UserScopedSetting, DefaultSettingValue("False")]
-        public bool automatic_search
+        public bool AutomaticSearch
         {
             get
             {
-                return (bool)this["automatic_search"];
+                return (bool)this["AutomaticSearch"];
             }
             set
             {
-                this["automatic_search"] = value;
+                this["AutomaticSearch"] = value;
             }
         }
         [DefaultSettingValue("True"), DebuggerNonUserCode, UserScopedSetting]
-        public bool show_custom_modules
+        public bool ShowCustomModules
         {
             get
             {
-                return (bool)this["show_custom_modules"];
+                return (bool)this["ShowCustomModules"];
             }
             set
             {
-                this["show_custom_modules"] = value;
+                this["ShowCustomModules"] = value;
             }
         }
         [DefaultSettingValue("<?xml version=\"1.0\" encoding=\"utf-16\"?>\r\n<ArrayOfString xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n  <string>None|None</string>\r\n</ArrayOfString>"), UserScopedSetting, DebuggerNonUserCode]
-        public StringCollection custom_modules
+        public StringCollection CustomModules
         {
             get
             {
-                return (StringCollection)this["custom_modules"];
+                return (StringCollection)this["CustomModules"];
             }
             set
             {
-                this["custom_modules"] = value;
+                this["CustomModules"] = value;
             }
         }
         [DefaultSettingValue("1000"), DebuggerNonUserCode, UserScopedSetting]
-        public int sync_max_records
+        public int SyncMaxRecords
         {
             get
             {
-                return (int)this["sync_max_records"];
+                return (int)this["SyncMaxRecords"];
             }
             set
             {
-                this["sync_max_records"] = value;
+                this["SyncMaxRecords"] = value;
             }
         }
         [DebuggerNonUserCode, UserScopedSetting, DefaultSettingValue("1,2,3")]
-        public string selected_search_modules
+        public string SelectedSearchModules
         {
             get
             {
-                return (string)this["selected_search_modules"];
+                return (string)this["SelectedSearchModules"];
             }
             set
             {
-                this["selected_search_modules"] = value;
+                this["SelectedSearchModules"] = value;
             }
         }
         [UserScopedSetting, DebuggerNonUserCode, DefaultSettingValue("False")]
-        public bool participate_in_ceip
+        public bool ParticipateInCeip
         {
             get
             {
-                return (bool)this["participate_in_ceip"];
+                return (bool)this["ParticipateInCeip"];
             }
             set
             {
-                this["participate_in_ceip"] = value;
+                this["ParticipateInCeip"] = value;
             }
         }
         [DefaultSettingValue("True"), DebuggerNonUserCode, UserScopedSetting]
-        public bool populate_context_lookup_list
+        public bool PopulateContextLookupList
         {
             get
             {
-                return (bool)this["populate_context_lookup_list"];
+                return (bool)this["PopulateContextLookupList"];
             }
             set
             {
-                this["populate_context_lookup_list"] = value;
+                this["PopulateContextLookupList"] = value;
             }
         }
         [DefaultSettingValue("True"), DebuggerNonUserCode, UserScopedSetting]
-        public bool auto_archive
+        public bool AutoArchive
         {
             get
             {
-                return (bool)this["auto_archive"];
+                return (bool)this["AutoArchive"];
             }
             set
             {
-                this["auto_archive"] = value;
+                this["AutoArchive"] = value;
             }
         }
         [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
-        public System.Collections.Generic.List<string> auto_archive_folders
+        public System.Collections.Generic.List<string> AutoArchiveFolders
         {
             get
             {
-                return (System.Collections.Generic.List<string>)this["auto_archive_folders"];               
+                return (System.Collections.Generic.List<string>)this["AutoArchiveFolders"];               
             }
             set
             {
-                this["auto_archive_folders"] = value;
+                this["AutoArchiveFolders"] = value;
             }
         }
         [UserScopedSetting, DefaultSettingValue(""), DebuggerNonUserCode]
@@ -224,45 +224,42 @@ namespace SuiteCRMAddIn
                 this["IsFirstTime"] = value;
             }
         }
-
-        [DefaultSettingValue("False"), DebuggerNonUserCode, UserScopedSetting]
-        public bool AttachmentsChecked
+      
+        [DefaultSettingValue("False"), UserScopedSetting, DebuggerNonUserCode]
+        public bool IsLDAPAuthentication
         {
             get
             {
-                return (bool)this["AttachmentsChecked"];
+                return (bool)this["IsLDAPAuthentication"];
             }
             set
             {
-                this["AttachmentsChecked"] = value;
+                this["IsLDAPAuthentication"] = value;
             }
         }
-
-        [UserScopedSetting, DebuggerNonUserCode]
-        public StringCollection opportunity_dropdown_salestage
+        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        public string LDAPKey
         {
             get
             {
-                return (StringCollection)this["opportunity_dropdown_salestage"];
+                return (string)this["LDAPKey"];
             }
             set
             {
-                this["opportunity_dropdown_salestage"] = value;
+                this["LDAPKey"] = value;
             }
         }
-        [DebuggerNonUserCode, UserScopedSetting]
-        public StringCollection case_dropdown_priority
+        [DefaultSettingValue("True"), DebuggerNonUserCode, UserScopedSetting]
+        public bool ShowConfirmationMessageArchive
         {
             get
             {
-                return (StringCollection)this["case_dropdown_priority"];
+                return (bool)this["ShowConfirmationMessageArchive"];
             }
             set
             {
-                this["case_dropdown_priority"] = value;
+                this["ShowConfirmationMessageArchive"] = value;
             }
-        }
-        public static Hashtable accountEntrys = new Hashtable();
-        public static AutoCompleteStringCollection accounts;
+        }    
     }
 }
