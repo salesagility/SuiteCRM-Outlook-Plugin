@@ -42,7 +42,7 @@ namespace SuiteCRMAddIn
         public frmAddressBook()
         {
             this.InitializeComponent();
-            if (Globals.ThisAddIn.SugarCRMUserSession.id == "")
+            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
             {
                 frmSettings objacbbSettings = new frmSettings();
                 objacbbSettings.ShowDialog();                
@@ -98,37 +98,6 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void btnFinish_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                MailItem currentItem = (MailItem)Globals.ThisAddIn.Application.ActiveInspector().CurrentItem;
-                foreach (ListViewItem item2 in this.lstViewTo.Items)
-                {
-                    currentItem.Recipients.Add(item2.SubItems[1].Text).Type = 1;
-                }
-                foreach (ListViewItem item3 in this.lstViewCC.Items)
-                {
-                    currentItem.Recipients.Add(item3.SubItems[1].Text).Type = 2;
-                }
-                foreach (ListViewItem item4 in this.lstViewBCC.Items)
-                {
-                    currentItem.Recipients.Add(item4.SubItems[1].Text).Type = 3;
-                }
-                currentItem.Recipients.ResolveAll();
-            }
-            catch (System.Exception exception)
-            {
-                MessageBox.Show("Error setting address from SugarCRM addressbook:" + exception.Message, "ERROR");
-            }
-            base.Close();
-        }
-
-        private void btnCancel_Click(object sender, EventArgs e)
-        {
-            base.Close();
-        }
-
         private void btnSearch_Click(object sender, EventArgs e)
         {
             string[] strArray = new string[2];
@@ -162,7 +131,7 @@ namespace SuiteCRMAddIn
                     if (this.cbMyItems.Checked)
                     {
                         string str8 = query;
-                        query = str8 + "AND " + str2.ToLower() + ".assigned_user_id = '" + Globals.ThisAddIn.SugarCRMUserSession.id + "'";
+                        query = str8 + "AND " + str2.ToLower() + ".assigned_user_id = '" + Globals.ThisAddIn.SuiteCRMUserSession.id + "'";
                     }
                     foreach (eEntryValue _value in clsSuiteCRMHelper.GetEntryList(str2, query, 0, "date_entered DESC", 0, false, new string[] { "first_name", "last_name", "email1" }).entry_list)
                     {
@@ -196,6 +165,47 @@ namespace SuiteCRMAddIn
             }
         }
 
-     
+        private void btnFinish_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                MailItem currentItem = (MailItem)Globals.ThisAddIn.Application.ActiveInspector().CurrentItem;
+                foreach (ListViewItem item2 in this.lstViewTo.Items)
+                {
+                    currentItem.Recipients.Add(item2.SubItems[1].Text).Type = 1;
+                }
+                foreach (ListViewItem item3 in this.lstViewCC.Items)
+                {
+                    currentItem.Recipients.Add(item3.SubItems[1].Text).Type = 2;
+                }
+                foreach (ListViewItem item4 in this.lstViewBCC.Items)
+                {
+                    currentItem.Recipients.Add(item4.SubItems[1].Text).Type = 3;
+                }
+                currentItem.Recipients.ResolveAll();
+            }
+            catch (System.Exception exception)
+            {
+                MessageBox.Show("Error setting address from SuiteCRM addressbook:" + exception.Message, "ERROR");
+            }
+            base.Close();
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            base.Close();
+        }
+        private void txtSearch_Enter(object sender, EventArgs e)
+        {
+            if (txtSearch.Focused == true)
+            {
+                this.AcceptButton = btnSearch;
+            }
+        }
+
+        private void txtSearch_Leave(object sender, EventArgs e)
+        {
+            this.AcceptButton = btnFinish;
+        }
     }
 }

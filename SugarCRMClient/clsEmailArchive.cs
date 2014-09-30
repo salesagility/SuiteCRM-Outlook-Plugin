@@ -42,11 +42,11 @@ namespace SuiteCRMClient
         public int ArchiveType { get; set; } //1-Manual, 2-Inbound, 3-Sent
         public object contactData;
 
-        public clsUsersession SugarCRMUserSession;
+        public clsUsersession SuiteCRMUserSession;
 
-        public clsEmailArchive(clsUsersession SugarCRMUserSession)
+        public clsEmailArchive(clsUsersession SuiteCRMUserSession)
         {
-            this.SugarCRMUserSession = SugarCRMUserSession;
+            this.SuiteCRMUserSession = SuiteCRMUserSession;
             Attachments = new List<clsEmailAttachments>();
         }
 
@@ -58,7 +58,7 @@ namespace SuiteCRMClient
         {
             string strUserID = clsSuiteCRMHelper.GetUserId();
             if (strUserID == "")
-                SugarCRMUserSession.Login();
+                SuiteCRMUserSession.Login();
 
             ArrayList arrRet = new ArrayList();
             ArrayList arrCheckedList = new ArrayList();
@@ -95,7 +95,7 @@ namespace SuiteCRMClient
 
                         contactData = new
                           {
-                              @session = SugarCRMUserSession.id,
+                              @session = SuiteCRMUserSession.id,
                               @module_name = "Contacts",
                               @query = GetContactIDQuery(strEmail),
                               @order_by = "",
@@ -153,7 +153,7 @@ namespace SuiteCRMClient
                     emailData.Add(new RESTObjects.eNameValue() { name = "status", value = "archived" });
                     object contactData = new
                     {
-                        @session = SugarCRMUserSession.id,
+                        @session = SuiteCRMUserSession.id,
                         @module_name = "Emails",
                         @name_value_list = emailData
                     };
@@ -164,7 +164,7 @@ namespace SuiteCRMClient
                     {
                         object contacRelationshipData = new
                         {
-                            @session = SugarCRMUserSession.id,
+                            @session = SuiteCRMUserSession.id,
                             @module_name = "Contacts",
                             @module_id = strContactID,
                             @link_field_name = "emails",
@@ -183,7 +183,7 @@ namespace SuiteCRMClient
 
                         object initNoteDataWebFormat = new
                         {
-                            @session = SugarCRMUserSession.id,
+                            @session = SuiteCRMUserSession.id,
                             @module_name = "Notes",
                             @name_value_list = initNoteData
                         };
@@ -197,7 +197,7 @@ namespace SuiteCRMClient
 
                         object attachmentDataWebFormat = new
                         {
-                            @session = SugarCRMUserSession.id,
+                            @session = SuiteCRMUserSession.id,
                             @note = attachment
                         };
 
@@ -206,7 +206,7 @@ namespace SuiteCRMClient
                         //Relate the email and the attachment
                         object contacRelationshipData = new
                         {
-                            @session = SugarCRMUserSession.id,
+                            @session = SuiteCRMUserSession.id,
                             @module_name = "Emails",
                             @module_id = emailResult.id,
                             @link_field_name = "notes",

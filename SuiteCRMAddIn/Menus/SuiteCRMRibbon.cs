@@ -148,7 +148,7 @@ namespace SuiteCRMAddIn
 
         private void ManualArchive()
         {
-            if (Globals.ThisAddIn.SugarCRMUserSession.id == "")
+            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
             {
                 frmSettings objacbbSettings = new frmSettings();
                 objacbbSettings.ShowDialog();

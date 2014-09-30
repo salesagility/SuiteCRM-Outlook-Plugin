@@ -50,7 +50,6 @@ namespace SuiteCRMAddIn
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmArchive));
             System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("All");
             System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("Accounts");
             System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("Contacts");
@@ -59,41 +58,43 @@ namespace SuiteCRMAddIn
             System.Windows.Forms.ListViewItem listViewItem6 = new System.Windows.Forms.ListViewItem("Cases");
             System.Windows.Forms.ListViewItem listViewItem7 = new System.Windows.Forms.ListViewItem("Project");
             System.Windows.Forms.ListViewItem listViewItem8 = new System.Windows.Forms.ListViewItem("Bugs");
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmArchive));
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.btnSearch = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.lstViewSearchModules = new System.Windows.Forms.ListView();
             this.colList = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.tsResults = new System.Windows.Forms.TreeView();
-            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.btnSave = new System.Windows.Forms.ToolStripButton();
-            this.btnCancel = new System.Windows.Forms.ToolStripButton();
-            this.toolStrip1.SuspendLayout();
+            this.btnArchive = new System.Windows.Forms.Button();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // txtSearch
             // 
-            this.txtSearch.Location = new System.Drawing.Point(9, 70);
+            this.txtSearch.Location = new System.Drawing.Point(9, 30);
             this.txtSearch.Name = "txtSearch";
             this.txtSearch.Size = new System.Drawing.Size(370, 20);
             this.txtSearch.TabIndex = 0;
             this.txtSearch.TextChanged += new System.EventHandler(this.txtSearch_TextChanged);
+            this.txtSearch.Enter += new System.EventHandler(this.txtSearch_Enter);
             this.txtSearch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtSearch_KeyDown);
+            this.txtSearch.Leave += new System.EventHandler(this.txtSearch_Leave);
             // 
             // btnSearch
             // 
-            this.btnSearch.Image = ((System.Drawing.Image)(resources.GetObject("btnSearch.Image")));
-            this.btnSearch.Location = new System.Drawing.Point(399, 65);
+            this.btnSearch.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnSearch.Location = new System.Drawing.Point(385, 28);
             this.btnSearch.Name = "btnSearch";
-            this.btnSearch.Size = new System.Drawing.Size(35, 29);
+            this.btnSearch.Size = new System.Drawing.Size(75, 23);
             this.btnSearch.TabIndex = 1;
+            this.btnSearch.Text = "&Search";
             this.btnSearch.UseVisualStyleBackColor = true;
             this.btnSearch.Click += new System.EventHandler(this.btnSearch_Click);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(9, 47);
+            this.label1.Location = new System.Drawing.Point(9, 7);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(230, 13);
             this.label1.TabIndex = 2;
@@ -129,7 +130,7 @@ namespace SuiteCRMAddIn
             listViewItem6,
             listViewItem7,
             listViewItem8});
-            this.lstViewSearchModules.Location = new System.Drawing.Point(326, 108);
+            this.lstViewSearchModules.Location = new System.Drawing.Point(326, 68);
             this.lstViewSearchModules.Name = "lstViewSearchModules";
             this.lstViewSearchModules.Size = new System.Drawing.Size(134, 262);
             this.lstViewSearchModules.TabIndex = 3;
@@ -146,7 +147,7 @@ namespace SuiteCRMAddIn
             // 
             this.tsResults.AccessibleName = "";
             this.tsResults.CheckBoxes = true;
-            this.tsResults.Location = new System.Drawing.Point(9, 108);
+            this.tsResults.Location = new System.Drawing.Point(9, 68);
             this.tsResults.Name = "tsResults";
             this.tsResults.Size = new System.Drawing.Size(311, 262);
             this.tsResults.TabIndex = 4;
@@ -155,53 +156,38 @@ namespace SuiteCRMAddIn
             this.tsResults.AfterExpand += new System.Windows.Forms.TreeViewEventHandler(this.tsResults_AfterExpand);
             this.tsResults.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
             // 
-            // toolStrip1
+            // btnArchive
             // 
-            this.toolStrip1.AutoSize = false;
-            this.toolStrip1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.toolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
-            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.btnSave,
-            this.btnCancel});
-            this.toolStrip1.Location = new System.Drawing.Point(0, 0);
-            this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(465, 38);
-            this.toolStrip1.Stretch = true;
-            this.toolStrip1.TabIndex = 8;
-            this.toolStrip1.Text = "toolStrip1";
-            // 
-            // btnSave
-            // 
-            this.btnSave.AutoSize = false;
-            this.btnSave.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnSave.Image = ((System.Drawing.Image)(resources.GetObject("btnSave.Image")));
-            this.btnSave.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btnSave.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(36, 36);
-            this.btnSave.Text = "Archive";
-            this.btnSave.ToolTipText = "Archive";
-            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            this.btnArchive.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnArchive.Location = new System.Drawing.Point(304, 336);
+            this.btnArchive.Name = "btnArchive";
+            this.btnArchive.Size = new System.Drawing.Size(75, 23);
+            this.btnArchive.TabIndex = 5;
+            this.btnArchive.Text = "&Archive";
+            this.btnArchive.UseVisualStyleBackColor = true;
+            this.btnArchive.Click += new System.EventHandler(this.btnArchive_Click);
             // 
             // btnCancel
             // 
-            this.btnCancel.AutoSize = false;
-            this.btnCancel.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnCancel.Image = ((System.Drawing.Image)(resources.GetObject("btnCancel.Image")));
-            this.btnCancel.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btnCancel.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.btnCancel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnCancel.Location = new System.Drawing.Point(385, 336);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(36, 36);
-            this.btnCancel.Text = "Cancel";
-            this.btnCancel.ToolTipText = "Cancel";
+            this.btnCancel.Size = new System.Drawing.Size(75, 23);
+            this.btnCancel.TabIndex = 6;
+            this.btnCancel.Text = "&Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // frmArchive
             // 
+            this.AcceptButton = this.btnArchive;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(465, 377);
-            this.Controls.Add(this.toolStrip1);
+            this.CancelButton = this.btnCancel;
+            this.ClientSize = new System.Drawing.Size(465, 365);
+            this.Controls.Add(this.btnCancel);
+            this.Controls.Add(this.btnArchive);
             this.Controls.Add(this.tsResults);
             this.Controls.Add(this.lstViewSearchModules);
             this.Controls.Add(this.label1);
@@ -209,16 +195,14 @@ namespace SuiteCRMAddIn
             this.Controls.Add(this.txtSearch);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(481, 416);
+            this.MaximumSize = new System.Drawing.Size(481, 404);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(481, 416);
+            this.MinimumSize = new System.Drawing.Size(481, 404);
             this.Name = "frmArchive";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Archive to SuiteCRM";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.frmArchive_FormClosed);
             this.Load += new System.EventHandler(this.frmArchive_Load);
-            this.toolStrip1.ResumeLayout(false);
-            this.toolStrip1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -232,8 +216,7 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.ListView lstViewSearchModules;
         private System.Windows.Forms.ColumnHeader colList;
         private System.Windows.Forms.TreeView tsResults;
-        private System.Windows.Forms.ToolStrip toolStrip1;
-        private System.Windows.Forms.ToolStripButton btnSave;
-        private System.Windows.Forms.ToolStripButton btnCancel;      
+        private System.Windows.Forms.Button btnArchive;
+        private System.Windows.Forms.Button btnCancel;      
     }
 }

@@ -40,18 +40,18 @@ namespace SuiteCRMAddIn
     {
         private clsSettings settings = Globals.ThisAddIn.settings;
         private List<string> IgnoreModules = new List<string>();
-        private TextBox textBoxDisplay;
+        private TextBox txtDisplay;
 
         public frmCustomModules()
         {
             InitializeComponent();
-            this.textBoxDisplay = new TextBox();
-            this.textBoxDisplay.Location = new Point(0xda, 0x1b);
-            this.textBoxDisplay.Name = "textBoxDisplay";
-            this.textBoxDisplay.Size = new Size(100, 0x15);
-            this.textBoxDisplay.TabIndex = 11;
-            this.textBoxDisplay.Visible = false;
-            base.Controls.Add(this.textBoxDisplay);
+            this.txtDisplay = new TextBox();
+            this.txtDisplay.Location = new Point(0xda, 0x1b);
+            this.txtDisplay.Name = "textBoxDisplay";
+            this.txtDisplay.Size = new Size(100, 0x15);
+            this.txtDisplay.TabIndex = 11;
+            this.txtDisplay.Visible = false;
+            base.Controls.Add(this.txtDisplay);
             this.IgnoreModules.Add("iFrames");
             this.IgnoreModules.Add("Contacts");
             this.IgnoreModules.Add("Accounts");
@@ -174,20 +174,119 @@ namespace SuiteCRMAddIn
             this.IgnoreModules.Add("OAuthKeys");
             this.IgnoreModules.Add("OAuthTokens");
             this.IgnoreModules.Add("Dashboard");
-
         }
-                
-        private void buttonSaveClose_Click(object sender, EventArgs e)
+
+        private void listViewAvailableModules_SubItemClicked(object sender, SubItemEventArgs e)
+        {
+            try
+            {
+                if (e.SubItem == 1)
+                {
+                    this.lstViewAvailableModules.StartEditing(this.txtDisplay, e.Item, e.SubItem);
+                }
+            }
+            catch (Exception ex)
+            {
+                string strLog;
+                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                strLog += "listViewAvailableModules_SubItemClicked General Exception:\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
+            }
+        }
+
+        private void frmCustomModules_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                string strUserID = clsSuiteCRMHelper.GetUserId();
+                if (strUserID == "")
+                {
+                    Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                }
+                if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+                {
+                    MessageBox.Show("Please enter SuiteCRM details in General tab and try again", "Invalid Authentication");
+                    base.Close();
+                    return;
+                }
+                   eModuleList modules = clsSuiteCRMHelper.GetModules();
+                       this.lstViewAvailableModules.SubItemClicked += new SubItemEventHandler(this.listViewAvailableModules_SubItemClicked);
+                       if (this.settings.CustomModules != null)
+                       {
+                           StringEnumerator enumerator = this.settings.CustomModules.GetEnumerator();
+                           while (enumerator.MoveNext())
+                           {
+                               string[] strArray = enumerator.Current.Split(new char[] { '|' });
+                               ListViewItem item = new ListViewItem
+                               {
+                                   Text = strArray[0],
+                                   Tag = strArray[1],
+                                   Checked = true
+                               };
+                               item.SubItems.Add(strArray[1]);
+                               if (strArray[0] != "None" || strArray[1] != "None")
+                                   this.lstViewAvailableModules.Items.Add(item);
+                           }
+                       }
+                       foreach (module_data objModuleData in modules.modules1)
+                       {
+                           string str2 = objModuleData.module_key;
+                           bool flag = false;
+                           if (!this.IgnoreModules.Contains(str2))
+                           {
+                               ListViewItem item2 = new ListViewItem
+                               {
+                                   Text = str2,
+                                   Tag = str2
+                               };
+                               item2.SubItems.Add(string.Empty);
+                               foreach (ListViewItem item3 in this.lstViewAvailableModules.Items)
+                               {
+                                   if (item3.Text == str2)
+                                   {
+                                       flag = true;
+                                   }
+                               }
+                               if (!flag)
+                               {
+                                   this.lstViewAvailableModules.Items.Add(item2);
+                               }
+                           }
+                       }
+            }
+            catch (Exception ex)
+            {
+                base.Close();
+                MessageBox.Show("Please check the Internet connection", "Network Failure", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                string strLog;
+                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                strLog += "frmCustomModules_Load General Exception\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "Data:" + ex.Data.ToString() + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
+            }
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
         {
             try
             {
                 bool flag = true;
-                this.settings.custom_modules.Clear();
+                this.settings.CustomModules.Clear();
                 foreach (ListViewItem item in this.lstViewAvailableModules.CheckedItems)
                 {
                     if (item.SubItems[1].Text != string.Empty)
                     {
-                        this.settings.custom_modules.Add(item.Text + "|" + item.SubItems[1].Text);
+                        this.settings.CustomModules.Add(item.Text + "|" + item.SubItems[1].Text);
                     }
                     else
                     {
@@ -214,102 +313,9 @@ namespace SuiteCRMAddIn
                 strLog += "Source:" + ex.Source + "\n";
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";                
-                 clsSuiteCRMHelper.WriteLog(strLog);                
+                strLog += "-------------------------------------------------------------------------\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
                 ex.Data.Clear();
-            }
-        }
-
-        private void listViewAvailableModules_SubItemClicked(object sender, SubItemEventArgs e)
-        {
-            try
-            {
-                if (e.SubItem == 1)
-                {
-                    this.lstViewAvailableModules.StartEditing(this.textBoxDisplay, e.Item, e.SubItem);
-                }
-            }
-            catch (Exception ex)
-            {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "listViewAvailableModules_SubItemClicked General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                 clsSuiteCRMHelper.WriteLog(strLog);                
-            }
-        }
-
-        private void frmCustomModules_Load(object sender, EventArgs e)
-        {
-            try
-            {
-                if (Globals.ThisAddIn.SugarCRMUserSession.id == "")
-                {
-                    MessageBox.Show("Please enter SuiteCRM details in General tab and try again", "Invalid Authentication");
-                    base.Close();
-                    return;
-                }
-                eModuleList modules = clsSuiteCRMHelper.GetModules();
-                this.lstViewAvailableModules.SubItemClicked += new SubItemEventHandler(this.listViewAvailableModules_SubItemClicked);
-                if (this.settings.custom_modules != null)
-                {
-                    StringEnumerator enumerator = this.settings.custom_modules.GetEnumerator();
-                    while (enumerator.MoveNext())
-                    {
-                        string[] strArray = enumerator.Current.Split(new char[] { '|' });
-                        ListViewItem item = new ListViewItem
-                        {
-                            Text = strArray[0],
-                            Tag = strArray[1],
-                            Checked = true
-                        };
-                        item.SubItems.Add(strArray[1]);
-                        if (strArray[0] != "None" || strArray[1] != "None")
-                            this.lstViewAvailableModules.Items.Add(item);
-                    }
-                }
-                foreach (module_data objModuleData in modules.modules1)
-                {
-                    string str2 = objModuleData.module_key;
-                    bool flag = false;
-                    if (!this.IgnoreModules.Contains(str2))
-                    {
-                        ListViewItem item2 = new ListViewItem
-                        {
-                            Text = str2,
-                            Tag = str2
-                        };
-                        item2.SubItems.Add(string.Empty);
-                        foreach (ListViewItem item3 in this.lstViewAvailableModules.Items)
-                        {
-                            if (item3.Text == str2)
-                            {
-                                flag = true;
-                            }
-                        }
-                        if (!flag)
-                        {
-                            this.lstViewAvailableModules.Items.Add(item2);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "frmCustomModules_Load General Exception\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                 clsSuiteCRMHelper.WriteLog(strLog);                
             }
         }
 

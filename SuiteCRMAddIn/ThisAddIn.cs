@@ -30,12 +30,16 @@ using Office = Microsoft.Office.Core;
 using SuiteCRMClient;
 using System.Runtime.InteropServices;
 using SuiteCRMAddIn.Properties;
+using System.Security.Cryptography;
+using System.Globalization;
+using SuiteCRMClient.RESTObjects;
+using SuiteCRMClient;
 
 namespace SuiteCRMAddIn
 {
-    public partial class ThisAddIn 
+    public partial class ThisAddIn
     {
-        public SuiteCRMClient.clsUsersession SugarCRMUserSession;
+        public SuiteCRMClient.clsUsersession SuiteCRMUserSession;
         public clsSettings settings;
         private Outlook.Explorer objExplorer;
         public Office.CommandBarPopup objSuiteCRMMenuBar2007;
@@ -44,17 +48,17 @@ namespace SuiteCRMAddIn
         List<Outlook.Folder> lstOutlookFolders;
         public int CurrentVersion;
         public Office.IRibbonUI RibbonUI { get; set; }
-        
+
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             CurrentVersion = Convert.ToInt32(Globals.ThisAddIn.Application.Version.Split('.')[0]);
             this.objExplorer = Globals.ThisAddIn.Application.ActiveExplorer();
             SuiteCRMClient.clsSuiteCRMHelper.InstallationPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\SuiteCRMOutlookAddIn";
             this.settings = new clsSettings();
-            if (this.settings.auto_archive)
+            if (this.settings.AutoArchive)
             {
                 this.objExplorer.Application.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
-                this.objExplorer.Application.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);                
+                this.objExplorer.Application.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
             }
             if (CurrentVersion < 14)
             {
@@ -63,7 +67,7 @@ namespace SuiteCRMAddIn
                 objSuiteCRMMenuBar2007 = (Office.CommandBarPopup)menuBar.Controls.Add(Office.MsoControlType.msoControlPopup, missing, missing, missing, true);
                 if (objSuiteCRMMenuBar2007 != null)
                 {
-                    objSuiteCRMMenuBar2007.Caption = "SugarCRM";
+                    objSuiteCRMMenuBar2007.Caption = "SuiteCRM";
                     this.btnArvive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
                     this.btnArvive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
                     this.btnArvive.Caption = "Archive";
@@ -91,7 +95,7 @@ namespace SuiteCRMAddIn
                 //var app = this.Application;
                 //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
             }
-            SugarCRMAuthenticate();
+            SuiteCRMAuthenticate();
         }
 
         //void app_FolderContextMenuDisplay(Office.CommandBar CommandBar, Outlook.MAPIFolder Folder)
@@ -111,12 +115,12 @@ namespace SuiteCRMAddIn
 
         private void ManualArchive()
         {
-            if (Globals.ThisAddIn.SugarCRMUserSession.id == "")
+            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
             {
                 frmSettings objacbbSettings = new frmSettings();
                 objacbbSettings.ShowDialog();
             }
-            if (Globals.ThisAddIn.SugarCRMUserSession.id != "")
+            if (Globals.ThisAddIn.SuiteCRMUserSession.id != "")
             {
                 frmArchive objForm = new frmArchive();
                 objForm.ShowDialog();
@@ -127,9 +131,9 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                if (SugarCRMUserSession != null)
-                    SugarCRMUserSession.LogOut();
-                if (this.CommandBarExists("SugarCRM"))
+                if (SuiteCRMUserSession != null)
+                    SuiteCRMUserSession.LogOut();
+                if (this.CommandBarExists("SuiteCRM"))
                 {
                     this.objSuiteCRMMenuBar2007.Delete();
                 }
@@ -149,7 +153,7 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception ex)
             {
-                
+
             }
 
             try
@@ -158,16 +162,16 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception ex1)
             {
-                
+
             }
-            
+
             try
             {
                 this.objExplorer.Application.NewMailEx -= new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
             }
             catch (System.Exception ex2)
             {
-                
+
             }
 
             try
@@ -176,10 +180,10 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception ex3)
             {
-                
+
             }
 
-            
+
         }
 
         private bool CommandBarExists(string name)
@@ -201,16 +205,16 @@ namespace SuiteCRMAddIn
         {
             Outlook.Selection selection = Selection;
             Outlook.MailItem item1 = (Outlook.MailItem)selection[1];
-            Office.CommandBarButton objMainMenu =(Office.CommandBarButton)CommandBar.Controls.Add(Microsoft.Office.Core.MsoControlType.msoControlButton, this.missing, this.missing, this.missing, this.missing);
+            Office.CommandBarButton objMainMenu = (Office.CommandBarButton)CommandBar.Controls.Add(Microsoft.Office.Core.MsoControlType.msoControlButton, this.missing, this.missing, this.missing, this.missing);
             objMainMenu.Caption = "SuiteCRM Archive";
             objMainMenu.Visible = true;
             objMainMenu.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
-            objMainMenu.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.contextMenuArchiveButton_Click);            
+            objMainMenu.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.contextMenuArchiveButton_Click);
         }
 
         private void contextMenuArchiveButton_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
-            if (Globals.ThisAddIn.SugarCRMUserSession.id == "")
+            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
             {
                 frmSettings objacbbSettings = new frmSettings();
                 objacbbSettings.ShowDialog();
@@ -247,7 +251,7 @@ namespace SuiteCRMAddIn
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------" + "\n";
                 clsSuiteCRMHelper.WriteLog(strLog);
-            }            
+            }
         }
 
         private void Application_NewMail(string EntryID)
@@ -279,7 +283,7 @@ namespace SuiteCRMAddIn
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------" + "\n";
                 clsSuiteCRMHelper.WriteLog(strLog);
-            } 
+            }
         }
 
         /// <summary>
@@ -299,15 +303,15 @@ namespace SuiteCRMAddIn
             return new SuiteCRMRibbon();
         }
 
-        public void SugarCRMAuthenticate()
+        public void SuiteCRMAuthenticate()
         {
-            if (Globals.ThisAddIn.SugarCRMUserSession == null)
+            if (Globals.ThisAddIn.SuiteCRMUserSession == null)
             {
                 Authenticate();
             }
             else
             {
-                if (Globals.ThisAddIn.SugarCRMUserSession.id == "")
+                if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
                     Authenticate();
             }
 
@@ -317,18 +321,24 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                Globals.ThisAddIn.SugarCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "");
+                string strUsername = Globals.ThisAddIn.settings.username;
+                string strPassword = Globals.ThisAddIn.settings.password;                
+
+                Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","");
                 string strURL = Globals.ThisAddIn.settings.host;
                 if (strURL != "")
                 {
-                    string strUsername = Globals.ThisAddIn.settings.username;
-                    string strPassword = Globals.ThisAddIn.settings.password;
-                    Globals.ThisAddIn.SugarCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword);
-                    Globals.ThisAddIn.SugarCRMUserSession.AwaitingAuthentication = true;
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, Globals.ThisAddIn.settings.LDAPKey);
+                    Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                     try
                     {
-                        Globals.ThisAddIn.SugarCRMUserSession.Login();
-                        if (Globals.ThisAddIn.SugarCRMUserSession.id != "")
+                        if (settings.IsLDAPAuthentication)
+                        {
+                            Globals.ThisAddIn.SuiteCRMUserSession.AuthenticateLDAP();
+                        }
+                        else
+                            Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                        if (Globals.ThisAddIn.SuiteCRMUserSession.id != "")
                             return;
                     }
                     catch (Exception ex)
@@ -336,7 +346,7 @@ namespace SuiteCRMAddIn
                         ex.Data.Clear();
                     }
                 }
-                Globals.ThisAddIn.SugarCRMUserSession.AwaitingAuthentication = false;
+                Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = false;
             }
             catch (Exception ex)
             {
@@ -372,14 +382,14 @@ namespace SuiteCRMAddIn
             {
                 string strLog;
                 strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog +="GetMailFolders method General Exception:"+ "\n";
-                strLog +="Message:" + ex.Message+ "\n";
-                strLog +="Source:" + ex.Source+ "\n";
-                strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                strLog +="Data:" + ex.Data.ToString()+ "\n";
-                strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                strLog +="-------------------------------------------------------------------------"+ "\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
+                strLog += "GetMailFolders method General Exception:" + "\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "Data:" + ex.Data.ToString() + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------" + "\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
                 ex.Data.Clear();
             }
         }
@@ -412,16 +422,16 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-               string strLog;
+                string strLog;
                 strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog +="ArchiveEmail method General Exception:"+ "\n";
-                strLog +="Message:" + ex.Message+ "\n";
-                strLog +="Source:" + ex.Source+ "\n";
-                strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                strLog +="Data:" + ex.Data.ToString()+ "\n";
-                strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                strLog +="-------------------------------------------------------------------------"+ "\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
+                strLog += "ArchiveEmail method General Exception:" + "\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "Data:" + ex.Data.ToString() + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------" + "\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
                 ex.Data.Clear();
             }
         }
@@ -430,15 +440,15 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                if (SugarCRMUserSession != null)
+                if (SuiteCRMUserSession != null)
                 {
-                    while (SugarCRMUserSession.AwaitingAuthentication == true)
+                    while (SuiteCRMUserSession.AwaitingAuthentication == true)
                     {
                         System.Threading.Thread.Sleep(1000);
                     }
-                    if (SugarCRMUserSession.id != "")
+                    if (SuiteCRMUserSession.id != "")
                     {
-                        objEmail.SugarCRMUserSession = SugarCRMUserSession;
+                        objEmail.SuiteCRMUserSession = SuiteCRMUserSession;
                         objEmail.Save(strExcludedEmails);
                     }
                 }
@@ -447,14 +457,14 @@ namespace SuiteCRMAddIn
             {
                 string strLog;
                 strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog +="ArchiveEmailThread method General Exception:"+ "\n";
-                strLog +="Message:" + ex.Message+ "\n";
-                strLog +="Source:" + ex.Source+ "\n";
-                strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                strLog +="Data:" + ex.Data.ToString()+ "\n";
-                strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                strLog +="-------------------------------------------------------------------------"+ "\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
+                strLog += "ArchiveEmailThread method General Exception:" + "\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "Data:" + ex.Data.ToString() + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------" + "\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
                 ex.Data.Clear();
             }
 
@@ -480,16 +490,16 @@ namespace SuiteCRMAddIn
                     {
                         string strLog;
                         strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                        strLog +="AddInModule.Base64Encode method COM Exception:"+ "\n";
-                        strLog +="Message:" + ex.Message+ "\n";
-                        strLog +="Source:" + ex.Source+ "\n";
-                        strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                        strLog +="Data:" + ex.Data.ToString()+ "\n";
-                        strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                        strLog +="Inputs:"+ "\n";
-                        strLog +="Data:" + objMailAttachment.DisplayName+ "\n";
-                        strLog +="-------------------------------------------------------------------------"+ "\n";
-                            clsSuiteCRMHelper.WriteLog(strLog);
+                        strLog += "AddInModule.Base64Encode method COM Exception:" + "\n";
+                        strLog += "Message:" + ex.Message + "\n";
+                        strLog += "Source:" + ex.Source + "\n";
+                        strLog += "StackTrace:" + ex.StackTrace + "\n";
+                        strLog += "Data:" + ex.Data.ToString() + "\n";
+                        strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                        strLog += "Inputs:" + "\n";
+                        strLog += "Data:" + objMailAttachment.DisplayName + "\n";
+                        strLog += "-------------------------------------------------------------------------" + "\n";
+                        clsSuiteCRMHelper.WriteLog(strLog);
                         ex.Data.Clear();
                         string strName = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
                         objMail.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
@@ -504,18 +514,18 @@ namespace SuiteCRMAddIn
                     }
                     catch (Exception ex1)
                     {
-                       string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                        strLog +="AddInModule.Base64Encode method General Exception:"+ "\n";
-                        strLog +="Message:" + ex.Message+ "\n";
-                        strLog +="Source:" + ex.Source+ "\n";
-                        strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                        strLog +="Data:" + ex.Data.ToString()+ "\n";
-                        strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                        strLog +="Inputs:"+ "\n";
-                        strLog +="Data:" + objMailAttachment.DisplayName+ "\n";
-                        strLog +="-------------------------------------------------------------------------"+ "\n";
-                            clsSuiteCRMHelper.WriteLog(strLog);
+                        string strLog;
+                        strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                        strLog += "AddInModule.Base64Encode method General Exception:" + "\n";
+                        strLog += "Message:" + ex.Message + "\n";
+                        strLog += "Source:" + ex.Source + "\n";
+                        strLog += "StackTrace:" + ex.StackTrace + "\n";
+                        strLog += "Data:" + ex.Data.ToString() + "\n";
+                        strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                        strLog += "Inputs:" + "\n";
+                        strLog += "Data:" + objMailAttachment.DisplayName + "\n";
+                        strLog += "-------------------------------------------------------------------------" + "\n";
+                        clsSuiteCRMHelper.WriteLog(strLog);
                         ex1.Data.Clear();
                     }
                 }
@@ -561,23 +571,23 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-               string strLog;
+                string strLog;
                 strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog +="ArchiveFolderItems method General Exception:"+ "\n";
-                strLog +="Message:" + ex.Message+ "\n";
-                strLog +="Source:" + ex.Source+ "\n";
-                strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                strLog +="Data:" + ex.Data.ToString()+ "\n";
-                strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                strLog +="-------------------------------------------------------------------------"+ "\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
+                strLog += "ArchiveFolderItems method General Exception:" + "\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "Data:" + ex.Data.ToString() + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------" + "\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
                 ex.Data.Clear();
             }
         }
 
         public void ProcessMails(DateTime? dtAutoArchiveFrom = null)
         {
-            if (settings.auto_archive == false)
+            if (settings.AutoArchive == false)
                 return;
             System.Threading.Thread.Sleep(5000);
             while (1 == 1)
@@ -590,13 +600,13 @@ namespace SuiteCRMAddIn
                     {
                         foreach (Outlook.Folder objFolder in lstOutlookFolders)
                         {
-                            if (settings.auto_archive_folders == null)
+                            if (settings.AutoArchiveFolders == null)
                                 ArchiveFolderItems(objFolder, dtAutoArchiveFrom);
-                            else if (settings.auto_archive_folders.Count == 0)
+                            else if (settings.AutoArchiveFolders.Count == 0)
                                 ArchiveFolderItems(objFolder, dtAutoArchiveFrom);
                             else
                             {
-                                if (settings.auto_archive_folders.Contains(objFolder.EntryID))
+                                if (settings.AutoArchiveFolders.Contains(objFolder.EntryID))
                                 {
                                     ArchiveFolderItems(objFolder, dtAutoArchiveFrom);
                                 }
@@ -608,14 +618,14 @@ namespace SuiteCRMAddIn
                 {
                     string strLog;
                     strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                    strLog +="ProcessMails method General Exception:"+ "\n";
-                    strLog +="Message:" + ex.Message+ "\n";
-                    strLog +="Source:" + ex.Source+ "\n";
-                    strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                    strLog +="Data:" + ex.Data.ToString()+ "\n";
-                    strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                    strLog +="-------------------------------------------------------------------------"+ "\n";
-                        clsSuiteCRMHelper.WriteLog(strLog);
+                    strLog += "ProcessMails method General Exception:" + "\n";
+                    strLog += "Message:" + ex.Message + "\n";
+                    strLog += "Source:" + ex.Source + "\n";
+                    strLog += "StackTrace:" + ex.StackTrace + "\n";
+                    strLog += "Data:" + ex.Data.ToString() + "\n";
+                    strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                    strLog += "-------------------------------------------------------------------------" + "\n";
+                    clsSuiteCRMHelper.WriteLog(strLog);
                     ex.Data.Clear();
                 }
                 if (dtAutoArchiveFrom != null)
@@ -623,6 +633,6 @@ namespace SuiteCRMAddIn
 
                 System.Threading.Thread.Sleep(5000);
             }
-        }
+        }        
     }
 }

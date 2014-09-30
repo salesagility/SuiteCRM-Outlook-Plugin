@@ -42,13 +42,13 @@ namespace SuiteCRMAddIn
         {
             InitializeComponent();
         }
-        
+
         private void GetCheckedFolders(TreeNode objInpNode)
         {
             try
             {
                 if (objInpNode.Checked)
-                    this.settings.auto_archive_folders.Add(objInpNode.Tag.ToString());
+                    this.settings.AutoArchiveFolders.Add(objInpNode.Tag.ToString());
 
                 foreach (TreeNode objNode in objInpNode.Nodes)
                 {
@@ -59,7 +59,7 @@ namespace SuiteCRMAddIn
                     else
                     {
                         if (objNode.Checked)
-                            this.settings.auto_archive_folders.Add(objNode.Tag.ToString());
+                            this.settings.AutoArchiveFolders.Add(objNode.Tag.ToString());
                     }
                 }
             }
@@ -72,8 +72,8 @@ namespace SuiteCRMAddIn
                 strLog += "Source:" + ex.Source + "\n";
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";                
-                 clsSuiteCRMHelper.WriteLog(strLog);                
+                strLog += "-------------------------------------------------------------------------\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
             }
         }
 
@@ -81,23 +81,33 @@ namespace SuiteCRMAddIn
         {
             if (txtURL.Text.Trim().Length == 0)
             {
-                MessageBox.Show("Please enter a valid SugarCRM URL");
+                MessageBox.Show("Please enter a valid SuiteCRM URL");
                 txtURL.Focus();
                 return false;
             }
 
             if (txtUsername.Text.Trim().Length == 0)
             {
-                MessageBox.Show("Please enter a valid SugarCRM Username");
+                MessageBox.Show("Please enter a valid SuiteCRM Username");
                 txtUsername.Focus();
                 return false;
             }
 
             if (txtPassword.Text.Trim().Length == 0)
             {
-                MessageBox.Show("Please enter a valid SugarCRM Password");
+                MessageBox.Show("Please enter a valid SuiteCRM Password");
                 txtPassword.Focus();
                 return false;
+            }
+
+            if (chkEnableLDAPAuthentication.Checked)
+            {
+                if (txtLDAPAuthenticationKey.Text.Trim().Length == 0)
+                {
+                    MessageBox.Show("Please enter a valid LDAP authentication key");
+                    txtLDAPAuthenticationKey.Focus();
+                    return false;
+                }
             }
 
             return true;
@@ -107,22 +117,25 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                if (Globals.ThisAddIn.SugarCRMUserSession == null)
-                    Globals.ThisAddIn.SugarCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "");
+                if (Globals.ThisAddIn.SuiteCRMUserSession == null)
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "", "");
 
-                Globals.ThisAddIn.SugarCRMUserSession.AwaitingAuthentication = true;
+                Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                 if (settings.host != "")
                 {
                     txtURL.Text = settings.host;
                     txtUsername.Text = settings.username;
                     txtPassword.Text = settings.password;
                 }
-                this.cbEmailAttachments.Checked = settings.archive_attachments_default;
+                this.chkEnableLDAPAuthentication.Checked = this.settings.IsLDAPAuthentication;
+                this.txtLDAPAuthenticationKey.Text = this.settings.LDAPKey;
+
+                this.cbEmailAttachments.Checked = settings.ArchiveAttachmentsDefault;
                 this.checkBoxAutomaticSearch.Checked = true;
-                this.cbShowCustomModules.Checked = settings.show_custom_modules;
-                this.txtSyncMaxRecords.Text = this.settings.sync_max_records.ToString();
-                this.checkBoxShowRightClick.Checked = this.settings.populate_context_lookup_list;
-                this.chkAutoArchive.Checked = this.settings.auto_archive;
+                this.cbShowCustomModules.Checked = settings.ShowCustomModules;
+                this.txtSyncMaxRecords.Text = this.settings.SyncMaxRecords.ToString();
+                this.checkBoxShowRightClick.Checked = this.settings.PopulateContextLookupList;
+                this.chkAutoArchive.Checked = this.settings.AutoArchive;
                 this.tsResults.AfterCheck += new TreeViewEventHandler(this.tree_search_results_AfterCheck);
                 this.tsResults.AfterExpand += new TreeViewEventHandler(this.tree_search_results_AfterExpand);
                 this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tree_search_results_NodeMouseClick);
@@ -134,7 +147,7 @@ namespace SuiteCRMAddIn
                         continue;
 
                     TreeNode objNode = new TreeNode() { Tag = objFolder.EntryID, Text = objFolder.Name };
-                    if (this.settings.auto_archive_folders.Contains(objFolder.EntryID))
+                    if (this.settings.AutoArchiveFolders.Contains(objFolder.EntryID))
                         objNode.Checked = true;
                     tsResults.Nodes.Add(objNode);
                     if (objFolder.Folders.Count > 0)
@@ -144,12 +157,22 @@ namespace SuiteCRMAddIn
                 }
                 this.tsResults.ExpandAll();
 
-                txtAuotSync.Text = settings.ExcludedEmails;
+                txtAutoSync.Text = settings.ExcludedEmails;
 
                 gbFirstTime.Visible = settings.IsFirstTime;
                 dtpAutoArchiveFrom.Value = System.DateTime.Now.AddDays(-10);
+                chkShowConfirmationMessageArchive.Checked = this.settings.ShowConfirmationMessageArchive;
 
-                settings.AttachmentsChecked = cbEmailAttachments.Checked;
+                if (chkEnableLDAPAuthentication.Checked)
+                {
+                    labelKey.Enabled = true;
+                    txtLDAPAuthenticationKey.Enabled = true;
+                }
+                else
+                {
+                    labelKey.Enabled = false;
+                    txtLDAPAuthenticationKey.Enabled = false;
+                }
             }
             catch (Exception ex)
             {
@@ -161,7 +184,7 @@ namespace SuiteCRMAddIn
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                 clsSuiteCRMHelper.WriteLog(strLog);                
+                clsSuiteCRMHelper.WriteLog(strLog);
             }
         }
 
@@ -176,7 +199,7 @@ namespace SuiteCRMAddIn
                     if (objFolder.Folders.Count > 0)
                     {
                         TreeNode objNode = new TreeNode() { Tag = objFolder.EntryID, Text = objFolder.Name };
-                        if (this.settings.auto_archive_folders.Contains(objFolder.EntryID))
+                        if (this.settings.AutoArchiveFolders.Contains(objFolder.EntryID))
                             objNode.Checked = true;
                         objInpNode.Nodes.Add(objNode);
                         GetMailFolders(objFolder, objNode);
@@ -184,7 +207,7 @@ namespace SuiteCRMAddIn
                     else
                     {
                         TreeNode objNode = new TreeNode() { Tag = objFolder.EntryID, Text = objFolder.Name };
-                        if (this.settings.auto_archive_folders.Contains(objFolder.EntryID))
+                        if (this.settings.AutoArchiveFolders.Contains(objFolder.EntryID))
                             objNode.Checked = true;
                         objInpNode.Nodes.Add(objNode);
                     }
@@ -194,13 +217,13 @@ namespace SuiteCRMAddIn
             {
                 string strLog;
                 strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog +="GetMailFolders method General Exception:"+ "\n";
-                strLog +="Message:" + ex.Message+ "\n";
-                strLog +="Source:" + ex.Source+ "\n";
-                strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                strLog +="Data:" + ex.Data.ToString()+ "\n";
-                strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                strLog += "-------------------------------------------------------------------------"+ "\n";
+                strLog += "GetMailFolders method General Exception:" + "\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "Data:" + ex.Data.ToString() + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------" + "\n";
                 clsSuiteCRMHelper.WriteLog(strLog);
                 ex.Data.Clear();
             }
@@ -237,10 +260,10 @@ namespace SuiteCRMAddIn
                 this.tsResults.SelectedNode = e.Node;
             }
         }
-        
+
         private void frmSettings_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Globals.ThisAddIn.SugarCRMUserSession.AwaitingAuthentication = false;
+            Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = false;
         }
 
         private void btnTestLogin_Click(object sender, EventArgs e)
@@ -256,9 +279,19 @@ namespace SuiteCRMAddIn
                     {
                         txtURL.Text = txtURL.Text + "/";
                     }
-                    Globals.ThisAddIn.SugarCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim());
-                    Globals.ThisAddIn.SugarCRMUserSession.Login();
-                    if (Globals.ThisAddIn.SugarCRMUserSession.id == "")
+                    if (txtLDAPAuthenticationKey.Text.Trim() == "")
+                    {
+                        txtLDAPAuthenticationKey.Text = null;
+                    }
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim());
+
+                    if (chkEnableLDAPAuthentication.Checked && txtLDAPAuthenticationKey.Text.Trim().Length != 0)
+                    {
+                        Globals.ThisAddIn.SuiteCRMUserSession.AuthenticateLDAP();
+                    }
+                    else
+                        Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                    if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
                     {
                         MessageBox.Show("Authentication failed!!!", "Authentication failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
@@ -269,27 +302,56 @@ namespace SuiteCRMAddIn
                     }
                     settings.host = txtURL.Text.Trim();
                     settings.username = txtUsername.Text.Trim();
-                    settings.password = txtPassword.Text.Trim();                    
+                    settings.password = txtPassword.Text.Trim();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message, "Unable to connect to SugarCRM", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(ex.Message, "Unable to connect to SuiteCRM", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     string strLog;
                     strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                    strLog +="TestLoginClick method General Exception:"+ "\n";
-                    strLog +="Message:" + ex.Message+ "\n";
-                    strLog +="Source:" + ex.Source+ "\n";
-                    strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                    strLog +="Data:" + ex.Data.ToString()+ "\n";
-                    strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                    strLog += "-------------------------------------------------------------------------"+ "\n";
-                     clsSuiteCRMHelper.WriteLog(strLog);
-                    ex.Data.Clear();                    
+                    strLog += "TestLoginClick method General Exception:" + "\n";
+                    strLog += "Message:" + ex.Message + "\n";
+                    strLog += "Source:" + ex.Source + "\n";
+                    strLog += "StackTrace:" + ex.StackTrace + "\n";
+                    strLog += "Data:" + ex.Data.ToString() + "\n";
+                    strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                    strLog += "-------------------------------------------------------------------------" + "\n";
+                    clsSuiteCRMHelper.WriteLog(strLog);
+                    ex.Data.Clear();
                 }
             }
         }
+        private void cbShowCustomModules_Click(object sender, EventArgs e)
+        {
+            if (cbShowCustomModules.Checked)
+            {
+                frmCustomModules objfrmCustomModules = new frmCustomModules();
+                objfrmCustomModules.ShowDialog();
+            }
+        }
 
-        
+        private void chkEnableLDAPAuthentication_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chkEnableLDAPAuthentication.Checked)
+            {
+                labelKey.Enabled = true;
+                txtLDAPAuthenticationKey.Enabled = true;
+            }
+            else
+            {
+                labelKey.Enabled = false;
+                txtLDAPAuthenticationKey.Enabled = false;
+            }
+        }
+
+        private void btnSelect_Click(object sender, EventArgs e)
+        {
+            if (cbShowCustomModules.Checked)
+            {
+                frmCustomModules objfrmCustomModules = new frmCustomModules();
+                objfrmCustomModules.ShowDialog();
+            }
+        }
         private void btnSave_Click(object sender, EventArgs e)
         {
             if (ValidateDetails())
@@ -303,9 +365,13 @@ namespace SuiteCRMAddIn
                     {
                         txtURL.Text = txtURL.Text + "/";
                     }
-                    Globals.ThisAddIn.SugarCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim());
-                    Globals.ThisAddIn.SugarCRMUserSession.Login();
-                    if (Globals.ThisAddIn.SugarCRMUserSession.id == "")
+                    if (txtLDAPAuthenticationKey.Text.Trim() == "")
+                    {
+                        txtLDAPAuthenticationKey.Text = null;
+                    }
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim());
+                    Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                    if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
                     {
                         MessageBox.Show("Authentication failed!!!", "Authentication failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         this.DialogResult = DialogResult.None;
@@ -314,32 +380,37 @@ namespace SuiteCRMAddIn
                     settings.host = txtURL.Text.Trim();
                     settings.username = txtUsername.Text.Trim();
                     settings.password = txtPassword.Text.Trim();
+
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message, "Unable to connect to SugarCRM", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(ex.Message, "Unable to connect to SuiteCRM", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     string strLog;
                     strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                    strLog +="SaveClick method General Exception:"+ "\n";
-                    strLog +="Message:" + ex.Message+ "\n";
-                    strLog +="Source:" + ex.Source+ "\n";
-                    strLog +="StackTrace:" + ex.StackTrace+ "\n";
-                    strLog +="Data:" + ex.Data.ToString()+ "\n";
-                    strLog +="HResult:" + ex.HResult.ToString()+ "\n";
-                    strLog +="-------------------------------------------------------------------------"+ "\n";
-                        clsSuiteCRMHelper.WriteLog(strLog);
+                    strLog += "SaveClick method General Exception:" + "\n";
+                    strLog += "Message:" + ex.Message + "\n";
+                    strLog += "Source:" + ex.Source + "\n";
+                    strLog += "StackTrace:" + ex.StackTrace + "\n";
+                    strLog += "Data:" + ex.Data.ToString() + "\n";
+                    strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                    strLog += "-------------------------------------------------------------------------" + "\n";
+                    clsSuiteCRMHelper.WriteLog(strLog);
                     ex.Data.Clear();
                     this.DialogResult = DialogResult.None;
                     return;
                 }
-                settings.archive_attachments_default = this.cbEmailAttachments.Checked;
-                settings.automatic_search = true;
-                settings.show_custom_modules = this.cbShowCustomModules.Checked;
-                settings.populate_context_lookup_list = this.checkBoxShowRightClick.Checked;
 
-                settings.ExcludedEmails = this.txtAuotSync.Text.Trim();
+                settings.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked;
+                settings.LDAPKey = txtLDAPAuthenticationKey.Text.Trim();
 
-                settings.auto_archive_folders = new List<string>();
+                settings.ArchiveAttachmentsDefault = this.cbEmailAttachments.Checked;
+                settings.AutomaticSearch = true;
+                settings.ShowCustomModules = this.cbShowCustomModules.Checked;
+                settings.PopulateContextLookupList = this.checkBoxShowRightClick.Checked;
+
+                settings.ExcludedEmails = this.txtAutoSync.Text.Trim();
+
+                settings.AutoArchiveFolders = new List<string>();
 
                 foreach (TreeNode objNode in this.tsResults.Nodes)
                 {
@@ -348,16 +419,16 @@ namespace SuiteCRMAddIn
                         GetCheckedFolders(objNode);
                     }
                 }
-                
-                settings.auto_archive = this.chkAutoArchive.Checked;
 
+                settings.AutoArchive = this.chkAutoArchive.Checked;
+                settings.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked;
                 if (this.txtSyncMaxRecords.Text != string.Empty)
                 {
-                    this.settings.sync_max_records = Convert.ToInt32(this.txtSyncMaxRecords.Text);
+                    this.settings.SyncMaxRecords = Convert.ToInt32(this.txtSyncMaxRecords.Text);
                 }
                 else
                 {
-                    this.settings.sync_max_records = 0;
+                    this.settings.SyncMaxRecords = 0;
                 }
                 if (settings.IsFirstTime)
                 {
@@ -365,6 +436,7 @@ namespace SuiteCRMAddIn
                     System.Threading.Thread objThread = new System.Threading.Thread(() => Globals.ThisAddIn.ProcessMails(dtpAutoArchiveFrom.Value));
                     objThread.Start();
                 }
+
                 this.settings.Save();
                 this.settings.Reload();
                 base.Close();
@@ -376,16 +448,6 @@ namespace SuiteCRMAddIn
         private void btnCancel_Click(object sender, EventArgs e)
         {
             base.Close();
-        }
-
-      
-        private void cbShowCustomModules_Click(object sender, EventArgs e)
-        {
-            if (cbShowCustomModules.Checked)
-            {
-                frmCustomModules objfrmCustomModules = new frmCustomModules();
-                objfrmCustomModules.ShowDialog();
-            }
         }
     }
 }

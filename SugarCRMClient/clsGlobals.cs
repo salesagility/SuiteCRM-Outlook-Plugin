@@ -34,10 +34,10 @@ using System.Windows.Forms;
 
 namespace SuiteCRMClient
 {
-     
+
     public static class clsGlobals
-    {        
-        public static Uri SugarCRMURL { get; set; }
+    {
+        public static Uri SuiteCRMURL { get; set; }
         public static HttpWebRequest CreateWebRequest(string url, int contentLength)
         {
             HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
@@ -50,19 +50,19 @@ namespace SuiteCRMClient
 
         public static string CreateFormattedPostRequest(string method, object parameters)
         {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
-                serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-                serializer.StringEscapeHandling = StringEscapeHandling.EscapeHtml;
+            JsonSerializer serializer = new JsonSerializer();
+            serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
+            serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+            serializer.StringEscapeHandling = StringEscapeHandling.EscapeHtml;
 
-                StringBuilder buffer = new StringBuilder();
+            StringBuilder buffer = new StringBuilder();
 
-                StringWriter swriter = new StringWriter(buffer);
-                serializer.Serialize(swriter, parameters);
+            StringWriter swriter = new StringWriter(buffer);
+            serializer.Serialize(swriter, parameters);
 
-                string ret = "method=" + method;
-                ret += "&input_type=JSON&response_type=JSON&rest_data=" + buffer.ToString();  
-                return ret;
+            string ret = "method=" + method;
+            ret += "&input_type=JSON&response_type=JSON&rest_data=" + buffer.ToString();
+            return ret;
         }
 
         public static T GetResponse<T>(string strMethod, object objInput, byte[] strFileContent = null)
@@ -74,12 +74,11 @@ namespace SuiteCRMClient
 
                 byte[] bytes = Encoding.UTF8.GetBytes(jsonData);
 
-                HttpWebRequest request = CreateWebRequest(SugarCRMURL.AbsoluteUri + "service/v4_1/rest.php", bytes.Length);
+                HttpWebRequest request = CreateWebRequest(SuiteCRMURL.AbsoluteUri + "service/v4_1/rest.php", bytes.Length);
 
                 using (var requestStream = request.GetRequestStream())
                 {
                     requestStream.Write(bytes, 0, bytes.Length);
-
                 }
                 using (var response = request.GetResponse() as HttpWebResponse)
                 {
@@ -87,18 +86,18 @@ namespace SuiteCRMClient
                     {
                         string strLog;
                         strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                        strLog +="GetResponse method Webserver Exception:" + "\n";
-                        strLog +="Status Description:" + response.StatusDescription + "\n";
-                        strLog +="Status Code:" + response.StatusCode + "\n";
-                        strLog +="Method:" + response.Method + "\n";
-                        strLog +="Response URI:" + response.ResponseUri.ToString() + "\n";
-                        strLog +="Inputs:" + "\n";
-                        strLog +="Method:" + strMethod + "\n";
-                        strLog +="Data:" + objInput.ToString() + "\n";
-                        strLog +="-------------------------------------------------------------------------" + "\n";
-                         clsSuiteCRMHelper.WriteLog(strLog);
+                        strLog += "GetResponse method Webserver Exception:" + "\n";
+                        strLog += "Status Description:" + response.StatusDescription + "\n";
+                        strLog += "Status Code:" + response.StatusCode + "\n";
+                        strLog += "Method:" + response.Method + "\n";
+                        strLog += "Response URI:" + response.ResponseUri.ToString() + "\n";
+                        strLog += "Inputs:" + "\n";
+                        strLog += "Method:" + strMethod + "\n";
+                        strLog += "Data:" + objInput.ToString() + "\n";
+                        strLog += "-------------------------------------------------------------------------" + "\n";
+                        clsSuiteCRMHelper.WriteLog(strLog);
                         throw new Exception(response.StatusDescription);
-                       
+
                     }
                     else
                     {
@@ -116,20 +115,20 @@ namespace SuiteCRMClient
             {
                 string strLog;
                 strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog +="GetResponse method General Exception:" + "\n";
-                strLog +="Message:" + ex.Message + "\n";
-                strLog +="Source:" + ex.Source + "\n";
-                strLog +="StackTrace:" + ex.StackTrace + "\n";
-                strLog +="Data:" + ex.Data.ToString() + "\n";
-                strLog +="HResult:" + ex.HResult.ToString() + "\n";
-                strLog +="Inputs:" + "\n";
-                strLog +="Method:" + strMethod + "\n";
-                strLog +="Data:" + objInput.ToString() + "\n";
-                strLog +="-------------------------------------------------------------------------" + "\n";
-                 clsSuiteCRMHelper.WriteLog(strLog);
+                strLog += "GetResponse method General Exception:" + "\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "Data:" + ex.Data.ToString() + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "Inputs:" + "\n";
+                strLog += "Method:" + strMethod + "\n";
+                strLog += "Data:" + objInput.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------" + "\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
                 throw ex;
             }
         }
-        
+
     }
 }
