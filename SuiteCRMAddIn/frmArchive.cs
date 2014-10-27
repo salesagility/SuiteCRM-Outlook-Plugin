@@ -173,7 +173,7 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                List<string> list = new List<string> { "Contacts", "Accounts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
+                List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
                 this.tsResults.CheckBoxes = true;
                 if (query == string.Empty)
                 {
@@ -198,99 +198,107 @@ namespace SuiteCRMAddIn
                     }
                     foreach (ListViewItem item in this.lstViewSearchModules.Items)
                     {
-                        TreeNode node;
-                        eGetEntryListResult _result;
-                        if (!item.Checked)
+                        try
                         {
-                            continue;
-                        }
-                        string text = item.Tag.ToString();
+                            TreeNode node;
+                            eGetEntryListResult _result;
+                            if (!item.Checked)
+                            {
+                                continue;
+                            }
+                           string text = item.Tag.ToString();
 
-                        if (!(text != "All"))
-                        {
-                            continue;
-                        }
-                        if (this.tsResults.Nodes[text] == null)
-                        {
-                            node = new TreeNode(text)
+                            if (!(text != "All"))
                             {
-                                Tag = "root_node",
-                                Name = text
-                            };
-                            this.tsResults.Nodes.Add(node);
-                        }
-                        else
-                        {
-                            node = this.tsResults.Nodes[text];
-                        }                        
-                        string str5 = text.ToLower() + ".name LIKE '%" + clsGlobals.MySqlEscape(query) + "%'";
-                        string[] fields = new string[6];
-                        fields[0] = "id";
-                        fields[1] = "first_name";
-                        fields[2] = "last_name";
-                        fields[3] = "name";
-                        string str6 = text;
-                        if (str6 != null)
-                        {
-                            if (!(str6 == "Contacts"))
+                                continue;
+                            }
+                            if (this.tsResults.Nodes[text] == null)
                             {
-                                if (str6 == "Leads")
+                                node = new TreeNode(text)
                                 {
-                                    goto Label_030F;
-                                }
-                                if (str6 == "Cases")
-                                {
-                                    goto Label_038F;
-                                }
-                                if (str6 == "Bugs")
-                                {
-                                    goto Label_03E4;
-                                }
-                                if (str6 == "Accounts")
-                                {
-                                    goto Label_03AS;
-                                }
+                                    Tag = "root_node",
+                                    Name = text
+                                };
+                                this.tsResults.Nodes.Add(node);
                             }
                             else
                             {
-                                str5 = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                                fields[4] = "account_name";
+                                node = this.tsResults.Nodes[text];
                             }
-                        }
-                        goto Label_0446;
-                    Label_030F: ;
-                        str5 = "(leads.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " leads.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (leads.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Leads' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                        fields[4] = "account_name";
-                        goto Label_0446;
-                    Label_038F: ;
-                        str5 = "(cases.name LIKE '%" + clsGlobals.MySqlEscape(query) + "%' OR cases.case_number LIKE '" + clsGlobals.MySqlEscape(query) + "')";
-                        fields[4] = "case_number";
-                        goto Label_0446;
-                    Label_03E4: ;
-                        str5 = "(bugs.name LIKE '%" + clsGlobals.MySqlEscape(query) + "%' " + str3 + " bugs.bug_number LIKE '" + clsGlobals.MySqlEscape(query) + "')";
-                        fields[4] = "bug_number";
-                        goto Label_0446;
-                    Label_03AS: ;
-                        str5 = "(accounts.name LIKE '%" + clsGlobals.MySqlEscape(usString)+"%'"+") OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                        fields[4] = "account_name";
-                    Label_0446:
-                        _result = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                        if (_result.result_count > 0)
-                        {
-                            this.populateTree(_result, text, node);
-                        }
-                        else if (!list.Contains(text) && clsSuiteCRMHelper.GetFields(text).Contains("first_name"))
-                        {
-                            str5 = "(" + text.ToLower() + ".first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " " + text.ToLower() + ".last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (" + text.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + text + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                            eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                            if (_result2.result_count > 0)
+                            string str5 = text.ToLower() + ".name LIKE '%" + clsGlobals.MySqlEscape(query) + "%'";
+                            string[] fields = new string[6];
+                            fields[0] = "id";
+                            fields[1] = "first_name";
+                            fields[2] = "last_name";
+                            fields[3] = "name";
+                            string str6 = text;
+                            if (str6 != null)
                             {
-                                this.populateTree(_result2, text, node);
+                                if (!(str6 == "Contacts"))
+                                {
+                                    if (str6 == "Leads")
+                                    {
+                                        goto Label_030F;
+                                    }
+                                    if (str6 == "Cases")
+                                    {
+                                        goto Label_038F;
+                                    }
+                                    if (str6 == "Bugs")
+                                    {
+                                        goto Label_03E4;
+                                    }
+                                    if (str6 == "Accounts")
+                                    {
+                                        goto Label_03AS;
+                                    }
+                                }
+                                else
+                                {
+                                    str5 = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
+                                    fields[4] = "account_name";
+                                }
+                            }
+                            goto Label_0446;
+                        Label_030F: ;
+                            str5 = "(leads.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " leads.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (leads.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Leads' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
+                            fields[4] = "account_name";
+                            goto Label_0446;
+                        Label_038F: ;
+                            str5 = "(cases.name LIKE '%" + clsGlobals.MySqlEscape(query) + "%' OR cases.case_number LIKE '" + clsGlobals.MySqlEscape(query) + "')";
+                            fields[4] = "case_number";
+                            goto Label_0446;
+                        Label_03E4: ;
+                            str5 = "(bugs.name LIKE '%" + clsGlobals.MySqlEscape(query) + "%' " + str3 + " bugs.bug_number LIKE '" + clsGlobals.MySqlEscape(query) + "')";
+                            fields[4] = "bug_number";
+                            goto Label_0446;
+                        Label_03AS: ;
+                            str5 = "(accounts.name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
+                            fields[4] = "account_name";
+                        Label_0446:
+                            _result = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                            if (_result.result_count > 0)
+                            {
+                                this.populateTree(_result, text, node);
+                            }
+                            else if (!list.Contains(text) && clsSuiteCRMHelper.GetFields(text).Contains("first_name"))
+                            {
+                                str5 = "(" + text.ToLower() + ".first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " " + text.ToLower() + ".last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (" + text.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + text + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
+                                eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                                if (_result2.result_count > 0)
+                                {
+                                    this.populateTree(_result2, text, node);
+                                }
+                            }
+                            if (node.GetNodeCount(true) <= 0)
+                            {
+                                node.Remove();
                             }
                         }
-                        if (node.GetNodeCount(true) <= 0)
+                        catch (System.Exception ex)
                         {
-                            node.Remove();
+                            ex.Data.Clear();
+                            this.tsResults.Nodes.Clear();
                         }
                     }
                     if (this.tsResults.Nodes.Count <= 0)
@@ -309,19 +317,17 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception ex)
             {
+                ex.Data.Clear();
+
                 this.tsResults.Nodes.Clear();
                 this.Cursor = Cursors.Default;
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "Archive Search method General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                TreeNode node2 = new TreeNode("No results found")
+                {
+                    Name = "No results",
+                    Text = "No Result"
+                };
+                this.tsResults.Nodes.Add(node2);
+                this.tsResults.CheckBoxes = false;
             }
         }
 
