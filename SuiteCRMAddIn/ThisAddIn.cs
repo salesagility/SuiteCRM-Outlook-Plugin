@@ -34,6 +34,7 @@ using System.Security.Cryptography;
 using System.Globalization;
 using SuiteCRMClient.RESTObjects;
 using SuiteCRMClient;
+using System.IO;
 
 namespace SuiteCRMAddIn
 {
@@ -477,7 +478,8 @@ namespace SuiteCRMAddIn
             {
                 if (System.IO.Directory.Exists(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath") == false)
                 {
-                    System.IO.Directory.CreateDirectory(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath");
+                    string strPath = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath";
+                    System.IO.Directory.CreateDirectory(strPath);
                 }
                 try
                 {
@@ -533,7 +535,7 @@ namespace SuiteCRMAddIn
                 {
                     if (System.IO.Directory.Exists(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath") == true)
                     {
-                        System.IO.Directory.Delete(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath", true);
+                        System.IO.Directory.Delete(Environment.SpecialFolder.MyDocuments.ToString(), true);
                     }
                 }
             }
