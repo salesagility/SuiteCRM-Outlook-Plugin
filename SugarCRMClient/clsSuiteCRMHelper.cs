@@ -36,9 +36,9 @@ namespace SuiteCRMClient
     public static class clsSuiteCRMHelper
     {
         public static string InstallationPath { get; set; }
-        
+
         public static clsUsersession SuiteCRMUserSession;
-        
+
         public static eModuleList GetModules()
         {
             string strUserID = clsSuiteCRMHelper.GetUserId();
@@ -182,7 +182,7 @@ namespace SuiteCRMClient
         public static eNameValue SetNameValuePair(string name, string value)
         {
             return new eNameValue { name = name, value = value };
-        }
+        }       
 
         public static eGetEntryListResult GetEntryList(string module, string query, int limit, string order_by, int offset, bool GetDeleted, string[] fields)
         {
@@ -190,7 +190,7 @@ namespace SuiteCRMClient
             if (strUserID == "")
             {
                 SuiteCRMUserSession.Login();
-            }
+            } 
             eGetEntryListResult _result = new eGetEntryListResult();
             try
             {
@@ -204,7 +204,7 @@ namespace SuiteCRMClient
                     @select_fields = fields,
                     @max_results = limit,
                     @deleted = Convert.ToInt32(GetDeleted)
-                };               
+                };
                 _result = clsGlobals.GetResponse<RESTObjects.eGetEntryListResult>("get_entry_list", data);                
                 if (_result.error != null)
                 {

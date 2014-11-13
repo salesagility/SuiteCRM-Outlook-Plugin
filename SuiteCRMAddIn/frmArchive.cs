@@ -126,8 +126,8 @@ namespace SuiteCRMAddIn
             this.tsResults.Nodes.Clear();
             this.Cursor = Cursors.WaitCursor;
 
-            if (!UnallowedNumber(this.txtSearch.Text))
-            {
+            //if (!UnallowedNumber(this.txtSearch.Text))
+            //{
                 if (this.txtSearch.Text.Contains<char>(','))
                 {
                     foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }))
@@ -146,13 +146,13 @@ namespace SuiteCRMAddIn
                 {
                     this.Search(this.txtSearch.Text);
                 }
-            }
-            else
-            {
-                this.tsResults.Nodes.Clear();
-                this.Cursor = Cursors.Default;
-                MessageBox.Show("The search cannot start with a number", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            //}
+            //else
+            //{
+            //    this.tsResults.Nodes.Clear();
+            //    this.Cursor = Cursors.Default;
+            //    MessageBox.Show("The search cannot start with a number", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            //}
         }
 
         private bool UnallowedNumber(string strText)
@@ -173,6 +173,7 @@ namespace SuiteCRMAddIn
         {
             try
             {
+                this.Cursor = Cursors.WaitCursor;
                 List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
                 this.tsResults.CheckBoxes = true;
                 if (query == string.Empty)
