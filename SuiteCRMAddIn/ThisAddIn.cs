@@ -35,6 +35,7 @@ using System.Globalization;
 using SuiteCRMClient.RESTObjects;
 using SuiteCRMClient;
 using System.IO;
+using System.Windows.Forms;
 
 namespace SuiteCRMAddIn
 {
@@ -86,7 +87,8 @@ namespace SuiteCRMAddIn
                     this.btnSettings.BeginGroup = true;
                     this.btnSettings.TooltipText = "SuiteCRM Settings";
                     this.btnSettings.Enabled = true;
-                    this.btnSettings.Picture = RibbonImageHelper.Convert(Resources.Settings);
+                    this.btnSettings.Picture = RibbonImageHelper.Convert(Resources.Settings);            
+
                     objSuiteCRMMenuBar2007.Visible = true;
                 }
             }

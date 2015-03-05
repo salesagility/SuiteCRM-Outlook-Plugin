@@ -31,12 +31,14 @@ namespace SuiteCRMClient
 {
     using RESTObjects;
     using System.Collections;
+    using System.Collections.Specialized;
     using System.IO;
+    using System.Windows.Forms;
     
     public static class clsSuiteCRMHelper
     {
         public static string InstallationPath { get; set; }
-
+     
         public static clsUsersession SuiteCRMUserSession;
 
         public static eModuleList GetModules()
@@ -333,7 +335,7 @@ namespace SuiteCRMClient
             }
             return hashtable;
         }
-
+       
         public static void WriteLog(string strLog)
         {
             StreamWriter log;

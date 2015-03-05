@@ -39,15 +39,14 @@ namespace SuiteCRMClient
 {
 
     public class clsUsersession
-    {      
+    {
         public string SuiteCRMUsername { get; set; }
         public string SuiteCRMPassword { get; set; }
         public string LDAPKey { get; set; }
         public string LDAPIV = "password";
         public bool AwaitingAuthentication { get; set; }
-
         public string id { get; set; }
-        
+
         public clsUsersession(string URL, string Username, string Password, string strLDAPKey)
         {
             if (URL != "")
@@ -56,38 +55,43 @@ namespace SuiteCRMClient
                 SuiteCRMUsername = Username;
                 SuiteCRMPassword = Password;
                 LDAPKey = strLDAPKey;
-            }           
-            id = "";            
+            }
+            id = "";
         }
 
         public void Login()
         {
             try
             {
-                AwaitingAuthentication = true;
-
-                object loginData = new
+                if (LDAPKey != "" && LDAPKey.Trim().Length != 0)
                 {
-                    @user_auth = new
-                    {
-                        @user_name = SuiteCRMUsername,
-                        @password = GetMD5Hash(SuiteCRMPassword, false)
-                    }
-                };
-                var loginReturn = clsGlobals.GetResponse<RESTObjects.Login>("login", loginData);
-                if (loginReturn.ErrorName != null)
-                {
-                    id = "";
-                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
-                    throw new Exception(loginReturn.ErrorDescription);
+                    AuthenticateLDAP();
                 }
                 else
                 {
-                    id = loginReturn.SessionID;
-                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                    AwaitingAuthentication = true;
+                    object loginData = new
+                    {
+                        @user_auth = new
+                        {
+                            @user_name = SuiteCRMUsername,
+                            @password = GetMD5Hash(SuiteCRMPassword, false)
+                        }
+                    };
+                    var loginReturn = clsGlobals.GetResponse<RESTObjects.Login>("login", loginData);
+                    if (loginReturn.ErrorName != null)
+                    {
+                        id = "";
+                        SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+                        throw new Exception(loginReturn.ErrorDescription);
+                    }
+                    else
+                    {
+                        id = loginReturn.SessionID;
+                        SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                    }
+                    AwaitingAuthentication = false;
                 }
-
-                AwaitingAuthentication = false;
             }
             catch (Exception ex)
             {
@@ -101,10 +105,10 @@ namespace SuiteCRMClient
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                 clsSuiteCRMHelper.WriteLog(strLog);                
+                clsSuiteCRMHelper.WriteLog(strLog);
                 throw ex;
             }
-            
+
         }
 
         public void AuthenticateLDAP()
@@ -125,7 +129,7 @@ namespace SuiteCRMClient
                     IV = Encoding.UTF8.GetBytes(LDAPIV),
                     Padding = PaddingMode.Zeros
                 };
-                byte[] buffer2 = edes.CreateEncryptor().TransformFinalBlock(Encoding.UTF8.GetBytes(SuiteCRMUsername), 0, Encoding.UTF8.GetByteCount(SuiteCRMPassword));
+                byte[] buffer2 = edes.CreateEncryptor().TransformFinalBlock(Encoding.UTF8.GetBytes(SuiteCRMPassword), 0, Encoding.UTF8.GetByteCount(SuiteCRMPassword));
                 StringBuilder builder2 = new StringBuilder();
                 foreach (byte num2 in buffer2)
                 {
@@ -140,15 +144,14 @@ namespace SuiteCRMClient
                     }
                 };
                 eSetEntryResult _result = SuiteCRMClient.clsGlobals.GetResponse<eSetEntryResult>("login", loginData);
-                if (int.Parse(_result.error.number) != 0)
+                if (_result.id == null || _result.id == "")
                 {
                     id = "";
                     SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
-                    throw new Exception(_result.error.description);
+                    return;
                 }
                 id = _result.id;
                 SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
-
                 AwaitingAuthentication = false;
             }
             catch (Exception ex)
@@ -158,7 +161,7 @@ namespace SuiteCRMClient
                 throw ex;
             }
         }
-        
+
         public void LogOut()
         {
             try
@@ -181,8 +184,8 @@ namespace SuiteCRMClient
                 strLog += "Source:" + ex.Source + "\n";
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";                
-                 clsSuiteCRMHelper.WriteLog(strLog);
+                strLog += "-------------------------------------------------------------------------\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
                 ex.Data.Clear();
             }
         }

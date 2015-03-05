@@ -260,6 +260,34 @@ namespace SuiteCRMAddIn
             {
                 this["ShowConfirmationMessageArchive"] = value;
             }
-        }    
+        }
+        [DebuggerNonUserCode, UserScopedSetting]
+        public StringCollection case_dropdown_priority
+        {
+            get
+            {
+                return (StringCollection)this["case_dropdown_priority"];
+            }
+            set
+            {
+                this["case_dropdown_priority"] = value;
+            }
+        }
+
+        [UserScopedSetting, DebuggerNonUserCode]
+        public StringCollection case_dropdown_status
+        {
+            get
+            {
+                return (StringCollection)this["case_dropdown_status"];
+            }
+            set
+            {
+                this["case_dropdown_status"] = value;
+            }
+        }
+
+        public static Hashtable accountEntrys = new Hashtable();
+        public static AutoCompleteStringCollection accounts = new AutoCompleteStringCollection();
     }
 }

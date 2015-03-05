@@ -290,7 +290,9 @@ namespace SuiteCRMAddIn
                         Globals.ThisAddIn.SuiteCRMUserSession.AuthenticateLDAP();
                     }
                     else
+                    {
                         Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                    }
                     if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
                     {
                         MessageBox.Show("Authentication failed!!!", "Authentication failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -336,11 +338,13 @@ namespace SuiteCRMAddIn
             {
                 labelKey.Enabled = true;
                 txtLDAPAuthenticationKey.Enabled = true;
+                txtLDAPAuthenticationKey.Text = settings.LDAPKey;
             }
             else
             {
                 labelKey.Enabled = false;
                 txtLDAPAuthenticationKey.Enabled = false;
+                txtLDAPAuthenticationKey.Text = "";
             }
         }
 
