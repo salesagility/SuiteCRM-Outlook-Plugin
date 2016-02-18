@@ -109,5 +109,14 @@ namespace SuiteCRMAddIn
             }
             return mail.SenderEmailAddress;
         }
+
+        public static string CleanHTML(string Input)
+        {
+            if (string.IsNullOrWhiteSpace(Input))
+                return Input;
+            Input = Input.Replace("<", "&lt;");
+            Input = Input.Replace(">", "&gt;");
+            return Input;
+        }
     }
 }

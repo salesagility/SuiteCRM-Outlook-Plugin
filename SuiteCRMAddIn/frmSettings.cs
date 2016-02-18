@@ -136,6 +136,8 @@ namespace SuiteCRMAddIn
                 this.txtSyncMaxRecords.Text = this.settings.SyncMaxRecords.ToString();
                 this.checkBoxShowRightClick.Checked = this.settings.PopulateContextLookupList;
                 this.chkAutoArchive.Checked = this.settings.AutoArchive;
+                this.chkSyncCalendar.Checked = this.settings.SyncCalendar;
+                this.chkSyncContacts.Checked = this.settings.SyncContacts;
                 this.tsResults.AfterCheck += new TreeViewEventHandler(this.tree_search_results_AfterCheck);
                 this.tsResults.AfterExpand += new TreeViewEventHandler(this.tree_search_results_AfterExpand);
                 this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tree_search_results_NodeMouseClick);
@@ -290,7 +292,9 @@ namespace SuiteCRMAddIn
                         Globals.ThisAddIn.SuiteCRMUserSession.AuthenticateLDAP();
                     }
                     else
+                    {
                         Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                    }
                     if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
                     {
                         MessageBox.Show("Authentication failed!!!", "Authentication failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -336,11 +340,13 @@ namespace SuiteCRMAddIn
             {
                 labelKey.Enabled = true;
                 txtLDAPAuthenticationKey.Enabled = true;
+                txtLDAPAuthenticationKey.Text = settings.LDAPKey;
             }
             else
             {
                 labelKey.Enabled = false;
                 txtLDAPAuthenticationKey.Enabled = false;
+                txtLDAPAuthenticationKey.Text = "";
             }
         }
 
@@ -421,6 +427,8 @@ namespace SuiteCRMAddIn
                 }
 
                 settings.AutoArchive = this.chkAutoArchive.Checked;
+                settings.SyncCalendar = this.chkSyncCalendar.Checked;
+                settings.SyncContacts = this.chkSyncContacts.Checked;
                 settings.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked;
                 if (this.txtSyncMaxRecords.Text != string.Empty)
                 {

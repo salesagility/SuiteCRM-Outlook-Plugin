@@ -6,10 +6,10 @@
         <group id="SuiteCRMGroup"
                label="SuiteCRM">
           <button id="btnArchive" getImage="GetImage" label="Archive" size="normal" onAction ="btnArchive_Action"/>
-          <button id="btnSettings" getImage="GetImage" label="Settings" size="normal" onAction ="btnSettings_Action"/>
+          <button id="btnSettings" getImage="GetImage" label="Settings" size="normal" onAction ="btnSettings_Action"/>       
         </group>
       </tab>
-    </tabs>    
+    </tabs>
   </ribbon>
   <contextMenus>
     <contextMenu idMso="ContextMenuMailItem">

@@ -88,6 +88,8 @@ namespace SuiteCRMAddIn
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
+            this.chkSyncCalendar = new System.Windows.Forms.CheckBox();
+            this.chkSyncContacts = new System.Windows.Forms.CheckBox();
             this.tabPage3.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -101,6 +103,8 @@ namespace SuiteCRMAddIn
             // 
             // tabPage3
             // 
+            this.tabPage3.Controls.Add(this.chkSyncContacts);
+            this.tabPage3.Controls.Add(this.chkSyncCalendar);
             this.tabPage3.Controls.Add(this.label7);
             this.tabPage3.Controls.Add(this.txtAutoSync);
             this.tabPage3.Controls.Add(this.tsResults);
@@ -478,6 +482,26 @@ namespace SuiteCRMAddIn
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
+            // chkSyncCalendar
+            // 
+            this.chkSyncCalendar.AutoSize = true;
+            this.chkSyncCalendar.Location = new System.Drawing.Point(15, 308);
+            this.chkSyncCalendar.Name = "chkSyncCalendar";
+            this.chkSyncCalendar.Size = new System.Drawing.Size(95, 17);
+            this.chkSyncCalendar.TabIndex = 15;
+            this.chkSyncCalendar.Text = "Sync Calendar";
+            this.chkSyncCalendar.UseVisualStyleBackColor = true;
+            // 
+            // chkSyncContacts
+            // 
+            this.chkSyncContacts.AutoSize = true;
+            this.chkSyncContacts.Location = new System.Drawing.Point(15, 332);
+            this.chkSyncContacts.Name = "chkSyncContacts";
+            this.chkSyncContacts.Size = new System.Drawing.Size(95, 17);
+            this.chkSyncContacts.TabIndex = 16;
+            this.chkSyncContacts.Text = "Sync Contacts";
+            this.chkSyncContacts.UseVisualStyleBackColor = true;
+            // 
             // frmSettings
             // 
             this.AcceptButton = this.btnSave;
@@ -558,6 +582,8 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.CheckBox chkShowConfirmationMessageArchive;
+        private System.Windows.Forms.CheckBox chkSyncContacts;
+        private System.Windows.Forms.CheckBox chkSyncCalendar;
 
     }
 }

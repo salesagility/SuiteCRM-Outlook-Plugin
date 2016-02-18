@@ -53,7 +53,7 @@ namespace SuiteCRMClient
             JsonSerializer serializer = new JsonSerializer();
             serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
             serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-            serializer.StringEscapeHandling = StringEscapeHandling.EscapeHtml;
+            //serializer.StringEscapeHandling = StringEscapeHandling.EscapeHtml;
 
             StringBuilder buffer = new StringBuilder();
 
@@ -128,7 +128,6 @@ namespace SuiteCRMClient
                 clsSuiteCRMHelper.WriteLog(strLog);
                 throw ex;
             }
-        }
-
+        }        
     }
 }

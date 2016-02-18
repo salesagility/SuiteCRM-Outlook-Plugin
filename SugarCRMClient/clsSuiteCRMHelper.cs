@@ -31,12 +31,14 @@ namespace SuiteCRMClient
 {
     using RESTObjects;
     using System.Collections;
+    using System.Collections.Specialized;
     using System.IO;
+    using System.Windows.Forms;
     
     public static class clsSuiteCRMHelper
     {
         public static string InstallationPath { get; set; }
-
+     
         public static clsUsersession SuiteCRMUserSession;
 
         public static eModuleList GetModules()
@@ -72,7 +74,7 @@ namespace SuiteCRMClient
             }
         }
 
-        public static string ArchiveEmail(eNameValue[] Data)
+        public static string SetEntry(eNameValue[] Data, string ModuleName = "Emails")
         {
             try
             {
@@ -84,7 +86,7 @@ namespace SuiteCRMClient
                 object data = new
                 {
                     @session = SuiteCRMUserSession.id,
-                    @module_name = "Emails",
+                    @module_name = ModuleName,
                     @name_value_list = Data
                 };
                 eSetEntryResult _result = clsGlobals.GetResponse<eSetEntryResult>("set_entry", data);  
@@ -184,6 +186,36 @@ namespace SuiteCRMClient
             return new eNameValue { name = name, value = value };
         }       
 
+        public static string GetAttendeeList(string module, string id)
+        {
+            string strUserID = clsSuiteCRMHelper.GetUserId();
+            if (strUserID == "")
+            {
+                SuiteCRMUserSession.Login();
+            }
+            string _result = "";
+            try
+            {
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = module,
+                    @module_id = id,
+                    @link_field_name = "employees",
+                    @related_fields = new string[] { "email1" }
+                    /*,
+                    @related_module_link_name_to_fields_array = new object[] {new object[]{
+                        new {@name = "employees", @value=new string[]{"email1"}}
+                    } }*/
+                };
+                _result = clsGlobals.GetResponse<string>("get_relationships", data);                
+            }
+            catch (System.Exception ex)
+            {
+                throw ex;
+            }
+            return _result;
+        }
         public static eGetEntryListResult GetEntryList(string module, string query, int limit, string order_by, int offset, bool GetDeleted, string[] fields)
         {
             string strUserID = clsSuiteCRMHelper.GetUserId();
@@ -279,7 +311,36 @@ namespace SuiteCRMClient
             }
             return list;
         }
-    
+
+        public static string[] GetSugarFields(string module)
+        {
+            string[] strArray = new string[14];
+            if (module == null)
+            {
+                return strArray;
+            }
+            if (module == "Contacts")
+            {
+                return new string[] { 
+                    "id", "first_name", "last_name", "email1", "phone_work", "phone_home", "title", "department", "primary_address_city", "primary_address_country", "primary_address_postalcode", "primary_address_state", "primary_address_street", "description", "user_sync", "date_modified", 
+                    "account_name", "phone_mobile", "phone_fax", "salutation"
+                 };
+            }
+            if (module == "Tasks")
+            {
+                return new string[] { "id", "name", "description", "date_due", "status", "date_modified", "date_start", "priority" };
+            }
+            if (module == "Meetings")
+            {
+                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "Users" };
+            }
+            if (module == "Calls")
+            {
+                return new string[] { "id", "name", "description", "date_start", "date_end", "date_modified", "duration_minutes", "duration_hours" };
+            }
+            return strArray;
+        }
+
         public static eSetEntryResult SetAccountsEntry(eNameValue[] Data)
         {
             string strUserID = clsSuiteCRMHelper.GetUserId();
@@ -333,7 +394,7 @@ namespace SuiteCRMClient
             }
             return hashtable;
         }
-
+       
         public static void WriteLog(string strLog)
         {
             StreamWriter log;

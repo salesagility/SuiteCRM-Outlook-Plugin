@@ -34,6 +34,7 @@ using SuiteCRMClient;
 using System.Collections.Specialized;
 using Microsoft.Office.Interop.Outlook;
 using System.Runtime.InteropServices;
+using System.Web;
 
 namespace SuiteCRMAddIn
 {
@@ -277,7 +278,15 @@ namespace SuiteCRMAddIn
                             str5 = "(accounts.name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
                             fields[4] = "account_name";
                         Label_0446:
-                            _result = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                            try
+                            {
+                                _result = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                            }
+                            catch (System.Exception ex1)
+                            {
+                                ex1.Data.Clear();
+                                _result = clsSuiteCRMHelper.GetEntryList(text, str5.Replace("%",""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                            }
                             if (_result.result_count > 0)
                             {
                                 this.populateTree(_result, text, node);
@@ -452,11 +461,17 @@ namespace SuiteCRMAddIn
                 goto Label_01A5;
             Label_017D:
                 data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.SentOn.ToString("yyyy-MM-dd HH:mm:ss"));
-            Label_01A5:
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", subject);
+        Label_01A5:
+            TextBox oTB = new TextBox();
+        oTB.Multiline = true;
+        oTB.WordWrap = false;
+        oTB.ScrollBars = ScrollBars.Both;
+        oTB.Text = itemFromID.Subject.Replace("&", "%26");
+                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", oTB.Text);
                 data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", itemFromID.EntryID);
                 data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
-                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", body);
+                oTB.Text = itemFromID.Body.Replace("&", "%26");
+                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", oTB.Text);
                 data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", hTMLBody);
                 data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(itemFromID, this.type));
                 data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", itemFromID.To);
@@ -464,11 +479,11 @@ namespace SuiteCRMAddIn
                 data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", itemFromID.BCC);
                 data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", itemFromID.ReplyRecipientNames);
                 data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
-                string str = clsSuiteCRMHelper.ArchiveEmail(data);
+                string str = clsSuiteCRMHelper.SetEntry(data);
                 if (str.Length < 0x24)
                 {
-                    data[7] = clsSuiteCRMHelper.SetNameValuePair("description_html", "");
-                    str = clsSuiteCRMHelper.ArchiveEmail(data);
+                    data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", "");
+                    str = clsSuiteCRMHelper.SetEntry(data);
                     if (str.Length < 0x24)
                     {
                         return "-1";

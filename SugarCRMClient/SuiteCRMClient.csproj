@@ -99,11 +99,6 @@
     </Compile>
     <Compile Include="clsMyExceptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Web References\SuitecrmSoapTest\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.map</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -112,84 +107,6 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <None Include="SuiteCRMClient.snk" />
-    <None Include="Web References\SuitecrmSoapTest\entry_value.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\get_entries_count_result.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\get_entry_list_result_version2.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\get_entry_result_version2.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\get_server_info_result.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\item.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\item0.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\last_viewed_entry.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\modified_relationship_result.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\module_list.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\new_module_fields.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\new_return_document_revision.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\new_return_note_attachment.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\new_set_entries_result.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\new_set_entry_result.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\new_set_relationship_list_result.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\Reference.map">
-      <Generator>MSDiscoCodeGenerator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\return_search_result.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-    <None Include="Web References\SuitecrmSoapTest\soap.wsdl" />
-    <None Include="Web References\SuitecrmSoapTest\upcoming_activity_entry.datasource">
-      <DependentUpon>Reference.map</DependentUpon>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Service References\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WebReferences Include="Web References\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WebReferenceUrl Include="https://suitecrm.com/suitedemo/service/v4_1/soap.php%3fwsdl">
-      <UrlBehavior>Dynamic</UrlBehavior>
-      <RelPath>Web References\SuitecrmSoapTest\</RelPath>
-      <UpdateFromURL>https://suitecrm.com/suitedemo/service/v4_1/soap.php%3fwsdl</UpdateFromURL>
-      <ServiceLocationURL>
-      </ServiceLocationURL>
-      <CachedDynamicPropName>
-      </CachedDynamicPropName>
-      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
-      <CachedSettingsPropName>SugarCRMClient_SuitecrmSoapTest_sugarsoap</CachedSettingsPropName>
-    </WebReferenceUrl>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

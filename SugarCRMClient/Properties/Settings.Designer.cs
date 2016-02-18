@@ -22,15 +22,5 @@ namespace SuiteCRMClient.Properties {
                 return defaultInstance;
             }
         }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.WebServiceUrl)]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://suitecrm.com/suitedemo/service/v4_1/soap.php")]
-        public string SugarCRMClient_SuitecrmSoapTest_sugarsoap {
-            get {
-                return ((string)(this["SugarCRMClient_SuitecrmSoapTest_sugarsoap"]));
-            }
-        }
     }
 }

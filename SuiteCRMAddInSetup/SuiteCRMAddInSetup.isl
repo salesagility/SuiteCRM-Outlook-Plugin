@@ -340,7 +340,8 @@
 		<col def="S0">ISDotNetInstallerArgsUninstall</col>
 		<col def="S0">ISDotNetInstallerArgsRollback</col>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td>{47DC3583-1B85-4B83-8898-D4057742C505}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>Newtonsoft.Json.dll</td><td>{13FB21D0-EDD1-47D8-AE25-2B7664FDFE08}</td><td>INSTALLDIR</td><td>2</td><td/><td>newtonsoft.json.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ISX_DEFAULTCOMPONENT1</td><td>{CF752638-4907-450F-A762-ED937A0E9D51}</td><td>INSTALLDIR</td><td>258</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>Newtonsoft.Json.dll</td><td>{8F129954-4BFF-4523-BFD1-9355815F4A5A}</td><td>INSTALLDIR</td><td>2</td><td/><td>newtonsoft.json.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>SuiteCRMAddIn.Primary_output</td><td>{C3AFF890-EE54-47A7-8D90-39F2BF44D01E}</td><td>INSTALLDIR</td><td>2</td><td/><td>suitecrmaddin.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 	</table>
 
@@ -1050,6 +1051,7 @@
 	<table name="CreateFolder">
 		<col key="yes" def="s72">Directory_</col>
 		<col key="yes" def="s72">Component_</col>
+		<row><td>INSTALLDIR</td><td>ISX_DEFAULTCOMPONENT1</td></row>
 	</table>
 
 	<table name="CustomAction">
@@ -1860,6 +1862,7 @@
 		<col key="yes" def="s38">Feature_</col>
 		<col key="yes" def="s72">Component_</col>
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT</td></row>
+		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT1</td></row>
 		<row><td>AlwaysInstall</td><td>Newtonsoft.Json.dll</td></row>
 		<row><td>AlwaysInstall</td><td>SuiteCRMAddIn.Primary_output</td></row>
 	</table>
@@ -1876,10 +1879,10 @@
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I4">ISAttributes</col>
 		<col def="S72">ISComponentSubFolder_</col>
-		<row><td>newtonsoft.json.dll</td><td>Newtonsoft.Json.dll</td><td>NEWTON~1.DLL|Newtonsoft.Json.dll</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Newtonsoft.Json.dll</td><td>1</td><td/></row>
-		<row><td>suitecrmaddin.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.MAN|SuiteCRMAddIn.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.manifest</td><td>1</td><td/></row>
+		<row><td>newtonsoft.json.dll</td><td>Newtonsoft.Json.dll</td><td>NEWTON~1.DLL|Newtonsoft.Json.dll</td><td>0</td><td/><td/><td/><td>1</td><td>D:\SuiteCRM\Working Copy\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\Newtonsoft.Json.dll</td><td>1</td><td/></row>
+		<row><td>suitecrmaddin.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.MAN|SuiteCRMAddIn.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>D:\SuiteCRM\Working Copy\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.manifest</td><td>1</td><td/></row>
 		<row><td>suitecrmaddin.primary_output</td><td>SuiteCRMAddIn.Primary_output</td><td>SuiteCRMAddIn.Primary output</td><td>0</td><td/><td/><td>0</td><td>1</td><td>&lt;SuiteCRMAddIn&gt;|Built</td><td>3</td><td/></row>
-		<row><td>suitecrmaddin.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.VST|SuiteCRMAddIn.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.vsto</td><td>1</td><td/></row>
+		<row><td>suitecrmaddin.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.VST|SuiteCRMAddIn.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>D:\SuiteCRM\Working Copy\SuiteCRMOutlookAddIn\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.vsto</td><td>1</td><td/></row>
 	</table>
 
 	<table name="FileSFPCatalog">
@@ -2025,7 +2028,8 @@
 		<col def="S0">HTTPLocation</col>
 		<col def="S0">Miscellaneous</col>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td/><td/><td>_30B7A77B_5D1A_4D6F_BD4D_E2B0995BFFFF_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>Newtonsoft.Json.dll</td><td/><td/><td>_D9CB9BA7_6D56_4E06_88A9_71BF8B49A29C_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ISX_DEFAULTCOMPONENT1</td><td/><td/><td>_AEA5FF0E_7F99_4D23_86ED_B81515D69189_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>Newtonsoft.Json.dll</td><td/><td/><td>_8B1FE9AB_7FCA_4EB5_BC34_DFD0BAF5FC98_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>SuiteCRMAddIn.Primary_output</td><td/><td/><td>_99EC7A64_5F26_47A4_8927_317EF14A2FB2_FILTER</td><td/><td/><td/><td/></row>
 	</table>
 
@@ -2611,7 +2615,7 @@
 		<col def="I2">Order</col>
 		<col def="I2">ISSetupLocation</col>
 		<col def="S255">ISReleaseFlags</col>
-		<row><td>_470891EF_1BF5_47AE_9BBA_DA2872FEAF38_</td><td>Visual Studio 2010 Tools for Office Runtime.prq</td><td/><td>2</td><td/></row>
+		<row><td>_87BC9124_660F_4ED2_B17C_E31E8FE7BCD2_</td><td>Microsoft VSTO 2010 Runtime.prq</td><td/><td>2</td><td/></row>
 		<row><td>_D89610ED_62EC_4583_BEF4_136546520A99_</td><td>Microsoft .NET Framework 4.5 Full.prq</td><td/><td>2</td><td/></row>
 	</table>
 
@@ -2646,7 +2650,7 @@
 		<col def="I2">Encoded</col>
 		<col def="S0">Comment</col>
 		<col def="I4">TimeStamp</col>
-		<row><td>COMPANY_NAME</td><td>1033</td><td>SalesAgility</td><td>0</td><td/><td>-1700637910</td></row>
+		<row><td>COMPANY_NAME</td><td>1033</td><td>SalesAgility</td><td>0</td><td/><td>-2128312591</td></row>
 		<row><td>DN_AlwaysInstall</td><td>1033</td><td>Always Install</td><td>0</td><td/><td>849486892</td></row>
 		<row><td>IDPROP_EXPRESS_LAUNCH_CONDITION_COLOR</td><td>1033</td><td>The color settings of your system are not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
 		<row><td>IDPROP_EXPRESS_LAUNCH_CONDITION_OS</td><td>1033</td><td>The operating system is not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
@@ -3746,9 +3750,9 @@
 		<row><td>IDS__TargetReq_DESC_PROCESSOR</td><td>1033</td><td>The processor is not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
 		<row><td>IDS__TargetReq_DESC_RAM</td><td>1033</td><td>The amount of RAM is not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
 		<row><td>IDS__TargetReq_DESC_RESOLUTION</td><td>1033</td><td>The screen resolution is not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
-		<row><td>ID_STRING1</td><td>1033</td><td>http://www.SalesAgility.com</td><td>0</td><td/><td>-1700637910</td></row>
-		<row><td>ID_STRING2</td><td>1033</td><td>SalesAgility</td><td>0</td><td/><td>-1700637910</td></row>
-		<row><td>ID_STRING3</td><td>1033</td><td>http://www.SalesAgility.com</td><td>0</td><td/><td>-1700637910</td></row>
+		<row><td>ID_STRING1</td><td>1033</td><td>http://www.SalesAgility.com</td><td>0</td><td/><td>-2128312591</td></row>
+		<row><td>ID_STRING2</td><td>1033</td><td>SalesAgility</td><td>0</td><td/><td>-2128312591</td></row>
+		<row><td>ID_STRING3</td><td>1033</td><td>http://www.SalesAgility.com</td><td>0</td><td/><td>-2128312591</td></row>
 		<row><td>ID_STRING4</td><td>1033</td><td>http://www.salesagility.com</td><td>0</td><td/><td>849487596</td></row>
 		<row><td>ID_STRING5</td><td>1033</td><td>SuiteCRM Outlook AddIn</td><td>0</td><td/><td>849508076</td></row>
 		<row><td>IIDS_UITEXT_FeatureUninstalled</td><td>1033</td><td>This feature will remain uninstalled.</td><td>0</td><td/><td>849486892</td></row>
@@ -4298,6 +4302,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<col key="yes" def="s72">Property</col>
 		<col def="L0">Value</col>
 		<col def="S255">ISComments</col>
+		<row><td>ALLUSERS</td><td>1</td><td/></row>
 		<row><td>ARPCOMMENTS</td><td>##ID_STRING5##</td><td/></row>
 		<row><td>ARPCONTACT</td><td>##ID_STRING4##</td><td/></row>
 		<row><td>ARPHELPLINK</td><td>##ID_STRING3##</td><td/></row>
@@ -4342,6 +4347,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>InstallChoice</td><td>AR</td><td/></row>
 		<row><td>LAUNCHPROGRAM</td><td>1</td><td/></row>
 		<row><td>LAUNCHREADME</td><td>1</td><td/></row>
+		<row><td>MSIFASTINSTALL</td><td>2</td><td/></row>
 		<row><td>Manufacturer</td><td>##COMPANY_NAME##</td><td/></row>
 		<row><td>PIDKEY</td><td/><td/></row>
 		<row><td>PIDTemplate</td><td>12345&lt;###-%%%%%%%&gt;@@@@@</td><td/></row>
@@ -4370,7 +4376,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{7D2339B3-980B-4AF0-8428-56ABB4CD7EF0}</td><td/></row>
 		<row><td>ProductName</td><td>SuiteCRMAddIn</td><td/></row>
-		<row><td>ProductVersion</td><td>1.1.0.7</td><td/></row>
+		<row><td>ProductVersion</td><td>2.0.0.0</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
@@ -4437,11 +4443,15 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<col def="S0">Value</col>
 		<col def="s72">Component_</col>
 		<col def="I4">ISAttributes</col>
-		<row><td>Registry10</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Manifest</td><td>file:///[INSTALLDIR]SuiteCRMAddIn.vsto|vstolocal</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
-		<row><td>Registry2</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins</td><td/><td/><td>ISX_DEFAULTCOMPONENT</td><td>1</td></row>
-		<row><td>Registry7</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Description</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
-		<row><td>Registry8</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>FriendlyName</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
-		<row><td>Registry9</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>LoadBehavior</td><td>#3</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry1</td><td>2</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Manifest</td><td>file:///[INSTALLDIR]SuiteCRMAddIn.vsto|vstolocal</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry11</td><td>2</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Description</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT1</td><td>0</td></row>
+		<row><td>Registry12</td><td>2</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>FriendlyName</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT1</td><td>0</td></row>
+		<row><td>Registry13</td><td>2</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>LoadBehavior</td><td>#3</td><td>ISX_DEFAULTCOMPONENT1</td><td>0</td></row>
+		<row><td>Registry2</td><td>1</td><td>SOFTWARE</td><td/><td/><td>ISX_DEFAULTCOMPONENT</td><td>1</td></row>
+		<row><td>Registry3</td><td>2</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Description</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry4</td><td>2</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>FriendlyName</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry5</td><td>2</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>LoadBehavior</td><td>#3</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry6</td><td>2</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Manifest</td><td>file:///[INSTALLDIR]SuiteCRMAddIn.vsto|vstolocal</td><td>ISX_DEFAULTCOMPONENT1</td><td>0</td></row>
 	</table>
 
 	<table name="RemoveFile">
