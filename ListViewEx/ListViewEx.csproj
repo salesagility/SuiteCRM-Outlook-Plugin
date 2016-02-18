@@ -1,0 +1,46 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <OutputPath>bin\Debug\</OutputPath>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <OutputPath>bin\Release\</OutputPath>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="log4net" />
+    <Reference Include="Microsoft.Office.Interop.Outlook" />
+    <Reference Include="Microsoft.Office.Tools.Common.v9.0" />
+    <Reference Include="Microsoft.Office.Tools.Outlook.v9.0" />
+    <Reference Include="Microsoft.Office.Tools.v9.0" />
+    <Reference Include="Microsoft.VisualStudio.Tools.Applications.Runtime.v9.0" />
+    <Reference Include="mscorlib" />
+    <Reference Include="office" />
+    <Reference Include="Opacus SugarCRM AddIn" />
+    <Reference Include="stdole" />
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Configuration.Install" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.SQLite" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="ListViewEx\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="D:\SasiNalla\Nalla\Works\Greg\ListViewEx\ListViewEx.ListViewEx.resources" />
+  </ItemGroup>
+  <Import Condition="" Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>

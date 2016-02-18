@@ -134,14 +134,18 @@
   -->
   <ItemGroup>
     <Reference Include="Accessibility" />
-    <Reference Include="AddinExpress.ToolbarControls.2005, Version=7.2.4055.2005, Culture=neutral, PublicKeyToken=16211aef6795d6cc, processorArchitecture=MSIL" />
     <Reference Include="ListViewEx">
       <HintPath>.\ListViewEx.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\SugarCRMClient\bin\Debug\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -195,6 +199,7 @@
     <Compile Include="AddressBook.Designer.cs">
       <DependentUpon>AddressBook.cs</DependentUpon>
     </Compile>
+    <Compile Include="cItem.cs" />
     <Compile Include="clsGlobals.cs" />
     <Compile Include="clsSettings.cs" />
     <Compile Include="frmArchive.cs">

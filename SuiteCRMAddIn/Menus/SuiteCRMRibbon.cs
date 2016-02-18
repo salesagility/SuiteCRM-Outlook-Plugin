@@ -136,16 +136,17 @@ namespace SuiteCRMAddIn
 
         public void btnSettings_Action(IRibbonControl control)
         {
-            frmSettings objacbbSettings = new frmSettings();
-            objacbbSettings.ShowDialog();
+            frmSettings objSettings = new frmSettings();
+            objSettings.ShowDialog();
         }
 
         public void btnAddressBook_Action(IRibbonControl control)
         {
-            frmAddressBook objForm = new frmAddressBook();
-            objForm.Show();
+            frmAddressBook objAddressBook = new frmAddressBook();
+            objAddressBook.Show();
         }
-
+      
+        
         private void ManualArchive()
         {
             if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
