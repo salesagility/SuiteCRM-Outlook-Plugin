@@ -72,184 +72,171 @@ namespace SuiteCRMAddIn
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-            CurrentVersion = Convert.ToInt32(Globals.ThisAddIn.Application.Version.Split('.')[0]);
-            this.objExplorer = Globals.ThisAddIn.Application.ActiveExplorer();
-            SuiteCRMClient.clsSuiteCRMHelper.InstallationPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\SuiteCRMOutlookAddIn";
-            this.settings = new clsSettings();
-            this.objExplorer.FolderSwitch -= objExplorer_FolderSwitch;
-            this.objExplorer.FolderSwitch += objExplorer_FolderSwitch;
-            if (this.settings.AutoArchive)
+            try
             {
-                this.objExplorer.Application.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
-                this.objExplorer.Application.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
-            }
-            if (CurrentVersion < 14)
-            {
-                this.Application.ItemContextMenuDisplay += new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
-                var menuBar = this.Application.ActiveExplorer().CommandBars.ActiveMenuBar;
-                objSuiteCRMMenuBar2007 = (Office.CommandBarPopup)menuBar.Controls.Add(Office.MsoControlType.msoControlPopup, missing, missing, missing, true);
-                if (objSuiteCRMMenuBar2007 != null)
+                CurrentVersion = Convert.ToInt32(Globals.ThisAddIn.Application.Version.Split('.')[0]);
+                this.objExplorer = Globals.ThisAddIn.Application.ActiveExplorer();
+                SuiteCRMClient.clsSuiteCRMHelper.InstallationPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\SuiteCRMOutlookAddIn";
+                this.settings = new clsSettings();
+                this.objExplorer.FolderSwitch -= objExplorer_FolderSwitch;
+                this.objExplorer.FolderSwitch += objExplorer_FolderSwitch;
+                if (this.settings.AutoArchive)
                 {
-                    objSuiteCRMMenuBar2007.Caption = "SuiteCRM";
-                    this.btnArvive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
-                    this.btnArvive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
-                    this.btnArvive.Caption = "Archive";
-                    this.btnArvive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
-                    this.btnArvive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
-                    this.btnArvive.Visible = true;
-                    this.btnArvive.BeginGroup = true;
-                    this.btnArvive.TooltipText = "Archive selected emails to SuiteCRM";
-                    this.btnArvive.Enabled = true;
-                    this.btnSettings = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
-                    this.btnSettings.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
-                    this.btnSettings.Caption = "Settings";
-                    this.btnSettings.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnSettings_Click);
-                    this.btnSettings.Visible = true;
-                    this.btnSettings.BeginGroup = true;
-                    this.btnSettings.TooltipText = "SuiteCRM Settings";
-                    this.btnSettings.Enabled = true;
-                    this.btnSettings.Picture = RibbonImageHelper.Convert(Resources.Settings);            
-
-                    objSuiteCRMMenuBar2007.Visible = true;
+                    this.objExplorer.Application.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
+                    this.objExplorer.Application.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
                 }
+                if (CurrentVersion < 14)
+                {
+                    this.Application.ItemContextMenuDisplay += new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
+                    var menuBar = this.Application.ActiveExplorer().CommandBars.ActiveMenuBar;
+                    objSuiteCRMMenuBar2007 = (Office.CommandBarPopup)menuBar.Controls.Add(Office.MsoControlType.msoControlPopup, missing, missing, missing, true);
+                    if (objSuiteCRMMenuBar2007 != null)
+                    {
+                        objSuiteCRMMenuBar2007.Caption = "SuiteCRM";
+                        this.btnArvive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
+                        this.btnArvive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
+                        this.btnArvive.Caption = "Archive";
+                        this.btnArvive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+                        this.btnArvive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
+                        this.btnArvive.Visible = true;
+                        this.btnArvive.BeginGroup = true;
+                        this.btnArvive.TooltipText = "Archive selected emails to SuiteCRM";
+                        this.btnArvive.Enabled = true;
+                        this.btnSettings = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
+                        this.btnSettings.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
+                        this.btnSettings.Caption = "Settings";
+                        this.btnSettings.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnSettings_Click);
+                        this.btnSettings.Visible = true;
+                        this.btnSettings.BeginGroup = true;
+                        this.btnSettings.TooltipText = "SuiteCRM Settings";
+                        this.btnSettings.Enabled = true;
+                        this.btnSettings.Picture = RibbonImageHelper.Convert(Resources.Settings);
+
+                        objSuiteCRMMenuBar2007.Visible = true;
+                    }
+                }
+                else
+                {
+                    //For Outlook version 2010 and greater
+                    //var app = this.Application;
+                    //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
+                }
+                SuiteCRMAuthenticate();
+                Sync();
             }
-            else
+            catch (Exception ex)
             {
-                //For Outlook version 2010 and greater
-                //var app = this.Application;
-                //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ThisAddIn_Startup");
             }
-            SuiteCRMAuthenticate();
-            Sync();
         }
 
         void objExplorer_FolderSwitch()
         {
-            if (this.objExplorer.CurrentFolder.DefaultItemType == GetDefaultFolder("appointments").DefaultItemType)
-                IsCalendarView = true;
-            else
-                IsCalendarView = false;
-            if (this.objExplorer.CurrentFolder.DefaultItemType == GetDefaultFolder("tasks").DefaultItemType)
-                IsTaskView = true;
-            else
-                IsTaskView = false;
-            if (this.objExplorer.CurrentFolder.DefaultItemType == GetDefaultFolder("contacts").DefaultItemType)
-                IsContactView = true;
-            else
-                IsContactView = false;
+            try
+            {
+                if (this.objExplorer.CurrentFolder.DefaultItemType == GetDefaultFolder("appointments").DefaultItemType)
+                    IsCalendarView = true;
+                else
+                    IsCalendarView = false;
+                if (this.objExplorer.CurrentFolder.DefaultItemType == GetDefaultFolder("tasks").DefaultItemType)
+                    IsTaskView = true;
+                else
+                    IsTaskView = false;
+                if (this.objExplorer.CurrentFolder.DefaultItemType == GetDefaultFolder("contacts").DefaultItemType)
+                    IsContactView = true;
+                else
+                    IsContactView = false;
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.objExplorer_FolderSwitch");
+            }
         }
 
         public async void Sync()
         //public void Sync()
         {
-            while (1 == 1)
+            try
             {
-                if (SuiteCRMUserSession != null && SuiteCRMUserSession.id != "") 
+                while (1 == 1)
                 {
-                    if (settings.SyncCalendar)
+                    if (SuiteCRMUserSession != null && SuiteCRMUserSession.id != "")
                     {
-                        //StartCalendarSync();
-                        Thread oThread = new Thread(() => StartCalendarSync());
-                        oThread.Start();
-                        //StartTaskSync();
-                        Thread oThread1 = new Thread(() => StartTaskSync());
-                        oThread1.Start();                        
+                        if (settings.SyncCalendar)
+                        {
+                            //StartCalendarSync();
+                            Thread oThread = new Thread(() => StartCalendarSync());
+                            oThread.Start();
+                            //StartTaskSync();
+                            Thread oThread1 = new Thread(() => StartTaskSync());
+                            oThread1.Start();
+                        }
+                        if (settings.SyncContacts)
+                        {
+                            //StartContactSync();
+                            Thread oThread = new Thread(() => StartContactSync());
+                            oThread.Start();
+                        }
                     }
-                    if (settings.SyncContacts)
-                    {
-                        //StartContactSync();
-                        Thread oThread = new Thread(() => StartContactSync());
-                        oThread.Start(); 
-                    }
+                    await Task.Delay(300000); //5 mins delay
                 }
-                await Task.Delay(300000); //5 mins delay
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Sync");
             }
         }
         private void StartContactSync()
         {
-            Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
-            Outlook.MAPIFolder contactsFolder = GetDefaultFolder("contacts");
-            Outlook.Items items = contactsFolder.Items;
-
-            items.ItemAdd -= CItems_ItemAdd;
-            items.ItemChange -= CItems_ItemChange;
-            items.ItemRemove -= CItems_ItemRemove;
-            items.ItemAdd += CItems_ItemAdd;
-            items.ItemChange += CItems_ItemChange;
-            items.ItemRemove += CItems_ItemRemove;
-
-            Outlook.MAPIFolderEvents_12_Event oCalendarEvents;
-            oCalendarEvents = contactsFolder as Outlook.MAPIFolderEvents_12_Event;
-            if (oCalendarEvents != null)
+            try
             {
-                oCalendarEvents.BeforeItemMove -= CoCalendarEvents_BeforeItemMove;
-                oCalendarEvents.BeforeItemMove += CoCalendarEvents_BeforeItemMove;
-            }
+                Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
+                Outlook.MAPIFolder contactsFolder = GetDefaultFolder("contacts");
+                Outlook.Items items = contactsFolder.Items;
 
-            SyncInProgress = true;
-            GetOutlookCItems(contactsFolder);
-            SyncContacts(contactsFolder);
-            SyncInProgress = false;
+                items.ItemAdd -= CItems_ItemAdd;
+                items.ItemChange -= CItems_ItemChange;
+                items.ItemRemove -= CItems_ItemRemove;
+                items.ItemAdd += CItems_ItemAdd;
+                items.ItemChange += CItems_ItemChange;
+                items.ItemRemove += CItems_ItemRemove;
+
+                Outlook.MAPIFolderEvents_12_Event oCalendarEvents;
+                oCalendarEvents = contactsFolder as Outlook.MAPIFolderEvents_12_Event;
+                if (oCalendarEvents != null)
+                {
+                    oCalendarEvents.BeforeItemMove -= CoCalendarEvents_BeforeItemMove;
+                    oCalendarEvents.BeforeItemMove += CoCalendarEvents_BeforeItemMove;
+                }
+
+                SyncInProgress = true;
+                GetOutlookCItems(contactsFolder);
+                SyncContacts(contactsFolder);
+                SyncInProgress = false;
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.StartContactSync");
+            }
 
         }
         private void SyncContacts(Outlook.MAPIFolder contactFolder)
         {
-            eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Contacts", "",
-                            0, "date_entered DESC", 0, false, clsSuiteCRMHelper.GetSugarFields("Contacts"));
-            if (_result2 != null)
+            try
             {
-                foreach (var oResult in _result2.entry_list)
+                eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Contacts", "",
+                                0, "date_entered DESC", 0, false, clsSuiteCRMHelper.GetSugarFields("Contacts"));
+                if (_result2 != null)
                 {
-                    try
+                    foreach (var oResult in _result2.entry_list)
                     {
-                        dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
-                        var oItem = lContactItems.Where(a => a.SEntryID == dResult.id.value.ToString()).FirstOrDefault();
-                        if (oItem == default(cContactItem))
+                        try
                         {
-                            Outlook.ContactItem cItem = contactFolder.Items.Add(Outlook.OlItemType.olContactItem);
-                            cItem.FirstName = dResult.first_name.value.ToString();
-                            cItem.LastName = dResult.last_name.value.ToString();
-                            cItem.Email1Address = dResult.email1.value.ToString();
-                            cItem.BusinessTelephoneNumber = dResult.phone_work.value.ToString();
-                            cItem.HomeTelephoneNumber = dResult.phone_home.value.ToString();
-                            cItem.MobileTelephoneNumber = dResult.phone_mobile.value.ToString();
-                            cItem.JobTitle = dResult.title.value.ToString();
-                            cItem.Department = dResult.department.value.ToString();
-                            cItem.BusinessAddressCity = dResult.primary_address_city.value.ToString();
-                            cItem.BusinessAddressCountry = dResult.primary_address_country.value.ToString();
-                            cItem.BusinessAddressPostalCode = dResult.primary_address_postalcode.value.ToString();
-                            cItem.BusinessAddressState = dResult.primary_address_state.value.ToString();
-                            cItem.BusinessAddressStreet = dResult.primary_address_street.value.ToString();
-                            cItem.Body = dResult.description.value.ToString();
-                            if (dResult.account_name != null)
+                            dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
+                            var oItem = lContactItems.Where(a => a.SEntryID == dResult.id.value.ToString()).FirstOrDefault();
+                            if (oItem == default(cContactItem))
                             {
-                                cItem.Account = dResult.account_name.value.ToString();
-                                cItem.CompanyName = dResult.account_name.value.ToString();
-                            }
-                            cItem.BusinessFaxNumber = dResult.phone_fax.value.ToString();
-                            cItem.Title = dResult.salutation.value.ToString();
-
-                            Outlook.UserProperty oProp = cItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
-                            oProp.Value = dResult.date_modified.value.ToString();
-                            Outlook.UserProperty oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
-                            oProp2.Value = dResult.id.value.ToString();
-                            cItem.Save();
-                            lContactItems.Add(new cContactItem
-                            {
-                                oItem = cItem,
-                                OModifiedDate = dResult.date_modified.value.ToString(),
-                                SEntryID = dResult.id.value.ToString(),
-                                Touched = true
-                            });
-                        }
-                        else
-                        {
-                            oItem.Touched = true;
-                            Outlook.ContactItem cItem = oItem.oItem;
-                            Outlook.UserProperty oProp = cItem.UserProperties["SOModifiedDate"];
-
-                            if (oProp.Value != dResult.date_modified.value.ToString())
-                            {
+                                Outlook.ContactItem cItem = contactFolder.Items.Add(Outlook.OlItemType.olContactItem);
                                 cItem.FirstName = dResult.first_name.value.ToString();
                                 cItem.LastName = dResult.last_name.value.ToString();
                                 cItem.Email1Address = dResult.email1.value.ToString();
@@ -264,101 +251,175 @@ namespace SuiteCRMAddIn
                                 cItem.BusinessAddressState = dResult.primary_address_state.value.ToString();
                                 cItem.BusinessAddressStreet = dResult.primary_address_street.value.ToString();
                                 cItem.Body = dResult.description.value.ToString();
-                                cItem.Account = dResult.account_name.value.ToString();
-                                cItem.CompanyName = dResult.account_name.value.ToString();
+                                if (dResult.account_name != null)
+                                {
+                                    cItem.Account = dResult.account_name.value.ToString();
+                                    cItem.CompanyName = dResult.account_name.value.ToString();
+                                }
                                 cItem.BusinessFaxNumber = dResult.phone_fax.value.ToString();
                                 cItem.Title = dResult.salutation.value.ToString();
-                                if (oProp == null)
-                                    oProp = cItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+
+                                Outlook.UserProperty oProp = cItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
                                 oProp.Value = dResult.date_modified.value.ToString();
-                                Outlook.UserProperty oProp2 = cItem.UserProperties["SEntryID"];
-                                if (oProp2 == null)
-                                    oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+                                Outlook.UserProperty oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                                 oProp2.Value = dResult.id.value.ToString();
                                 cItem.Save();
+                                lContactItems.Add(new cContactItem
+                                {
+                                    oItem = cItem,
+                                    OModifiedDate = dResult.date_modified.value.ToString(),
+                                    SEntryID = dResult.id.value.ToString(),
+                                    Touched = true
+                                });
+                            }
+                            else
+                            {
+                                oItem.Touched = true;
+                                Outlook.ContactItem cItem = oItem.oItem;
+                                Outlook.UserProperty oProp = cItem.UserProperties["SOModifiedDate"];
+
+                                if (oProp.Value != dResult.date_modified.value.ToString())
+                                {
+                                    cItem.FirstName = dResult.first_name.value.ToString();
+                                    cItem.LastName = dResult.last_name.value.ToString();
+                                    cItem.Email1Address = dResult.email1.value.ToString();
+                                    cItem.BusinessTelephoneNumber = dResult.phone_work.value.ToString();
+                                    cItem.HomeTelephoneNumber = dResult.phone_home.value.ToString();
+                                    cItem.MobileTelephoneNumber = dResult.phone_mobile.value.ToString();
+                                    cItem.JobTitle = dResult.title.value.ToString();
+                                    cItem.Department = dResult.department.value.ToString();
+                                    cItem.BusinessAddressCity = dResult.primary_address_city.value.ToString();
+                                    cItem.BusinessAddressCountry = dResult.primary_address_country.value.ToString();
+                                    cItem.BusinessAddressPostalCode = dResult.primary_address_postalcode.value.ToString();
+                                    cItem.BusinessAddressState = dResult.primary_address_state.value.ToString();
+                                    cItem.BusinessAddressStreet = dResult.primary_address_street.value.ToString();
+                                    cItem.Body = dResult.description.value.ToString();
+                                    cItem.Account = dResult.account_name.value.ToString();
+                                    cItem.CompanyName = dResult.account_name.value.ToString();
+                                    cItem.BusinessFaxNumber = dResult.phone_fax.value.ToString();
+                                    cItem.Title = dResult.salutation.value.ToString();
+                                    if (oProp == null)
+                                        oProp = cItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+                                    oProp.Value = dResult.date_modified.value.ToString();
+                                    Outlook.UserProperty oProp2 = cItem.UserProperties["SEntryID"];
+                                    if (oProp2 == null)
+                                        oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+                                    oProp2.Value = dResult.id.value.ToString();
+                                    cItem.Save();
+                                }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncContacts");
+                        }
                     }
-                    catch
-                    { }
+
+                }
+
+                try
+                {
+                    var lItemToBeDeletedO = lContactItems.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate)).ToList();
+                    foreach (var oItem in lItemToBeDeletedO)
+                    {
+                        oItem.oItem.Delete();
+                    }
+                    lContactItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate));
+
+                    var lItemToBeAddedToS = lContactItems.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate)).ToList();
+                    foreach (var oItem in lItemToBeAddedToS)
+                    {
+                        AddContactToS(oItem.oItem);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncContacts");
                 }
             }
-
-            try
+            catch (Exception ex)
             {
-                var lItemToBeDeletedO = lContactItems.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate)).ToList();
-                foreach (var oItem in lItemToBeDeletedO)
-                {
-                    oItem.oItem.Delete();
-                }
-                lContactItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate));
-
-                var lItemToBeAddedToS = lContactItems.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate)).ToList();
-                foreach (var oItem in lItemToBeAddedToS)
-                {
-                    AddContactToS(oItem.oItem);
-                }
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncContacts");
             }
-            catch
-            { }
         }
         private void GetOutlookCItems(Outlook.MAPIFolder taskFolder)
         {
-            if (lContactItems == null)
+            try
             {
-                lContactItems = new List<cContactItem>();
-                Outlook.Items items = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
-                foreach (Outlook.ContactItem oItem in items)
+                if (lContactItems == null)
                 {
-                    if (oItem.Sensitivity != Outlook.OlSensitivity.olPrivate)
+                    lContactItems = new List<cContactItem>();
+                    Outlook.Items items = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
+                    foreach (Outlook.ContactItem oItem in items)
                     {
-                        Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
-                        if (oProp != null)
+                        if (oItem.Sensitivity != Outlook.OlSensitivity.olPrivate)
                         {
-                            Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
-                            lContactItems.Add(new cContactItem
+                            Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
+                            if (oProp != null)
                             {
-                                oItem = oItem,
-                                OModifiedDate = oProp.Value.ToString(),
-                                SEntryID = oProp2.Value.ToString()
-                            });
-                        }
-                        else
-                        {
-                            lContactItems.Add(new cContactItem
+                                Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
+                                lContactItems.Add(new cContactItem
+                                {
+                                    oItem = oItem,
+                                    OModifiedDate = oProp.Value.ToString(),
+                                    SEntryID = oProp2.Value.ToString()
+                                });
+                            }
+                            else
                             {
-                                oItem = oItem
-                            });
+                                lContactItems.Add(new cContactItem
+                                {
+                                    oItem = oItem
+                                });
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.GetOutlookCItems");
             }
         }
 
         void CItems_ItemChange(object Item)
         {
-            if (!SyncInProgress && IsContactView)
+            try
             {
-                bool SyncOldStatus = SyncInProgress;
-                SyncInProgress = true;
-                var oItem = Item as Outlook.ContactItem;
-                if (PrevContactID != oItem.EntryID)
+                if (!SyncInProgress && IsContactView)
                 {
-                    Outlook.UserProperty oProp1 = oItem.UserProperties["SEntryID"];
-                    if (oProp1 != null)
+                    bool SyncOldStatus = SyncInProgress;
+                    SyncInProgress = true;
+                    var oItem = Item as Outlook.ContactItem;
+                    if (PrevContactID != oItem.EntryID)
                     {
-                        AddContactToS(oItem, oProp1.Value.ToString());
+                        Outlook.UserProperty oProp1 = oItem.UserProperties["SEntryID"];
+                        if (oProp1 != null)
+                        {
+                            AddContactToS(oItem, oProp1.Value.ToString());
+                        }
                     }
-                }                
-                SyncInProgress = SyncOldStatus;
+                    SyncInProgress = SyncOldStatus;
+                }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.CItems_ItemChange");
             }
         }
 
         void CItems_ItemAdd(object Item)
         {
+            try
+            { 
             if (!SyncInProgress && IsContactView)
             {
                 AddContactToS(Item as Outlook.ContactItem);
+            }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.CItems_ItemAdd");
             }
         }
         private void AddContactToS(Outlook.ContactItem oItem, string sID = "")
@@ -414,8 +475,10 @@ namespace SuiteCRMAddIn
                     else
                         lContactItems.Add(new cContactItem { SEntryID = _result, OModifiedDate = "Fresh", oItem = oItem });
                 }
-                catch
-                { }
+                catch (Exception ex)
+                {
+                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.AddContactToS");
+                }
             }
         }
         void CItems_ItemRemove()
@@ -432,54 +495,69 @@ namespace SuiteCRMAddIn
                         clsSuiteCRMHelper.SetEntry(data, "Contacts");
                         lContactItems.RemoveAll(a => a.SEntryID == sDelContactId);
                     }
-                    catch
-                    { }
+                    catch (Exception ex)
+                    {
+                        clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.CItems_ItemRemove");
+                    }
                 }
                 sDelContactId = "";
             }
         }
         void CoCalendarEvents_BeforeItemMove(object Item, Outlook.MAPIFolder MoveTo, ref bool Cancel)
         {
-            if (!SyncInProgress && IsContactView)
+            try
             {
-                sDelContactId = "";
-                Outlook.ContactItem oContact = Item as Outlook.ContactItem;
-                if (oContact.UserProperties != null)
+                if (!SyncInProgress && IsContactView)
                 {
-                    Outlook.UserProperty oProp = oContact.UserProperties["SEntryID"];
-                    if (oProp != null)
+                    sDelContactId = "";
+                    Outlook.ContactItem oContact = Item as Outlook.ContactItem;
+                    if (oContact.UserProperties != null)
                     {
-                        sDelContactId = oProp.Value.ToString();
+                        Outlook.UserProperty oProp = oContact.UserProperties["SEntryID"];
+                        if (oProp != null)
+                        {
+                            sDelContactId = oProp.Value.ToString();
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.CoCalendarEvents_BeforeItemMove");
             }
         }
         private void StartTaskSync()
         {
-            Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
-            Outlook.MAPIFolder taskFolder = GetDefaultFolder("tasks");
-            Outlook.Items items = taskFolder.Items;
-
-            items.ItemAdd -= TItems_ItemAdd;
-            items.ItemChange -= TItems_ItemChange;
-            items.ItemRemove -= TItems_ItemRemove;
-            items.ItemAdd += TItems_ItemAdd;
-            items.ItemChange += TItems_ItemChange;
-            items.ItemRemove += TItems_ItemRemove;
-
-            Outlook.MAPIFolderEvents_12_Event oCalendarEvents;
-            oCalendarEvents = taskFolder as Outlook.MAPIFolderEvents_12_Event;
-            if (oCalendarEvents != null)
+            try
             {
-                oCalendarEvents.BeforeItemMove -= ToCalendarEvents_BeforeItemMove;
-                oCalendarEvents.BeforeItemMove += ToCalendarEvents_BeforeItemMove;
+                Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
+                Outlook.MAPIFolder taskFolder = GetDefaultFolder("tasks");
+                Outlook.Items items = taskFolder.Items;
+
+                items.ItemAdd -= TItems_ItemAdd;
+                items.ItemChange -= TItems_ItemChange;
+                items.ItemRemove -= TItems_ItemRemove;
+                items.ItemAdd += TItems_ItemAdd;
+                items.ItemChange += TItems_ItemChange;
+                items.ItemRemove += TItems_ItemRemove;
+
+                Outlook.MAPIFolderEvents_12_Event oCalendarEvents;
+                oCalendarEvents = taskFolder as Outlook.MAPIFolderEvents_12_Event;
+                if (oCalendarEvents != null)
+                {
+                    oCalendarEvents.BeforeItemMove -= ToCalendarEvents_BeforeItemMove;
+                    oCalendarEvents.BeforeItemMove += ToCalendarEvents_BeforeItemMove;
+                }
+
+                SyncInProgress = true;
+                GetOutlookTItems(taskFolder);
+                SyncTasks(taskFolder);
+                SyncInProgress = false;
             }
-
-            SyncInProgress = true;
-            GetOutlookTItems(taskFolder);
-            SyncTasks(taskFolder);            
-            SyncInProgress = false;
-
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.StartTaskSync");
+            }
         }
         private Outlook.OlImportance GetImportance(string sImportance)
         {
@@ -515,54 +593,23 @@ namespace SuiteCRMAddIn
         }
         private void SyncTasks(Outlook.MAPIFolder tasksFolder)
         {
-            eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Tasks", "",
-                            0, "date_entered DESC", 0, false, clsSuiteCRMHelper.GetSugarFields("Tasks"));
-            if (_result2 != null)
+            try
             {
-                foreach (var oResult in _result2.entry_list)
+                eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Tasks", "",
+                                0, "date_entered DESC", 0, false, clsSuiteCRMHelper.GetSugarFields("Tasks"));
+                if (_result2 != null)
                 {
-                    try
+                    foreach (var oResult in _result2.entry_list)
                     {
-                        dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
-                        var oItem = lTaskItems.Where(a => a.SEntryID == dResult.id.value.ToString()).FirstOrDefault();
-                        if (oItem == default(cTaskItem))
+                        try
                         {
-                            Outlook.TaskItem tItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
-                            tItem.Subject = dResult.name.value.ToString();
-                            tItem.Body = dResult.description.value.ToString();
-                            if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
+                            dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
+                            if (DateTime.Parse(dResult.date_start.value.ToString()) < GetStartDate())
+                                continue;
+                            var oItem = lTaskItems.Where(a => a.SEntryID == dResult.id.value.ToString()).FirstOrDefault();
+                            if (oItem == default(cTaskItem))
                             {
-                                tItem.StartDate = DateTime.Parse(dResult.date_start.value.ToString());
-                            }
-                            if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
-                            {
-                                tItem.DueDate = DateTime.Parse(dResult.date_due.value.ToString());
-                            }
-
-                            tItem.Status = GetStatus(dResult.status.value.ToString());
-                            tItem.Importance = GetImportance(dResult.priority.value.ToString());
-
-                            Outlook.UserProperty oProp = tItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
-                            oProp.Value = dResult.date_modified.value.ToString();
-                            Outlook.UserProperty oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
-                            oProp2.Value = dResult.id.value.ToString();
-                            tItem.Save();
-                            lTaskItems.Add(new cTaskItem
-                            {
-                                oItem = tItem,
-                                OModifiedDate = dResult.date_modified.value.ToString(),
-                                SEntryID = dResult.id.value.ToString(),
-                                Touched = true
-                            });
-                        }
-                        else
-                        {
-                            oItem.Touched = true;
-                            Outlook.TaskItem tItem = oItem.oItem;
-                            Outlook.UserProperty oProp = tItem.UserProperties["SOModifiedDate"];
-
-                            if (oProp.Value != dResult.date_modified.value.ToString())
-                            {
+                                Outlook.TaskItem tItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
                                 tItem.Subject = dResult.name.value.ToString();
                                 tItem.Body = dResult.description.value.ToString();
                                 if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
@@ -576,94 +623,159 @@ namespace SuiteCRMAddIn
 
                                 tItem.Status = GetStatus(dResult.status.value.ToString());
                                 tItem.Importance = GetImportance(dResult.priority.value.ToString());
-                                if (oProp == null)
-                                    oProp = tItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+
+                                Outlook.UserProperty oProp = tItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
                                 oProp.Value = dResult.date_modified.value.ToString();
-                                Outlook.UserProperty oProp2 = tItem.UserProperties["SEntryID"];
-                                if (oProp2 == null)
-                                    oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+                                Outlook.UserProperty oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                                 oProp2.Value = dResult.id.value.ToString();
                                 tItem.Save();
+                                lTaskItems.Add(new cTaskItem
+                                {
+                                    oItem = tItem,
+                                    OModifiedDate = dResult.date_modified.value.ToString(),
+                                    SEntryID = dResult.id.value.ToString(),
+                                    Touched = true
+                                });
+                            }
+                            else
+                            {
+                                oItem.Touched = true;
+                                Outlook.TaskItem tItem = oItem.oItem;
+                                Outlook.UserProperty oProp = tItem.UserProperties["SOModifiedDate"];
+
+                                if (oProp.Value != dResult.date_modified.value.ToString())
+                                {
+                                    tItem.Subject = dResult.name.value.ToString();
+                                    tItem.Body = dResult.description.value.ToString();
+                                    if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
+                                    {
+                                        tItem.StartDate = DateTime.Parse(dResult.date_start.value.ToString());
+                                    }
+                                    if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
+                                    {
+                                        tItem.DueDate = DateTime.Parse(dResult.date_due.value.ToString());
+                                    }
+
+                                    tItem.Status = GetStatus(dResult.status.value.ToString());
+                                    tItem.Importance = GetImportance(dResult.priority.value.ToString());
+                                    if (oProp == null)
+                                        oProp = tItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+                                    oProp.Value = dResult.date_modified.value.ToString();
+                                    Outlook.UserProperty oProp2 = tItem.UserProperties["SEntryID"];
+                                    if (oProp2 == null)
+                                        oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+                                    oProp2.Value = dResult.id.value.ToString();
+                                    tItem.Save();
+                                }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncTasks");
+                        }
                     }
-                    catch
-                    { }
+                }
+
+                try
+                {
+                    var lItemToBeDeletedO = lTaskItems.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate)).ToList();
+                    foreach (var oItem in lItemToBeDeletedO)
+                    {
+                        oItem.oItem.Delete();
+                    }
+                    lTaskItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate));
+
+                    var lItemToBeAddedToS = lTaskItems.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate)).ToList();
+                    foreach (var oItem in lItemToBeAddedToS)
+                    {
+                        AddTaskToS(oItem.oItem);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncTasks");
                 }
             }
-
-            try
+            catch (Exception ex)
             {
-                var lItemToBeDeletedO = lTaskItems.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate)).ToList();
-                foreach (var oItem in lItemToBeDeletedO)
-                {
-                    oItem.oItem.Delete();
-                }
-                lTaskItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate));
-
-                var lItemToBeAddedToS = lTaskItems.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate)).ToList();
-                foreach (var oItem in lItemToBeAddedToS)
-                {
-                    AddTaskToS(oItem.oItem);
-                }
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncTasks");
             }
-            catch
-            { }
         }
         private void GetOutlookTItems(Outlook.MAPIFolder taskFolder)
         {
-            if (lTaskItems == null)
+            try
             {
-                lTaskItems = new List<cTaskItem>();
-                Outlook.Items items = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Task'");
-                foreach (Outlook.TaskItem oItem in items)
+                if (lTaskItems == null)
                 {
-                    Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
-                    if (oProp != null)
+                    lTaskItems = new List<cTaskItem>();
+                    Outlook.Items items = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Task'" + GetStartDateString());
+                    foreach (Outlook.TaskItem oItem in items)
                     {
-                        Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
-                        lTaskItems.Add(new cTaskItem
+                        Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
+                        if (oProp != null)
                         {
-                            oItem = oItem,
-                            OModifiedDate = oProp.Value.ToString(),
-                            SEntryID = oProp2.Value.ToString()
-                        });
-                    }
-                    else
-                    {
-                        lTaskItems.Add(new cTaskItem
+                            Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
+                            lTaskItems.Add(new cTaskItem
+                            {
+                                oItem = oItem,
+                                OModifiedDate = oProp.Value.ToString(),
+                                SEntryID = oProp2.Value.ToString()
+                            });
+                        }
+                        else
                         {
-                            oItem = oItem
-                        });
+                            lTaskItems.Add(new cTaskItem
+                            {
+                                oItem = oItem
+                            });
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.GetOutlookTItems");
             }
         }
 
         void TItems_ItemChange(object Item)
         {
-            if (!SyncInProgress && IsTaskView)
+            try
             {
-                bool SyncOldStatus = SyncInProgress;
-                SyncInProgress = true;
-                var oItem = Item as Outlook.TaskItem;
-                if (PrevTaskID != oItem.EntryID)
+                if (!SyncInProgress && IsTaskView)
                 {
-                    Outlook.UserProperty oProp1 = oItem.UserProperties["SEntryID"];
-                    if (oProp1 != null)
+                    bool SyncOldStatus = SyncInProgress;
+                    SyncInProgress = true;
+                    var oItem = Item as Outlook.TaskItem;
+                    if (PrevTaskID != oItem.EntryID)
                     {
-                        AddTaskToS(oItem, oProp1.Value.ToString());
+                        Outlook.UserProperty oProp1 = oItem.UserProperties["SEntryID"];
+                        if (oProp1 != null)
+                        {
+                            AddTaskToS(oItem, oProp1.Value.ToString());
+                        }
                     }
-                }                
-                SyncInProgress = SyncOldStatus;
+                    SyncInProgress = SyncOldStatus;
+                }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.TItems_ItemChange");
             }
         }
 
         void TItems_ItemAdd(object Item)
         {
+            try
+            { 
             if (!SyncInProgress && IsTaskView)
             {
                 AddTaskToS(Item as Outlook.TaskItem);
+            }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.TItems_ItemAdd");
             }
         }
         private void AddTaskToS(Outlook.TaskItem oItem, string sID = "")
@@ -745,8 +857,10 @@ namespace SuiteCRMAddIn
                     else
                         lTaskItems.Add(new cTaskItem { SEntryID = _result, OModifiedDate = "Fresh", oItem = oItem });
                 }
-                catch
-                { }
+                catch (Exception ex)
+                {
+                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.AddTaskToS");
+                }
             }
         }
         void TItems_ItemRemove()
@@ -763,8 +877,10 @@ namespace SuiteCRMAddIn
                         clsSuiteCRMHelper.SetEntry(data, "Tasks");
                         lTaskItems.RemoveAll(a => a.SEntryID == sDelTaskId);
                     }
-                    catch
-                    { }
+                    catch (Exception ex)
+                    {
+                        clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.TItems_ItemRemove");
+                    }
                 }
                 sDelTaskId = "";
                 
@@ -772,108 +888,142 @@ namespace SuiteCRMAddIn
         }
         void ToCalendarEvents_BeforeItemMove(object Item, Outlook.MAPIFolder MoveTo, ref bool Cancel)
         {
-            if (!SyncInProgress && IsTaskView)
+            try
             {
-                sDelTaskId = "";
-                Outlook.TaskItem oTask = Item as Outlook.TaskItem;
-                if (oTask.UserProperties != null)
+                if (!SyncInProgress && IsTaskView)
                 {
-                    Outlook.UserProperty oProp = oTask.UserProperties["SEntryID"];
-                    if (oProp != null)
+                    sDelTaskId = "";
+                    Outlook.TaskItem oTask = Item as Outlook.TaskItem;
+                    if (oTask.UserProperties != null)
                     {
-                        sDelTaskId = oProp.Value.ToString();                        
+                        Outlook.UserProperty oProp = oTask.UserProperties["SEntryID"];
+                        if (oProp != null)
+                        {
+                            sDelTaskId = oProp.Value.ToString();
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ToCalendarEvents_BeforeItemMove");
             }
         }
         private void StartCalendarSync()
         {
-            Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
-            Outlook.MAPIFolder appointmentsFolder = GetDefaultFolder("appointments");
-            Outlook.Items items = appointmentsFolder.Items;
-            
-            items.ItemAdd -= Items_ItemAdd;
-            items.ItemChange -= Items_ItemChange;
-            items.ItemRemove -= Items_ItemRemove;
-            items.ItemAdd += Items_ItemAdd;
-            items.ItemChange += Items_ItemChange;
-            items.ItemRemove += Items_ItemRemove;
-
-            Outlook.MAPIFolderEvents_12_Event oCalendarEvents;
-            oCalendarEvents = appointmentsFolder as Outlook.MAPIFolderEvents_12_Event;
-            if (oCalendarEvents != null)
+            try
             {
-                oCalendarEvents.BeforeItemMove -= oCalendarEvents_BeforeItemMove;
-                oCalendarEvents.BeforeItemMove += oCalendarEvents_BeforeItemMove;
-            }
+                Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
+                Outlook.MAPIFolder appointmentsFolder = GetDefaultFolder("appointments");
+                Outlook.Items items = appointmentsFolder.Items;
 
-            SyncInProgress = true;
-            GetOutlookCalItems(appointmentsFolder);
-            SyncMeetings(appointmentsFolder, "Meetings");
-            SyncMeetings(appointmentsFolder, "Calls");
-            SyncInProgress = false;
-                        
+                items.ItemAdd -= Items_ItemAdd;
+                items.ItemChange -= Items_ItemChange;
+                items.ItemRemove -= Items_ItemRemove;
+                items.ItemAdd += Items_ItemAdd;
+                items.ItemChange += Items_ItemChange;
+                items.ItemRemove += Items_ItemRemove;
+
+                Outlook.MAPIFolderEvents_12_Event oCalendarEvents;
+                oCalendarEvents = appointmentsFolder as Outlook.MAPIFolderEvents_12_Event;
+                if (oCalendarEvents != null)
+                {
+                    oCalendarEvents.BeforeItemMove -= oCalendarEvents_BeforeItemMove;
+                    oCalendarEvents.BeforeItemMove += oCalendarEvents_BeforeItemMove;
+                }
+
+                SyncInProgress = true;
+                GetOutlookCalItems(appointmentsFolder);
+                SyncMeetings(appointmentsFolder, "Meetings");
+                SyncMeetings(appointmentsFolder, "Calls");
+                SyncInProgress = false;
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.StartCalendarSync");
+            }
         }
 
         void oCalendarEvents_BeforeItemMove(object Item, Outlook.MAPIFolder MoveTo, ref bool Cancel)
         {
-            if (!SyncInProgress && IsCalendarView)
+            try
             {
-                sDelCalId = "";
-                sDelCalModule = "";
-                Outlook.AppointmentItem oApp = Item as Outlook.AppointmentItem;
-                if (oApp.UserProperties != null)
+                if (!SyncInProgress && IsCalendarView)
                 {
-                    Outlook.UserProperty oProp = oApp.UserProperties["SEntryID"];
-                    Outlook.UserProperty oProp1 = oApp.UserProperties["SType"];
-                    if (oProp != null && oProp1 != null)
+                    sDelCalId = "";
+                    sDelCalModule = "";
+                    Outlook.AppointmentItem oApp = Item as Outlook.AppointmentItem;
+                    if (oApp.UserProperties != null)
                     {
-                        sDelCalId = oProp.Value.ToString();
-                        sDelCalModule = oProp1.Value.ToString();
+                        Outlook.UserProperty oProp = oApp.UserProperties["SEntryID"];
+                        Outlook.UserProperty oProp1 = oApp.UserProperties["SType"];
+                        if (oProp != null && oProp1 != null)
+                        {
+                            sDelCalId = oProp.Value.ToString();
+                            sDelCalModule = oProp1.Value.ToString();
+                        }
                     }
-                }                
+                }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.oCalendarEvents_BeforeItemMove");
             }
         }
 
         void Items_ItemRemove()
         {
-            if (!SyncInProgress && IsCalendarView)
+            try
             {
-                if (sDelCalId != "")
+                if (!SyncInProgress && IsCalendarView)
                 {
-                    try
+                    if (sDelCalId != "")
                     {
-                        eNameValue[] data = new eNameValue[2];
-                        data[0] = clsSuiteCRMHelper.SetNameValuePair("id", sDelCalId);
-                        data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                        clsSuiteCRMHelper.SetEntry(data, sDelCalModule);
-                        lCalItems.RemoveAll(a => a.SEntryID == sDelCalId);
+                        try
+                        {
+                            eNameValue[] data = new eNameValue[2];
+                            data[0] = clsSuiteCRMHelper.SetNameValuePair("id", sDelCalId);
+                            data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
+                            clsSuiteCRMHelper.SetEntry(data, sDelCalModule);
+                            lCalItems.RemoveAll(a => a.SEntryID == sDelCalId);
+                        }
+                        catch
+                        { }
                     }
-                    catch
-                    { }
+                    sDelCalId = "";
+                    sDelCalModule = "";
                 }
-                sDelCalId = "";
-                sDelCalModule = "";
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Items_ItemRemove");
             }
         }
 
         void Items_ItemChange(object Item)
         {
-            if (!SyncInProgress && IsCalendarView)
+            try
             {
-                bool SyncOldStatus = SyncInProgress;
-                SyncInProgress = true;
-                var aItem = Item as Outlook.AppointmentItem;
-                if (PrevCalSID != aItem.EntryID)
+                if (!SyncInProgress && IsCalendarView)
                 {
-                    Outlook.UserProperty oProp = aItem.UserProperties["SType"];
-                    Outlook.UserProperty oProp1 = aItem.UserProperties["SEntryID"];
-                    if (oProp != null && oProp1 != null)
+                    bool SyncOldStatus = SyncInProgress;
+                    SyncInProgress = true;
+                    var aItem = Item as Outlook.AppointmentItem;
+                    if (PrevCalSID != aItem.EntryID)
                     {
-                        AddAppointmentToS(aItem, oProp.Value.ToString(), oProp1.Value.ToString());
+                        Outlook.UserProperty oProp = aItem.UserProperties["SType"];
+                        Outlook.UserProperty oProp1 = aItem.UserProperties["SEntryID"];
+                        if (oProp != null && oProp1 != null)
+                        {
+                            AddAppointmentToS(aItem, oProp.Value.ToString(), oProp1.Value.ToString());
+                        }
                     }
-                }                
-                SyncInProgress = SyncOldStatus;
+                    SyncInProgress = SyncOldStatus;
+                }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Items_ItemChange");
             }
         }
 
@@ -887,105 +1037,72 @@ namespace SuiteCRMAddIn
 
         private void GetOutlookCalItems(Outlook.MAPIFolder appointmentsFolder)
         {
-            if (lCalItems == null)
+            try
             {
-                lCalItems = new List<cAppItem>();
-                Outlook.Items items = appointmentsFolder.Items.Restrict("[MessageClass] = 'IPM.Appointment'");
-                foreach (Outlook.AppointmentItem aItem in items)
+                if (lCalItems == null)
                 {
-                    Outlook.UserProperty oProp = aItem.UserProperties["SOModifiedDate"];
-                    if (oProp != null)
+                    lCalItems = new List<cAppItem>();
+                    Outlook.Items items = appointmentsFolder.Items.Restrict("[MessageClass] = 'IPM.Appointment'" + GetStartDateString());
+                    foreach (Outlook.AppointmentItem aItem in items)
                     {
-                        Outlook.UserProperty oProp1 = aItem.UserProperties["SType"];
-                        Outlook.UserProperty oProp2 = aItem.UserProperties["SEntryID"];
-                        lCalItems.Add(new cAppItem
+                        Outlook.UserProperty oProp = aItem.UserProperties["SOModifiedDate"];
+                        if (oProp != null)
                         {
-                            oItem = aItem,
-                            OModifiedDate = oProp.Value.ToString(),
-                            SType = oProp1.Value.ToString(),
-                            SEntryID = oProp2.Value.ToString()
-                        });
-                    }
-                    else
-                    {
-                        lCalItems.Add(new cAppItem
-                        {
-                            oItem = aItem,
-                            SType = "Meetings"
-                        });
-                    }
-                }
-            }
-        }
-        private void SyncMeetings(Outlook.MAPIFolder appointmentsFolder, string sModule)
-        {
-            eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(sModule, "",
-                            0, "date_entered DESC", 0, false, clsSuiteCRMHelper.GetSugarFields(sModule));
-            if (_result2 != null)
-            {
-                foreach (var oResult in _result2.entry_list)
-                {
-                    try
-                    {
-                        dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
-                        var oItem = lCalItems.Where(a => a.SEntryID == dResult.id.value.ToString() && a.SType == sModule).FirstOrDefault();
-                        if (oItem == default(cAppItem))
-                        {
-                            Outlook.AppointmentItem aItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
-                            aItem.Subject = dResult.name.value.ToString();
-                            aItem.Body = dResult.description.value.ToString();
-                            if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
-                            {
-                                aItem.Start = DateTime.Parse(dResult.date_start.value.ToString());
-                                int iMin = 0, iHour = 0;
-                                if (!string.IsNullOrWhiteSpace(dResult.duration_minutes.value.ToString()))
-                                {
-                                    iMin = int.Parse(dResult.duration_minutes.value.ToString());
-                                }
-                                if (!string.IsNullOrWhiteSpace(dResult.duration_hours.value.ToString()))
-                                {
-                                    iHour = int.Parse(dResult.duration_hours.value.ToString());
-                                }
-                                if (sModule == "Meetings")
-                                {
-                                    aItem.Location = dResult.location.value.ToString();
-                                    aItem.End = aItem.Start;
-                                    if (iHour > 0)
-                                        aItem.End.AddHours(iHour);
-                                    if (iMin > 0)
-                                        aItem.End.AddMinutes(iMin);
-                                }
-                                try
-                                {
-                                    aItem.Duration = iMin + iHour * 60;
-                                }
-                                catch (Exception)
-                                { }
-                            }
-                            Outlook.UserProperty oProp = aItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
-                            oProp.Value = dResult.date_modified.value.ToString();
-                            Outlook.UserProperty oProp1 = aItem.UserProperties.Add("SType", Outlook.OlUserPropertyType.olText);
-                            oProp1.Value = sModule;
-                            Outlook.UserProperty oProp2 = aItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
-                            oProp2.Value = dResult.id.value.ToString();
-                            aItem.Save();
+                            Outlook.UserProperty oProp1 = aItem.UserProperties["SType"];
+                            Outlook.UserProperty oProp2 = aItem.UserProperties["SEntryID"];
                             lCalItems.Add(new cAppItem
                             {
                                 oItem = aItem,
-                                OModifiedDate = dResult.date_modified.value.ToString(),
-                                SType = sModule,
-                                SEntryID = dResult.id.value.ToString(),
-                                Touched = true
+                                OModifiedDate = oProp.Value.ToString(),
+                                SType = oProp1.Value.ToString(),
+                                SEntryID = oProp2.Value.ToString()
                             });
                         }
                         else
                         {
-                            oItem.Touched = true;
-                            Outlook.AppointmentItem aItem = oItem.oItem;
-                            Outlook.UserProperty oProp = aItem.UserProperties["SOModifiedDate"];
-
-                            if (oProp.Value != dResult.date_modified.value.ToString())
+                            lCalItems.Add(new cAppItem
                             {
+                                oItem = aItem,
+                                SType = "Meetings"
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.GetOutlookCalItems");
+            }
+        }
+
+        public DateTime GetStartDate()
+        {
+            DateTime dtRet = DateTime.Now.AddDays(-5);
+            return new DateTime(dtRet.Year, dtRet.Month, dtRet.Day, 0, 0, 0);
+        }
+        public string GetStartDateString()
+        {
+            return " AND [Start] >='" + GetStartDate().ToString("MM/dd/yyyy HH:mm") + "'";
+        }
+        private void SyncMeetings(Outlook.MAPIFolder appointmentsFolder, string sModule)
+        {
+            try
+            {
+                eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(sModule, "",
+                                0, "date_entered DESC", 0, false, clsSuiteCRMHelper.GetSugarFields(sModule));
+                if (_result2 != null)
+                {
+                    foreach (var oResult in _result2.entry_list)
+                    {
+                        try
+                        {
+                            dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
+                            if (DateTime.Parse(dResult.date_start.value.ToString()) < GetStartDate())
+                                continue;
+                            var oItem = lCalItems.Where(a => a.SEntryID == dResult.id.value.ToString() && a.SType == sModule).FirstOrDefault();
+                            if (oItem == default(cAppItem))
+                            {
+                                Outlook.AppointmentItem aItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
                                 aItem.Subject = dResult.name.value.ToString();
                                 aItem.Body = dResult.description.value.ToString();
                                 if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
@@ -1016,44 +1133,107 @@ namespace SuiteCRMAddIn
                                     catch (Exception)
                                     { }
                                 }
-                                if (oProp == null)
-                                    oProp = aItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+                                Outlook.UserProperty oProp = aItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
                                 oProp.Value = dResult.date_modified.value.ToString();
-                                Outlook.UserProperty oProp1 = aItem.UserProperties["SType"];
-                                if (oProp1 == null)
-                                    oProp1 = aItem.UserProperties.Add("SType", Outlook.OlUserPropertyType.olText);
+                                Outlook.UserProperty oProp1 = aItem.UserProperties.Add("SType", Outlook.OlUserPropertyType.olText);
                                 oProp1.Value = sModule;
-                                Outlook.UserProperty oProp2 = aItem.UserProperties["SEntryID"];
-                                if (oProp2 == null)
-                                    oProp2 = aItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+                                Outlook.UserProperty oProp2 = aItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                                 oProp2.Value = dResult.id.value.ToString();
                                 aItem.Save();
+                                lCalItems.Add(new cAppItem
+                                {
+                                    oItem = aItem,
+                                    OModifiedDate = dResult.date_modified.value.ToString(),
+                                    SType = sModule,
+                                    SEntryID = dResult.id.value.ToString(),
+                                    Touched = true
+                                });
+                            }
+                            else
+                            {
+                                oItem.Touched = true;
+                                Outlook.AppointmentItem aItem = oItem.oItem;
+                                Outlook.UserProperty oProp = aItem.UserProperties["SOModifiedDate"];
+
+                                if (oProp.Value != dResult.date_modified.value.ToString())
+                                {
+                                    aItem.Subject = dResult.name.value.ToString();
+                                    aItem.Body = dResult.description.value.ToString();
+                                    if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
+                                    {
+                                        aItem.Start = DateTime.Parse(dResult.date_start.value.ToString());
+                                        int iMin = 0, iHour = 0;
+                                        if (!string.IsNullOrWhiteSpace(dResult.duration_minutes.value.ToString()))
+                                        {
+                                            iMin = int.Parse(dResult.duration_minutes.value.ToString());
+                                        }
+                                        if (!string.IsNullOrWhiteSpace(dResult.duration_hours.value.ToString()))
+                                        {
+                                            iHour = int.Parse(dResult.duration_hours.value.ToString());
+                                        }
+                                        if (sModule == "Meetings")
+                                        {
+                                            aItem.Location = dResult.location.value.ToString();
+                                            aItem.End = aItem.Start;
+                                            if (iHour > 0)
+                                                aItem.End.AddHours(iHour);
+                                            if (iMin > 0)
+                                                aItem.End.AddMinutes(iMin);
+                                        }
+                                        try
+                                        {
+                                            aItem.Duration = iMin + iHour * 60;
+                                        }
+                                        catch (Exception)
+                                        { }
+                                    }
+                                    if (oProp == null)
+                                        oProp = aItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+                                    oProp.Value = dResult.date_modified.value.ToString();
+                                    Outlook.UserProperty oProp1 = aItem.UserProperties["SType"];
+                                    if (oProp1 == null)
+                                        oProp1 = aItem.UserProperties.Add("SType", Outlook.OlUserPropertyType.olText);
+                                    oProp1.Value = sModule;
+                                    Outlook.UserProperty oProp2 = aItem.UserProperties["SEntryID"];
+                                    if (oProp2 == null)
+                                        oProp2 = aItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+                                    oProp2.Value = dResult.id.value.ToString();
+                                    aItem.Save();
+                                }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncMeetings");
+                        }
                     }
-                    catch
-                    { }
                 }
-            }
-            try
-            {
-                if (sModule == "Meetings")
+                try
                 {
-                    var lItemToBeDeletedO = lCalItems.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate) && a.SType == sModule).ToList();
-                    foreach (var oItem in lItemToBeDeletedO)
+                    if (sModule == "Meetings")
                     {
-                        oItem.oItem.Delete();
+                        var lItemToBeDeletedO = lCalItems.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate) && a.SType == sModule).ToList();
+                        foreach (var oItem in lItemToBeDeletedO)
+                        {
+                            oItem.oItem.Delete();
+                        }
+                        lCalItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate) && a.SType == sModule);
                     }
-                    lCalItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate) && a.SType == sModule);
+                    var lItemToBeAddedToS = lCalItems.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate) && a.SType == sModule).ToList();
+                    foreach (var oItem in lItemToBeAddedToS)
+                    {
+                        AddAppointmentToS(oItem.oItem, sModule);
+                    }
                 }
-                var lItemToBeAddedToS = lCalItems.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate) && a.SType == sModule).ToList();
-                foreach (var oItem in lItemToBeAddedToS)
+                catch (Exception ex)
                 {
-                    AddAppointmentToS(oItem.oItem, sModule);
+                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncMeetings");
                 }
             }
-            catch
-            { }
+            catch (Exception ex)
+            {
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncMeetings");
+            }
         }
         private void AddAppointmentToS(Outlook.AppointmentItem aItem, string sModule, string sID = "")
         {
@@ -1110,8 +1290,10 @@ namespace SuiteCRMAddIn
                         lCalItems.Add(new cAppItem { SEntryID = _result, SType = sModule, OModifiedDate = "Fresh", oItem = aItem });
                     }
                 }
-                catch
-                { }
+                catch (Exception ex)
+                {
+                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.AddAppointmentToS");
+                }
             }
         }
         public DateTime GetUTCDateTime(DateTime dateTime)
@@ -1159,7 +1341,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                ex.Data.Clear();
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ThisAddIn_Shutdown");
             }
         }
 
@@ -1169,36 +1351,35 @@ namespace SuiteCRMAddIn
             {
                 this.Application.ItemContextMenuDisplay -= new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.UnregisterEvents");
             }
-
             try
             {
                 this.btnArvive.Click -= new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
             }
-            catch (System.Exception ex1)
+            catch (Exception ex)
             {
-
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.UnregisterEvents");
             }
 
             try
             {
                 this.objExplorer.Application.NewMailEx -= new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
             }
-            catch (System.Exception ex2)
+            catch (Exception ex)
             {
-
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.UnregisterEvents");
             }
 
             try
             {
                 this.objExplorer.Application.ItemSend -= new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
             }
-            catch (System.Exception ex3)
+            catch (Exception ex)
             {
-
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.UnregisterEvents");
             }
 
 
@@ -1262,16 +1443,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "OutlookEvents_ItemSend General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Application_ItemSend");
             }
         }
 
@@ -1297,16 +1469,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "Application_NewMail General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Application_NewMail");
             }
         }
 
@@ -1374,16 +1537,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "Authenticate method General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Authenticate");
             }
         }
 
@@ -1404,17 +1558,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "GetMailFolders method General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.GetMailFolders"); ;
             }
         }
 
@@ -1446,17 +1590,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "ArchiveEmail method General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ArchiveEmail");
             }
         }
 
@@ -1479,17 +1613,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "ArchiveEmailThread method General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ArchiveEmailThread");
             }
 
         }
@@ -1539,19 +1663,7 @@ namespace SuiteCRMAddIn
                     }
                     catch (Exception ex1)
                     {
-                        string strLog;
-                        strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                        strLog += "AddInModule.Base64Encode method General Exception:" + "\n";
-                        strLog += "Message:" + ex.Message + "\n";
-                        strLog += "Source:" + ex.Source + "\n";
-                        strLog += "StackTrace:" + ex.StackTrace + "\n";
-                        strLog += "Data:" + ex.Data.ToString() + "\n";
-                        strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                        strLog += "Inputs:" + "\n";
-                        strLog += "Data:" + objMailAttachment.DisplayName + "\n";
-                        strLog += "-------------------------------------------------------------------------" + "\n";
-                        clsSuiteCRMHelper.WriteLog(strLog);
-                        ex1.Data.Clear();
+                        clsSuiteCRMHelper.WriteException(ex1, "ThisAddIn.Base64Encode");
                     }
                 }
                 finally
@@ -1610,17 +1722,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "ArchiveFolderItems method General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ArchiveFolderItems");
             }
         }
 
@@ -1655,17 +1757,7 @@ namespace SuiteCRMAddIn
                 }
                 catch (Exception ex)
                 {
-                    string strLog;
-                    strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                    strLog += "ProcessMails method General Exception:" + "\n";
-                    strLog += "Message:" + ex.Message + "\n";
-                    strLog += "Source:" + ex.Source + "\n";
-                    strLog += "StackTrace:" + ex.StackTrace + "\n";
-                    strLog += "Data:" + ex.Data.ToString() + "\n";
-                    strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                    strLog += "-------------------------------------------------------------------------" + "\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
-                    ex.Data.Clear();
+                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ProcessMails");
                 }
                 if (dtAutoArchiveFrom != null)
                     break;

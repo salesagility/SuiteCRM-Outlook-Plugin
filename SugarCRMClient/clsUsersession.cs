@@ -81,9 +81,26 @@ namespace SuiteCRMClient
                     var loginReturn = clsGlobals.GetResponse<RESTObjects.Login>("login", loginData);
                     if (loginReturn.ErrorName != null)
                     {
-                        id = "";
-                        SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
-                        throw new Exception(loginReturn.ErrorDescription);
+                        loginData = new
+                        {
+                            @user_auth = new
+                            {
+                                @user_name = SuiteCRMUsername,
+                                @password = SuiteCRMPassword
+                            }
+                        };
+                        loginReturn = clsGlobals.GetResponse<RESTObjects.Login>("login", loginData);
+                        if (loginReturn.ErrorName != null)
+                        {
+                            id = "";
+                            SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+                            throw new Exception(loginReturn.ErrorDescription);
+                        }
+                        else
+                        {
+                            id = loginReturn.SessionID;
+                            SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                        }
                     }
                     else
                     {

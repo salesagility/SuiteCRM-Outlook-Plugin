@@ -395,6 +395,26 @@ namespace SuiteCRMClient
             return hashtable;
         }
        
+        public static void WriteException(Exception ex, string sMethodName)
+        {
+            try
+            {
+                string strLog;
+                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+                strLog += "Method:" + sMethodName + "\n";
+                strLog += "Message:" + ex.Message + "\n";
+                strLog += "Source:" + ex.Source + "\n";
+                strLog += "StackTrace:" + ex.StackTrace + "\n";
+                strLog += "Data:" + ex.Data.ToString() + "\n";
+                strLog += "HResult:" + ex.HResult.ToString() + "\n";
+                strLog += "-------------------------------------------------------------------------" + "\n";
+                clsSuiteCRMHelper.WriteLog(strLog);
+                ex.Data.Clear();
+            }
+            catch { }
+
+        }
+
         public static void WriteLog(string strLog)
         {
             StreamWriter log;
