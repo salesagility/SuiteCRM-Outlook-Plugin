@@ -14,6 +14,7 @@ namespace SuiteCRMAddIn
         public string SType { get; set; }
         public string OModifiedDate { get; set; }
         public Outlook.AppointmentItem oItem { get; set; }
+        public bool Delete { get; set; }
         
     }
 
@@ -23,7 +24,7 @@ namespace SuiteCRMAddIn
         public bool Touched { get; set; }
         public string OModifiedDate { get; set; }
         public Outlook.TaskItem oItem { get; set; }
-
+        public bool Delete { get; set; }
     }
     public class cContactItem
     {
@@ -31,6 +32,7 @@ namespace SuiteCRMAddIn
         public bool Touched { get; set; }
         public string OModifiedDate { get; set; }
         public Outlook.ContactItem oItem { get; set; }
+        public bool Delete { get; set; }
 
     }
 }

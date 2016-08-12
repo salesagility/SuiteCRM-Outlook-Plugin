@@ -54,6 +54,7 @@ namespace SuiteCRMClient
             };
             return clsGlobals.GetResponse<eModuleList>("get_available_modules", data);            
         }
+                
 
         public static string GetUserId()
         {
@@ -97,6 +98,70 @@ namespace SuiteCRMClient
             {
                 exception.Data.Clear();
                 return string.Empty;
+            }
+        }
+
+        public static string getRelationship(string MainModule, string ID, string ModuleToFind)
+        {
+            try
+            {
+                string strUserID = clsSuiteCRMHelper.GetUserId();
+                if (strUserID == "")
+                {
+                    SuiteCRMUserSession.Login();
+                }
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = MainModule,
+                    @module_id = ID,
+                    @link_field_name = ModuleToFind,
+                    @related_module_query = "",
+                    @related_fields = new string[] { "id" }/*,
+                    @query = ""
+                    //@limit = 1*/
+                };
+                eGetRelationshipResult _result = clsGlobals.GetResponse<eGetRelationshipResult>("get_relationships", data);
+                if (_result.entry_list.Length > 0)
+                    return _result.entry_list[0].id;
+                return "";
+            }
+            catch (System.Exception exception)
+            {
+                exception.Data.Clear();
+                return "";
+            }            
+        }
+
+        public static eEntryValue[] getRelationships(string MainModule, string ID, string ModuleToFind, string[] fields)
+        {
+            try
+            {
+                string strUserID = clsSuiteCRMHelper.GetUserId();
+                if (strUserID == "")
+                {
+                    SuiteCRMUserSession.Login();
+                }
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = MainModule,
+                    @module_id = ID,
+                    @link_field_name = ModuleToFind,
+                    @related_module_query = "",
+                    @related_fields = fields/*,
+                    @query = ""
+                    //@limit = 1*/
+                };
+                eGetRelationshipResult _result = clsGlobals.GetResponse<eGetRelationshipResult>("get_relationships", data);
+                if (_result.entry_list.Length > 0)
+                    return _result.entry_list;
+                return null;
+            }
+            catch (System.Exception exception)
+            {
+                exception.Data.Clear();
+                return null;
             }
         }
 
@@ -186,7 +251,7 @@ namespace SuiteCRMClient
             return new eNameValue { name = name, value = value };
         }       
 
-        public static string GetAttendeeList(string module, string id)
+        public static string GetAttendeeList(string id)
         {
             string strUserID = clsSuiteCRMHelper.GetUserId();
             if (strUserID == "")
@@ -199,9 +264,9 @@ namespace SuiteCRMClient
                 object data = new
                 {
                     @session = SuiteCRMUserSession.id,
-                    @module_name = module,
+                    @module_name = "Meetings",
                     @module_id = id,
-                    @link_field_name = "employees",
+                    @link_field_name = "contacts",
                     @related_fields = new string[] { "email1" }
                     /*,
                     @related_module_link_name_to_fields_array = new object[] {new object[]{
@@ -216,6 +281,7 @@ namespace SuiteCRMClient
             }
             return _result;
         }
+        
         public static eGetEntryListResult GetEntryList(string module, string query, int limit, string order_by, int offset, bool GetDeleted, string[] fields)
         {
             string strUserID = clsSuiteCRMHelper.GetUserId();
@@ -332,7 +398,7 @@ namespace SuiteCRMClient
             }
             if (module == "Meetings")
             {
-                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "Users" };
+                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees" };
             }
             if (module == "Calls")
             {

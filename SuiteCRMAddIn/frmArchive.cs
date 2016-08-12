@@ -493,6 +493,9 @@ namespace SuiteCRMAddIn
                 {
 
                 }
+                
+                itemFromID.Categories = "SuiteCRM";
+                itemFromID.Save();
                 if (settings.ArchiveAttachmentsDefault)
                 {
                     try

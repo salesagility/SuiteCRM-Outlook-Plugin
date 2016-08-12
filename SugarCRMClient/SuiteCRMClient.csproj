@@ -68,6 +68,7 @@
     <Compile Include="RESTObjects\eGetEntryListResultEncoded.cs" />
     <Compile Include="RESTObjects\eGetEntryResult.cs" />
     <Compile Include="RESTObjects\eGetMailmergeDocumentResult.cs" />
+    <Compile Include="RESTObjects\eGetRelationshipResult.cs" />
     <Compile Include="RESTObjects\eGetRelationshipsResult.cs" />
     <Compile Include="RESTObjects\eGetSyncResultEncoded.cs" />
     <Compile Include="RESTObjects\eIdMod.cs" />
