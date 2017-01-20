@@ -683,7 +683,8 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception exception)
             {
-                MessageBox.Show("There was an error while archiving", "Error");
+                clsSuiteCRMHelper.WriteException(exception, "btnArchive_Click");
+                MessageBox.Show("There was an error while archiving", "Error");             
                 base.Enabled = true;
                 this.Cursor = Cursors.Default;
             }

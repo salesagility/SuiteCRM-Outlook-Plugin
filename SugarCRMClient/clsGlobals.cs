@@ -65,7 +65,7 @@ namespace SuiteCRMClient
             return ret;
         }
 
-        public static T GetResponse<T>(string strMethod, object objInput, byte[] strFileContent = null)
+        public static T GetResponse<T>(string strMethod, object objInput, byte[] strFileContent = null, bool islog = false)
         {
             try
             {
@@ -106,6 +106,8 @@ namespace SuiteCRMClient
                             StreamReader reader = new StreamReader(input);
                             string buffer = reader.ReadToEnd();
                             var objReturn = JsonConvert.DeserializeObject<T>(buffer);
+                            if (islog)
+                                clsSuiteCRMHelper.WriteLog("Responce : " + buffer);
                             return objReturn;
                         }
                     }

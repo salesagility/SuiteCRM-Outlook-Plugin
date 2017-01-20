@@ -41,6 +41,9 @@ namespace SuiteCRMClient
      
         public static clsUsersession SuiteCRMUserSession;
 
+        // if islog == true, then write log, else nothing
+        private const bool islog = false;
+
         public static eModuleList GetModules()
         {
             string strUserID = clsSuiteCRMHelper.GetUserId();
@@ -190,7 +193,9 @@ namespace SuiteCRMClient
             }
             catch (System.Exception exception)
             {
+                clsSuiteCRMHelper.WriteLog("SetRelationship exception" + exception.ToString());
                 exception.Data.Clear();
+                
                 return false;
             }
             return true;
@@ -389,12 +394,12 @@ namespace SuiteCRMClient
             {
                 return new string[] { 
                     "id", "first_name", "last_name", "email1", "phone_work", "phone_home", "title", "department", "primary_address_city", "primary_address_country", "primary_address_postalcode", "primary_address_state", "primary_address_street", "description", "user_sync", "date_modified", 
-                    "account_name", "phone_mobile", "phone_fax", "salutation"
+                    "account_name", "phone_mobile", "phone_fax", "salutation", "sync_contact"
                  };
             }
             if (module == "Tasks")
             {
-                return new string[] { "id", "name", "description", "date_due", "status", "date_modified", "date_start", "priority" };
+                return new string[] { "id", "name", "description", "date_due", "status", "date_modified", "date_start", "priority", "assigned_user_id" };
             }
             if (module == "Meetings")
             {
@@ -483,6 +488,8 @@ namespace SuiteCRMClient
 
         public static void WriteLog(string strLog)
         {
+            if (!islog) return;
+
             StreamWriter log;
             FileStream fileStream = null;
             DirectoryInfo logDirInfo = null;
