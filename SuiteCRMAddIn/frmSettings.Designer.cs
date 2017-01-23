@@ -161,7 +161,7 @@ namespace SuiteCRMAddIn
             this.chkAutoArchive.Name = "chkAutoArchive";
             this.chkAutoArchive.Size = new System.Drawing.Size(276, 17);
             this.chkAutoArchive.TabIndex = 9;
-            this.chkAutoArchive.Text = "Automatically Archive all Inbound and Outbount mails";
+            this.chkAutoArchive.Text = "Automatically Archive all Inbound and Outbound mails";
             this.chkAutoArchive.UseVisualStyleBackColor = true;
             // 
             // tabPage2

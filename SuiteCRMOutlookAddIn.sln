@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuiteCRMClient", "SugarCRMClient\SuiteCRMClient.csproj", "{383E8EE7-604D-447D-A2C2-C50080D28F69}"
 EndProject
@@ -53,8 +53,8 @@ Global
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.Release|x86.ActiveCfg = Release|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|Any CPU.Build.0 = Release|Any CPU
-		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|Mixed Platforms.Build.0 = Release|Any CPU
+		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|Mixed Platforms.Build.0 = Debug|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|x86.ActiveCfg = Release|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
@@ -78,8 +78,8 @@ Global
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.Release|x86.ActiveCfg = Release|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|Any CPU.Build.0 = Release|Any CPU
-		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|Mixed Platforms.Build.0 = Release|Any CPU
+		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|Mixed Platforms.Build.0 = Debug|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|x86.ActiveCfg = Release|Any CPU
 		{068824B4-9D40-4ACB-B21A-1F0BFA9C0D74}.CD_ROM|Any CPU.ActiveCfg = CD_ROM
 		{068824B4-9D40-4ACB-B21A-1F0BFA9C0D74}.CD_ROM|Any CPU.Build.0 = CD_ROM

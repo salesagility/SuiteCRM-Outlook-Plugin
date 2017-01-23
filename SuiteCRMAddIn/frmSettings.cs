@@ -302,7 +302,7 @@ namespace SuiteCRMAddIn
                     }
                     else
                     {
-                        MessageBox.Show("Login Succeed!!!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        MessageBox.Show("Login Successful!!!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     }
                     settings.host = txtURL.Text.Trim();
                     settings.username = txtUsername.Text.Trim();

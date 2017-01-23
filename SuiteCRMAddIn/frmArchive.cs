@@ -493,6 +493,9 @@ namespace SuiteCRMAddIn
                 {
 
                 }
+                
+                itemFromID.Categories = "SuiteCRM";
+                itemFromID.Save();
                 if (settings.ArchiveAttachmentsDefault)
                 {
                     try
@@ -680,7 +683,8 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception exception)
             {
-                MessageBox.Show("There was an error while archiving", "Error");
+                clsSuiteCRMHelper.WriteException(exception, "btnArchive_Click");
+                MessageBox.Show("There was an error while archiving", "Error");             
                 base.Enabled = true;
                 this.Cursor = Cursors.Default;
             }
