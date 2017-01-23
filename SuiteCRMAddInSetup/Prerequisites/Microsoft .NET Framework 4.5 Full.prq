@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SetupPrereq>
+  <conditions>
+    <condition Type="2" Comparison="2" Path="HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" FileName="Release" ReturnValue="378389"></condition>
+  </conditions>
+  <operatingsystemconditions>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="0" PlatformId="2" CSDVersion="" Bits="1" ProductType="2|3"></operatingsystemcondition>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="1" PlatformId="2" CSDVersion="" Bits="1"></operatingsystemcondition>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="0" PlatformId="2" CSDVersion="" Bits="4" ProductType="2|3"></operatingsystemcondition>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="1" PlatformId="2" CSDVersion="" Bits="4"></operatingsystemcondition>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="2" PlatformId="2" CSDVersion="" Bits="1"></operatingsystemcondition>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="2" PlatformId="2" CSDVersion="" Bits="4"></operatingsystemcondition>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="3" PlatformId="2" CSDVersion="" Bits="1"></operatingsystemcondition>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="3" PlatformId="2" CSDVersion="" Bits="4"></operatingsystemcondition>
+    <operatingsystemcondition MajorVersion="10" MinorVersion="0" PlatformId="2" CSDVersion="" Bits="1"></operatingsystemcondition>
+    <operatingsystemcondition MajorVersion="10" MinorVersion="0" PlatformId="2" CSDVersion="" Bits="4"></operatingsystemcondition>
+  </operatingsystemconditions>
+  <files>
+    <file LocalFile="&lt;ISProductFolder&gt;\SetupPrerequisites\Microsoft .net\4.5\Full\dotnetfx45_full_x86_x64.exe" URL="http://go.microsoft.com/fwlink/?LinkId=255995" CheckSum="D02DC8B69A702A47C083278938C4D2F1" FileSize="0,50352408"></file>
+  </files>
+  <execute file="dotnetfx45_full_x86_x64.exe" cmdline="/showrmui /passive " cmdlinesilent="/q /norestart" returncodetoreboot="1641,3010" requiresmsiengine="1"></execute>
+  <properties Id="{72D7E3D1-C9DF-4FA6-9F9B-4E5117AB2919}" Description="This prerequisite installs the .NET Framework 4.5 full standalone package." AltPrqURL="http://saturn.installshield.com/is/prerequisites/microsoft .net framework 4.5 full.prq"></properties>
+  <behavior Reboot="2"></behavior>
+</SetupPrereq>
