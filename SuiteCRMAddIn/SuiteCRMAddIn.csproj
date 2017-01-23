@@ -294,7 +294,7 @@
       <Project>{086e7c3c-e203-4335-89b7-b6cbfc3370e2}</Project>
       <Name>ListViewEx</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SugarCRMClient\SuiteCRMClient.csproj">
+    <ProjectReference Include="..\SuiteCRMClient\SuiteCRMClient.csproj">
       <Project>{383e8ee7-604d-447d-a2c2-c50080d28f69}</Project>
       <Name>SuiteCRMClient</Name>
     </ProjectReference>
