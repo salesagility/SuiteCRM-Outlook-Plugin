@@ -31,6 +31,15 @@ namespace SuiteCRMClient
 
     public static class clsGlobals
     {
+        private static readonly JsonSerializer Serializer;
+
+        static clsGlobals()
+        {
+            Serializer = new JsonSerializer();
+            Serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
+            Serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+        }
+
         public static Uri SuiteCRMURL { get; set; }
 
         public static T GetCrmResponse<T>(string strMethod, object objInput, byte[] strFileContent = null, bool islog = false)
@@ -61,14 +70,9 @@ namespace SuiteCRMClient
 
         private static string SerialiseJson(object parameters)
         {
-            JsonSerializer serializer = new JsonSerializer();
-            serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
-            serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-
             var buffer = new StringBuilder();
             var swriter = new StringWriter(buffer);
-
-            serializer.Serialize(swriter, parameters);
+            Serializer.Serialize(swriter, parameters);
             return buffer.ToString();
         }
 
