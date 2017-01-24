@@ -423,62 +423,24 @@ namespace SuiteCRMAddIn
             return counter;
         }
 
-        public string archiveEmail(MailItem itemFromID)
+        public string archiveEmail(MailItem mailItem)
         {
             try
             {
-                string body = string.Empty;
-                string subject = string.Empty;
-                string hTMLBody = itemFromID.HTMLBody;
                 eNameValue[] data = new eNameValue[12];
-                body = itemFromID.Body;
-                subject = itemFromID.Subject;
-
-                string type = this.type;
-                if (type == null)
-                {
-                    goto Label_017D;
-                }
-                if (!(type == "autoINBOUND"))
-                {
-                    if (type == "autoOUTBOUND")
-                    {
-                        goto Label_0129;
-                    }
-                    if (type == "SendArchive")
-                    {
-                        goto Label_0153;
-                    }
-                    goto Label_017D;
-                }
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.SentOn.ToString("yyyy-MM-dd HH:mm:ss"));
-                goto Label_01A5;
-            Label_0129:
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                goto Label_01A5;
-            Label_0153:
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                goto Label_01A5;
-            Label_017D:
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.SentOn.ToString("yyyy-MM-dd HH:mm:ss"));
-        Label_01A5:
-            TextBox oTB = new TextBox();
-        oTB.Multiline = true;
-        oTB.WordWrap = false;
-        oTB.ScrollBars = ScrollBars.Both;
-        oTB.Text = itemFromID.Subject;
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", oTB.Text);
-                data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", itemFromID.EntryID);
+                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? "");
+                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem).ToString("yyyy-MM-dd HH:mm:ss"));
+                data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
                 data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
-                oTB.Text = itemFromID.Body;
-                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", oTB.Text);
-                data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", hTMLBody);
-                data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(itemFromID, this.type));
-                data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", itemFromID.To);
-                data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", itemFromID.CC);
-                data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", itemFromID.BCC);
-                data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", itemFromID.ReplyRecipientNames);
+                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", mailItem.Body ?? "");
+                data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", mailItem.HTMLBody);
+                data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(mailItem, this.type));
+                data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", mailItem.To);
+                data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", mailItem.CC);
+                data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", mailItem.BCC);
+                data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", mailItem.ReplyRecipientNames);
                 data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
+
                 string str = clsSuiteCRMHelper.SetEntry(data);
                 if (str.Length < 0x24)
                 {
@@ -489,22 +451,18 @@ namespace SuiteCRMAddIn
                         return "-1";
                     }
                 }
-                else
-                {
-
-                }
                 
-                itemFromID.Categories = "SuiteCRM";
-                itemFromID.Save();
+                mailItem.Categories = "SuiteCRM";
+                mailItem.Save();
                 if (settings.ArchiveAttachmentsDefault)
                 {
                     try
                     {
-                        if (itemFromID.Attachments.Count > 0)
+                        if (mailItem.Attachments.Count > 0)
                         {
-                            foreach (Attachment attachment in itemFromID.Attachments)
+                            foreach (Attachment attachment in mailItem.Attachments)
                             {
-                                if (!clsSuiteCRMHelper.UploadAttahcment(new SuiteCRMClient.clsEmailAttachments { DisplayName = attachment.DisplayName, FileContentInBase64String = Globals.ThisAddIn.Base64Encode(attachment, itemFromID) }, str))
+                                if (!clsSuiteCRMHelper.UploadAttahcment(new SuiteCRMClient.clsEmailAttachments { DisplayName = attachment.DisplayName, FileContentInBase64String = Globals.ThisAddIn.Base64Encode(attachment, mailItem) }, str))
                                 {
 
                                 }
@@ -523,6 +481,24 @@ namespace SuiteCRMAddIn
                 exception2.Data.Clear();
                 return "-1";
             }
+        }
+
+        private DateTime DateTimeOfMailItem(MailItem mailItem)
+        {
+            DateTime dateTime;
+            switch (this.type)
+            {
+                case "autoOUTBOUND":
+                case "SendArchive":
+                    dateTime = mailItem.CreationTime;
+                    break;
+                case null:
+                case "autoINBOUND":
+                default:
+                    dateTime = mailItem.SentOn;
+                    break;
+            }
+            return dateTime;
         }
 
         public bool createEmailRelationship(string emailId, TreeNode node)
@@ -633,46 +609,52 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                bool flag = false;
+                bool success = true;
                 base.Enabled = false;
                 this.Cursor = Cursors.WaitCursor;
-                foreach (object obj2 in Globals.ThisAddIn.Application.ActiveExplorer().Selection)
+                try
                 {
-                    MailItem o = obj2 as MailItem;
-                    if (this.type == "SendArchive")
+                    foreach (object obj2 in Globals.ThisAddIn.Application.ActiveExplorer().Selection)
                     {
-                        o.Save();
-                    }
-                    if (this.tsResults.Nodes.Count > 0)
-                    {
-                        if (this.traverseTree(this.tsResults, 0) > 0)
+                        MailItem o = obj2 as MailItem;
+                        if (this.type == "SendArchive")
                         {
-                            string emailId = this.archiveEmail(o);
-                            if (emailId != "-1")
+                            o.Save();
+                        }
+                        if (this.tsResults.Nodes.Count > 0)
+                        {
+                            if (this.traverseTree(this.tsResults, 0) > 0)
                             {
-                                foreach (TreeNode node in this.checkedNodes)
+                                string emailId = this.archiveEmail(o);
+                                if (emailId != "-1")
                                 {
-                                    this.createEmailRelationship(emailId, node);
+                                    foreach (TreeNode node in this.checkedNodes)
+                                    {
+                                        this.createEmailRelationship(emailId, node);
+                                    }
                                 }
                             }
+                            else
+                            {
+                                success = false;
+                                MessageBox.Show("Error Archiving Email", "Error");
+                            }
+                            this.checkedNodes.Clear();
                         }
                         else
                         {
-                            flag = true;
-                            MessageBox.Show("Error Archiving Email", "Error");
+                            success = false;
+                            MessageBox.Show("There are no search results.", "Error");
                         }
-                        this.checkedNodes.Clear();
+                        Marshal.ReleaseComObject(o);
                     }
-                    else
-                    {
-                        flag = true;
-                        MessageBox.Show("There are no search results.", "Error");
-                    }
-                    Marshal.ReleaseComObject(o);
                 }
-                base.Enabled = true;
-                this.Cursor = Cursors.Default;
-                if (!flag)
+                finally
+                {
+                    base.Enabled = true;
+                    this.Cursor = Cursors.Default;
+                }
+                if (success)
                 {
                     if (settings.ShowConfirmationMessageArchive)
                     {
@@ -684,9 +666,7 @@ namespace SuiteCRMAddIn
             catch (System.Exception exception)
             {
                 clsSuiteCRMHelper.WriteException(exception, "btnArchive_Click");
-                MessageBox.Show("There was an error while archiving", "Error");             
-                base.Enabled = true;
-                this.Cursor = Cursors.Default;
+                MessageBox.Show("There was an error while archiving", "Error");
             }
         }
 
