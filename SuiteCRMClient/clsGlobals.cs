@@ -21,16 +21,10 @@
  * @author SalesAgility <info@salesagility.com>
  */
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using System.IO;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Collections;
-using System.Windows.Forms;
 
 namespace SuiteCRMClient
 {
@@ -39,20 +33,30 @@ namespace SuiteCRMClient
     {
         public static Uri SuiteCRMURL { get; set; }
 
-        public static HttpWebRequest CreateWebRequest(string url, int contentLength)
+        public static T GetCrmResponse<T>(string strMethod, object objInput, byte[] strFileContent = null, bool islog = false)
         {
-            HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
-
-            request.Method = "POST";
-            request.ContentLength = contentLength;
-            request.ContentType = "application/x-www-form-urlencoded; charset=utf-8";
-            return request;
+            try
+            {
+                var request = CreateCrmRestRequest(strMethod, objInput);
+                var buffer = GetResponseString(strMethod, objInput, islog, request);
+                return JsonConvert.DeserializeObject<T>(buffer);
+            }
+            catch (Exception ex)
+            {
+                LogException(strMethod, objInput, ex);
+                throw;
+            }
         }
 
-        public static string CreateFormattedPostBody(string method, object jsonDataObject)
+        private static HttpWebRequest CreateCrmRestRequest(string strMethod, object objInput)
         {
-            var restData = SerialiseJson(jsonDataObject);
-            return $"method={WebUtility.UrlEncode(method)}&input_type=JSON&response_type=JSON&rest_data={WebUtility.UrlEncode(restData)}";
+            var requestUrl = SuiteCRMURL.AbsoluteUri + "service/v4_1/rest.php";
+            var restData = SerialiseJson(objInput);
+            var jsonData = $"method={WebUtility.UrlEncode(strMethod)}&input_type=JSON&response_type=JSON&rest_data={WebUtility.UrlEncode(restData)}";
+
+            var contentTypeAndEncoding = "application/x-www-form-urlencoded; charset=utf-8";
+            var bytes = Encoding.UTF8.GetBytes(jsonData);
+            return CreatePostRequest(requestUrl, bytes, contentTypeAndEncoding);
         }
 
         private static string SerialiseJson(object parameters)
@@ -68,70 +72,77 @@ namespace SuiteCRMClient
             return buffer.ToString();
         }
 
-        public static T GetResponse<T>(string strMethod, object objInput, byte[] strFileContent = null, bool islog = false)
+        private static string GetResponseString(string strMethod, object objInput, bool islog, HttpWebRequest request)
         {
-            try
+            using (var response = request.GetResponse() as HttpWebResponse)
             {
-                var requestUrl = SuiteCRMURL.AbsoluteUri + "service/v4_1/rest.php";
-                var jsonData = CreateFormattedPostBody(strMethod, objInput);
-
-                byte[] bytes = Encoding.UTF8.GetBytes(jsonData);
-
-                HttpWebRequest request = CreateWebRequest(requestUrl, bytes.Length);
-
-                using (var requestStream = request.GetRequestStream())
+                if (response.StatusCode != HttpStatusCode.OK)
                 {
-                    requestStream.Write(bytes, 0, bytes.Length);
+                    LogFailedRequest(strMethod, objInput, response);
+                    throw new Exception(response.StatusDescription);
                 }
-                using (var response = request.GetResponse() as HttpWebResponse)
-                {
-                    if (response.StatusCode != HttpStatusCode.OK)
-                    {
-                        string strLog;
-                        strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                        strLog += "GetResponse method Webserver Exception:" + "\n";
-                        strLog += "Status Description:" + response.StatusDescription + "\n";
-                        strLog += "Status Code:" + response.StatusCode + "\n";
-                        strLog += "Method:" + response.Method + "\n";
-                        strLog += "Response URI:" + response.ResponseUri.ToString() + "\n";
-                        strLog += "Inputs:" + "\n";
-                        strLog += "Method:" + strMethod + "\n";
-                        strLog += "Data:" + objInput.ToString() + "\n";
-                        strLog += "-------------------------------------------------------------------------" + "\n";
-                        clsSuiteCRMHelper.WriteLog(strLog);
-                        throw new Exception(response.StatusDescription);
-                    }
-                    else
-                    {
-                        using (Stream input = response.GetResponseStream())
-                        {
-                            StreamReader reader = new StreamReader(input);
-                            string buffer = reader.ReadToEnd();
-                            var objReturn = JsonConvert.DeserializeObject<T>(buffer);
-                            if (islog)
-                                clsSuiteCRMHelper.WriteLog("Responce : " + buffer);
-                            return objReturn;
-                        }
-                    }
-                }
+
+               return GetStringFromWebResponse(response, islog);
             }
-            catch (Exception ex)
+        }
+
+        private static string GetStringFromWebResponse(HttpWebResponse response, bool isLog)
+        {
+            using (var input = response.GetResponseStream())
+            using(var reader = new StreamReader(input))
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "GetResponse method General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "Inputs:" + "\n";
-                strLog += "Method:" + strMethod + "\n";
-                strLog += "Data:" + objInput.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                throw ex;
+                var result = reader.ReadToEnd();
+                if (isLog) clsSuiteCRMHelper.WriteLog("Response : " + result);
+                return result;
             }
-        }        
+        }
+
+        private static HttpWebRequest CreatePostRequest(string requestUrl, byte[] bytes, string contentTypeAndEncoding)
+        {
+            var request = WebRequest.Create(requestUrl) as HttpWebRequest;
+
+            request.Method = "POST";
+            request.ContentLength = bytes.Length;
+            request.ContentType = contentTypeAndEncoding;
+
+            using (var requestStream = request.GetRequestStream())
+            {
+                requestStream.Write(bytes, 0, bytes.Length);
+            }
+            return request;
+        }
+
+        private static void LogException(string strMethod, object objInput, Exception ex)
+        {
+            string strLog;
+            strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+            strLog += "GetResponse method General Exception:" + "\n";
+            strLog += "Message:" + ex.Message + "\n";
+            strLog += "Source:" + ex.Source + "\n";
+            strLog += "StackTrace:" + ex.StackTrace + "\n";
+            strLog += "Data:" + ex.Data.ToString() + "\n";
+            strLog += "HResult:" + ex.HResult.ToString() + "\n";
+            strLog += "Inputs:" + "\n";
+            strLog += "Method:" + strMethod + "\n";
+            strLog += "Data:" + objInput.ToString() + "\n";
+            strLog += "-------------------------------------------------------------------------" + "\n";
+            clsSuiteCRMHelper.WriteLog(strLog);
+        }
+
+        private static void LogFailedRequest(string strMethod, object objInput, HttpWebResponse response)
+        {
+            string strLog;
+            strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
+            strLog += "GetResponse method Webserver Exception:" + "\n";
+            strLog += "Status Description:" + response.StatusDescription + "\n";
+            strLog += "Status Code:" + response.StatusCode + "\n";
+            strLog += "Method:" + response.Method + "\n";
+            strLog += "Response URI:" + response.ResponseUri.ToString() + "\n";
+            strLog += "Inputs:" + "\n";
+            strLog += "Method:" + strMethod + "\n";
+            strLog += "Data:" + objInput.ToString() + "\n";
+            strLog += "-------------------------------------------------------------------------" + "\n";
+            clsSuiteCRMHelper.WriteLog(strLog);
+        }
     }
 }
