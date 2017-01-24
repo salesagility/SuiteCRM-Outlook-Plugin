@@ -225,6 +225,7 @@
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="WaitCursor.cs" />
     <EmbeddedResource Include="AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
     </EmbeddedResource>

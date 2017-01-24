@@ -124,35 +124,25 @@ namespace SuiteCRMAddIn
         public void btnSearch_Click(object sender, EventArgs e)
         {
             this.tsResults.Nodes.Clear();
-            this.Cursor = Cursors.WaitCursor;
 
-            //if (!UnallowedNumber(this.txtSearch.Text))
-            //{
-                if (this.txtSearch.Text.Contains<char>(','))
+            if (this.txtSearch.Text.Contains<char>(','))
+            {
+                foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }))
                 {
-                    foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }))
-                    {
-                        this.Search(str);
-                    }
+                    this.Search(str);
                 }
-                if (this.txtSearch.Text.Contains(";"))
+            }
+            if (this.txtSearch.Text.Contains(";"))
+            {
+                foreach (string str2 in this.txtSearch.Text.Split(new char[] { ';' }))
                 {
-                    foreach (string str2 in this.txtSearch.Text.Split(new char[] { ';' }))
-                    {
-                        this.Search(str2);
-                    }
+                    this.Search(str2);
                 }
-                else
-                {
-                    this.Search(this.txtSearch.Text);
-                }
-            //}
-            //else
-            //{
-            //    this.tsResults.Nodes.Clear();
-            //    this.Cursor = Cursors.Default;
-            //    MessageBox.Show("The search cannot start with a number", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            //}
+            }
+            else
+            {
+                this.Search(this.txtSearch.Text);
+            }
         }
 
         private bool UnallowedNumber(string strText)
@@ -171,15 +161,14 @@ namespace SuiteCRMAddIn
 
         public void Search(string query)
         {
+            using(WaitCursor.For(this))
             try
             {
-                this.Cursor = Cursors.WaitCursor;
                 List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
                 this.tsResults.CheckBoxes = true;
                 if (query == string.Empty)
                 {
                     MessageBox.Show("Please enter some text to search", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    this.Cursor = Cursors.Default;
                 }
                 else
                 {
@@ -321,7 +310,6 @@ namespace SuiteCRMAddIn
                         this.tsResults.CheckBoxes = false;
                     }
                     this.txtSearch.Enabled = true;
-                    this.Cursor = Cursors.Default;
                 }
             }
             catch (System.Exception ex)
@@ -329,7 +317,6 @@ namespace SuiteCRMAddIn
                 ex.Data.Clear();
 
                 this.tsResults.Nodes.Clear();
-                this.Cursor = Cursors.Default;
                 TreeNode node2 = new TreeNode("No results found")
                 {
                     Name = "No results",
@@ -624,9 +611,7 @@ namespace SuiteCRMAddIn
             try
             {
                 bool success = true;
-                base.Enabled = false;
-                this.Cursor = Cursors.WaitCursor;
-                try
+                using (WaitCursor.For(this, shouldDisable: true))
                 {
                     foreach (var o in Globals.ThisAddIn.SelectedEmails)
                     {
@@ -641,11 +626,7 @@ namespace SuiteCRMAddIn
                         }
                     }
                 }
-                finally
-                {
-                    base.Enabled = true;
-                    this.Cursor = Cursors.Default;
-                }
+
                 if (success)
                 {
                     if (settings.ShowConfirmationMessageArchive)
