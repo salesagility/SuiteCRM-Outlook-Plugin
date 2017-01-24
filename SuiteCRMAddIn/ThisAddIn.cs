@@ -574,7 +574,7 @@ namespace SuiteCRMAddIn
                     else
                         data[17] = clsSuiteCRMHelper.SetNameValuePair("id", sID);
 
-                    _result = clsSuiteCRMHelper.SetEntry(data, "Contacts");
+                    _result = clsSuiteCRMHelper.SetEntryUnsafe(data, "Contacts");
                     Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
                     if (oProp == null)
                         oProp = oItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
@@ -640,7 +640,7 @@ namespace SuiteCRMAddIn
                             eNameValue[] data = new eNameValue[2];
                             data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
                             data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                            clsSuiteCRMHelper.SetEntry(data, "Contacts");
+                            clsSuiteCRMHelper.SetEntryUnsafe(data, "Contacts");
                             oItem.Delete = true;
                         }
                     }
@@ -1134,7 +1134,7 @@ namespace SuiteCRMAddIn
                     else
                         data[6] = clsSuiteCRMHelper.SetNameValuePair("id", sID);
 
-                    _result = clsSuiteCRMHelper.SetEntry(data, "Tasks");
+                    _result = clsSuiteCRMHelper.SetEntryUnsafe(data, "Tasks");
                     Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
                     if (oProp == null)
                         oProp = oItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
@@ -1185,7 +1185,7 @@ namespace SuiteCRMAddIn
                                 eNameValue[] data = new eNameValue[2];
                                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
                                 data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                                clsSuiteCRMHelper.SetEntry(data, "Tasks");
+                                clsSuiteCRMHelper.SetEntryUnsafe(data, "Tasks");
                                 oItem.Delete = true;
                             }
                         }
@@ -1249,7 +1249,7 @@ namespace SuiteCRMAddIn
                                 eNameValue[] data = new eNameValue[2];
                                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
                                 data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                                clsSuiteCRMHelper.SetEntry(data, oItem.SType);
+                                clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.SType);
                                 oItem.Delete = true;
                             }
                         }                        
@@ -1663,7 +1663,7 @@ namespace SuiteCRMAddIn
                     else
                         data[7] = clsSuiteCRMHelper.SetNameValuePair("id", sID);
 
-                    _result = clsSuiteCRMHelper.SetEntry(data, sModule);
+                    _result = clsSuiteCRMHelper.SetEntryUnsafe(data, sModule);
                     if (sID == "")
                     {
                         clsSuiteCRMHelper.WriteLog("    -- AddAppointmentToS AddAppointmentToS sID =" + sID);
@@ -1675,7 +1675,7 @@ namespace SuiteCRMAddIn
                             module1 = "Users",
                             module1_id = clsSuiteCRMHelper.GetUserId()
                         };
-                        clsSuiteCRMHelper.SetRelationship(info);
+                        clsSuiteCRMHelper.SetRelationshipUnsafe(info);
                                                 
                     }
                     if (aItem.Recipients!=null)
@@ -1724,7 +1724,7 @@ namespace SuiteCRMAddIn
 
                                 clsSuiteCRMHelper.WriteLog("    SetRelationship 1");
                                 clsSuiteCRMHelper.WriteLog("    sCID=" + sCID); 
-                                clsSuiteCRMHelper.SetRelationship(info);
+                                clsSuiteCRMHelper.SetRelationshipUnsafe(info);
 
                                 string AccountID = clsSuiteCRMHelper.getRelationship("Contacts", sCID, "accounts");
 
@@ -1737,7 +1737,7 @@ namespace SuiteCRMAddIn
                                         module1 = "Accounts",
                                         module1_id = AccountID
                                     };
-                                    clsSuiteCRMHelper.SetRelationship(info);
+                                    clsSuiteCRMHelper.SetRelationshipUnsafe(info);
                                 }
                                 continue;
                             }
@@ -1751,7 +1751,7 @@ namespace SuiteCRMAddIn
                                     module1 = "Users",
                                     module1_id = sCID
                                 };
-                                clsSuiteCRMHelper.SetRelationship(info);
+                                clsSuiteCRMHelper.SetRelationshipUnsafe(info);
                                 continue;
                             }
                             sCID = GetID(objRecepient.Address, "Leads");
@@ -1765,7 +1765,7 @@ namespace SuiteCRMAddIn
                                     module1_id = sCID
                                 };
                                 clsSuiteCRMHelper.WriteLog("    SetRelationship 2");
-                                clsSuiteCRMHelper.SetRelationship(info);
+                                clsSuiteCRMHelper.SetRelationshipUnsafe(info);
                                 continue;
                             }
                         }

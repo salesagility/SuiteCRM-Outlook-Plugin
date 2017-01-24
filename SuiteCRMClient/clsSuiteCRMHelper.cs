@@ -34,7 +34,8 @@ namespace SuiteCRMClient
     using System.Collections.Specialized;
     using System.IO;
     using System.Windows.Forms;
-    
+    using Exceptions;
+
     public static class clsSuiteCRMHelper
     {
         public static string InstallationPath { get; set; }
@@ -88,26 +89,39 @@ namespace SuiteCRMClient
             }
         }
 
-        public static string SetEntry(eNameValue[] Data, string ModuleName = "Emails")
+        /// <summary>
+        /// Sets an entry in CRM and returns the id. 'Unsafe' because if it fails (for 
+        /// whatever reason), it returns the empty string. Most code which uses it fails
+        /// to check for the 'empty string' return result. Use 'SetEntry' instead (which
+        /// throws an exception on failure).
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="moduleName"></param>
+        /// <returns></returns>
+        public static string SetEntryUnsafe(eNameValue[] data, string moduleName = "Emails")
         {
             try
             {
-                EnsureLoggedIn();
-                object data = new
-                {
-                    @session = SuiteCRMUserSession.id,
-                    @module_name = ModuleName,
-                    @name_value_list = Data
-                };
-                eSetEntryResult _result = clsGlobals.GetCrmResponse<eSetEntryResult>("set_entry", data);  
-                                
-                return _result.id.ToString();
+                return SetEntry(data, moduleName);
             }
             catch (System.Exception)
             {
                 // Swallow exception(!)
                 return string.Empty;
             }
+        }
+
+        public static string SetEntry(eNameValue[] values, string moduleName)
+        {
+            EnsureLoggedIn();
+            object data = new
+            {
+                @session = SuiteCRMUserSession.id,
+                @module_name = moduleName,
+                @name_value_list = values
+            };
+            eSetEntryResult _result = clsGlobals.GetCrmResponse<eSetEntryResult>("set_entry", data);
+            return _result.id.ToString();
         }
 
         public static string getRelationship(string MainModule, string ID, string ModuleToFind)
@@ -166,47 +180,52 @@ namespace SuiteCRMClient
             }
         }
 
-        public static bool SetRelationship(eSetRelationshipValue info)
+        /// <summary>
+        /// Sets a CRM relationship and returns boolean success. 'Unsafe' because most 
+        /// callers ignore the result. Call 'SetRelationship' instead, which throws an
+        /// exception on failure.
+        /// </summary>
+        public static bool SetRelationshipUnsafe(eSetRelationshipValue info)
         {
             try
             {
-                EnsureLoggedIn();
-                object data = new
-                {
-                    @session = SuiteCRMUserSession.id,
-                    @module_name = info.module1,
-                    @module_id = info.module1_id,
-                    @link_field_name = info.module2,
-                    @related_ids = new string[] { info.module2_id }
-                };
-                var _value = clsGlobals.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
-                if (_value.Created==0)
-                {
-                    return false;
-                }
+                return SetRelationship(info);
             }
             catch (System.Exception exception)
             {
                 clsSuiteCRMHelper.WriteLog("SetRelationship exception" + exception.ToString());
                 // Swallow exception(!)
-
                 return false;
             }
-            return true;
         }
 
-        public static bool UploadAttahcment(clsEmailAttachments objAttachment, string email_id)
+        public static bool SetRelationship(eSetRelationshipValue info)
         {
             EnsureLoggedIn();
-            //Initialize AddIn attachment
-            List<RESTObjects.eNameValue> initNoteData = new List<RESTObjects.eNameValue>();
-            initNoteData.Add(new RESTObjects.eNameValue() { name = "name", value = objAttachment.DisplayName });
+            object data = new
+            {
+                @session = SuiteCRMUserSession.id,
+                @module_name = info.module1,
+                @module_id = info.module1_id,
+                @link_field_name = info.module2,
+                @related_ids = new string[] {info.module2_id}
+            };
+            var _value = clsGlobals.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+            return (_value.Created != 0);
+        }
+
+        public static void UploadAttachment(clsEmailAttachments objAttachment, string email_id)
+        {
+            EnsureLoggedIn();
 
             object initNoteDataWebFormat = new
             {
                 @session = SuiteCRMUserSession.id,
                 @module_name = "Notes",
-                @name_value_list = initNoteData
+                @name_value_list = new List<RESTObjects.eNameValue>
+                {
+                    new RESTObjects.eNameValue() {name = "name", value = objAttachment.DisplayName}
+                }
             };
             var res = clsGlobals.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", initNoteDataWebFormat);
 
@@ -237,10 +256,10 @@ namespace SuiteCRMClient
 
             if (rel.Created == 0)
             {
-                return false;
+                throw new CrmSaveDataException("Cannot upload email attachment ('set_relationship failed')");
             }
-            return true;
         }
+
         public static eNameValue SetNameValuePair(string name, string value)
         {
             return new eNameValue { name = name, value = value };
