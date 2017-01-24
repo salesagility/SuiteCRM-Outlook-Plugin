@@ -2040,7 +2040,10 @@ namespace SuiteCRMAddIn
                             Globals.ThisAddIn.SuiteCRMUserSession.AuthenticateLDAP();
                         }
                         else
+                        {
                             Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                        }
+
                         if (Globals.ThisAddIn.SuiteCRMUserSession.id != "")
                             return;
                     }

@@ -46,18 +46,28 @@ namespace SuiteCRMClient
 
         public static eModuleList GetModules()
         {
-            string strUserID = clsSuiteCRMHelper.GetUserId();
-            if (strUserID == "")
-            {
-                SuiteCRMUserSession.Login();
-            }
+            EnsureLoggedIn();
             object data = new
             {
                 @session = SuiteCRMUserSession.id
             };
             return clsGlobals.GetCrmResponse<eModuleList>("get_available_modules", data);            
         }
-                
+
+        public static void EnsureLoggedIn()
+        {
+            EnsureLoggedIn(SuiteCRMUserSession);
+        }
+
+        public static void EnsureLoggedIn(clsUsersession userSession)
+        {
+            string strUserID = clsSuiteCRMHelper.GetUserId();
+            if (strUserID == "")
+            {
+                userSession.Login();
+            }
+        }
+
 
         public static string GetUserId()
         {
@@ -82,11 +92,7 @@ namespace SuiteCRMClient
         {
             try
             {
-                string strUserID = clsSuiteCRMHelper.GetUserId();
-                if (strUserID == "")
-                {
-                    SuiteCRMUserSession.Login();
-                }
+                EnsureLoggedIn();
                 object data = new
                 {
                     @session = SuiteCRMUserSession.id,
@@ -108,11 +114,7 @@ namespace SuiteCRMClient
         {
             try
             {
-                string strUserID = clsSuiteCRMHelper.GetUserId();
-                if (strUserID == "")
-                {
-                    SuiteCRMUserSession.Login();
-                }
+                EnsureLoggedIn();
                 object data = new
                 {
                     @session = SuiteCRMUserSession.id,
@@ -140,11 +142,7 @@ namespace SuiteCRMClient
         {
             try
             {
-                string strUserID = clsSuiteCRMHelper.GetUserId();
-                if (strUserID == "")
-                {
-                    SuiteCRMUserSession.Login();
-                }
+                EnsureLoggedIn();
                 object data = new
                 {
                     @session = SuiteCRMUserSession.id,
@@ -172,11 +170,7 @@ namespace SuiteCRMClient
         {
             try
             {
-                string strUserID = clsSuiteCRMHelper.GetUserId();
-                if (strUserID == "")
-                {
-                    SuiteCRMUserSession.Login();
-                }
+                EnsureLoggedIn();
                 object data = new
                 {
                     @session = SuiteCRMUserSession.id,
@@ -203,11 +197,7 @@ namespace SuiteCRMClient
 
         public static bool UploadAttahcment(clsEmailAttachments objAttachment, string email_id)
         {
-            string strUserID = clsSuiteCRMHelper.GetUserId();
-            if (strUserID == "")
-            {
-                SuiteCRMUserSession.Login();
-            }
+            EnsureLoggedIn();
             //Initialize AddIn attachment
             List<RESTObjects.eNameValue> initNoteData = new List<RESTObjects.eNameValue>();
             initNoteData.Add(new RESTObjects.eNameValue() { name = "name", value = objAttachment.DisplayName });
@@ -258,66 +248,45 @@ namespace SuiteCRMClient
 
         public static string GetAttendeeList(string id)
         {
-            string strUserID = clsSuiteCRMHelper.GetUserId();
-            if (strUserID == "")
-            {
-                SuiteCRMUserSession.Login();
-            }
+            EnsureLoggedIn();
             string _result = "";
-            try
+            object data = new
             {
-                object data = new
-                {
-                    @session = SuiteCRMUserSession.id,
-                    @module_name = "Meetings",
-                    @module_id = id,
-                    @link_field_name = "contacts",
-                    @related_fields = new string[] { "email1" }
-                    /*,
-                    @related_module_link_name_to_fields_array = new object[] {new object[]{
-                        new {@name = "employees", @value=new string[]{"email1"}}
-                    } }*/
-                };
-                _result = clsGlobals.GetCrmResponse<string>("get_relationships", data);                
-            }
-            catch (System.Exception ex)
-            {
-                throw ex;
-            }
+                @session = SuiteCRMUserSession.id,
+                @module_name = "Meetings",
+                @module_id = id,
+                @link_field_name = "contacts",
+                @related_fields = new string[] { "email1" }
+                /*,
+                @related_module_link_name_to_fields_array = new object[] {new object[]{
+                    new {@name = "employees", @value=new string[]{"email1"}}
+                } }*/
+            };
+            _result = clsGlobals.GetCrmResponse<string>("get_relationships", data);                
             return _result;
         }
         
         public static eGetEntryListResult GetEntryList(string module, string query, int limit, string order_by, int offset, bool GetDeleted, string[] fields)
         {
-            string strUserID = clsSuiteCRMHelper.GetUserId();
-            if (strUserID == "")
-            {
-                SuiteCRMUserSession.Login();
-            } 
+            EnsureLoggedIn();
             eGetEntryListResult _result = new eGetEntryListResult();
-            try
+            object data = new
             {
-                object data = new
-                {
-                    @session = SuiteCRMUserSession.id,
-                    @module_name = module,
-                    @query = query,
-                    @order_by = order_by,
-                    @offset = offset,
-                    @select_fields = fields,
-                    @max_results = limit,
-                    @deleted = Convert.ToInt32(GetDeleted)
-                };
-                _result = clsGlobals.GetCrmResponse<RESTObjects.eGetEntryListResult>("get_entry_list", data);                
-                if (_result.error != null)
-                {
-                    throw new Exception(_result.error.description);                    
-                }
-            }
-            catch (System.Exception ex)
+                @session = SuiteCRMUserSession.id,
+                @module_name = module,
+                @query = query,
+                @order_by = order_by,
+                @offset = offset,
+                @select_fields = fields,
+                @max_results = limit,
+                @deleted = Convert.ToInt32(GetDeleted)
+            };
+            _result = clsGlobals.GetCrmResponse<RESTObjects.eGetEntryListResult>("get_entry_list", data);                
+            if (_result.error != null)
             {
-                throw ex;
+                throw new Exception(_result.error.description);                    
             }
+
             try
             {
                 Hashtable hashtable = new Hashtable();
@@ -362,15 +331,11 @@ namespace SuiteCRMClient
 
         public static List<string> GetFields(string module)
         {
-            string strUserID = clsSuiteCRMHelper.GetUserId();
-            if (strUserID == "")
-            {
-                SuiteCRMUserSession.Login();
-            }
             List<string> list = new List<string>();
             if (module == null)
                 return list;
 
+            EnsureLoggedIn();
             object data = new
             {
                 @session = SuiteCRMUserSession.id,
@@ -414,11 +379,7 @@ namespace SuiteCRMClient
 
         public static eSetEntryResult SetAccountsEntry(eNameValue[] Data)
         {
-            string strUserID = clsSuiteCRMHelper.GetUserId();
-            if (strUserID == "")
-            {
-                SuiteCRMUserSession.Login();
-            }
+            EnsureLoggedIn();
             object data = new
             {
                 @session = SuiteCRMUserSession.id,
@@ -431,11 +392,7 @@ namespace SuiteCRMClient
         }
         public static eSetEntryResult SetOpportunitiesEntry(eNameValue[] Data)
         {
-            string strUserID = clsSuiteCRMHelper.GetUserId();
-            if (strUserID == "")
-            {
-                SuiteCRMUserSession.Login();
-            }
+            EnsureLoggedIn();
             object data = new
             {
                 @session = SuiteCRMUserSession.id,

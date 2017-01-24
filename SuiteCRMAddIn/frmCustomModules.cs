@@ -203,11 +203,8 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                string strUserID = clsSuiteCRMHelper.GetUserId();
-                if (strUserID == "")
-                {
-                    Globals.ThisAddIn.SuiteCRMUserSession.Login();
-                }
+                clsSuiteCRMHelper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
+
                 if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
                 {
                     MessageBox.Show("Please enter SuiteCRM details in General tab and try again", "Invalid Authentication");

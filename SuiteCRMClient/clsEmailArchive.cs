@@ -56,9 +56,7 @@ namespace SuiteCRMClient
         }
         private ArrayList GetValidContactIDs(string strExcludedEmails = "")
         {
-            string strUserID = clsSuiteCRMHelper.GetUserId();
-            if (strUserID == "")
-                SuiteCRMUserSession.Login();
+            clsSuiteCRMHelper.EnsureLoggedIn(SuiteCRMUserSession);
 
             ArrayList arrRet = new ArrayList();
             ArrayList arrCheckedList = new ArrayList();
