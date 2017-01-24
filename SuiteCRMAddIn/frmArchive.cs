@@ -466,11 +466,11 @@ namespace SuiteCRMAddIn
         oTB.Multiline = true;
         oTB.WordWrap = false;
         oTB.ScrollBars = ScrollBars.Both;
-        oTB.Text = itemFromID.Subject.Replace("&", "%26");
+        oTB.Text = itemFromID.Subject;
                 data[0] = clsSuiteCRMHelper.SetNameValuePair("name", oTB.Text);
                 data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", itemFromID.EntryID);
                 data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
-                oTB.Text = itemFromID.Body.Replace("&", "%26");
+                oTB.Text = itemFromID.Body;
                 data[4] = clsSuiteCRMHelper.SetNameValuePair("description", oTB.Text);
                 data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", hTMLBody);
                 data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(itemFromID, this.type));

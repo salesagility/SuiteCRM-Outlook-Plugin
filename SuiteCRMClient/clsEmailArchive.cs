@@ -146,9 +146,9 @@ namespace SuiteCRMClient
                     List<RESTObjects.eNameValue> emailData = new List<RESTObjects.eNameValue>();
                     emailData.Add(new RESTObjects.eNameValue() { name = "from_addr", value = From });
                     emailData.Add(new RESTObjects.eNameValue() { name = "to_addrs", value = To.Replace("\n", "") });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject.Replace("&", "%26") });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body.Replace("&", "%26") });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = HTMLBody.Replace("&", "%26") });
+                    emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject });
+                    emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body });
+                    emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = HTMLBody });
                     emailData.Add(new RESTObjects.eNameValue() { name = "assigned_user_id", value = clsSuiteCRMHelper.GetUserId() });
                     emailData.Add(new RESTObjects.eNameValue() { name = "status", value = "archived" });
                     object contactData = new

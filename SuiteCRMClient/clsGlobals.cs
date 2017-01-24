@@ -38,6 +38,7 @@ namespace SuiteCRMClient
     public static class clsGlobals
     {
         public static Uri SuiteCRMURL { get; set; }
+
         public static HttpWebRequest CreateWebRequest(string url, int contentLength)
         {
             HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
@@ -48,33 +49,35 @@ namespace SuiteCRMClient
             return request;
         }
 
-        public static string CreateFormattedPostRequest(string method, object parameters)
+        public static string CreateFormattedPostBody(string method, object jsonDataObject)
+        {
+            var restData = SerialiseJson(jsonDataObject);
+            return $"method={WebUtility.UrlEncode(method)}&input_type=JSON&response_type=JSON&rest_data={WebUtility.UrlEncode(restData)}";
+        }
+
+        private static string SerialiseJson(object parameters)
         {
             JsonSerializer serializer = new JsonSerializer();
             serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
             serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-            //serializer.StringEscapeHandling = StringEscapeHandling.EscapeHtml;
 
-            StringBuilder buffer = new StringBuilder();
+            var buffer = new StringBuilder();
+            var swriter = new StringWriter(buffer);
 
-            StringWriter swriter = new StringWriter(buffer);
             serializer.Serialize(swriter, parameters);
-
-            string ret = "method=" + method;
-            ret += "&input_type=JSON&response_type=JSON&rest_data=" + buffer.ToString();
-            return ret;
+            return buffer.ToString();
         }
 
         public static T GetResponse<T>(string strMethod, object objInput, byte[] strFileContent = null, bool islog = false)
         {
             try
             {
-                string jsonData;
-                jsonData = CreateFormattedPostRequest(strMethod, objInput);
+                var requestUrl = SuiteCRMURL.AbsoluteUri + "service/v4_1/rest.php";
+                var jsonData = CreateFormattedPostBody(strMethod, objInput);
 
                 byte[] bytes = Encoding.UTF8.GetBytes(jsonData);
 
-                HttpWebRequest request = CreateWebRequest(SuiteCRMURL.AbsoluteUri + "service/v4_1/rest.php", bytes.Length);
+                HttpWebRequest request = CreateWebRequest(requestUrl, bytes.Length);
 
                 using (var requestStream = request.GetRequestStream())
                 {
@@ -97,7 +100,6 @@ namespace SuiteCRMClient
                         strLog += "-------------------------------------------------------------------------" + "\n";
                         clsSuiteCRMHelper.WriteLog(strLog);
                         throw new Exception(response.StatusDescription);
-
                     }
                     else
                     {
