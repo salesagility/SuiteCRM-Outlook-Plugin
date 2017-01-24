@@ -2333,7 +2333,24 @@ namespace SuiteCRMAddIn
                 clsSuiteCRMHelper.WriteLog("Body doesn't have time string");
                 return null;
             }
-           
+
+        }
+
+        public int SelectedEmailCount => Application.ActiveExplorer()?.Selection.Count ?? 0;
+
+        public IEnumerable<Outlook.MailItem> SelectedEmails
+        {
+            get
+            {
+                var selection = Application.ActiveExplorer()?.Selection;
+                if (selection == null) yield break;
+                foreach (object e in selection)
+                {
+                    var mail = e as Outlook.MailItem;
+                    if (mail != null) yield return mail;
+                    Marshal.ReleaseComObject(e);
+                }
+            }
         }
     }
 }

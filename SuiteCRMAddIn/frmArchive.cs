@@ -94,7 +94,7 @@ namespace SuiteCRMAddIn
             this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
             base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
 
-            foreach (MailItem item2 in Globals.ThisAddIn.Application.ActiveExplorer().Selection)
+            foreach (var item2 in Globals.ThisAddIn.SelectedEmails)
             {
                 this.txtSearch.Text = this.txtSearch.Text + clsGlobals.GetSMTPEmailAddress(item2) + ",";
             }
@@ -614,6 +614,13 @@ namespace SuiteCRMAddIn
                 return;
             }
 
+            var selectedEmailsCount = Globals.ThisAddIn.SelectedEmailCount;
+            if (selectedEmailsCount == 0)
+            {
+                MessageBox.Show("No emails selected", "Error");
+                return;
+            }
+
             try
             {
                 bool success = true;
@@ -621,9 +628,8 @@ namespace SuiteCRMAddIn
                 this.Cursor = Cursors.WaitCursor;
                 try
                 {
-                    foreach (object obj2 in Globals.ThisAddIn.Application.ActiveExplorer().Selection)
+                    foreach (var o in Globals.ThisAddIn.SelectedEmails)
                     {
-                        MailItem o = obj2 as MailItem;
                         SaveMailItemIfNecessary(o);
                         string emailId = this.archiveEmail(o);
                         if (emailId != "-1")
@@ -633,7 +639,6 @@ namespace SuiteCRMAddIn
                                 createEmailRelationship(emailId, entity);
                             }
                         }
-                        Marshal.ReleaseComObject(o);
                     }
                 }
                 finally
@@ -646,8 +651,8 @@ namespace SuiteCRMAddIn
                     if (settings.ShowConfirmationMessageArchive)
                     {
                         MessageBox.Show(
-                            Globals.ThisAddIn.Application.ActiveExplorer().Selection.Count.ToString() +
-                            " Email has been successfully archived", "Success");
+                            $"{selectedEmailsCount} email(s) have been successfully archived",
+                            "Success");
                     }
                     base.Close();
                 }
