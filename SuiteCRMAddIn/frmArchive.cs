@@ -48,7 +48,6 @@ namespace SuiteCRMAddIn
 
         private clsSettings settings = Globals.ThisAddIn.settings;
         public string type;
-        private List<TreeNode> checkedNodes = new List<TreeNode>();
 
         private void GetCustomModules()
         {
@@ -400,27 +399,26 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private int traverseTree(TreeView tree, int counter)
+        private List<CrmEntity> GetSelectedCrmEntities(TreeView tree)
         {
+            var result = new List<CrmEntity>();
             foreach (TreeNode node in tree.Nodes)
             {
-                counter = this.GetSelectedNodeCount(node, counter);
+                this.GetSelectedCrmEntitiesHelper(node, result);
             }
-            return counter;
+            return result;
         }
 
-        private int GetSelectedNodeCount(TreeNode node, int counter)
+        private void GetSelectedCrmEntitiesHelper(TreeNode node, List<CrmEntity> selectedCrmEntities)
         {
             if (((node.Tag != null) && (node.Tag.ToString() != "root_node")) && ((node.Tag.ToString() != "sub_root_node") && node.Checked))
             {
-                counter++;
-                this.checkedNodes.Add(node);
+                selectedCrmEntities.Add(new CrmEntity(node.Parent.Text, node.Tag.ToString()));
             }
             foreach (TreeNode node2 in node.Nodes)
             {
-                counter = this.GetSelectedNodeCount(node2, counter);
+                this.GetSelectedCrmEntitiesHelper(node2, selectedCrmEntities);
             }
-            return counter;
         }
 
         public string archiveEmail(MailItem mailItem)
@@ -501,20 +499,16 @@ namespace SuiteCRMAddIn
             return dateTime;
         }
 
-        public bool createEmailRelationship(string emailId, TreeNode node)
+        public bool createEmailRelationship(string emailId, CrmEntity entity)
         {
-            eSetRelationshipValue info = new eSetRelationshipValue
-            {
-                module2 = "emails",
-                module2_id = emailId,
-                module1 = node.Parent.Text,
-                module1_id = node.Tag.ToString()
-            };
-            if (!clsSuiteCRMHelper.SetRelationship(info))
-            {
-                return false;
-            }
-            return true;
+            return clsSuiteCRMHelper.SetRelationship(
+                new eSetRelationshipValue
+                {
+                    module2 = "emails",
+                    module2_id = emailId,
+                    module1 = entity.ModuleName,
+                    module1_id = entity.EntityId,
+                });
         }
 
         private void frmArchive_FormClosed(object sender, FormClosedEventArgs e)
@@ -607,6 +601,19 @@ namespace SuiteCRMAddIn
 
         private void btnArchive_Click(object sender, EventArgs e)
         {
+            if (this.tsResults.Nodes.Count <= 0)
+            {
+                MessageBox.Show("There are no search results.", "Error");
+                return;
+            }
+
+            var selectedCrmEntities = GetSelectedCrmEntities(this.tsResults);
+            if (!selectedCrmEntities.Any())
+            {
+                MessageBox.Show("No selected CRM entities", "Error");
+                return;
+            }
+
             try
             {
                 bool success = true;
@@ -617,34 +624,14 @@ namespace SuiteCRMAddIn
                     foreach (object obj2 in Globals.ThisAddIn.Application.ActiveExplorer().Selection)
                     {
                         MailItem o = obj2 as MailItem;
-                        if (this.type == "SendArchive")
+                        SaveMailItemIfNecessary(o);
+                        string emailId = this.archiveEmail(o);
+                        if (emailId != "-1")
                         {
-                            o.Save();
-                        }
-                        if (this.tsResults.Nodes.Count > 0)
-                        {
-                            if (this.traverseTree(this.tsResults, 0) > 0)
+                            foreach (var entity in selectedCrmEntities)
                             {
-                                string emailId = this.archiveEmail(o);
-                                if (emailId != "-1")
-                                {
-                                    foreach (TreeNode node in this.checkedNodes)
-                                    {
-                                        this.createEmailRelationship(emailId, node);
-                                    }
-                                }
+                                createEmailRelationship(emailId, entity);
                             }
-                            else
-                            {
-                                success = false;
-                                MessageBox.Show("Error Archiving Email", "Error");
-                            }
-                            this.checkedNodes.Clear();
-                        }
-                        else
-                        {
-                            success = false;
-                            MessageBox.Show("There are no search results.", "Error");
                         }
                         Marshal.ReleaseComObject(o);
                     }
@@ -658,7 +645,9 @@ namespace SuiteCRMAddIn
                 {
                     if (settings.ShowConfirmationMessageArchive)
                     {
-                        MessageBox.Show(Globals.ThisAddIn.Application.ActiveExplorer().Selection.Count.ToString() + " Email has been successfully archived", "Success");
+                        MessageBox.Show(
+                            Globals.ThisAddIn.Application.ActiveExplorer().Selection.Count.ToString() +
+                            " Email has been successfully archived", "Success");
                     }
                     base.Close();
                 }
@@ -667,6 +656,14 @@ namespace SuiteCRMAddIn
             {
                 clsSuiteCRMHelper.WriteException(exception, "btnArchive_Click");
                 MessageBox.Show("There was an error while archiving", "Error");
+            }
+        }
+
+        private void SaveMailItemIfNecessary(MailItem o)
+        {
+            if (this.type == "SendArchive")
+            {
+                o.Save();
             }
         }
 

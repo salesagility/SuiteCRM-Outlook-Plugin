@@ -62,6 +62,7 @@
     <Compile Include="clsGlobals.cs" />
     <Compile Include="clsEmailArchive.cs" />
     <Compile Include="clsEmailAttachments.cs" />
+    <Compile Include="CrmEntity.cs" />
     <Compile Include="RESTObjects\eContactDetail.cs" />
     <Compile Include="RESTObjects\eDocumentRevision.cs" />
     <Compile Include="RESTObjects\eEntryValue.cs" />
