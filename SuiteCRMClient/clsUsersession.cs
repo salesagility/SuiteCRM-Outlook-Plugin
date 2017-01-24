@@ -78,7 +78,7 @@ namespace SuiteCRMClient
                             @password = GetMD5Hash(SuiteCRMPassword)
                         }
                     };
-                    var loginReturn = clsGlobals.GetResponse<RESTObjects.Login>("login", loginData);
+                    var loginReturn = clsGlobals.GetCrmResponse<RESTObjects.Login>("login", loginData);
                     if (loginReturn.ErrorName != null)
                     {
                         loginData = new
@@ -89,7 +89,7 @@ namespace SuiteCRMClient
                                 @password = SuiteCRMPassword
                             }
                         };
-                        loginReturn = clsGlobals.GetResponse<RESTObjects.Login>("login", loginData);
+                        loginReturn = clsGlobals.GetCrmResponse<RESTObjects.Login>("login", loginData);
                         if (loginReturn.ErrorName != null)
                         {
                             id = "";
@@ -160,7 +160,7 @@ namespace SuiteCRMClient
                         @password = builder2.ToString()
                     }
                 };
-                eSetEntryResult _result = SuiteCRMClient.clsGlobals.GetResponse<eSetEntryResult>("login", loginData);
+                eSetEntryResult _result = SuiteCRMClient.clsGlobals.GetCrmResponse<eSetEntryResult>("login", loginData);
                 if (_result.id == null || _result.id == "")
                 {
                     id = "";
@@ -189,7 +189,7 @@ namespace SuiteCRMClient
                     {
                         @session = id
                     };
-                    var objRet = clsGlobals.GetResponse<object>("logout", logoutData);
+                    var objRet = clsGlobals.GetCrmResponse<object>("logout", logoutData);
                 }
             }
             catch (Exception ex)

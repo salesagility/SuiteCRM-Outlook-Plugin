@@ -103,7 +103,7 @@ namespace SuiteCRMClient
                               @select_fields = new string[] { "id" },
                               @max_results = 1
                           };
-                        var contactReturn = clsGlobals.GetResponse<RESTObjects.eContacts>("get_entry_list", contactData);
+                        var contactReturn = clsGlobals.GetCrmResponse<RESTObjects.eContacts>("get_entry_list", contactData);
 
                         if (contactReturn.entry_list.Count > 0)
                             arrRet.Add(contactReturn.entry_list[0].id);
@@ -146,9 +146,9 @@ namespace SuiteCRMClient
                     List<RESTObjects.eNameValue> emailData = new List<RESTObjects.eNameValue>();
                     emailData.Add(new RESTObjects.eNameValue() { name = "from_addr", value = From });
                     emailData.Add(new RESTObjects.eNameValue() { name = "to_addrs", value = To.Replace("\n", "") });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject.Replace("&", "%26") });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body.Replace("&", "%26") });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = HTMLBody.Replace("&", "%26") });
+                    emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject });
+                    emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body });
+                    emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = HTMLBody });
                     emailData.Add(new RESTObjects.eNameValue() { name = "assigned_user_id", value = clsSuiteCRMHelper.GetUserId() });
                     emailData.Add(new RESTObjects.eNameValue() { name = "status", value = "archived" });
                     object contactData = new
@@ -157,7 +157,7 @@ namespace SuiteCRMClient
                         @module_name = "Emails",
                         @name_value_list = emailData
                     };
-                    var emailResult = clsGlobals.GetResponse<RESTObjects.eNewSetEntryResult>("set_entry", contactData);
+                    var emailResult = clsGlobals.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", contactData);
 
 
                     foreach (string strContactID in arrCRMContacts)
@@ -170,7 +170,7 @@ namespace SuiteCRMClient
                             @link_field_name = "emails",
                             @related_ids = new string[] { emailResult.id }
                         };
-                        var relResult = clsGlobals.GetResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", contacRelationshipData);
+                        var relResult = clsGlobals.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", contacRelationshipData);
 
                     }
 
@@ -187,7 +187,7 @@ namespace SuiteCRMClient
                             @module_name = "Notes",
                             @name_value_list = initNoteData
                         };
-                        var res = clsGlobals.GetResponse<RESTObjects.eNewSetEntryResult>("set_entry", initNoteDataWebFormat);
+                        var res = clsGlobals.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", initNoteDataWebFormat);
 
                         //upload the attachment  
                         RESTObjects.eNewNoteAttachment attachment = new RESTObjects.eNewNoteAttachment();
@@ -201,7 +201,7 @@ namespace SuiteCRMClient
                             @note = attachment
                         };
 
-                        var attachmentResult = clsGlobals.GetResponse<RESTObjects.eNewSetEntryResult>("set_note_attachment", attachmentDataWebFormat);
+                        var attachmentResult = clsGlobals.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_note_attachment", attachmentDataWebFormat);
 
                         //Relate the email and the attachment
                         object contacRelationshipData = new
@@ -212,7 +212,7 @@ namespace SuiteCRMClient
                             @link_field_name = "notes",
                             @related_ids = new string[] { attachmentResult.id }
                         };
-                        var rel = clsGlobals.GetResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", contacRelationshipData);
+                        var rel = clsGlobals.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", contacRelationshipData);
 
                     }
                 }
