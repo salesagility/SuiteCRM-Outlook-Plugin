@@ -2163,15 +2163,16 @@ namespace SuiteCRMAddIn
             byte[] strRet = null;
             if (objMailAttachment != null)
             {
-                if (System.IO.Directory.Exists(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath") == false)
+                var temporaryAttachmentPath = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath";
+                if (!System.IO.Directory.Exists(temporaryAttachmentPath))
                 {
-                    string strPath = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath";
-                    System.IO.Directory.CreateDirectory(strPath);
+                    System.IO.Directory.CreateDirectory(temporaryAttachmentPath);
                 }
                 try
                 {
-                    objMailAttachment.SaveAsFile(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath\\" + objMailAttachment.FileName);
-                    strRet = System.IO.File.ReadAllBytes(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath\\" + objMailAttachment.FileName);
+                    var attachmentFilePath = temporaryAttachmentPath + "\\" + objMailAttachment.FileName;
+                    objMailAttachment.SaveAsFile(attachmentFilePath);
+                    strRet = System.IO.File.ReadAllBytes(attachmentFilePath);
                 }
                 catch (COMException ex)
                 {
@@ -2190,7 +2191,7 @@ namespace SuiteCRMAddIn
                         strLog += "-------------------------------------------------------------------------" + "\n";
                         clsSuiteCRMHelper.WriteLog(strLog);
                         // Swallow exception(!)
-                        string strName = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
+                        string strName = temporaryAttachmentPath  + "\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
                         objMail.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         foreach (string strFileName in System.IO.Directory.GetFiles(strName.Replace(".html", "_files")))
                         {
@@ -2208,9 +2209,9 @@ namespace SuiteCRMAddIn
                 }
                 finally
                 {
-                    if (System.IO.Directory.Exists(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath") == true)
+                    if (System.IO.Directory.Exists(temporaryAttachmentPath))
                     {
-                        System.IO.Directory.Delete(Environment.SpecialFolder.MyDocuments.ToString(), true);
+                        System.IO.Directory.Delete(temporaryAttachmentPath, true);
                     }
                 }
             }
