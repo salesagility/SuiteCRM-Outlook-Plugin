@@ -635,7 +635,7 @@ namespace SuiteCRMAddIn
                                 continue;
                             string sID = oItem.oItem.EntryID;
                         }
-                        catch (COMException ex)
+                        catch (COMException)
                         {
                             eNameValue[] data = new eNameValue[2];
                             data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
@@ -1180,7 +1180,7 @@ namespace SuiteCRMAddIn
                             {
                                 string sID = oItem.oItem.EntryID;
                             }
-                            catch (COMException ex)
+                            catch (COMException)
                             {
                                 eNameValue[] data = new eNameValue[2];
                                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
@@ -1244,7 +1244,7 @@ namespace SuiteCRMAddIn
                             {
                                 string sID = oItem.oItem.EntryID;
                             }
-                            catch(COMException ex)
+                            catch(COMException)
                             {
                                 eNameValue[] data = new eNameValue[2];
                                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
@@ -1607,7 +1607,7 @@ namespace SuiteCRMAddIn
                             {
                                 oItem.oItem.Delete();
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
                                 clsSuiteCRMHelper.WriteLog("   Exception  oItem.oItem.Delete");
                             }
@@ -2044,9 +2044,9 @@ namespace SuiteCRMAddIn
                         if (Globals.ThisAddIn.SuiteCRMUserSession.id != "")
                             return;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        ex.Data.Clear();
+                        // Swallow exception(!)
                     }
                 }
                 Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = false;
@@ -2186,7 +2186,7 @@ namespace SuiteCRMAddIn
                         strLog += "Data:" + objMailAttachment.DisplayName + "\n";
                         strLog += "-------------------------------------------------------------------------" + "\n";
                         clsSuiteCRMHelper.WriteLog(strLog);
-                        ex.Data.Clear();
+                        // Swallow exception(!)
                         string strName = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
                         objMail.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         foreach (string strFileName in System.IO.Directory.GetFiles(strName.Replace(".html", "_files")))

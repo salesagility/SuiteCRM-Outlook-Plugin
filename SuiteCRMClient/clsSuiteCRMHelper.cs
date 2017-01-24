@@ -71,9 +71,9 @@ namespace SuiteCRMClient
                 userId = clsGlobals.GetCrmResponse<string>("get_user_id", data);
                 return userId;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                ex.Data.Clear();
+                // Swallow exception(!)
                 return "";
             }
         }
@@ -97,9 +97,9 @@ namespace SuiteCRMClient
                                 
                 return _result.id.ToString();
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
                 return string.Empty;
             }
         }
@@ -129,11 +129,11 @@ namespace SuiteCRMClient
                     return _result.entry_list[0].id;
                 return "";
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
                 return "";
-            }            
+            }
         }
 
         public static eEntryValue[] getRelationships(string MainModule, string ID, string ModuleToFind, string[] fields)
@@ -161,9 +161,9 @@ namespace SuiteCRMClient
                     return _result.entry_list;
                 return null;
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
                 return null;
             }
         }
@@ -194,8 +194,8 @@ namespace SuiteCRMClient
             catch (System.Exception exception)
             {
                 clsSuiteCRMHelper.WriteLog("SetRelationship exception" + exception.ToString());
-                exception.Data.Clear();
-                
+                // Swallow exception(!)
+
                 return false;
             }
             return true;
@@ -480,7 +480,6 @@ namespace SuiteCRMClient
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------" + "\n";
                 clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
             }
             catch { }
         }
@@ -510,6 +509,6 @@ namespace SuiteCRMClient
             log = new StreamWriter(fileStream);
             log.WriteLine(strLog);
             log.Close();
-        }        
+        }
     }
 }

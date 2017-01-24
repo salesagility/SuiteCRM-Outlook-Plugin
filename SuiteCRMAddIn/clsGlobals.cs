@@ -87,11 +87,11 @@ namespace SuiteCRMAddIn
                 }
                 return exchangeUser.PrimarySmtpAddress;
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
+                return "";
             }
-            return "";
         }
         public static string GetSenderAddress(MailItem mail, string type)
         {

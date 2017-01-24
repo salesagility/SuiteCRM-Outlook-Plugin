@@ -315,7 +315,7 @@ namespace SuiteCRMAddIn
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
                 clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                // Swallow exception(!)
             }
         }
 

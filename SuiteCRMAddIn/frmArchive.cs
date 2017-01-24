@@ -83,10 +83,11 @@ namespace SuiteCRMAddIn
                     this.lstViewSearchModules.Items[num].Checked = true;
                 }
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
             }
+
             this.tsResults.AfterCheck += new TreeViewEventHandler(this.tsResults_AfterCheck);
             this.tsResults.AfterExpand += new TreeViewEventHandler(this.tsResults_AfterExpand);
             this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
@@ -270,9 +271,9 @@ namespace SuiteCRMAddIn
                             {
                                 _result = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
                             }
-                            catch (System.Exception ex1)
+                            catch (System.Exception)
                             {
-                                ex1.Data.Clear();
+                                // Swallow exception(!)
                                 _result = clsSuiteCRMHelper.GetEntryList(text, str5.Replace("%",""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
                             }
                             if (_result.result_count > 0)
@@ -293,9 +294,9 @@ namespace SuiteCRMAddIn
                                 node.Remove();
                             }
                         }
-                        catch (System.Exception ex)
+                        catch (System.Exception)
                         {
-                            ex.Data.Clear();
+                            // Swallow exception(!)
                             this.tsResults.Nodes.Clear();
                         }
                     }
@@ -312,9 +313,9 @@ namespace SuiteCRMAddIn
                     this.txtSearch.Enabled = true;
                 }
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
-                ex.Data.Clear();
+                // Swallow exception(!)
 
                 this.tsResults.Nodes.Clear();
                 TreeNode node2 = new TreeNode("No results found")
@@ -454,16 +455,16 @@ namespace SuiteCRMAddIn
                             }
                         }
                     }
-                    catch (System.Exception exception)
+                    catch (System.Exception)
                     {
-                        exception.Data.Clear();
+                        // Swallow exception(!)
                     }
                 }
                 return str;
             }
-            catch (System.Exception exception2)
+            catch (System.Exception)
             {
-                exception2.Data.Clear();
+                // Swallow exception(!)
                 return "-1";
             }
         }
@@ -515,9 +516,9 @@ namespace SuiteCRMAddIn
                 this.settings.Save();
                 bool flag1 = this.settings.ParticipateInCeip;
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
             }
         }
 
