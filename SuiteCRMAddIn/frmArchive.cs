@@ -627,7 +627,7 @@ namespace SuiteCRMAddIn
                 }
 
                 List<ArchiveResult> emailArchiveResults;
-                using (WaitCursor.For(this, shouldDisable: true))
+                using (WaitCursor.For(this, disableForm: true))
                 {
                     emailArchiveResults =
                         Globals.ThisAddIn.SelectedEmails
