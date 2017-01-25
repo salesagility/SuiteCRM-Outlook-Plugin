@@ -2035,11 +2035,11 @@ namespace SuiteCRMAddIn
                 string strUsername = Globals.ThisAddIn.settings.username;
                 string strPassword = Globals.ThisAddIn.settings.password;                
 
-                Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","", Globals.ThisAddIn.Log);
+                Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","", Log);
                 string strURL = Globals.ThisAddIn.settings.host;
                 if (strURL != "")
                 {
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, Globals.ThisAddIn.settings.LDAPKey, Globals.ThisAddIn.Log);
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, Globals.ThisAddIn.settings.LDAPKey, Log);
                     Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                     try
                     {

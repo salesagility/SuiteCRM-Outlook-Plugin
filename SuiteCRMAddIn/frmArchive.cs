@@ -53,6 +53,8 @@ namespace SuiteCRMAddIn
         private clsSettings settings = Globals.ThisAddIn.settings;
         public string type;
 
+        private ILogger Log => Globals.ThisAddIn.Log;
+
         private void GetCustomModules()
         {
             if (this.settings.CustomModules != null)
@@ -641,7 +643,7 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception exception)
             {
-                Globals.ThisAddIn.Log.Error("btnArchive_Click", exception);
+                Log.Error("btnArchive_Click", exception);
                 MessageBox.Show("There was an error while archiving", "Error");
             }
         }
@@ -703,7 +705,7 @@ namespace SuiteCRMAddIn
                 }
                 catch (System.Exception failure)
                 {
-                    Globals.ThisAddIn.Log.Error("CreateEmailRelationshipsWithEntities", failure);
+                    Log.Error("CreateEmailRelationshipsWithEntities", failure);
                     failures.Add(failure);
                 }
             }
