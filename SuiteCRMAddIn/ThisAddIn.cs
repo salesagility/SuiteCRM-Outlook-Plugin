@@ -132,7 +132,7 @@ namespace SuiteCRMAddIn
 
         private void ResetLog()
         {
-            Log = new FileLogger(LogDirPath);
+            Log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log");
             clsSuiteCRMHelper.SetLog(Log);
             SuiteCRMClient.clsGlobals.SetLog(Log);
         }
