@@ -53,6 +53,8 @@ namespace SuiteCRMAddIn
         private clsSettings settings = Globals.ThisAddIn.settings;
         public string type;
 
+        private ILogger Log => Globals.ThisAddIn.Log;
+
         private void GetCustomModules()
         {
             if (this.settings.CustomModules != null)
@@ -440,6 +442,7 @@ namespace SuiteCRMAddIn
                 }
                 catch (System.Exception firstFailure)
                 {
+                    Log.Warn("1st attempt to upload email failed", firstFailure);
                     data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", "");
                     try
                     {
@@ -447,6 +450,7 @@ namespace SuiteCRMAddIn
                     }
                     catch(System.Exception secondFailure)
                     {
+                        Log.Warn("2nd attempt to upload email failed", secondFailure);
                         return ArchiveResult.Failure(new [] {firstFailure, secondFailure});
                     }
                 }
@@ -470,6 +474,7 @@ namespace SuiteCRMAddIn
                         }
                         catch (System.Exception problem)
                         {
+                            Log.Warn("Failed to upload email attachment", problem);
                             warnings.Add(problem);
                         }
                     }
@@ -478,6 +483,7 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception failure)
             {
+                Log.Warn("Could not upload email to CRM", failure);
                 return ArchiveResult.Failure(failure);
             }
         }
@@ -627,7 +633,7 @@ namespace SuiteCRMAddIn
                 }
 
                 List<ArchiveResult> emailArchiveResults;
-                using (WaitCursor.For(this, shouldDisable: true))
+                using (WaitCursor.For(this, disableForm: true))
                 {
                     emailArchiveResults =
                         Globals.ThisAddIn.SelectedEmails
@@ -641,7 +647,7 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception exception)
             {
-                Globals.ThisAddIn.Log.Error("btnArchive_Click", exception);
+                Log.Error("btnArchive_Click", exception);
                 MessageBox.Show("There was an error while archiving", "Error");
             }
         }
@@ -703,7 +709,7 @@ namespace SuiteCRMAddIn
                 }
                 catch (System.Exception failure)
                 {
-                    Globals.ThisAddIn.Log.Error("CreateEmailRelationshipsWithEntities", failure);
+                    Log.Error("CreateEmailRelationshipsWithEntities", failure);
                     failures.Add(failure);
                 }
             }

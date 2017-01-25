@@ -172,6 +172,8 @@ namespace SuiteCRMAddIn
             this.IgnoreModules.Add("Dashboard");
         }
 
+        private ILogger Log => Globals.ThisAddIn.Log;
+
         private void listViewAvailableModules_SubItemClicked(object sender, SubItemEventArgs e)
         {
             try
@@ -191,7 +193,7 @@ namespace SuiteCRMAddIn
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                Globals.ThisAddIn.Log.Warn(strLog);
+                Log.Warn(strLog);
             }
         }
 
@@ -265,7 +267,7 @@ namespace SuiteCRMAddIn
                 strLog += "Data:" + ex.Data.ToString() + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                Globals.ThisAddIn.Log.Warn(strLog);
+                Log.Warn(strLog);
             }
         }
 
@@ -307,7 +309,7 @@ namespace SuiteCRMAddIn
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                Globals.ThisAddIn.Log.Warn(strLog);
+                Log.Warn(strLog);
                 // Swallow exception(!)
             }
         }

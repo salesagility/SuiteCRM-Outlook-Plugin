@@ -25,9 +25,9 @@ namespace SuiteCRMAddIn
             if (_shouldReenable) _form.Enabled = true;
         }
 
-        public static WaitCursor For(Form form, bool shouldDisable = false)
+        public static WaitCursor For(Form form, bool disableForm = false)
         {
-            return new WaitCursor(form, shouldDisable);
+            return new WaitCursor(form, disableForm);
         }
     }
 }
