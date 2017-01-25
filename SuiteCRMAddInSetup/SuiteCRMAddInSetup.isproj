@@ -29,4 +29,10 @@
 	</ItemGroup>
 	<Import Project="$(MSBuildExtensionsPath32)\InstallShield\2015Limited\InstallShield.targets"/>
 	<ItemGroup/>
+	<ItemGroup>
+		<ProjectReference Include="..\SuiteCRMAddIn\SuiteCRMAddIn.csproj">
+			<Name>SuiteCRMAddIn</Name>
+			<Project>{8EF51293-040D-4A83-AFC3-9EA8C328B653}</Project>
+		</ProjectReference>
+	</ItemGroup>
 </Project>
