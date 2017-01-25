@@ -442,6 +442,7 @@ namespace SuiteCRMAddIn
                 }
                 catch (System.Exception firstFailure)
                 {
+                    Log.Warn("1st attempt to upload email failed", firstFailure);
                     data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", "");
                     try
                     {
@@ -449,6 +450,7 @@ namespace SuiteCRMAddIn
                     }
                     catch(System.Exception secondFailure)
                     {
+                        Log.Warn("2nd attempt to upload email failed", secondFailure);
                         return ArchiveResult.Failure(new [] {firstFailure, secondFailure});
                     }
                 }
@@ -472,6 +474,7 @@ namespace SuiteCRMAddIn
                         }
                         catch (System.Exception problem)
                         {
+                            Log.Warn("Failed to upload email attachment", problem);
                             warnings.Add(problem);
                         }
                     }
@@ -480,6 +483,7 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception failure)
             {
+                Log.Warn("Could not upload email to CRM", failure);
                 return ArchiveResult.Failure(failure);
             }
         }
