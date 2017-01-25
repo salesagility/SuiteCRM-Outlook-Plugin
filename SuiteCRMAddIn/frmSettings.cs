@@ -22,22 +22,19 @@
  */
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
-using Microsoft.Office.Interop;
 using SuiteCRMClient;
+using SuiteCRMClient.Logging;
 
 namespace SuiteCRMAddIn
 {
     public partial class frmSettings : Form
     {
         private clsSettings settings = Globals.ThisAddIn.settings;
+
+        public EventHandler SettingsChanged;
+
         public frmSettings()
         {
             InitializeComponent();
@@ -175,6 +172,9 @@ namespace SuiteCRMAddIn
                     labelKey.Enabled = false;
                     txtLDAPAuthenticationKey.Enabled = false;
                 }
+
+                DetailedLoggingCheckBox.Checked = settings.LogLevel <= LogEntryType.Debug;
+                LinkToLogFileDir.Text = ThisAddIn.LogDirPath;
             }
             catch (Exception ex)
             {
@@ -437,6 +437,9 @@ namespace SuiteCRMAddIn
                 {
                     this.settings.SyncMaxRecords = 0;
                 }
+
+                settings.LogLevel = DetailedLoggingCheckBox.Checked ? LogEntryType.Debug : LogEntryType.Information;
+
                 if (settings.IsFirstTime)
                 {
                     settings.IsFirstTime = false;
@@ -447,6 +450,8 @@ namespace SuiteCRMAddIn
                 this.settings.Save();
                 this.settings.Reload();
                 base.Close();
+
+                this.SettingsChanged?.Invoke(this, EventArgs.Empty);
             }
             else
                 this.DialogResult = DialogResult.None;
@@ -455,6 +460,11 @@ namespace SuiteCRMAddIn
         private void btnCancel_Click(object sender, EventArgs e)
         {
             base.Close();
+        }
+
+        private void LinkToLogFileDir_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Process.Start(ThisAddIn.LogDirPath);
         }
     }
 }

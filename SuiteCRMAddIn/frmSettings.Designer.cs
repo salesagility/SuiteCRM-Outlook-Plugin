@@ -86,6 +86,12 @@ namespace SuiteCRMAddIn
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.InformationTabPage = new System.Windows.Forms.TabPage();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.DetailedLoggingCheckBox = new System.Windows.Forms.CheckBox();
+            this.LinkToLogFileDir = new System.Windows.Forms.LinkLabel();
+            this.label11 = new System.Windows.Forms.Label();
+            this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
             this.chkSyncCalendar = new System.Windows.Forms.CheckBox();
@@ -99,6 +105,8 @@ namespace SuiteCRMAddIn
             this.gbFirstTime.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.tabControl1.SuspendLayout();
+            this.InformationTabPage.SuspendLayout();
+            this.groupBox4.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabPage3
@@ -451,6 +459,7 @@ namespace SuiteCRMAddIn
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Controls.Add(this.tabPage3);
+            this.tabControl1.Controls.Add(this.InformationTabPage);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Top;
             this.tabControl1.Location = new System.Drawing.Point(3, 3);
             this.tabControl1.Multiline = true;
@@ -458,6 +467,69 @@ namespace SuiteCRMAddIn
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(387, 382);
             this.tabControl1.TabIndex = 6;
+            // 
+            // InformationTabPage
+            // 
+            this.InformationTabPage.Controls.Add(this.groupBox4);
+            this.InformationTabPage.Controls.Add(this.AddInTitleLabel);
+            this.InformationTabPage.Location = new System.Drawing.Point(23, 4);
+            this.InformationTabPage.Name = "InformationTabPage";
+            this.InformationTabPage.Size = new System.Drawing.Size(360, 374);
+            this.InformationTabPage.TabIndex = 3;
+            this.InformationTabPage.Text = "Information";
+            this.InformationTabPage.UseVisualStyleBackColor = true;
+            // 
+            // groupBox4
+            // 
+            this.groupBox4.Controls.Add(this.DetailedLoggingCheckBox);
+            this.groupBox4.Controls.Add(this.LinkToLogFileDir);
+            this.groupBox4.Controls.Add(this.label11);
+            this.groupBox4.Location = new System.Drawing.Point(13, 144);
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.Size = new System.Drawing.Size(332, 116);
+            this.groupBox4.TabIndex = 5;
+            this.groupBox4.TabStop = false;
+            this.groupBox4.Text = "Logging";
+            // 
+            // DetailedLoggingCheckBox
+            // 
+            this.DetailedLoggingCheckBox.AutoSize = true;
+            this.DetailedLoggingCheckBox.Location = new System.Drawing.Point(9, 82);
+            this.DetailedLoggingCheckBox.Name = "DetailedLoggingCheckBox";
+            this.DetailedLoggingCheckBox.Size = new System.Drawing.Size(102, 17);
+            this.DetailedLoggingCheckBox.TabIndex = 0;
+            this.DetailedLoggingCheckBox.Text = "Detailed logging";
+            this.DetailedLoggingCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // LinkToLogFileDir
+            // 
+            this.LinkToLogFileDir.AutoEllipsis = true;
+            this.LinkToLogFileDir.Location = new System.Drawing.Point(6, 54);
+            this.LinkToLogFileDir.Name = "LinkToLogFileDir";
+            this.LinkToLogFileDir.Size = new System.Drawing.Size(320, 14);
+            this.LinkToLogFileDir.TabIndex = 3;
+            this.LinkToLogFileDir.TabStop = true;
+            this.LinkToLogFileDir.Text = "C:\\path\\to\\log\\files";
+            this.LinkToLogFileDir.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.LinkToLogFileDir_LinkClicked);
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Location = new System.Drawing.Point(6, 28);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(172, 13);
+            this.label11.TabIndex = 4;
+            this.label11.Text = "Log files are stored in this directory:";
+            // 
+            // AddInTitleLabel
+            // 
+            this.AddInTitleLabel.AutoSize = true;
+            this.AddInTitleLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 15F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.AddInTitleLabel.Location = new System.Drawing.Point(28, 26);
+            this.AddInTitleLabel.Name = "AddInTitleLabel";
+            this.AddInTitleLabel.Size = new System.Drawing.Size(262, 25);
+            this.AddInTitleLabel.TabIndex = 1;
+            this.AddInTitleLabel.Text = "SuiteCRM Outlook Add-In";
             // 
             // btnCancel
             // 
@@ -539,6 +611,10 @@ namespace SuiteCRMAddIn
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.tabControl1.ResumeLayout(false);
+            this.InformationTabPage.ResumeLayout(false);
+            this.InformationTabPage.PerformLayout();
+            this.groupBox4.ResumeLayout(false);
+            this.groupBox4.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -584,6 +660,11 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.CheckBox chkShowConfirmationMessageArchive;
         private System.Windows.Forms.CheckBox chkSyncContacts;
         private System.Windows.Forms.CheckBox chkSyncCalendar;
-
+        private System.Windows.Forms.TabPage InformationTabPage;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.LinkLabel LinkToLogFileDir;
+        private System.Windows.Forms.Label AddInTitleLabel;
+        private System.Windows.Forms.CheckBox DetailedLoggingCheckBox;
+        private System.Windows.Forms.GroupBox groupBox4;
     }
 }

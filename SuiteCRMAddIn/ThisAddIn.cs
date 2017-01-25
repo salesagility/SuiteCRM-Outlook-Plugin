@@ -68,7 +68,6 @@ namespace SuiteCRMAddIn
         
         public Office.IRibbonUI RibbonUI { get; set; }
 
-        public static bool loggingIsOn = true;
         public ILogger Log;
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
@@ -77,13 +76,7 @@ namespace SuiteCRMAddIn
             {
                 CurrentVersion = Convert.ToInt32(Globals.ThisAddIn.Application.Version.Split('.')[0]);
                 this.objExplorer = Globals.ThisAddIn.Application.ActiveExplorer();
-                if (loggingIsOn)
-                {
-                    var logDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
-                                 "\\SuiteCRMOutlookAddIn\\Logs\\";
-                    Log = new FileLogger(logDir);
-                    clsSuiteCRMHelper.Log = Log;
-                }
+                ResetLog();
                 this.settings = new clsSettings();
                 this.objExplorer.FolderSwitch -= objExplorer_FolderSwitch;
                 this.objExplorer.FolderSwitch += objExplorer_FolderSwitch;
@@ -137,7 +130,16 @@ namespace SuiteCRMAddIn
                 clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ThisAddIn_Startup");
             }
         }
-              
+
+        public static string LogDirPath =>
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
+            "\\SuiteCRMOutlookAddIn\\Logs\\";
+
+        private void ResetLog()
+        {
+            Log = new FileLogger(LogDirPath);
+            clsSuiteCRMHelper.Log = Log;
+        }
 
         void objExplorer_FolderSwitch()
         {
@@ -1829,8 +1831,9 @@ namespace SuiteCRMAddIn
 
         private void cbtnSettings_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
-            frmSettings objacbbSettings = new frmSettings();
-            objacbbSettings.ShowDialog();
+            var settingsForm = new frmSettings();
+            settingsForm.SettingsChanged += (sender, args) => this.ResetLog();
+            settingsForm.ShowDialog();
         }
 
         private void ManualArchive()

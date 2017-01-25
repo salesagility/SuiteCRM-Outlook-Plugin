@@ -28,6 +28,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
+using SuiteCRMClient.Logging;
 
 namespace SuiteCRMAddIn
 {
@@ -309,6 +310,13 @@ namespace SuiteCRMAddIn
             {
                 this["case_dropdown_status"] = value;
             }
+        }
+
+        [DefaultSettingValue("0"), UserScopedSetting, DebuggerNonUserCode]
+        public LogEntryType LogLevel
+        {
+            get { return (LogEntryType) this["LogLevel"]; }
+            set { this["LogLevel"] = value; }
         }
 
         public static Hashtable accountEntrys = new Hashtable();
