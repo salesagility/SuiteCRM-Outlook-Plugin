@@ -38,6 +38,10 @@ using System.Web;
 
 namespace SuiteCRMAddIn
 {
+    using SuiteCRMClient.Exceptions;
+    using SuiteCRMClient.Logging;
+    using Exception = System.Exception;
+
     public partial class frmArchive : Form
     {
 
@@ -48,7 +52,6 @@ namespace SuiteCRMAddIn
 
         private clsSettings settings = Globals.ThisAddIn.settings;
         public string type;
-        private List<TreeNode> checkedNodes = new List<TreeNode>();
 
         private void GetCustomModules()
         {
@@ -84,10 +87,11 @@ namespace SuiteCRMAddIn
                     this.lstViewSearchModules.Items[num].Checked = true;
                 }
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
             }
+
             this.tsResults.AfterCheck += new TreeViewEventHandler(this.tsResults_AfterCheck);
             this.tsResults.AfterExpand += new TreeViewEventHandler(this.tsResults_AfterExpand);
             this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
@@ -95,7 +99,7 @@ namespace SuiteCRMAddIn
             this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
             base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
 
-            foreach (MailItem item2 in Globals.ThisAddIn.Application.ActiveExplorer().Selection)
+            foreach (var item2 in Globals.ThisAddIn.SelectedEmails)
             {
                 this.txtSearch.Text = this.txtSearch.Text + clsGlobals.GetSMTPEmailAddress(item2) + ",";
             }
@@ -125,35 +129,25 @@ namespace SuiteCRMAddIn
         public void btnSearch_Click(object sender, EventArgs e)
         {
             this.tsResults.Nodes.Clear();
-            this.Cursor = Cursors.WaitCursor;
 
-            //if (!UnallowedNumber(this.txtSearch.Text))
-            //{
-                if (this.txtSearch.Text.Contains<char>(','))
+            if (this.txtSearch.Text.Contains<char>(','))
+            {
+                foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }))
                 {
-                    foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }))
-                    {
-                        this.Search(str);
-                    }
+                    this.Search(str);
                 }
-                if (this.txtSearch.Text.Contains(";"))
+            }
+            if (this.txtSearch.Text.Contains(";"))
+            {
+                foreach (string str2 in this.txtSearch.Text.Split(new char[] { ';' }))
                 {
-                    foreach (string str2 in this.txtSearch.Text.Split(new char[] { ';' }))
-                    {
-                        this.Search(str2);
-                    }
+                    this.Search(str2);
                 }
-                else
-                {
-                    this.Search(this.txtSearch.Text);
-                }
-            //}
-            //else
-            //{
-            //    this.tsResults.Nodes.Clear();
-            //    this.Cursor = Cursors.Default;
-            //    MessageBox.Show("The search cannot start with a number", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            //}
+            }
+            else
+            {
+                this.Search(this.txtSearch.Text);
+            }
         }
 
         private bool UnallowedNumber(string strText)
@@ -172,15 +166,14 @@ namespace SuiteCRMAddIn
 
         public void Search(string query)
         {
+            using(WaitCursor.For(this))
             try
             {
-                this.Cursor = Cursors.WaitCursor;
                 List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
                 this.tsResults.CheckBoxes = true;
                 if (query == string.Empty)
                 {
                     MessageBox.Show("Please enter some text to search", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    this.Cursor = Cursors.Default;
                 }
                 else
                 {
@@ -282,9 +275,9 @@ namespace SuiteCRMAddIn
                             {
                                 _result = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
                             }
-                            catch (System.Exception ex1)
+                            catch (System.Exception)
                             {
-                                ex1.Data.Clear();
+                                // Swallow exception(!)
                                 _result = clsSuiteCRMHelper.GetEntryList(text, str5.Replace("%",""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
                             }
                             if (_result.result_count > 0)
@@ -305,9 +298,9 @@ namespace SuiteCRMAddIn
                                 node.Remove();
                             }
                         }
-                        catch (System.Exception ex)
+                        catch (System.Exception)
                         {
-                            ex.Data.Clear();
+                            // Swallow exception(!)
                             this.tsResults.Nodes.Clear();
                         }
                     }
@@ -322,15 +315,13 @@ namespace SuiteCRMAddIn
                         this.tsResults.CheckBoxes = false;
                     }
                     this.txtSearch.Enabled = true;
-                    this.Cursor = Cursors.Default;
                 }
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
-                ex.Data.Clear();
+                // Swallow exception(!)
 
                 this.tsResults.Nodes.Clear();
-                this.Cursor = Cursors.Default;
                 TreeNode node2 = new TreeNode("No results found")
                 {
                     Name = "No results",
@@ -400,145 +391,127 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private int traverseTree(TreeView tree, int counter)
+        private List<CrmEntity> GetSelectedCrmEntities(TreeView tree)
         {
+            var result = new List<CrmEntity>();
             foreach (TreeNode node in tree.Nodes)
             {
-                counter = this.GetSelectedNodeCount(node, counter);
+                this.GetSelectedCrmEntitiesHelper(node, result);
             }
-            return counter;
+            return result;
         }
 
-        private int GetSelectedNodeCount(TreeNode node, int counter)
+        private void GetSelectedCrmEntitiesHelper(TreeNode node, List<CrmEntity> selectedCrmEntities)
         {
             if (((node.Tag != null) && (node.Tag.ToString() != "root_node")) && ((node.Tag.ToString() != "sub_root_node") && node.Checked))
             {
-                counter++;
-                this.checkedNodes.Add(node);
+                selectedCrmEntities.Add(new CrmEntity(node.Parent.Text, node.Tag.ToString()));
             }
             foreach (TreeNode node2 in node.Nodes)
             {
-                counter = this.GetSelectedNodeCount(node2, counter);
+                this.GetSelectedCrmEntitiesHelper(node2, selectedCrmEntities);
             }
-            return counter;
         }
 
-        public string archiveEmail(MailItem itemFromID)
+        public ArchiveResult SaveEmailToCrm(MailItem mailItem)
         {
             try
             {
-                string body = string.Empty;
-                string subject = string.Empty;
-                string hTMLBody = itemFromID.HTMLBody;
-                eNameValue[] data = new eNameValue[12];
-                body = itemFromID.Body;
-                subject = itemFromID.Subject;
+                SaveMailItemIfNecessary(mailItem);
 
-                string type = this.type;
-                if (type == null)
-                {
-                    goto Label_017D;
-                }
-                if (!(type == "autoINBOUND"))
-                {
-                    if (type == "autoOUTBOUND")
-                    {
-                        goto Label_0129;
-                    }
-                    if (type == "SendArchive")
-                    {
-                        goto Label_0153;
-                    }
-                    goto Label_017D;
-                }
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.SentOn.ToString("yyyy-MM-dd HH:mm:ss"));
-                goto Label_01A5;
-            Label_0129:
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                goto Label_01A5;
-            Label_0153:
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                goto Label_01A5;
-            Label_017D:
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.SentOn.ToString("yyyy-MM-dd HH:mm:ss"));
-        Label_01A5:
-            TextBox oTB = new TextBox();
-        oTB.Multiline = true;
-        oTB.WordWrap = false;
-        oTB.ScrollBars = ScrollBars.Both;
-        oTB.Text = itemFromID.Subject;
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", oTB.Text);
-                data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", itemFromID.EntryID);
+                eNameValue[] data = new eNameValue[12];
+                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? "");
+                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem).ToString("yyyy-MM-dd HH:mm:ss"));
+                data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
                 data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
-                oTB.Text = itemFromID.Body;
-                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", oTB.Text);
-                data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", hTMLBody);
-                data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(itemFromID, this.type));
-                data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", itemFromID.To);
-                data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", itemFromID.CC);
-                data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", itemFromID.BCC);
-                data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", itemFromID.ReplyRecipientNames);
+                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", mailItem.Body ?? "");
+                data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", mailItem.HTMLBody);
+                data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(mailItem, this.type));
+                data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", mailItem.To);
+                data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", mailItem.CC);
+                data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", mailItem.BCC);
+                data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", mailItem.ReplyRecipientNames);
                 data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
-                string str = clsSuiteCRMHelper.SetEntry(data);
-                if (str.Length < 0x24)
+
+                string crmEmailId;
+                try
+                {
+                    crmEmailId = clsSuiteCRMHelper.SetEntry(data, "Emails");
+                }
+                catch (System.Exception firstFailure)
                 {
                     data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", "");
-                    str = clsSuiteCRMHelper.SetEntry(data);
-                    if (str.Length < 0x24)
-                    {
-                        return "-1";
-                    }
-                }
-                else
-                {
-
-                }
-                
-                itemFromID.Categories = "SuiteCRM";
-                itemFromID.Save();
-                if (settings.ArchiveAttachmentsDefault)
-                {
                     try
                     {
-                        if (itemFromID.Attachments.Count > 0)
-                        {
-                            foreach (Attachment attachment in itemFromID.Attachments)
-                            {
-                                if (!clsSuiteCRMHelper.UploadAttahcment(new SuiteCRMClient.clsEmailAttachments { DisplayName = attachment.DisplayName, FileContentInBase64String = Globals.ThisAddIn.Base64Encode(attachment, itemFromID) }, str))
-                                {
-
-                                }
-                            }
-                        }
+                        crmEmailId = clsSuiteCRMHelper.SetEntry(data, "Emails");
                     }
-                    catch (System.Exception exception)
+                    catch(System.Exception secondFailure)
                     {
-                        exception.Data.Clear();
+                        return ArchiveResult.Failure(new [] {firstFailure, secondFailure});
                     }
                 }
-                return str;
+                
+                mailItem.Categories = "SuiteCRM";
+                mailItem.Save();
+                var warnings = new List<System.Exception>();
+                if (settings.ArchiveAttachmentsDefault)
+                {
+                    foreach (Attachment attachment in mailItem.Attachments)
+                    {
+                        try
+                        {
+                            clsSuiteCRMHelper.UploadAttachment(
+                                new clsEmailAttachments
+                                {
+                                    DisplayName = attachment.DisplayName,
+                                    FileContentInBase64String = Globals.ThisAddIn.Base64Encode(attachment, mailItem)
+                                },
+                                crmEmailId);
+                        }
+                        catch (System.Exception problem)
+                        {
+                            warnings.Add(problem);
+                        }
+                    }
+                }
+                return ArchiveResult.Success(crmEmailId, warnings);
             }
-            catch (System.Exception exception2)
+            catch (System.Exception failure)
             {
-                exception2.Data.Clear();
-                return "-1";
+                return ArchiveResult.Failure(failure);
             }
         }
 
-        public bool createEmailRelationship(string emailId, TreeNode node)
+        private DateTime DateTimeOfMailItem(MailItem mailItem)
         {
-            eSetRelationshipValue info = new eSetRelationshipValue
+            DateTime dateTime;
+            switch (this.type)
             {
-                module2 = "emails",
-                module2_id = emailId,
-                module1 = node.Parent.Text,
-                module1_id = node.Tag.ToString()
-            };
-            if (!clsSuiteCRMHelper.SetRelationship(info))
-            {
-                return false;
+                case "autoOUTBOUND":
+                case "SendArchive":
+                    dateTime = mailItem.CreationTime;
+                    break;
+                case null:
+                case "autoINBOUND":
+                default:
+                    dateTime = mailItem.SentOn;
+                    break;
             }
-            return true;
+            return dateTime;
+        }
+
+        public void CreateEmailRelationshipOrFail(string emailId, CrmEntity entity)
+        {
+            var success = clsSuiteCRMHelper.SetRelationship(
+                new eSetRelationshipValue
+                {
+                    module2 = "emails",
+                    module2_id = emailId,
+                    module1 = entity.ModuleName,
+                    module1_id = entity.EntityId,
+                });
+
+            if (!success) throw new CrmSaveDataException($"Cannot create email relationship with {entity.ModuleName} ('set_relationship' failed)");
         }
 
         private void frmArchive_FormClosed(object sender, FormClosedEventArgs e)
@@ -558,9 +531,9 @@ namespace SuiteCRMAddIn
                 this.settings.Save();
                 bool flag1 = this.settings.ParticipateInCeip;
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
             }
         }
 
@@ -633,60 +606,115 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                bool flag = false;
-                base.Enabled = false;
-                this.Cursor = Cursors.WaitCursor;
-                foreach (object obj2 in Globals.ThisAddIn.Application.ActiveExplorer().Selection)
+                if (this.tsResults.Nodes.Count == 0)
                 {
-                    MailItem o = obj2 as MailItem;
-                    if (this.type == "SendArchive")
-                    {
-                        o.Save();
-                    }
-                    if (this.tsResults.Nodes.Count > 0)
-                    {
-                        if (this.traverseTree(this.tsResults, 0) > 0)
-                        {
-                            string emailId = this.archiveEmail(o);
-                            if (emailId != "-1")
-                            {
-                                foreach (TreeNode node in this.checkedNodes)
-                                {
-                                    this.createEmailRelationship(emailId, node);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            flag = true;
-                            MessageBox.Show("Error Archiving Email", "Error");
-                        }
-                        this.checkedNodes.Clear();
-                    }
-                    else
-                    {
-                        flag = true;
-                        MessageBox.Show("There are no search results.", "Error");
-                    }
-                    Marshal.ReleaseComObject(o);
+                    MessageBox.Show("There are no search results.", "Error");
+                    return;
                 }
-                base.Enabled = true;
-                this.Cursor = Cursors.Default;
-                if (!flag)
+
+                var selectedCrmEntities = GetSelectedCrmEntities(this.tsResults);
+                if (!selectedCrmEntities.Any())
                 {
-                    if (settings.ShowConfirmationMessageArchive)
-                    {
-                        MessageBox.Show(Globals.ThisAddIn.Application.ActiveExplorer().Selection.Count.ToString() + " Email has been successfully archived", "Success");
-                    }
-                    base.Close();
+                    MessageBox.Show("No selected CRM entities", "Error");
+                    return;
                 }
+
+                var selectedEmailsCount = Globals.ThisAddIn.SelectedEmailCount;
+                if (selectedEmailsCount == 0)
+                {
+                    MessageBox.Show("No emails selected", "Error");
+                    return;
+                }
+
+                List<ArchiveResult> emailArchiveResults;
+                using (WaitCursor.For(this, shouldDisable: true))
+                {
+                    emailArchiveResults =
+                        Globals.ThisAddIn.SelectedEmails
+                            .Select(mailItem =>
+                                ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities))
+                            .ToList();
+                }
+
+                if (ReportOnEmailArchiveSuccess(emailArchiveResults))
+                    Close();
             }
             catch (System.Exception exception)
             {
-                clsSuiteCRMHelper.WriteException(exception, "btnArchive_Click");
-                MessageBox.Show("There was an error while archiving", "Error");             
-                base.Enabled = true;
-                this.Cursor = Cursors.Default;
+                Globals.ThisAddIn.Log.Error("btnArchive_Click", exception);
+                MessageBox.Show("There was an error while archiving", "Error");
+            }
+        }
+
+        private bool ReportOnEmailArchiveSuccess(List<ArchiveResult> emailArchiveResults)
+        {
+            var successCount = emailArchiveResults.Count(r => r.IsSuccess);
+            var failCount = emailArchiveResults.Count - successCount;
+            var fullSuccess = failCount == 0;
+            if (fullSuccess)
+            {
+                if (settings.ShowConfirmationMessageArchive)
+                {
+                    MessageBox.Show(
+                        $"{successCount} email(s) have been successfully archived",
+                        "Success");
+                }
+                return true;
+            }
+            else
+            {
+                var message = successCount == 0
+                    ? $"Failed to archive {failCount} email(s)"
+                    : $"{successCount} emails(s) were successfully archived.";
+
+                var first11Problems = emailArchiveResults.SelectMany(r => r.Problems).Take(11).ToList();
+                if (first11Problems.Any())
+                {
+                    message =
+                        message +
+                        "\n\nThere were some failures:\n" +
+                        string.Join("\n", first11Problems.Take(10)) +
+                        (first11Problems.Count > 10 ? "\n[and more]" : "");
+                }
+
+                MessageBox.Show(message, "Failure");
+                return false;
+            }
+        }
+
+        private ArchiveResult ArchiveEmailWithEntityRelationships(MailItem mailItem, List<CrmEntity> selectedCrmEntities)
+        {
+            var result = this.SaveEmailToCrm(mailItem);
+            if (result.IsFailure) return result;
+            var warnings = CreateEmailRelationshipsWithEntities(result.EmailId, selectedCrmEntities);
+            return ArchiveResult.Success(
+                result.EmailId,
+                result.Problems.Concat(warnings));
+        }
+
+        private IList<System.Exception> CreateEmailRelationshipsWithEntities(string crmMailId, List<CrmEntity> selectedCrmEntities)
+        {
+            var failures = new List<System.Exception>();
+            foreach (var entity in selectedCrmEntities)
+            {
+                try
+                {
+                    CreateEmailRelationshipOrFail(crmMailId, entity);
+                }
+                catch (System.Exception failure)
+                {
+                    Globals.ThisAddIn.Log.Error("CreateEmailRelationshipsWithEntities", failure);
+                    failures.Add(failure);
+                }
+            }
+            return failures;
+        }
+
+        private void SaveMailItemIfNecessary(MailItem o)
+        {
+            if (this.type == "SendArchive")
+            {
+                o.Save();
             }
         }
 
@@ -706,6 +734,34 @@ namespace SuiteCRMAddIn
         private void txtSearch_Leave(object sender, EventArgs e)
         {
             this.AcceptButton = btnArchive;
+        }
+
+        public class ArchiveResult
+        {
+            public static ArchiveResult Success(string emailId, IEnumerable<System.Exception> warnings)
+            {
+                return new ArchiveResult
+                {
+                    EmailId = emailId,
+                    Problems = warnings,
+                };
+            }
+
+            public static ArchiveResult Failure(params System.Exception[] exceptions)
+            {
+                return new ArchiveResult
+                {
+                    Problems = exceptions,
+                };
+            }
+
+            public string EmailId { get; set; }
+
+            public IEnumerable<System.Exception> Problems { get; set; }
+
+            public bool IsSuccess => !string.IsNullOrEmpty(EmailId);
+
+            public bool IsFailure => !IsSuccess;
         }
     }
 }

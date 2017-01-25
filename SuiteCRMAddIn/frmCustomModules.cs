@@ -22,14 +22,10 @@
  */
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using SuiteCRMClient;
+using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
 using ListViewEx;
 using System.Collections.Specialized;
@@ -195,7 +191,7 @@ namespace SuiteCRMAddIn
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                Globals.ThisAddIn.Log.Warn(strLog);
             }
         }
 
@@ -203,11 +199,8 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                string strUserID = clsSuiteCRMHelper.GetUserId();
-                if (strUserID == "")
-                {
-                    Globals.ThisAddIn.SuiteCRMUserSession.Login();
-                }
+                clsSuiteCRMHelper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
+
                 if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
                 {
                     MessageBox.Show("Please enter SuiteCRM details in General tab and try again", "Invalid Authentication");
@@ -272,7 +265,7 @@ namespace SuiteCRMAddIn
                 strLog += "Data:" + ex.Data.ToString() + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                Globals.ThisAddIn.Log.Warn(strLog);
             }
         }
 
@@ -314,8 +307,8 @@ namespace SuiteCRMAddIn
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                Globals.ThisAddIn.Log.Warn(strLog);
+                // Swallow exception(!)
             }
         }
 

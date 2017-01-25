@@ -22,22 +22,19 @@
  */
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
-using Microsoft.Office.Interop;
 using SuiteCRMClient;
+using SuiteCRMClient.Logging;
 
 namespace SuiteCRMAddIn
 {
     public partial class frmSettings : Form
     {
         private clsSettings settings = Globals.ThisAddIn.settings;
+
+        public EventHandler SettingsChanged;
+
         public frmSettings()
         {
             InitializeComponent();
@@ -73,7 +70,7 @@ namespace SuiteCRMAddIn
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                Globals.ThisAddIn.Log.Warn(strLog);
             }
         }
 
@@ -118,7 +115,7 @@ namespace SuiteCRMAddIn
             try
             {
                 if (Globals.ThisAddIn.SuiteCRMUserSession == null)
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "", "");
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "", "", Globals.ThisAddIn.Log);
 
                 Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                 if (settings.host != "")
@@ -175,6 +172,9 @@ namespace SuiteCRMAddIn
                     labelKey.Enabled = false;
                     txtLDAPAuthenticationKey.Enabled = false;
                 }
+
+                DetailedLoggingCheckBox.Checked = settings.LogLevel <= LogEntryType.Debug;
+                LinkToLogFileDir.Text = ThisAddIn.LogDirPath;
             }
             catch (Exception ex)
             {
@@ -186,7 +186,7 @@ namespace SuiteCRMAddIn
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                Globals.ThisAddIn.Log.Warn(strLog);
             }
         }
 
@@ -226,8 +226,8 @@ namespace SuiteCRMAddIn
                 strLog += "Data:" + ex.Data.ToString() + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                Globals.ThisAddIn.Log.Warn(strLog);
+                // Swallow exception(!)
             }
         }
 
@@ -285,7 +285,7 @@ namespace SuiteCRMAddIn
                     {
                         txtLDAPAuthenticationKey.Text = null;
                     }
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim());
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Globals.ThisAddIn.Log);
 
                     if (chkEnableLDAPAuthentication.Checked && txtLDAPAuthenticationKey.Text.Trim().Length != 0)
                     {
@@ -320,8 +320,8 @@ namespace SuiteCRMAddIn
                     strLog += "Data:" + ex.Data.ToString() + "\n";
                     strLog += "HResult:" + ex.HResult.ToString() + "\n";
                     strLog += "-------------------------------------------------------------------------" + "\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
-                    ex.Data.Clear();
+                    Globals.ThisAddIn.Log.Warn(strLog);
+                    // Swallow exception(!)
                 }
             }
         }
@@ -375,7 +375,7 @@ namespace SuiteCRMAddIn
                     {
                         txtLDAPAuthenticationKey.Text = null;
                     }
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim());
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Globals.ThisAddIn.Log);
                     Globals.ThisAddIn.SuiteCRMUserSession.Login();
                     if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
                     {
@@ -400,8 +400,7 @@ namespace SuiteCRMAddIn
                     strLog += "Data:" + ex.Data.ToString() + "\n";
                     strLog += "HResult:" + ex.HResult.ToString() + "\n";
                     strLog += "-------------------------------------------------------------------------" + "\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
-                    ex.Data.Clear();
+                    Globals.ThisAddIn.Log.Warn(strLog);
                     this.DialogResult = DialogResult.None;
                     return;
                 }
@@ -438,6 +437,9 @@ namespace SuiteCRMAddIn
                 {
                     this.settings.SyncMaxRecords = 0;
                 }
+
+                settings.LogLevel = DetailedLoggingCheckBox.Checked ? LogEntryType.Debug : LogEntryType.Information;
+
                 if (settings.IsFirstTime)
                 {
                     settings.IsFirstTime = false;
@@ -448,6 +450,8 @@ namespace SuiteCRMAddIn
                 this.settings.Save();
                 this.settings.Reload();
                 base.Close();
+
+                this.SettingsChanged?.Invoke(this, EventArgs.Empty);
             }
             else
                 this.DialogResult = DialogResult.None;
@@ -456,6 +460,11 @@ namespace SuiteCRMAddIn
         private void btnCancel_Click(object sender, EventArgs e)
         {
             base.Close();
+        }
+
+        private void LinkToLogFileDir_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Process.Start(ThisAddIn.LogDirPath);
         }
     }
 }

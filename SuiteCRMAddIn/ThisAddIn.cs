@@ -23,21 +23,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Xml.Linq;
 using Outlook = Microsoft.Office.Interop.Outlook;
 using Office = Microsoft.Office.Core;
 using SuiteCRMClient;
 using System.Runtime.InteropServices;
 using SuiteCRMAddIn.Properties;
-using System.Security.Cryptography;
 using System.Globalization;
 using SuiteCRMClient.RESTObjects;
-using System.IO;
 using System.Windows.Forms;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using SuiteCRMClient.Logging;
 
 namespace SuiteCRMAddIn
 {
@@ -66,13 +63,15 @@ namespace SuiteCRMAddIn
         
         public Office.IRibbonUI RibbonUI { get; set; }
 
+        public ILogger Log;
+
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             try
             {
                 CurrentVersion = Convert.ToInt32(Globals.ThisAddIn.Application.Version.Split('.')[0]);
                 this.objExplorer = Globals.ThisAddIn.Application.ActiveExplorer();
-                SuiteCRMClient.clsSuiteCRMHelper.InstallationPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\SuiteCRMOutlookAddIn";
+                ResetLog();
                 this.settings = new clsSettings();
                 this.objExplorer.FolderSwitch -= objExplorer_FolderSwitch;
                 this.objExplorer.FolderSwitch += objExplorer_FolderSwitch;
@@ -123,10 +122,20 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ThisAddIn_Startup");
+                Log.Error("ThisAddIn.ThisAddIn_Startup", ex);
             }
         }
-              
+
+        public static string LogDirPath =>
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
+            "\\SuiteCRMOutlookAddIn\\Logs\\";
+
+        private void ResetLog()
+        {
+            Log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log");
+            clsSuiteCRMHelper.SetLog(Log);
+            SuiteCRMClient.clsGlobals.SetLog(Log);
+        }
 
         void objExplorer_FolderSwitch()
         {
@@ -147,7 +156,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.objExplorer_FolderSwitch");
+                Log.Error("ThisAddIn.objExplorer_FolderSwitch", ex);
             }
         }
 
@@ -182,7 +191,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Sync");
+                Log.Error("ThisAddIn.Sync", ex);
             }
         }
         private void StartContactSync()
@@ -206,13 +215,13 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.StartContactSync");
+                Log.Error("ThisAddIn.StartContactSync", ex);
             }
 
         }
         private void SyncContacts(Outlook.MAPIFolder contactFolder)
         {
-            clsSuiteCRMHelper.WriteLog("ThisAddIn.SyncContacts");
+            Log.Warn("ThisAddIn.SyncContacts");
             try
             {
                 int iOffset = 0;
@@ -262,11 +271,11 @@ namespace SuiteCRMAddIn
                                 {
                                     if (dResult.sync_contact.value.ToString() != "True")
                                     {
-                                        clsSuiteCRMHelper.WriteLog("not sync!");
+                                        Log.Warn("not sync!");
                                         continue;
                                     }
 
-                                    clsSuiteCRMHelper.WriteLog("    default sync");
+                                    Log.Warn("    default sync");
                                     Outlook.ContactItem cItem = contactFolder.Items.Add(Outlook.OlItemType.olContactItem);
                                     cItem.FirstName = dResult.first_name.value.ToString();
                                     cItem.LastName = dResult.last_name.value.ToString();
@@ -301,7 +310,7 @@ namespace SuiteCRMAddIn
                                         SEntryID = dResult.id.value.ToString(),
                                         Touched = true
                                     });
-                                    clsSuiteCRMHelper.WriteLog(cItem.FullName + "     is saving with " + cItem.Sensitivity.ToString());
+                                    Log.Warn(cItem.FullName + "     is saving with " + cItem.Sensitivity.ToString());
                                     cItem.Save();                                    
                                 }
                                 else
@@ -345,17 +354,17 @@ namespace SuiteCRMAddIn
                                         if (oProp2 == null)
                                             oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                                         oProp2.Value = dResult.id.value.ToString();
-                                        clsSuiteCRMHelper.WriteLog("    save not default");
-                                        clsSuiteCRMHelper.WriteLog(cItem.FullName+ "     is saving with" + cItem.Sensitivity.ToString());
+                                        Log.Warn("    save not default");
+                                        Log.Warn(cItem.FullName+ "     is saving with" + cItem.Sensitivity.ToString());
                                         cItem.Save();
                                     }
-                                    clsSuiteCRMHelper.WriteLog(cItem.FullName + " dResult.date_modified= " + dResult.date_modified.ToString());
+                                    Log.Warn((string) (cItem.FullName + " dResult.date_modified= " + dResult.date_modified.ToString()));
                                     oItem.OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
                                 }
                             }
                             catch (Exception ex)
                             {
-                                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncContacts");
+                                Log.Error("ThisAddIn.SyncContacts", ex);
                             }
                         }
 
@@ -384,12 +393,12 @@ namespace SuiteCRMAddIn
                 }
                 catch (Exception ex)
                 {
-                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncContacts");
+                    Log.Error("ThisAddIn.SyncContacts", ex);
                 }
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncContacts");
+                Log.Error("ThisAddIn.SyncContacts", ex);
             }
         }
         private void GetOutlookCItems(Outlook.MAPIFolder taskFolder)
@@ -436,23 +445,23 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.GetOutlookCItems");
+                Log.Error("ThisAddIn.GetOutlookCItems", ex);
             }
         }
 
         void CItems_ItemChange(object Item)
         {
-            clsSuiteCRMHelper.WriteLog("ItemChange");
+            Log.Warn("ItemChange");
 
             try
             {
                 var oItem = Item as Outlook.ContactItem;
 
-                clsSuiteCRMHelper.WriteLog(oItem.FullName + " Sensitivity= " + oItem.Sensitivity);
+                Log.Warn(oItem.FullName + " Sensitivity= " + oItem.Sensitivity);
                 string entryId = oItem.EntryID;
-                clsSuiteCRMHelper.WriteLog("oItem.EntryID: " + entryId);
+                Log.Warn("oItem.EntryID: " + entryId);
                 cContactItem contact = lContactItems.FirstOrDefault(a => a.oItem.EntryID == entryId);
-                clsSuiteCRMHelper.WriteLog("EntryID=  " + oItem.EntryID);
+                Log.Warn("EntryID=  " + oItem.EntryID);
                 if (contact != default(cContactItem))
                 {
                     if ((int)Math.Abs((DateTime.UtcNow - contact.OModifiedDate).TotalSeconds) > 5)
@@ -460,24 +469,24 @@ namespace SuiteCRMAddIn
                         contact.IsUpdate = 0;
                     }
 
-                    clsSuiteCRMHelper.WriteLog("Before UtcNow - contact.OModifiedDate= " +
+                    Log.Warn("Before UtcNow - contact.OModifiedDate= " +
                                                (int) (DateTime.UtcNow - contact.OModifiedDate).TotalSeconds);
-                    clsSuiteCRMHelper.WriteLog("IsUpdate before time check: " + contact.IsUpdate.ToString());
+                    Log.Warn("IsUpdate before time check: " + contact.IsUpdate.ToString());
                     if ((int) Math.Abs((DateTime.UtcNow - contact.OModifiedDate).TotalSeconds) > 2 && contact.IsUpdate == 0)
                     {
                         contact.OModifiedDate = DateTime.UtcNow;
-                        clsSuiteCRMHelper.WriteLog("Change IsUpdate = " + contact.IsUpdate);
+                        Log.Warn("Change IsUpdate = " + contact.IsUpdate);
                         contact.IsUpdate++;
                     }
 
-                    clsSuiteCRMHelper.WriteLog("contact = " + contact.oItem.FullName);
-                    clsSuiteCRMHelper.WriteLog("contact mod_date= " + contact.OModifiedDate.ToString());
-                    clsSuiteCRMHelper.WriteLog("UtcNow - contact.OModifiedDate= " +
+                    Log.Warn("contact = " + contact.oItem.FullName);
+                    Log.Warn("contact mod_date= " + contact.OModifiedDate.ToString());
+                    Log.Warn("UtcNow - contact.OModifiedDate= " +
                                                (int) (DateTime.UtcNow - contact.OModifiedDate).TotalSeconds);
                 }
                 else
                 {
-                    clsSuiteCRMHelper.WriteLog("not found contact. AddContactToS(oItem) ");
+                    Log.Warn("not found contact. AddContactToS(oItem) ");
                 }
                 // oItem.Sensitivity == Outlook.OlSensitivity.olNormal
                 if (IsContactView && lContactItems.Exists(a => a.oItem.EntryID == oItem.EntryID
@@ -489,7 +498,7 @@ namespace SuiteCRMAddIn
                     if (oProp1 != null)
                     {
                         contact.IsUpdate++;
-                        clsSuiteCRMHelper.WriteLog("Go to AddContactToS");
+                        Log.Warn("Go to AddContactToS");
                         AddContactToS(oItem, oProp1.Value.ToString());
                     }
                     else
@@ -500,11 +509,11 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.CItems_ItemChange");
+                Log.Error("ThisAddIn.CItems_ItemChange", ex);
             }
             finally
             {
-                clsSuiteCRMHelper.WriteLog("lContactItems.Count = " + lContactItems.Count);
+                Log.Warn("lContactItems.Count = " + lContactItems.Count);
             }
         }
 
@@ -519,7 +528,7 @@ namespace SuiteCRMAddIn
                 if (item.Sensitivity != Outlook.OlSensitivity.olNormal)
                 {
                     lContactItems.Add(new cContactItem {OModifiedDate = DateTime.UtcNow, oItem = item });
-                    clsSuiteCRMHelper.WriteLog("Contact with abnormal Sensitivity was added to lContactItems - " + item.FullName);
+                    Log.Warn("Contact with abnormal Sensitivity was added to lContactItems - " + item.FullName);
                     return;
                 }
                     
@@ -537,7 +546,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.CItems_ItemAdd");
+                Log.Error("ThisAddIn.CItems_ItemAdd", ex);
             }
         }
         private void AddContactToS(Outlook.ContactItem oItem, string sID = "")
@@ -574,7 +583,7 @@ namespace SuiteCRMAddIn
                     else
                         data[17] = clsSuiteCRMHelper.SetNameValuePair("id", sID);
 
-                    _result = clsSuiteCRMHelper.SetEntry(data, "Contacts");
+                    _result = clsSuiteCRMHelper.SetEntryUnsafe(data, "Contacts");
                     Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
                     if (oProp == null)
                         oProp = oItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
@@ -586,12 +595,12 @@ namespace SuiteCRMAddIn
                         oProp2 = oItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                     oProp2.Value = _result;
 
-                    clsSuiteCRMHelper.WriteLog(oItem.FullName + " from save Sensitivity= " + oItem.Sensitivity);
+                    Log.Warn(oItem.FullName + " from save Sensitivity= " + oItem.Sensitivity);
 
                     if (oItem.Sensitivity.ToString() != "olNormal")
                         return;
 
-                    clsSuiteCRMHelper.WriteLog("        Save");
+                    Log.Warn("        Save");
                     oItem.Save();
 
                     string entryId = oItem.EntryID;
@@ -599,24 +608,24 @@ namespace SuiteCRMAddIn
                     if (sItem != default(cContactItem))
                     {
                         sItem.oItem = oItem;
-                        clsSuiteCRMHelper.WriteLog("ThisAddIn.AddContactToS (DateTime.UtcNow - sItem.OModifiedDate).Milliseconds = " +
-                            (DateTime.UtcNow - sItem.OModifiedDate).TotalSeconds.ToString());
+                        Log.Warn("ThisAddIn.AddContactToS (DateTime.UtcNow - sItem.OModifiedDate).Milliseconds = " +
+                                                   (DateTime.UtcNow - sItem.OModifiedDate).TotalSeconds.ToString());
 
                         sItem.OModifiedDate = DateTime.UtcNow;
 
                         sItem.SEntryID = _result;
-                        clsSuiteCRMHelper.WriteLog("ThisAddIn.AddContactToS sItem.OModifiedDate = "+ sItem.OModifiedDate.ToString());
+                        Log.Warn("ThisAddIn.AddContactToS sItem.OModifiedDate = "+ sItem.OModifiedDate.ToString());
                     }
                     else
                     {
-                        clsSuiteCRMHelper.WriteLog("ThisAddIn.AddContactToS ADD lContactItemsFresh");
+                        Log.Warn("ThisAddIn.AddContactToS ADD lContactItemsFresh");
                         lContactItems.Add(new cContactItem { SEntryID = _result, OModifiedDate = DateTime.UtcNow, oItem = oItem });
                     }
                         
                 }
                 catch (Exception ex)
                 {
-                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.AddContactToS");
+                    Log.Error("ThisAddIn.AddContactToS", ex);
                 }
             }
         }
@@ -635,12 +644,12 @@ namespace SuiteCRMAddIn
                                 continue;
                             string sID = oItem.oItem.EntryID;
                         }
-                        catch (COMException ex)
+                        catch (COMException)
                         {
                             eNameValue[] data = new eNameValue[2];
                             data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
                             data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                            clsSuiteCRMHelper.SetEntry(data, "Contacts");
+                            clsSuiteCRMHelper.SetEntryUnsafe(data, "Contacts");
                             oItem.Delete = true;
                         }
                     }
@@ -648,7 +657,7 @@ namespace SuiteCRMAddIn
                 }
                 catch (Exception ex)
                 {
-                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.CItems_ItemRemove");
+                    Log.Error("ThisAddIn.CItems_ItemRemove", ex);
                 }
             }
             sDelContactId = "";
@@ -675,7 +684,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.StartTaskSync");
+                Log.Error("ThisAddIn.StartTaskSync", ex);
             }
         }
         private Outlook.OlImportance GetImportance(string sImportance)
@@ -712,9 +721,8 @@ namespace SuiteCRMAddIn
         }
         private void SyncTasks(Outlook.MAPIFolder tasksFolder)
         {
-
-            clsSuiteCRMHelper.WriteLog("SyncTasks");
-            clsSuiteCRMHelper.WriteLog("My UserId= " + clsSuiteCRMHelper.GetUserId());
+            Log.Warn("SyncTasks");
+            Log.Warn("My UserId= " + clsSuiteCRMHelper.GetUserId());
             try
             {
                 int iOffset = 0;
@@ -754,7 +762,7 @@ namespace SuiteCRMAddIn
 
                                 if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()) && !string.IsNullOrEmpty(dResult.date_start.value.ToString()))
                                 {
-                                    clsSuiteCRMHelper.WriteLog("    SET date_start = dResult.date_start");
+                                    Log.Warn("    SET date_start = dResult.date_start");
                                     date_start = DateTime.ParseExact(dResult.date_start.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
 
                                     date_start = date_start.Value.Add(new DateTimeOffset(DateTime.Now).Offset);
@@ -771,7 +779,7 @@ namespace SuiteCRMAddIn
 
                                 if (date_start != null && date_start < GetStartDate())
                                 {
-                                    clsSuiteCRMHelper.WriteLog("    date_start="+ date_start.ToString() + ", GetStartDate= " + GetStartDate().ToString());
+                                    Log.Warn("    date_start="+ date_start.ToString() + ", GetStartDate= " + GetStartDate().ToString());
                                     continue;
                                 }
 
@@ -784,7 +792,7 @@ namespace SuiteCRMAddIn
 
                                 foreach (var lt in lTaskItems)
                                 {
-                                    clsSuiteCRMHelper.WriteLog("    Task= " + lt.SEntryID);
+                                    Log.Warn("    Task= " + lt.SEntryID);
                                 }
 
                                 var oItem = lTaskItems.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString());
@@ -792,7 +800,7 @@ namespace SuiteCRMAddIn
 
                                 if (oItem == default(cTaskItem))
                                 {
-                                    clsSuiteCRMHelper.WriteLog("    if default");
+                                    Log.Warn("    if default");
                                     Outlook.TaskItem tItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
                                     tItem.Subject = dResult.name.value.ToString();
                                     
@@ -821,24 +829,24 @@ namespace SuiteCRMAddIn
                                         SEntryID = dResult.id.value.ToString(),
                                         Touched = true
                                     });
-                                    clsSuiteCRMHelper.WriteLog("    save 0");
+                                    Log.Warn("    save 0");
                                     tItem.Save();
                                 }
                                 else
                                 {
-                                    clsSuiteCRMHelper.WriteLog("    else not default");
+                                    Log.Warn("    else not default");
                                     oItem.Touched = true;
                                     Outlook.TaskItem tItem = oItem.oItem;
                                     Outlook.UserProperty oProp = tItem.UserProperties["SOModifiedDate"];
 
-                                    clsSuiteCRMHelper.WriteLog("    oProp.Value= " + oProp.Value + ", dResult.date_modified=" + dResult.date_modified.value.ToString());
+                                    Log.Warn((string) ("    oProp.Value= " + oProp.Value + ", dResult.date_modified=" + dResult.date_modified.value.ToString()));
                                     if (oProp.Value != dResult.date_modified.value.ToString())
                                     {
                                         tItem.Subject = dResult.name.value.ToString();
 
                                         if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
                                         {
-                                            clsSuiteCRMHelper.WriteLog("    tItem.StartDate= "+ tItem.StartDate+ ", date_start=" + date_start);
+                                            Log.Warn("    tItem.StartDate= "+ tItem.StartDate+ ", date_start=" + date_start);
                                             tItem.StartDate = date_start.Value;
                                         }
                                         if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
@@ -857,7 +865,7 @@ namespace SuiteCRMAddIn
                                         if (oProp2 == null)
                                             oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                                         oProp2.Value = dResult.id.value.ToString();
-                                        clsSuiteCRMHelper.WriteLog("    save 1");
+                                        Log.Warn("    save 1");
                                         tItem.Save();
                                     }
                                     oItem.OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
@@ -865,7 +873,7 @@ namespace SuiteCRMAddIn
                             }
                             catch (Exception ex)
                             {
-                                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncTasks");
+                                Log.Error("ThisAddIn.SyncTasks", ex);
                             }
                         }
                     }
@@ -893,12 +901,12 @@ namespace SuiteCRMAddIn
                 }
                 catch (Exception ex)
                 {
-                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncTasks");
+                    Log.Error("ThisAddIn.SyncTasks", ex);
                 }
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncTasks");
+                Log.Error("ThisAddIn.SyncTasks", ex);
             }
         }
         private void GetOutlookTItems(Outlook.MAPIFolder taskFolder)
@@ -938,45 +946,45 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.GetOutlookTItems");
+                Log.Error("ThisAddIn.GetOutlookTItems", ex);
             }
         }
 
         void TItems_ItemChange(object Item)
         {
-            clsSuiteCRMHelper.WriteLog("TItems_ItemChange");
+            Log.Warn("TItems_ItemChange");
             try
             {
                 var oItem = Item as Outlook.TaskItem;
                 string entryId = oItem.EntryID;
-                clsSuiteCRMHelper.WriteLog("    oItem.EntryID= "+ entryId);
+                Log.Warn("    oItem.EntryID= "+ entryId);
 
                 cTaskItem taskitem = lTaskItems.FirstOrDefault(a => a.oItem.EntryID == entryId);
                 if (taskitem != default(cTaskItem))
                 {
                     if ((DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 5)
                     {
-                        clsSuiteCRMHelper.WriteLog("2 callitem.IsUpdate = " + taskitem.IsUpdate);
+                        Log.Warn("2 callitem.IsUpdate = " + taskitem.IsUpdate);
                         taskitem.IsUpdate = 0;
                     }
 
-                    clsSuiteCRMHelper.WriteLog("Before UtcNow - callitem.OModifiedDate= " + (DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds.ToString());
+                    Log.Warn("Before UtcNow - callitem.OModifiedDate= " + (DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds.ToString());
 
                     if ( (int)(DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 2 && taskitem.IsUpdate == 0)
                     {
                         taskitem.OModifiedDate = DateTime.UtcNow;
-                        clsSuiteCRMHelper.WriteLog("1 callitem.IsUpdate = " + taskitem.IsUpdate);
+                        Log.Warn("1 callitem.IsUpdate = " + taskitem.IsUpdate);
                         taskitem.IsUpdate++;
                     }
 
-                    clsSuiteCRMHelper.WriteLog("callitem = " + taskitem.oItem.Subject);
-                    clsSuiteCRMHelper.WriteLog("callitem.SEntryID = " + taskitem.SEntryID);
-                    clsSuiteCRMHelper.WriteLog("callitem mod_date= " + taskitem.OModifiedDate.ToString());
-                    clsSuiteCRMHelper.WriteLog("UtcNow - callitem.OModifiedDate= " + (DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds.ToString());
+                    Log.Warn("callitem = " + taskitem.oItem.Subject);
+                    Log.Warn("callitem.SEntryID = " + taskitem.SEntryID);
+                    Log.Warn("callitem mod_date= " + taskitem.OModifiedDate.ToString());
+                    Log.Warn("UtcNow - callitem.OModifiedDate= " + (DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds.ToString());
                 }
                 else
                 {
-                    clsSuiteCRMHelper.WriteLog("not found callitem ");
+                    Log.Warn("not found callitem ");
                 }
 
 
@@ -989,7 +997,7 @@ namespace SuiteCRMAddIn
                     Outlook.UserProperty oProp1 = oItem.UserProperties["SEntryID"];
                     if (oProp1 != null)
                     {
-                        clsSuiteCRMHelper.WriteLog("    go to AddTaskToS");
+                        Log.Warn("    go to AddTaskToS");
                         taskitem.IsUpdate++;
                         AddTaskToS(oItem, oProp1.Value.ToString());
                     }
@@ -997,7 +1005,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.TItems_ItemChange");
+                Log.Error("ThisAddIn.TItems_ItemChange", ex);
             }
         }
 
@@ -1021,12 +1029,12 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.TItems_ItemAdd");
+                Log.Error("ThisAddIn.TItems_ItemAdd", ex);
             }
         }
         private void AddTaskToS(Outlook.TaskItem oItem, string sID = "")
         {
-            clsSuiteCRMHelper.WriteLog("AddTaskToS");
+            Log.Warn("AddTaskToS");
             //if (!settings.SyncCalendar)
             //    return;
             if (oItem != null)
@@ -1120,7 +1128,7 @@ namespace SuiteCRMAddIn
                             description = body;
                         }
                     }
-                    clsSuiteCRMHelper.WriteLog("    description= "+ description);
+                    Log.Warn("    description= "+ description);
 
                     data[0] = clsSuiteCRMHelper.SetNameValuePair("name", oItem.Subject);
                     data[1] = clsSuiteCRMHelper.SetNameValuePair("description", description);
@@ -1134,7 +1142,7 @@ namespace SuiteCRMAddIn
                     else
                         data[6] = clsSuiteCRMHelper.SetNameValuePair("id", sID);
 
-                    _result = clsSuiteCRMHelper.SetEntry(data, "Tasks");
+                    _result = clsSuiteCRMHelper.SetEntryUnsafe(data, "Tasks");
                     Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
                     if (oProp == null)
                         oProp = oItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
@@ -1157,12 +1165,11 @@ namespace SuiteCRMAddIn
                     else
                         lTaskItems.Add(new cTaskItem { Touched = true, SEntryID = _result, OModifiedDate = DateTime.UtcNow, oItem = oItem });
 
-                    clsSuiteCRMHelper.WriteLog("    date_start= " + str + ", date_due=" + str2);
-
+                    Log.Warn("    date_start= " + str + ", date_due=" + str2);
                 }
                 catch (Exception ex)
                 {
-                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.AddTaskToS");
+                    Log.Error("ThisAddIn.AddTaskToS", ex);
                 }
             }
         }
@@ -1180,12 +1187,12 @@ namespace SuiteCRMAddIn
                             {
                                 string sID = oItem.oItem.EntryID;
                             }
-                            catch (COMException ex)
+                            catch (COMException)
                             {
                                 eNameValue[] data = new eNameValue[2];
                                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
                                 data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                                clsSuiteCRMHelper.SetEntry(data, "Tasks");
+                                clsSuiteCRMHelper.SetEntryUnsafe(data, "Tasks");
                                 oItem.Delete = true;
                             }
                         }
@@ -1193,7 +1200,7 @@ namespace SuiteCRMAddIn
                     }
                     catch (Exception ex)
                     {
-                        clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.TItems_ItemRemove");
+                        Log.Error("ThisAddIn.TItems_ItemRemove", ex);
                     }
                 }
                 sDelTaskId = "";
@@ -1226,7 +1233,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.StartCalendarSync");
+                Log.Error("ThisAddIn.StartCalendarSync", ex);
             }
         }
 
@@ -1244,12 +1251,12 @@ namespace SuiteCRMAddIn
                             {
                                 string sID = oItem.oItem.EntryID;
                             }
-                            catch(COMException ex)
+                            catch(COMException)
                             {
                                 eNameValue[] data = new eNameValue[2];
                                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
                                 data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                                clsSuiteCRMHelper.SetEntry(data, oItem.SType);
+                                clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.SType);
                                 oItem.Delete = true;
                             }
                         }                        
@@ -1261,47 +1268,47 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Items_ItemRemove");
+                Log.Error("ThisAddIn.Items_ItemRemove", ex);
             }
         }
 
         void Items_ItemChange(object Item)
         {
-            clsSuiteCRMHelper.WriteLog("Items_ItemChange");
+            Log.Warn("Items_ItemChange");
             try
             {
                 var aItem = Item as Outlook.AppointmentItem;
 
                 string entryId = aItem.EntryID;
                 cAppItem callitem = lCalItems.FirstOrDefault(a => a.oItem.EntryID == entryId);
-                clsSuiteCRMHelper.WriteLog("CalItem EntryID=  " + aItem.EntryID);
+                Log.Warn("CalItem EntryID=  " + aItem.EntryID);
                 if (callitem != default(cAppItem))
                 {
                     var utcNow = DateTime.UtcNow;
                     if (Math.Abs((int)(utcNow - callitem.OModifiedDate).TotalSeconds) > 5)
                     {
-                        clsSuiteCRMHelper.WriteLog("2 callitem.IsUpdate = " + callitem.IsUpdate);
+                        Log.Warn("2 callitem.IsUpdate = " + callitem.IsUpdate);
                         callitem.IsUpdate = 0;
                     }
 
-                    clsSuiteCRMHelper.WriteLog("Before UtcNow - callitem.OModifiedDate= " + (int)(utcNow - callitem.OModifiedDate).TotalSeconds);
+                    Log.Warn("Before UtcNow - callitem.OModifiedDate= " + (int)(utcNow - callitem.OModifiedDate).TotalSeconds);
 
                     if (Math.Abs((int)(utcNow - callitem.OModifiedDate).TotalSeconds) > 2 && callitem.IsUpdate == 0)
                     {
                         callitem.OModifiedDate = DateTime.UtcNow;
-                        clsSuiteCRMHelper.WriteLog("1 callitem.IsUpdate = " + callitem.IsUpdate);
+                        Log.Warn("1 callitem.IsUpdate = " + callitem.IsUpdate);
                         callitem.IsUpdate++;
                     }
 
-                    clsSuiteCRMHelper.WriteLog("callitem = " + callitem.oItem.Subject);
-                    clsSuiteCRMHelper.WriteLog("callitem.SEntryID = " + callitem.SEntryID);
-                    clsSuiteCRMHelper.WriteLog("callitem mod_date= " + callitem.OModifiedDate.ToString());
-                    clsSuiteCRMHelper.WriteLog("utcNow= " + DateTime.UtcNow.ToString());
-                    clsSuiteCRMHelper.WriteLog("UtcNow - callitem.OModifiedDate= " + (int)(DateTime.UtcNow - callitem.OModifiedDate).TotalSeconds);
+                    Log.Warn("callitem = " + callitem.oItem.Subject);
+                    Log.Warn("callitem.SEntryID = " + callitem.SEntryID);
+                    Log.Warn("callitem mod_date= " + callitem.OModifiedDate.ToString());
+                    Log.Warn("utcNow= " + DateTime.UtcNow.ToString());
+                    Log.Warn("UtcNow - callitem.OModifiedDate= " + (int)(DateTime.UtcNow - callitem.OModifiedDate).TotalSeconds);
                 }
                 else
                 {
-                    clsSuiteCRMHelper.WriteLog("not found callitem ");
+                    Log.Warn("not found callitem ");
                 }
 
 
@@ -1321,13 +1328,13 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Items_ItemChange");
+                Log.Error("ThisAddIn.Items_ItemChange", ex);
             }
         }
 
         void Items_ItemAdd(object Item)
         {
-            clsSuiteCRMHelper.WriteLog("Items_ItemAdd");
+            Log.Warn("Items_ItemAdd");
             var aItem = Item as Outlook.AppointmentItem;
             if (IsCalendarView && !lCalItems.Exists(a => a.oItem.EntryID == aItem.EntryID))
             {
@@ -1373,7 +1380,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.GetOutlookCalItems");
+                Log.Error("ThisAddIn.GetOutlookCalItems", ex);
             }
         }
 
@@ -1408,11 +1415,11 @@ namespace SuiteCRMAddIn
                     {
                         dynamic dResult1 = JsonConvert.DeserializeObject(oResult1.name_value_object.ToString());
 
-                        clsSuiteCRMHelper.WriteLog("-------------------SetRecepients-----Start-----dResult1---2-------");
-                        clsSuiteCRMHelper.WriteLog(Convert.ToString(dResult1));
-                        clsSuiteCRMHelper.WriteLog("-------------------SetRecepients-----End---------------");
+                        Log.Warn("-------------------SetRecepients-----Start-----dResult1---2-------");
+                        Log.Warn((string) Convert.ToString(dResult1));
+                        Log.Warn("-------------------SetRecepients-----End---------------");
 
-                       /* clsSuiteCRMHelper.WriteLog("-------------------SetRecepients GetAttendeeList-----Start---------------");
+                        /* clsSuiteCRMHelper.WriteLog("-------------------SetRecepients GetAttendeeList-----Start---------------");
 
                         string findmeet = clsSuiteCRMHelper.getRelationship("Contacts", oResult1.id, "meetings");
                         clsSuiteCRMHelper.WriteLog("    findmeet=" + findmeet);
@@ -1472,7 +1479,7 @@ namespace SuiteCRMAddIn
                                 if (iMin > 0)
                                     aItem.End.AddMinutes(iMin);
                             }
-                            clsSuiteCRMHelper.WriteLog("   default SetRecepients");
+                            Log.Warn("   default SetRecepients");
                             SetRecepients(aItem, dResult.id.value.ToString(), sModule);
 
                             //}
@@ -1529,7 +1536,7 @@ namespace SuiteCRMAddIn
                                         aItem.End.AddHours(iHour);
                                     if (iMin > 0)
                                         aItem.End.AddMinutes(iMin);
-                                    clsSuiteCRMHelper.WriteLog("    SetRecepients");
+                                    Log.Warn("    SetRecepients");
                                     SetRecepients(aItem, dResult.id.value.ToString(), sModule);
                                 }
                                 try
@@ -1553,19 +1560,19 @@ namespace SuiteCRMAddIn
                             oProp2.Value = dResult.id.value.ToString();
                             aItem.Save();
                         }
-                        clsSuiteCRMHelper.WriteLog("Not default dResult.date_modified= "+ dResult.date_modified.value.ToString());
+                        Log.Warn((string) ("Not default dResult.date_modified= "+ dResult.date_modified.value.ToString()));
                         oItem.OModifiedDate =DateTime.ParseExact(dResult.date_modified.value.ToString(),"yyyy-MM-dd HH:mm:ss", null);
                     }
                 }
                 catch (Exception ex)
                 {
-                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncMeetings");
+                    Log.Error("ThisAddIn.SyncMeetings", ex);
                 }
             }
         }
         private void SyncMeetings(Outlook.MAPIFolder appointmentsFolder, string sModule)
         {
-            clsSuiteCRMHelper.WriteLog("SyncMeetings");
+            Log.Warn("SyncMeetings");
             try
             {
                 int iOffset = 0;
@@ -1607,9 +1614,9 @@ namespace SuiteCRMAddIn
                             {
                                 oItem.oItem.Delete();
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
-                                clsSuiteCRMHelper.WriteLog("   Exception  oItem.oItem.Delete");
+                                Log.Warn("   Exception  oItem.oItem.Delete");
                             }
 
 
@@ -1624,17 +1631,17 @@ namespace SuiteCRMAddIn
                 }
                 catch (Exception ex)
                 {
-                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncMeetings");
+                    Log.Error("ThisAddIn.SyncMeetings", ex);
                 }
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.SyncMeetings");
+                Log.Error("ThisAddIn.SyncMeetings", ex);
             }
         }
         private void AddAppointmentToS(Outlook.AppointmentItem aItem, string sModule, string sID = "")
         {
-            clsSuiteCRMHelper.WriteLog("AddAppointmentToS");
+            Log.Warn("AddAppointmentToS");
             if (!settings.SyncCalendar)
                 return;
             if (aItem != null)
@@ -1663,10 +1670,10 @@ namespace SuiteCRMAddIn
                     else
                         data[7] = clsSuiteCRMHelper.SetNameValuePair("id", sID);
 
-                    _result = clsSuiteCRMHelper.SetEntry(data, sModule);
+                    _result = clsSuiteCRMHelper.SetEntryUnsafe(data, sModule);
                     if (sID == "")
                     {
-                        clsSuiteCRMHelper.WriteLog("    -- AddAppointmentToS AddAppointmentToS sID =" + sID);
+                        Log.Warn("    -- AddAppointmentToS AddAppointmentToS sID =" + sID);
 
                         eSetRelationshipValue info = new eSetRelationshipValue
                         {
@@ -1675,7 +1682,7 @@ namespace SuiteCRMAddIn
                             module1 = "Users",
                             module1_id = clsSuiteCRMHelper.GetUserId()
                         };
-                        clsSuiteCRMHelper.SetRelationship(info);
+                        clsSuiteCRMHelper.SetRelationshipUnsafe(info);
                                                 
                     }
                     if (aItem.Recipients!=null)
@@ -1684,12 +1691,12 @@ namespace SuiteCRMAddIn
                         {
                             try
                             {
-                                clsSuiteCRMHelper.WriteLog("objRecepientName= " + objRecepient.Name.ToString());
-                                clsSuiteCRMHelper.WriteLog("objRecepient= " + objRecepient.Address.ToString());
+                                Log.Warn("objRecepientName= " + objRecepient.Name.ToString());
+                                Log.Warn("objRecepient= " + objRecepient.Address.ToString());
                             }
                             catch
                             {
-                                clsSuiteCRMHelper.WriteLog("objRecepient ERROR");
+                                Log.Warn("objRecepient ERROR");
                                 continue;
                             }
 
@@ -1722,9 +1729,9 @@ namespace SuiteCRMAddIn
                                     clsSuiteCRMHelper.WriteLog("    lc.SEntryID= " + lc.SEntryID.ToString()); 
                                 }*/
 
-                                clsSuiteCRMHelper.WriteLog("    SetRelationship 1");
-                                clsSuiteCRMHelper.WriteLog("    sCID=" + sCID); 
-                                clsSuiteCRMHelper.SetRelationship(info);
+                                Log.Warn("    SetRelationship 1");
+                                Log.Warn("    sCID=" + sCID);
+                                clsSuiteCRMHelper.SetRelationshipUnsafe(info);
 
                                 string AccountID = clsSuiteCRMHelper.getRelationship("Contacts", sCID, "accounts");
 
@@ -1737,7 +1744,7 @@ namespace SuiteCRMAddIn
                                         module1 = "Accounts",
                                         module1_id = AccountID
                                     };
-                                    clsSuiteCRMHelper.SetRelationship(info);
+                                    clsSuiteCRMHelper.SetRelationshipUnsafe(info);
                                 }
                                 continue;
                             }
@@ -1751,7 +1758,7 @@ namespace SuiteCRMAddIn
                                     module1 = "Users",
                                     module1_id = sCID
                                 };
-                                clsSuiteCRMHelper.SetRelationship(info);
+                                clsSuiteCRMHelper.SetRelationshipUnsafe(info);
                                 continue;
                             }
                             sCID = GetID(objRecepient.Address, "Leads");
@@ -1764,8 +1771,8 @@ namespace SuiteCRMAddIn
                                     module1 = "Leads",
                                     module1_id = sCID
                                 };
-                                clsSuiteCRMHelper.WriteLog("    SetRelationship 2");
-                                clsSuiteCRMHelper.SetRelationship(info);
+                                Log.Warn("    SetRelationship 2");
+                                clsSuiteCRMHelper.SetRelationshipUnsafe(info);
                                 continue;
                             }
                         }
@@ -1782,7 +1789,7 @@ namespace SuiteCRMAddIn
                     if (oProp2 == null)
                         oProp2 = aItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                     oProp2.Value = _result;
-                    clsSuiteCRMHelper.WriteLog("    AddAppointmentToS Save ");
+                    Log.Warn("    AddAppointmentToS Save ");
                     aItem.Save();
                     string entryId = aItem.EntryID;
                     var sItem = lCalItems.FirstOrDefault(a => a.oItem.EntryID == entryId);
@@ -1791,17 +1798,17 @@ namespace SuiteCRMAddIn
                         sItem.oItem = aItem;
                         sItem.OModifiedDate = DateTime.UtcNow;
                         sItem.SEntryID = _result;
-                        clsSuiteCRMHelper.WriteLog("    AddAppointmentToS Edit ");
+                        Log.Warn("    AddAppointmentToS Edit ");
                     }
                     else
                     {
                         lCalItems.Add(new cAppItem { SEntryID = _result, SType = sModule, OModifiedDate = DateTime.UtcNow, oItem = aItem });
-                        clsSuiteCRMHelper.WriteLog("    AddAppointmentToS New ");
+                        Log.Warn("    AddAppointmentToS New ");
                     }
                 }
                 catch (Exception ex)
                 {
-                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.AddAppointmentToS");
+                    Log.Error("ThisAddIn.AddAppointmentToS", ex);
                 }
             }
         }
@@ -1818,8 +1825,9 @@ namespace SuiteCRMAddIn
 
         private void cbtnSettings_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
-            frmSettings objacbbSettings = new frmSettings();
-            objacbbSettings.ShowDialog();
+            var settingsForm = new frmSettings();
+            settingsForm.SettingsChanged += (sender, args) => this.ResetLog();
+            settingsForm.ShowDialog();
         }
 
         private void ManualArchive()
@@ -1850,7 +1858,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ThisAddIn_Shutdown");
+                Log.Error("ThisAddIn.ThisAddIn_Shutdown", ex);
             }
         }
 
@@ -1862,7 +1870,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.UnregisterEvents");
+                Log.Error("ThisAddIn.UnregisterEvents", ex);
             }
             try
             {
@@ -1870,7 +1878,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.UnregisterEvents");
+                Log.Error("ThisAddIn.UnregisterEvents", ex);
             }
 
             try
@@ -1879,7 +1887,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.UnregisterEvents");
+                Log.Error("ThisAddIn.UnregisterEvents", ex);
             }
 
             try
@@ -1888,7 +1896,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.UnregisterEvents");
+                Log.Error("ThisAddIn.UnregisterEvents", ex);
             }
 
 
@@ -1959,7 +1967,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Application_ItemSend");
+                Log.Error("ThisAddIn.Application_ItemSend", ex);
             }
         }
 
@@ -1985,7 +1993,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Application_NewMail");
+                Log.Error("ThisAddIn.Application_NewMail", ex);
             }
         }
 
@@ -2027,11 +2035,11 @@ namespace SuiteCRMAddIn
                 string strUsername = Globals.ThisAddIn.settings.username;
                 string strPassword = Globals.ThisAddIn.settings.password;                
 
-                Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","");
+                Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","", Globals.ThisAddIn.Log);
                 string strURL = Globals.ThisAddIn.settings.host;
                 if (strURL != "")
                 {
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, Globals.ThisAddIn.settings.LDAPKey);
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, Globals.ThisAddIn.settings.LDAPKey, Globals.ThisAddIn.Log);
                     Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                     try
                     {
@@ -2040,20 +2048,23 @@ namespace SuiteCRMAddIn
                             Globals.ThisAddIn.SuiteCRMUserSession.AuthenticateLDAP();
                         }
                         else
+                        {
                             Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                        }
+
                         if (Globals.ThisAddIn.SuiteCRMUserSession.id != "")
                             return;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        ex.Data.Clear();
+                        // Swallow exception(!)
                     }
                 }
                 Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = false;
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.Authenticate");
+                Log.Error("ThisAddIn.Authenticate", ex);
             }
         }
 
@@ -2074,7 +2085,8 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.GetMailFolders"); ;
+                Log.Error("ThisAddIn.GetMailFolders", ex);
+                ;
             }
         }
 
@@ -2107,7 +2119,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ArchiveEmail");
+                Log.Error("ThisAddIn.ArchiveEmail", ex);
             }
         }
 
@@ -2115,11 +2127,11 @@ namespace SuiteCRMAddIn
         {
             string str5 = "(" + sModule.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + sModule + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(sEmailID) + "%'))";
 
-            clsSuiteCRMHelper.WriteLog("-------------------GetID-----Start---------------");
+            Log.Warn("-------------------GetID-----Start---------------");
 
-            clsSuiteCRMHelper.WriteLog("    str5=" + str5);
+            Log.Warn("    str5=" + str5);
 
-            clsSuiteCRMHelper.WriteLog("-------------------GetID-----End---------------");
+            Log.Warn("-------------------GetID-----End---------------");
 
             string[] fields = new string[1];
             fields[0] = "id";
@@ -2150,7 +2162,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ArchiveEmailThread");
+                Log.Error("ThisAddIn.ArchiveEmailThread", ex);
             }
 
         }
@@ -2160,15 +2172,16 @@ namespace SuiteCRMAddIn
             byte[] strRet = null;
             if (objMailAttachment != null)
             {
-                if (System.IO.Directory.Exists(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath") == false)
+                var temporaryAttachmentPath = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath";
+                if (!System.IO.Directory.Exists(temporaryAttachmentPath))
                 {
-                    string strPath = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath";
-                    System.IO.Directory.CreateDirectory(strPath);
+                    System.IO.Directory.CreateDirectory(temporaryAttachmentPath);
                 }
                 try
                 {
-                    objMailAttachment.SaveAsFile(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath\\" + objMailAttachment.FileName);
-                    strRet = System.IO.File.ReadAllBytes(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath\\" + objMailAttachment.FileName);
+                    var attachmentFilePath = temporaryAttachmentPath + "\\" + objMailAttachment.FileName;
+                    objMailAttachment.SaveAsFile(attachmentFilePath);
+                    strRet = System.IO.File.ReadAllBytes(attachmentFilePath);
                 }
                 catch (COMException ex)
                 {
@@ -2185,9 +2198,9 @@ namespace SuiteCRMAddIn
                         strLog += "Inputs:" + "\n";
                         strLog += "Data:" + objMailAttachment.DisplayName + "\n";
                         strLog += "-------------------------------------------------------------------------" + "\n";
-                        clsSuiteCRMHelper.WriteLog(strLog);
-                        ex.Data.Clear();
-                        string strName = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
+                        Log.Warn(strLog);
+                        // Swallow exception(!)
+                        string strName = temporaryAttachmentPath  + "\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
                         objMail.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         foreach (string strFileName in System.IO.Directory.GetFiles(strName.Replace(".html", "_files")))
                         {
@@ -2200,14 +2213,14 @@ namespace SuiteCRMAddIn
                     }
                     catch (Exception ex1)
                     {
-                        clsSuiteCRMHelper.WriteException(ex1, "ThisAddIn.Base64Encode");
+                        Log.Error("ThisAddIn.Base64Encode", ex1);
                     }
                 }
                 finally
                 {
-                    if (System.IO.Directory.Exists(Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath") == true)
+                    if (System.IO.Directory.Exists(temporaryAttachmentPath))
                     {
-                        System.IO.Directory.Delete(Environment.SpecialFolder.MyDocuments.ToString(), true);
+                        System.IO.Directory.Delete(temporaryAttachmentPath, true);
                     }
                 }
             }
@@ -2259,7 +2272,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ArchiveFolderItems");
+                Log.Error("ThisAddIn.ArchiveFolderItems", ex);
             }
         }
 
@@ -2294,7 +2307,7 @@ namespace SuiteCRMAddIn
                 }
                 catch (Exception ex)
                 {
-                    clsSuiteCRMHelper.WriteException(ex, "ThisAddIn.ProcessMails");
+                    Log.Error("ThisAddIn.ProcessMails", ex);
                 }
                 if (dtAutoArchiveFrom != null)
                     break;
@@ -2330,10 +2343,27 @@ namespace SuiteCRMAddIn
             }
             catch
             {
-                clsSuiteCRMHelper.WriteLog("Body doesn't have time string");
+                Log.Warn("Body doesn't have time string");
                 return null;
             }
-           
+
+        }
+
+        public int SelectedEmailCount => Application.ActiveExplorer()?.Selection.Count ?? 0;
+
+        public IEnumerable<Outlook.MailItem> SelectedEmails
+        {
+            get
+            {
+                var selection = Application.ActiveExplorer()?.Selection;
+                if (selection == null) yield break;
+                foreach (object e in selection)
+                {
+                    var mail = e as Outlook.MailItem;
+                    if (mail != null) yield return mail;
+                    Marshal.ReleaseComObject(e);
+                }
+            }
         }
     }
 }
