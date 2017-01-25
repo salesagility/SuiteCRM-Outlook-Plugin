@@ -70,7 +70,7 @@ namespace SuiteCRMAddIn
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                Globals.ThisAddIn.Log.Warn(strLog);
             }
         }
 
@@ -115,7 +115,7 @@ namespace SuiteCRMAddIn
             try
             {
                 if (Globals.ThisAddIn.SuiteCRMUserSession == null)
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "", "");
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "", "", Globals.ThisAddIn.Log);
 
                 Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                 if (settings.host != "")
@@ -186,7 +186,7 @@ namespace SuiteCRMAddIn
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                Globals.ThisAddIn.Log.Warn(strLog);
             }
         }
 
@@ -226,7 +226,7 @@ namespace SuiteCRMAddIn
                 strLog += "Data:" + ex.Data.ToString() + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                Globals.ThisAddIn.Log.Warn(strLog);
                 // Swallow exception(!)
             }
         }
@@ -285,7 +285,7 @@ namespace SuiteCRMAddIn
                     {
                         txtLDAPAuthenticationKey.Text = null;
                     }
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim());
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Globals.ThisAddIn.Log);
 
                     if (chkEnableLDAPAuthentication.Checked && txtLDAPAuthenticationKey.Text.Trim().Length != 0)
                     {
@@ -320,7 +320,7 @@ namespace SuiteCRMAddIn
                     strLog += "Data:" + ex.Data.ToString() + "\n";
                     strLog += "HResult:" + ex.HResult.ToString() + "\n";
                     strLog += "-------------------------------------------------------------------------" + "\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
+                    Globals.ThisAddIn.Log.Warn(strLog);
                     // Swallow exception(!)
                 }
             }
@@ -375,7 +375,7 @@ namespace SuiteCRMAddIn
                     {
                         txtLDAPAuthenticationKey.Text = null;
                     }
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim());
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Globals.ThisAddIn.Log);
                     Globals.ThisAddIn.SuiteCRMUserSession.Login();
                     if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
                     {
@@ -400,7 +400,7 @@ namespace SuiteCRMAddIn
                     strLog += "Data:" + ex.Data.ToString() + "\n";
                     strLog += "HResult:" + ex.HResult.ToString() + "\n";
                     strLog += "-------------------------------------------------------------------------" + "\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
+                    Globals.ThisAddIn.Log.Warn(strLog);
                     this.DialogResult = DialogResult.None;
                     return;
                 }

@@ -21,25 +21,18 @@
  * @author SalesAgility <info@salesagility.com>
  */
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Security.Cryptography;
-using System.Configuration;
-using System.Net;
-using System.IO;
-using Newtonsoft.Json;
-using System.Windows.Forms;
-using System.Collections;
 using System.Globalization;
+using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
 
 namespace SuiteCRMClient
 {
-
     public class clsUsersession
     {
+        private readonly ILogger _log;
+
         public string SuiteCRMUsername { get; set; }
         public string SuiteCRMPassword { get; set; }
         public string LDAPKey { get; set; }
@@ -47,8 +40,9 @@ namespace SuiteCRMClient
         public bool AwaitingAuthentication { get; set; }
         public string id { get; set; }
 
-        public clsUsersession(string URL, string Username, string Password, string strLDAPKey)
+        public clsUsersession(string URL, string Username, string Password, string strLDAPKey, ILogger log)
         {
+            _log = log;
             if (URL != "")
             {
                 clsGlobals.SuiteCRMURL = new Uri(URL);
@@ -122,7 +116,7 @@ namespace SuiteCRMClient
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                _log.Warn(strLog);
                 throw ex;
             }
 
@@ -202,7 +196,7 @@ namespace SuiteCRMClient
                 strLog += "StackTrace:" + ex.StackTrace + "\n";
                 strLog += "HResult:" + ex.HResult.ToString() + "\n";
                 strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                _log.Warn(strLog);
             }
         }
 

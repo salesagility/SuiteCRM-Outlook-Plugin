@@ -25,19 +25,25 @@ using System.Text;
 using System.Net;
 using System.IO;
 using Newtonsoft.Json;
+using SuiteCRMClient.Logging;
 
 namespace SuiteCRMClient
 {
-
     public static class clsGlobals
     {
         private static readonly JsonSerializer Serializer;
+        private static ILogger Log;
 
         static clsGlobals()
         {
             Serializer = new JsonSerializer();
             Serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
             Serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+        }
+
+        public static void SetLog(ILogger log)
+        {
+            Log = log;
         }
 
         public static Uri SuiteCRMURL { get; set; }
@@ -96,7 +102,10 @@ namespace SuiteCRMClient
             using(var reader = new StreamReader(input))
             {
                 var result = reader.ReadToEnd();
-                if (isLog) clsSuiteCRMHelper.WriteLog("Response : " + result);
+                if (isLog)
+                {
+                    Log.Debug("Response : " + result);
+                }
                 return result;
             }
         }
@@ -118,19 +127,9 @@ namespace SuiteCRMClient
 
         private static void LogException(string strMethod, object objInput, Exception ex)
         {
-            string strLog;
-            strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-            strLog += "GetResponse method General Exception:" + "\n";
-            strLog += "Message:" + ex.Message + "\n";
-            strLog += "Source:" + ex.Source + "\n";
-            strLog += "StackTrace:" + ex.StackTrace + "\n";
-            strLog += "Data:" + ex.Data.ToString() + "\n";
-            strLog += "HResult:" + ex.HResult.ToString() + "\n";
-            strLog += "Inputs:" + "\n";
-            strLog += "Method:" + strMethod + "\n";
-            strLog += "Data:" + objInput.ToString() + "\n";
-            strLog += "-------------------------------------------------------------------------" + "\n";
-            clsSuiteCRMHelper.WriteLog(strLog);
+            Log.Warn("Problem", ex);
+            Log.Warn("Method:" + strMethod);
+            Log.Warn("Data:" + objInput.ToString());
         }
 
         private static void LogFailedRequest(string strMethod, object objInput, HttpWebResponse response)
@@ -146,7 +145,7 @@ namespace SuiteCRMClient
             strLog += "Method:" + strMethod + "\n";
             strLog += "Data:" + objInput.ToString() + "\n";
             strLog += "-------------------------------------------------------------------------" + "\n";
-            clsSuiteCRMHelper.WriteLog(strLog);
+            Log.Warn(strLog);
         }
     }
 }

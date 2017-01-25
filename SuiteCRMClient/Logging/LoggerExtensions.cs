@@ -31,7 +31,12 @@ namespace SuiteCRMClient.Logging
 
         public static void Error(this ILogger log, string message, Exception error)
         {
-            log?.SafeLog(LogEntryType.Error, message + "\n" + error.ToString());
+            log?.SafeLog(
+                LogEntryType.Error,
+                message + "\n" +
+                error.ToString() + "\n" +
+                "Data:" + error.Data + "\n" +
+                "HResult:" + error.HResult);
         }
 
         private static void SafeLog(this ILogger log, LogEntryType type, string message)

@@ -39,6 +39,8 @@ using System.Web;
 namespace SuiteCRMAddIn
 {
     using SuiteCRMClient.Exceptions;
+    using SuiteCRMClient.Logging;
+    using Exception = System.Exception;
 
     public partial class frmArchive : Form
     {
@@ -639,7 +641,7 @@ namespace SuiteCRMAddIn
             }
             catch (System.Exception exception)
             {
-                clsSuiteCRMHelper.WriteException(exception, "btnArchive_Click");
+                Globals.ThisAddIn.Log.Error("btnArchive_Click", exception);
                 MessageBox.Show("There was an error while archiving", "Error");
             }
         }
@@ -701,7 +703,7 @@ namespace SuiteCRMAddIn
                 }
                 catch (System.Exception failure)
                 {
-                    clsSuiteCRMHelper.WriteException(failure, "CreateEmailRelationshipsWithEntities");
+                    Globals.ThisAddIn.Log.Error("CreateEmailRelationshipsWithEntities", failure);
                     failures.Add(failure);
                 }
             }

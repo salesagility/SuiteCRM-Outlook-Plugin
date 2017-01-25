@@ -22,16 +22,15 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections;
-using Newtonsoft.Json;
+using SuiteCRMClient.Logging;
 
 namespace SuiteCRMClient
 {
     public class clsEmailArchive
     {
+        private readonly ILogger _log;
+
         public string From { get; set; }
         public string To { get; set; }
         public string Subject { get; set; }
@@ -44,8 +43,9 @@ namespace SuiteCRMClient
 
         public clsUsersession SuiteCRMUserSession;
 
-        public clsEmailArchive(clsUsersession SuiteCRMUserSession)
+        public clsEmailArchive(clsUsersession SuiteCRMUserSession, ILogger log)
         {
+            _log = log;
             this.SuiteCRMUserSession = SuiteCRMUserSession;
             Attachments = new List<clsEmailAttachments>();
         }
@@ -120,7 +120,7 @@ namespace SuiteCRMClient
                     strLog += "Inputs:" + "\n";
                     strLog += "Data:" + contactData.ToString() + "\n";
                     strLog += "-------------------------------------------------------------------------\n";
-                    clsSuiteCRMHelper.WriteLog(strLog);
+                    _log.Warn(strLog);
 
                     throw ex;
                 }
@@ -217,18 +217,8 @@ namespace SuiteCRMClient
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "clsEmailArchive.Save method General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "Inputs:" + "\n";
-                strLog += "Data:" + this.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                throw ex;
+                _log.Error("clsEmailArchive.Save", ex);
+                throw;
             }
         }
 

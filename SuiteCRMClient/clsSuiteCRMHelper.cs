@@ -22,26 +22,24 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 
 namespace SuiteCRMClient
 {
     using RESTObjects;
     using System.Collections;
-    using System.Collections.Specialized;
-    using System.IO;
-    using System.Windows.Forms;
     using Exceptions;
     using Logging;
 
     public static class clsSuiteCRMHelper
     {
-        public static ILogger Log;
+        private static ILogger Log;
 
         public static clsUsersession SuiteCRMUserSession;
+
+        public static void SetLog(ILogger log)
+        {
+            Log = log;
+        }
 
         public static eModuleList GetModules()
         {
@@ -191,7 +189,7 @@ namespace SuiteCRMClient
             }
             catch (System.Exception exception)
             {
-                clsSuiteCRMHelper.WriteLog("SetRelationship exception" + exception.ToString());
+                Log.Warn("SetRelationship exception" + exception.ToString());
                 // Swallow exception(!)
                 return false;
             }
@@ -438,29 +436,6 @@ namespace SuiteCRMClient
                 }
             }
             return hashtable;
-        }
-       
-        public static void WriteException(Exception ex, string sMethodName)
-        {
-            try
-            {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "Method:" + sMethodName + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-            }
-            catch { }
-        }
-
-        public static void WriteLog(string strLog)
-        {
-            Log.Warn(strLog);
         }
     }
 }
