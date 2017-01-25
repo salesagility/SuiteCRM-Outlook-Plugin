@@ -25,7 +25,7 @@ using System.Collections.Generic;
 using System.Collections;
 using SuiteCRMClient.Logging;
 
-namespace SuiteCRMClient
+namespace SuiteCRMClient.Email
 {
     public class clsEmailArchive
     {

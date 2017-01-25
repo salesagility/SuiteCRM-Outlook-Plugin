@@ -20,13 +20,8 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SuiteCRMClient
+ namespace SuiteCRMClient.Email
 {
     public class clsEmailAttachments
     {

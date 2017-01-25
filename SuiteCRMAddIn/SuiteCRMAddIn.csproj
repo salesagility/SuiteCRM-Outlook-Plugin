@@ -202,6 +202,7 @@
     <Compile Include="AddressBook.Designer.cs">
       <DependentUpon>AddressBook.cs</DependentUpon>
     </Compile>
+    <Compile Include="BusinessLogic\EmailArchiving.cs" />
     <Compile Include="cItem.cs" />
     <Compile Include="clsGlobals.cs" />
     <Compile Include="clsSettings.cs" />

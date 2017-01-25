@@ -39,6 +39,7 @@ using SuiteCRMClient.Logging;
 namespace SuiteCRMAddIn
 {
     using System.Reflection;
+    using BusinessLogic;
 
     public partial class ThisAddIn
     {
@@ -48,7 +49,6 @@ namespace SuiteCRMAddIn
         public Office.CommandBarPopup objSuiteCRMMenuBar2007;
         public Office.CommandBarButton btnArvive;
         public Office.CommandBarButton btnSettings;
-        List<Outlook.Folder> lstOutlookFolders;
         public int CurrentVersion;
         List<cAppItem> lCalItems;
         private string sDelCalId = "";
@@ -1952,20 +1952,9 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                if (settings.AutoArchive)
-                {
-                    if (item is Outlook.MailItem)
-                    {
-                        Outlook.MailItem objMail = (Outlook.MailItem)item;
-                        if (objMail.UserProperties["SuiteCRM"] == null)
-                        {
-                            ArchiveEmail(objMail, 3, this.settings.ExcludedEmails);
-                            objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
-                            objMail.UserProperties["SuiteCRM"].Value = "True";
-                            objMail.Save();
-                        }
-                    }
-                }
+                ProcessNewMailItem(
+                    () => item as Outlook.MailItem,
+                    intArchiveType: 3);
             }
             catch (Exception ex)
             {
@@ -1977,26 +1966,22 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                if (settings.AutoArchive)
-                {
-                    var objItem = Globals.ThisAddIn.Application.Session.GetItemFromID(EntryID);
-                    if (objItem is Outlook.MailItem)
-                    {
-                        Outlook.MailItem objMail = (Outlook.MailItem)objItem;
-                        if (objMail.UserProperties["SuiteCRM"] == null)
-                        {
-                            ArchiveEmail(objMail, 2, this.settings.ExcludedEmails);
-                            objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
-                            objMail.UserProperties["SuiteCRM"].Value = "True";
-                            objMail.Save();
-                        }
-                    }
-                }
+                ProcessNewMailItem(
+                    () => Globals.ThisAddIn.Application.Session.GetItemFromID(EntryID) as Outlook.MailItem,
+                    intArchiveType: 2);
             }
             catch (Exception ex)
             {
                 Log.Error("ThisAddIn.Application_NewMail", ex);
             }
+        }
+
+        private void ProcessNewMailItem(Func<Outlook.MailItem> mailItemGetter, int intArchiveType)
+        {
+            if (!settings.AutoArchive) return;
+            var mailItem = mailItemGetter();
+            if (mailItem == null) return;
+            new EmailArchiving().ProcessNewMailItem(mailItem, intArchiveType);
         }
 
         /// <summary>
@@ -2070,61 +2055,6 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void GetMailFolders(Outlook.Folders objInpFolders)
-        {
-            try
-            {
-                foreach (Outlook.Folder objFolder in objInpFolders)
-                {
-                    if (objFolder.Folders.Count > 0)
-                    {
-                        lstOutlookFolders.Add(objFolder);
-                        GetMailFolders(objFolder.Folders);
-                    }
-                    else
-                        lstOutlookFolders.Add(objFolder);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.GetMailFolders", ex);
-                ;
-            }
-        }
-
-        private void ArchiveEmail(Outlook.MailItem objMail, int intArchiveType, string strExcludedEmails = "")
-        {
-            try
-            {
-                SuiteCRMClient.clsEmailArchive objEmail = new SuiteCRMClient.clsEmailArchive();
-                objEmail.From = objMail.SenderEmailAddress;
-                objEmail.To = "";
-                foreach (Outlook.Recipient objRecepient in objMail.Recipients)
-                {
-                    if (objEmail.To == "")
-                        objEmail.To = objRecepient.Address;
-                    else
-                        objEmail.To += ";" + objRecepient.Address;
-                }
-                objEmail.Subject = objMail.Subject;
-                objEmail.Body = objMail.Body;
-                objEmail.HTMLBody = objMail.HTMLBody;
-                objEmail.ArchiveType = intArchiveType;
-                foreach (Outlook.Attachment objMailAttachments in objMail.Attachments)
-                {
-                    objEmail.Attachments.Add(new SuiteCRMClient.clsEmailAttachments { DisplayName = objMailAttachments.DisplayName, FileContentInBase64String = Base64Encode(objMailAttachments, objMail) });
-                }
-                System.Threading.Thread objThread = new System.Threading.Thread(() => ArchiveEmailThread(objEmail, intArchiveType, strExcludedEmails));
-                objThread.Start();
-                objMail.Categories = "SuiteCRM";
-                objMail.Save();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.ArchiveEmail", ex);
-            }
-        }
-
         public string GetID(string sEmailID, string sModule)
         {
             string str5 = "(" + sModule.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + sModule + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(sEmailID) + "%'))";
@@ -2145,90 +2075,6 @@ namespace SuiteCRMAddIn
             return "";
         }
                 
-        private void ArchiveEmailThread(SuiteCRMClient.clsEmailArchive objEmail, int intArchiveType, string strExcludedEmails = "")
-        {
-            try
-            {
-                if (SuiteCRMUserSession != null)
-                {                    
-                    while (SuiteCRMUserSession.AwaitingAuthentication == true)
-                    {
-                        System.Threading.Thread.Sleep(1000);
-                    }                    
-                    if (SuiteCRMUserSession.id != "")
-                    {
-                        objEmail.SuiteCRMUserSession = SuiteCRMUserSession;
-                        objEmail.Save(strExcludedEmails);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.ArchiveEmailThread", ex);
-            }
-
-        }
-
-        public byte[] Base64Encode(Outlook.Attachment objMailAttachment, Outlook.MailItem objMail)
-        {
-            byte[] strRet = null;
-            if (objMailAttachment != null)
-            {
-                var temporaryAttachmentPath = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath";
-                if (!System.IO.Directory.Exists(temporaryAttachmentPath))
-                {
-                    System.IO.Directory.CreateDirectory(temporaryAttachmentPath);
-                }
-                try
-                {
-                    var attachmentFilePath = temporaryAttachmentPath + "\\" + objMailAttachment.FileName;
-                    objMailAttachment.SaveAsFile(attachmentFilePath);
-                    strRet = System.IO.File.ReadAllBytes(attachmentFilePath);
-                }
-                catch (COMException ex)
-                {
-                    try
-                    {
-                        string strLog;
-                        strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                        strLog += "AddInModule.Base64Encode method COM Exception:" + "\n";
-                        strLog += "Message:" + ex.Message + "\n";
-                        strLog += "Source:" + ex.Source + "\n";
-                        strLog += "StackTrace:" + ex.StackTrace + "\n";
-                        strLog += "Data:" + ex.Data.ToString() + "\n";
-                        strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                        strLog += "Inputs:" + "\n";
-                        strLog += "Data:" + objMailAttachment.DisplayName + "\n";
-                        strLog += "-------------------------------------------------------------------------" + "\n";
-                        Log.Warn(strLog);
-                        // Swallow exception(!)
-                        string strName = temporaryAttachmentPath  + "\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
-                        objMail.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
-                        foreach (string strFileName in System.IO.Directory.GetFiles(strName.Replace(".html", "_files")))
-                        {
-                            if (strFileName.EndsWith("\\" + objMailAttachment.DisplayName))
-                            {
-                                strRet = System.IO.File.ReadAllBytes(strFileName);
-                                break;
-                            }
-                        }
-                    }
-                    catch (Exception ex1)
-                    {
-                        Log.Error("ThisAddIn.Base64Encode", ex1);
-                    }
-                }
-                finally
-                {
-                    if (System.IO.Directory.Exists(temporaryAttachmentPath))
-                    {
-                        System.IO.Directory.Delete(temporaryAttachmentPath, true);
-                    }
-                }
-            }
-
-            return strRet;
-        }
         public Outlook.MAPIFolder GetDefaultFolder(string type)
         {
             switch (type)
@@ -2244,78 +2090,10 @@ namespace SuiteCRMAddIn
             }
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
         }
-        private void ArchiveFolderItems(Outlook.Folder objFolder, DateTime? dtAutoArchiveFrom = null)
-        {
-            try
-            {
-                Outlook.Items UnReads;
-                if (dtAutoArchiveFrom == null)
-                    UnReads = objFolder.Items.Restrict("[Unread]=true");
-                else
-                    UnReads = objFolder.Items.Restrict("[ReceivedTime] >= '" + ((DateTime)dtAutoArchiveFrom).AddDays(-1).ToString("yyyy-MM-dd HH:mm") + "'");
-
-                for (int intItr = 1; intItr <= UnReads.Count; intItr++)
-                {
-                    if (UnReads[intItr] is Outlook.MailItem)
-                    {
-                        Outlook.MailItem objMail = (Outlook.MailItem)UnReads[intItr];
-
-                        if (objMail.UserProperties["SuiteCRM"] == null)
-                        {
-                            ArchiveEmail(objMail, 2, this.settings.ExcludedEmails);
-                            objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
-                            objMail.UserProperties["SuiteCRM"].Value = "True";
-                            objMail.Save();
-                        }
-                        else
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.ArchiveFolderItems", ex);
-            }
-        }
 
         public void ProcessMails(DateTime? dtAutoArchiveFrom = null)
         {
-            if (settings.AutoArchive == false)
-                return;
-            System.Threading.Thread.Sleep(5000);
-            while (true)
-            {
-                try
-                {
-                    lstOutlookFolders = new List<Outlook.Folder>();
-                    GetMailFolders(Globals.ThisAddIn.Application.Session.Folders);
-                    if (lstOutlookFolders != null)
-                    {
-                        foreach (Outlook.Folder objFolder in lstOutlookFolders)
-                        {
-                            if (settings.AutoArchiveFolders == null)
-                                ArchiveFolderItems(objFolder, dtAutoArchiveFrom);
-                            else if (settings.AutoArchiveFolders.Count == 0)
-                                ArchiveFolderItems(objFolder, dtAutoArchiveFrom);
-                            else
-                            {
-                                if (settings.AutoArchiveFolders.Contains(objFolder.EntryID))
-                                {
-                                    ArchiveFolderItems(objFolder, dtAutoArchiveFrom);
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("ThisAddIn.ProcessMails", ex);
-                }
-                if (dtAutoArchiveFrom != null)
-                    break;
-
-                System.Threading.Thread.Sleep(5000);
-            }
+            new EmailArchiving().ProcessMails(dtAutoArchiveFrom);
         }
 
         private TimeSpan[] ParseTimesFromTaskBody(string body)
