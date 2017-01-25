@@ -1884,7 +1884,6 @@
 		<row><td>microsoft.office.tools.outlo</td><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>0</td><td/><td/><td/><td>1</td><td>D:\DIY\outlook\SuiteCRM-Outlook-Plugin\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>1</td><td/></row>
 		<row><td>newtonsoft.json.dll</td><td>Newtonsoft.Json.dll</td><td>NEWTON~1.DLL|Newtonsoft.Json.dll</td><td>0</td><td/><td/><td/><td>1</td><td>D:\DIY\outlook\SuiteCRM-Outlook-Plugin\SuiteCRMAddIn\bin\Debug\Newtonsoft.Json.dll</td><td>1</td><td/></row>
 		<row><td>suitecrmaddin.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.MAN|SuiteCRMAddIn.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>D:\DIY\outlook\SuiteCRM-Outlook-Plugin\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.manifest</td><td>1</td><td/></row>
-		<row><td>suitecrmaddin.primary_output</td><td>SuiteCRMAddIn.Primary_output</td><td>SuiteCRMAddIn.Primary output</td><td>0</td><td/><td/><td>0</td><td>1</td><td>&lt;SuiteCRMAddIn&gt;|Built</td><td>3</td><td/></row>
 		<row><td>suitecrmaddin.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.VST|SuiteCRMAddIn.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>D:\DIY\outlook\SuiteCRM-Outlook-Plugin\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.vsto</td><td>1</td><td/></row>
 	</table>
 
@@ -4002,7 +4001,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISTheme</td><td>InstallShield Blue.theme</td></row>
 		<row><td>ISUSLock</td><td>{61A790E4-9219-4622-8A29-6BC24DE6B0D0}</td></row>
 		<row><td>ISUSSignature</td><td>{F1280AA3-C75F-4733-84BD-23500D9612AE}</td></row>
-		<row><td>ISVisitedViews</td><td>viewAssistant,viewObjects,viewProject,viewDependencies,viewSystemSearch,viewFeatureFiles,viewRegistry,viewISToday,viewAppV,viewAppFiles,viewSetupTypes,viewSetupDesign,viewRealSetupDesign,viewSupportFiles,viewCustomActions,viewInstallScriptStd,viewCE,viewRelease,viewDesignPatches,viewLearnMore,viewUpdateService,viewUpgradePaths</td></row>
+		<row><td>ISVisitedViews</td><td>viewAssistant,viewObjects,viewProject,viewDependencies,viewSystemSearch,viewFeatureFiles,viewRegistry,viewISToday,viewAppV,viewAppFiles,viewSetupTypes,viewSetupDesign,viewRealSetupDesign,viewSupportFiles,viewCustomActions,viewInstallScriptStd,viewCE,viewRelease,viewDesignPatches,viewLearnMore,viewUpdateService,viewUpgradePaths,viewEnvironmentVariables,viewTextMessages,viewServices</td></row>
 		<row><td>Limited</td><td>1</td></row>
 		<row><td>LockPermissionMode</td><td>1</td></row>
 		<row><td>MsiExecCmdLineOptions</td><td/></row>
@@ -4380,7 +4379,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{7D2339B3-980B-4AF0-8428-56ABB4CD7EF0}</td><td/></row>
 		<row><td>ProductName</td><td>SuiteCRMAddIn</td><td/></row>
-		<row><td>ProductVersion</td><td>2.1.0.0</td><td/></row>
+		<row><td>ProductVersion</td><td>2.2.0.012501</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>

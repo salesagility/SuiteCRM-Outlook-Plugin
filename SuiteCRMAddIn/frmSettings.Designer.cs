@@ -52,6 +52,8 @@ namespace SuiteCRMAddIn
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmSettings));
             this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.chkSyncContacts = new System.Windows.Forms.CheckBox();
+            this.chkSyncCalendar = new System.Windows.Forms.CheckBox();
             this.label7 = new System.Windows.Forms.Label();
             this.txtAutoSync = new System.Windows.Forms.TextBox();
             this.tsResults = new System.Windows.Forms.TreeView();
@@ -94,8 +96,7 @@ namespace SuiteCRMAddIn
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.chkSyncCalendar = new System.Windows.Forms.CheckBox();
-            this.chkSyncContacts = new System.Windows.Forms.CheckBox();
+            this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.tabPage3.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -124,6 +125,26 @@ namespace SuiteCRMAddIn
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "Auto Archive";
             this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // chkSyncContacts
+            // 
+            this.chkSyncContacts.AutoSize = true;
+            this.chkSyncContacts.Location = new System.Drawing.Point(15, 332);
+            this.chkSyncContacts.Name = "chkSyncContacts";
+            this.chkSyncContacts.Size = new System.Drawing.Size(95, 17);
+            this.chkSyncContacts.TabIndex = 16;
+            this.chkSyncContacts.Text = "Sync Contacts";
+            this.chkSyncContacts.UseVisualStyleBackColor = true;
+            // 
+            // chkSyncCalendar
+            // 
+            this.chkSyncCalendar.AutoSize = true;
+            this.chkSyncCalendar.Location = new System.Drawing.Point(15, 308);
+            this.chkSyncCalendar.Name = "chkSyncCalendar";
+            this.chkSyncCalendar.Size = new System.Drawing.Size(95, 17);
+            this.chkSyncCalendar.TabIndex = 15;
+            this.chkSyncCalendar.Text = "Sync Calendar";
+            this.chkSyncCalendar.UseVisualStyleBackColor = true;
             // 
             // label7
             // 
@@ -167,7 +188,7 @@ namespace SuiteCRMAddIn
             this.chkAutoArchive.AutoSize = true;
             this.chkAutoArchive.Location = new System.Drawing.Point(15, 20);
             this.chkAutoArchive.Name = "chkAutoArchive";
-            this.chkAutoArchive.Size = new System.Drawing.Size(276, 17);
+            this.chkAutoArchive.Size = new System.Drawing.Size(279, 17);
             this.chkAutoArchive.TabIndex = 9;
             this.chkAutoArchive.Text = "Automatically Archive all Inbound and Outbound mails";
             this.chkAutoArchive.UseVisualStyleBackColor = true;
@@ -470,6 +491,7 @@ namespace SuiteCRMAddIn
             // 
             // InformationTabPage
             // 
+            this.InformationTabPage.Controls.Add(this.AddInVersionLabel);
             this.InformationTabPage.Controls.Add(this.groupBox4);
             this.InformationTabPage.Controls.Add(this.AddInTitleLabel);
             this.InformationTabPage.Location = new System.Drawing.Point(23, 4);
@@ -523,13 +545,13 @@ namespace SuiteCRMAddIn
             // 
             // AddInTitleLabel
             // 
-            this.AddInTitleLabel.AutoSize = true;
             this.AddInTitleLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 15F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.AddInTitleLabel.Location = new System.Drawing.Point(28, 26);
+            this.AddInTitleLabel.Location = new System.Drawing.Point(13, 26);
             this.AddInTitleLabel.Name = "AddInTitleLabel";
-            this.AddInTitleLabel.Size = new System.Drawing.Size(262, 25);
+            this.AddInTitleLabel.Size = new System.Drawing.Size(332, 25);
             this.AddInTitleLabel.TabIndex = 1;
             this.AddInTitleLabel.Text = "SuiteCRM Outlook Add-In";
+            this.AddInTitleLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // btnCancel
             // 
@@ -554,25 +576,15 @@ namespace SuiteCRMAddIn
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // chkSyncCalendar
+            // AddInVersionLabel
             // 
-            this.chkSyncCalendar.AutoSize = true;
-            this.chkSyncCalendar.Location = new System.Drawing.Point(15, 308);
-            this.chkSyncCalendar.Name = "chkSyncCalendar";
-            this.chkSyncCalendar.Size = new System.Drawing.Size(95, 17);
-            this.chkSyncCalendar.TabIndex = 15;
-            this.chkSyncCalendar.Text = "Sync Calendar";
-            this.chkSyncCalendar.UseVisualStyleBackColor = true;
-            // 
-            // chkSyncContacts
-            // 
-            this.chkSyncContacts.AutoSize = true;
-            this.chkSyncContacts.Location = new System.Drawing.Point(15, 332);
-            this.chkSyncContacts.Name = "chkSyncContacts";
-            this.chkSyncContacts.Size = new System.Drawing.Size(95, 17);
-            this.chkSyncContacts.TabIndex = 16;
-            this.chkSyncContacts.Text = "Sync Contacts";
-            this.chkSyncContacts.UseVisualStyleBackColor = true;
+            this.AddInVersionLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.AddInVersionLabel.Location = new System.Drawing.Point(13, 61);
+            this.AddInVersionLabel.Name = "AddInVersionLabel";
+            this.AddInVersionLabel.Size = new System.Drawing.Size(332, 25);
+            this.AddInVersionLabel.TabIndex = 6;
+            this.AddInVersionLabel.Text = "version 0.0.0.0";
+            this.AddInVersionLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // frmSettings
             // 
@@ -612,7 +624,6 @@ namespace SuiteCRMAddIn
             this.groupBox1.PerformLayout();
             this.tabControl1.ResumeLayout(false);
             this.InformationTabPage.ResumeLayout(false);
-            this.InformationTabPage.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.ResumeLayout(false);
@@ -666,5 +677,6 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.Label AddInTitleLabel;
         private System.Windows.Forms.CheckBox DetailedLoggingCheckBox;
         private System.Windows.Forms.GroupBox groupBox4;
+        private System.Windows.Forms.Label AddInVersionLabel;
     }
 }

@@ -38,6 +38,8 @@ using SuiteCRMClient.Logging;
 
 namespace SuiteCRMAddIn
 {
+    using System.Reflection;
+
     public partial class ThisAddIn
     {
         public SuiteCRMClient.clsUsersession SuiteCRMUserSession;
@@ -2363,6 +2365,18 @@ namespace SuiteCRMAddIn
                     if (mail != null) yield return mail;
                     Marshal.ReleaseComObject(e);
                 }
+            }
+        }
+
+        public string VersionString
+        {
+            get
+            {
+                var version = Assembly.GetExecutingAssembly().GetName().Version;
+
+                // 'Build' is what we'd call the 'revision number' and
+                // 'Revision' is what we'd call the 'build number'.
+                return $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
             }
         }
     }
