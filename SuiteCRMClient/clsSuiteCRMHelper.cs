@@ -35,15 +35,13 @@ namespace SuiteCRMClient
     using System.IO;
     using System.Windows.Forms;
     using Exceptions;
+    using Logging;
 
     public static class clsSuiteCRMHelper
     {
-        public static string InstallationPath { get; set; }
-     
-        public static clsUsersession SuiteCRMUserSession;
+        public static ILogger Log;
 
-        // if islog == true, then write log, else nothing
-        private const bool islog = false;
+        public static clsUsersession SuiteCRMUserSession;
 
         public static eModuleList GetModules()
         {
@@ -462,29 +460,7 @@ namespace SuiteCRMClient
 
         public static void WriteLog(string strLog)
         {
-            if (!islog) return;
-
-            StreamWriter log;
-            FileStream fileStream = null;
-            DirectoryInfo logDirInfo = null;
-            FileInfo logFileInfo;
-            
-            string logFilePath = clsSuiteCRMHelper.InstallationPath + "\\Logs\\";
-            logFilePath = logFilePath + "Log-" + System.DateTime.Today.ToString("MM-dd-yyyy") + "." + "txt";            
-            logFileInfo = new FileInfo(logFilePath);
-            logDirInfo = new DirectoryInfo(logFileInfo.DirectoryName);
-            if (!logDirInfo.Exists) logDirInfo.Create();
-            if (!logFileInfo.Exists)
-            {
-                fileStream = logFileInfo.Create();
-            }
-            else
-            {
-                fileStream = new FileStream(logFilePath, FileMode.Append);
-            }
-            log = new StreamWriter(fileStream);
-            log.WriteLine(strLog);
-            log.Close();
+            Log.Warn(strLog);
         }
     }
 }

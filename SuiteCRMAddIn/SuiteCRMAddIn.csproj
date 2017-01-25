@@ -219,6 +219,7 @@
     <Compile Include="frmSettings.Designer.cs">
       <DependentUpon>frmSettings.cs</DependentUpon>
     </Compile>
+    <Compile Include="FileLogger.cs" />
     <Compile Include="Menus\RibbonImageHelper.cs">
       <SubType>Component</SubType>
     </Compile>

@@ -41,6 +41,8 @@ using Newtonsoft.Json;
 
 namespace SuiteCRMAddIn
 {
+    using SuiteCRMClient.Logging;
+
     public partial class ThisAddIn
     {
         public SuiteCRMClient.clsUsersession SuiteCRMUserSession;
@@ -66,13 +68,22 @@ namespace SuiteCRMAddIn
         
         public Office.IRibbonUI RibbonUI { get; set; }
 
+        public static bool loggingIsOn = true;
+        public ILogger Log;
+
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             try
             {
                 CurrentVersion = Convert.ToInt32(Globals.ThisAddIn.Application.Version.Split('.')[0]);
                 this.objExplorer = Globals.ThisAddIn.Application.ActiveExplorer();
-                SuiteCRMClient.clsSuiteCRMHelper.InstallationPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\SuiteCRMOutlookAddIn";
+                if (loggingIsOn)
+                {
+                    var logDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
+                                 "\\SuiteCRMOutlookAddIn\\Logs\\";
+                    Log = new FileLogger(logDir);
+                    clsSuiteCRMHelper.Log = Log;
+                }
                 this.settings = new clsSettings();
                 this.objExplorer.FolderSwitch -= objExplorer_FolderSwitch;
                 this.objExplorer.FolderSwitch += objExplorer_FolderSwitch;
