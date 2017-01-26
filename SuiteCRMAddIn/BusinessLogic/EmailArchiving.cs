@@ -83,6 +83,26 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        public void ProcessEligibleNewMailItem(Outlook.MailItem objMail, EmailArchiveType archiveType)
+        {
+            var parentFolder = objMail.Parent as Outlook.Folder;
+            if (parentFolder == null)
+            {
+                Log.Debug("mail item folder is null");
+                return;
+            }
+
+            if (FolderShouldBeAutoArchived(parentFolder))
+            {
+                Log.Debug("Archiving email in folder: " + parentFolder.Name);
+                ProcessNewMailItem(objMail, archiveType);
+            }
+            else
+            {
+                Log.Debug("Should not be archived: " + parentFolder.Name);
+            }
+        }
+
         public void ProcessNewMailItem(Outlook.MailItem objMail, EmailArchiveType archiveType)
         {
             if (objMail.UserProperties["SuiteCRM"] == null)

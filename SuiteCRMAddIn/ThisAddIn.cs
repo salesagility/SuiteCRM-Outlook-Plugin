@@ -1982,7 +1982,7 @@ namespace SuiteCRMAddIn
             if (!settings.AutoArchive) return;
             var mailItem = mailItemGetter();
             if (mailItem == null) return;
-            new EmailArchiving().ProcessNewMailItem(mailItem, archiveType);
+            new EmailArchiving().ProcessEligibleNewMailItem(mailItem, archiveType);
         }
 
         /// <summary>
