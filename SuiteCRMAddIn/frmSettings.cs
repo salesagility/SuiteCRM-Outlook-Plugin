@@ -64,15 +64,8 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "GetCheckedFolders method General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                Log.Warn(strLog);
+                // Suppress exception.
+                Log.Error("GetCheckedFolders error", ex);
             }
         }
 
@@ -128,15 +121,8 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "frmSettings_Load General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                Log.Warn(strLog);
+                Log.Error("frmSettings_Load error", ex);
+                // Swallow exception!
             }
         }
 
@@ -227,17 +213,8 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "GetMailFolders method General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                Log.Warn(strLog);
                 // Swallow exception(!)
+                Log.Error("GetMailFolders error", ex);
             }
         }
 
@@ -320,18 +297,8 @@ namespace SuiteCRMAddIn
                 }
                 catch (Exception ex)
                 {
+                    Log.Error("Unable to connect to SuiteCRM", ex);
                     MessageBox.Show(ex.Message, "Unable to connect to SuiteCRM", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    string strLog;
-                    strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                    strLog += "TestLoginClick method General Exception:" + "\n";
-                    strLog += "Message:" + ex.Message + "\n";
-                    strLog += "Source:" + ex.Source + "\n";
-                    strLog += "StackTrace:" + ex.StackTrace + "\n";
-                    strLog += "Data:" + ex.Data.ToString() + "\n";
-                    strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                    strLog += "-------------------------------------------------------------------------" + "\n";
-                    Log.Warn(strLog);
-                    // Swallow exception(!)
                 }
             }
         }
@@ -406,18 +373,9 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
+                Log.Warn("Unable to connect to SuiteCRM", ex);
                 MessageBox.Show(ex.Message, "Unable to connect to SuiteCRM", MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "SaveClick method General Exception:" + "\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------" + "\n";
-                Log.Warn(strLog);
                 this.DialogResult = DialogResult.None;
                 return;
             }

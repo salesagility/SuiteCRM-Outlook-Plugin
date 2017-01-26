@@ -190,19 +190,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     try
                     {
-                        string strLog;
-                        strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                        strLog += "AddInModule.Base64Encode method COM Exception:" + "\n";
-                        strLog += "Message:" + ex.Message + "\n";
-                        strLog += "Source:" + ex.Source + "\n";
-                        strLog += "StackTrace:" + ex.StackTrace + "\n";
-                        strLog += "Data:" + ex.Data.ToString() + "\n";
-                        strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                        strLog += "Inputs:" + "\n";
-                        strLog += "Data:" + objMailAttachment.DisplayName + "\n";
-                        strLog += "-------------------------------------------------------------------------" + "\n";
-                        Log.Warn(strLog);
+                        Log.Warn("Failed to get attachment bytes for " + objMailAttachment.DisplayName, ex);
                         // Swallow exception(!)
+
                         string strName = temporaryAttachmentPath + "\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
                         objMail.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         foreach (string strFileName in System.IO.Directory.GetFiles(strName.Replace(".html", "_files")))
@@ -216,7 +206,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     catch (Exception ex1)
                     {
-                        Log.Error("ThisAddIn.Base64Encode", ex1);
+                        Log.Error("EmailArchiving.GetAttachmentBytes", ex1);
                     }
                 }
                 finally

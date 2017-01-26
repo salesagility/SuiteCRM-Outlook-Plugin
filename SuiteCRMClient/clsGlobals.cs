@@ -58,7 +58,7 @@ namespace SuiteCRMClient
             }
             catch (Exception ex)
             {
-                LogException(strMethod, objInput, ex);
+                Log.Warn("Problem calling " + strMethod, ex);
                 throw;
             }
         }
@@ -125,27 +125,18 @@ namespace SuiteCRMClient
             return request;
         }
 
-        private static void LogException(string strMethod, object objInput, Exception ex)
-        {
-            Log.Warn("Problem", ex);
-            Log.Warn("Method:" + strMethod);
-            Log.Warn("Data:" + objInput.ToString());
-        }
-
         private static void LogFailedRequest(string strMethod, object objInput, HttpWebResponse response)
         {
-            string strLog;
-            strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-            strLog += "GetResponse method Webserver Exception:" + "\n";
-            strLog += "Status Description:" + response.StatusDescription + "\n";
-            strLog += "Status Code:" + response.StatusCode + "\n";
-            strLog += "Method:" + response.Method + "\n";
-            strLog += "Response URI:" + response.ResponseUri.ToString() + "\n";
-            strLog += "Inputs:" + "\n";
-            strLog += "Method:" + strMethod + "\n";
-            strLog += "Data:" + objInput.ToString() + "\n";
-            strLog += "-------------------------------------------------------------------------" + "\n";
-            Log.Warn(strLog);
+            Log.Warn(
+                "GetResponse method Webserver Exception:" + "\n" +
+                "Status Description:" + response.StatusDescription + "\n" +
+                "Status Code:" + response.StatusCode + "\n"+
+                "Method:" + response.Method + "\n"+
+                "Response URI:" + response.ResponseUri.ToString() + "\n" +
+                "Inputs:" + "\n"+
+                "Method:" + strMethod + "\n"+
+                "Data:" + objInput.ToString() + "\n" +
+                "-------------------------------------------------------------------------" + "\n");
         }
     }
 }

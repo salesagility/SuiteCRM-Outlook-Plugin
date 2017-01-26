@@ -110,19 +110,8 @@ namespace SuiteCRMClient.Email
                 }
                 catch (Exception ex)
                 {
-                    string strLog;
-                    strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                    strLog += "clsEmailArchive.GetValidContactIDs method General Exception:\n";
-                    strLog += "Message:" + ex.Message + "\n";
-                    strLog += "Source:" + ex.Source + "\n";
-                    strLog += "StackTrace:" + ex.StackTrace + "\n";
-                    strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                    strLog += "Inputs:" + "\n";
-                    strLog += "Data:" + contactData.ToString() + "\n";
-                    strLog += "-------------------------------------------------------------------------\n";
-                    _log.Warn(strLog);
-
-                    throw ex;
+                    _log.Warn("GetValidContactIDs error", ex);
+                    throw;
                 }
             }
             return arrRet;
