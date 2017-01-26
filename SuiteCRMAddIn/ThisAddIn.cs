@@ -50,10 +50,8 @@ namespace SuiteCRMAddIn
         public Office.CommandBarPopup objSuiteCRMMenuBar2007;
         public Office.CommandBarButton btnArvive;
         public Office.CommandBarButton btnSettings;
-        public int CurrentVersion;
+        public int OutlookVersion;
         List<cAppItem> lCalItems;
-        private string sDelCalId = "";
-        private string sDelCalModule = "";
         private bool IsCalendarView = false;
         
         List<cTaskItem> lTaskItems;
@@ -72,22 +70,24 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                CurrentVersion = Convert.ToInt32(Globals.ThisAddIn.Application.Version.Split('.')[0]);
-                this.objExplorer = Globals.ThisAddIn.Application.ActiveExplorer();
+                var outlookApp = this.Application;
+                OutlookVersion = Convert.ToInt32(outlookApp.Version.Split('.')[0]);
+                var outlookExplorer = outlookApp.ActiveExplorer();
+                this.objExplorer = outlookExplorer;
                 ResetLog();
                 this.settings = new clsSettings();
-                this.objExplorer.FolderSwitch -= objExplorer_FolderSwitch;
-                this.objExplorer.FolderSwitch += objExplorer_FolderSwitch;
+                outlookExplorer.FolderSwitch -= objExplorer_FolderSwitch;
+                outlookExplorer.FolderSwitch += objExplorer_FolderSwitch;
                 
                 if (this.settings.AutoArchive)
                 {
-                    this.objExplorer.Application.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
-                    this.objExplorer.Application.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
+                    outlookApp.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
+                    outlookApp.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
                 }
-                if (CurrentVersion < 14)
+                if (OutlookVersion < 14)
                 {
-                    this.Application.ItemContextMenuDisplay += new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
-                    var menuBar = this.Application.ActiveExplorer().CommandBars.ActiveMenuBar;
+                    outlookApp.ItemContextMenuDisplay += new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
+                    var menuBar = outlookExplorer.CommandBars.ActiveMenuBar;
                     objSuiteCRMMenuBar2007 = (Office.CommandBarPopup)menuBar.Controls.Add(Office.MsoControlType.msoControlPopup, missing, missing, missing, true);
                     if (objSuiteCRMMenuBar2007 != null)
                     {
