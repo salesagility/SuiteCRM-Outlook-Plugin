@@ -1953,9 +1953,8 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                ProcessNewMailItem(
-                    () => item as Outlook.MailItem,
-                   EmailArchiveType.Sent);
+                if (!settings.AutoArchive) return;
+                ProcessNewMailItem(EmailArchiveType.Sent, item as Outlook.MailItem);
             }
             catch (Exception ex)
             {
@@ -1967,9 +1966,10 @@ namespace SuiteCRMAddIn
         {
             try
             {
+                if (!settings.AutoArchive) return;
                 ProcessNewMailItem(
-                    () => Globals.ThisAddIn.Application.Session.GetItemFromID(EntryID) as Outlook.MailItem,
-                    EmailArchiveType.Inbound);
+                    EmailArchiveType.Inbound,
+                    Application.Session.GetItemFromID(EntryID) as Outlook.MailItem);
             }
             catch (Exception ex)
             {
@@ -1977,11 +1977,14 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void ProcessNewMailItem(Func<Outlook.MailItem> mailItemGetter, EmailArchiveType archiveType)
+        private void ProcessNewMailItem(EmailArchiveType archiveType, Outlook.MailItem mailItem)
         {
-            if (!settings.AutoArchive) return;
-            var mailItem = mailItemGetter();
-            if (mailItem == null) return;
+            if (mailItem == null)
+            {
+                Log.Info("New 'mail item' was null");
+                return;
+            }
+            Log.Info("Processing new mail item: " + mailItem.Subject);
             new EmailArchiving().ProcessEligibleNewMailItem(mailItem, archiveType);
         }
 

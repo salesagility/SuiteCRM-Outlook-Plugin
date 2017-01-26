@@ -88,18 +88,18 @@ namespace SuiteCRMAddIn.BusinessLogic
             var parentFolder = objMail.Parent as Outlook.Folder;
             if (parentFolder == null)
             {
-                Log.Debug("mail item folder is null");
+                Log.Debug("NULL email folder for " + objMail.Subject);
                 return;
             }
 
             if (FolderShouldBeAutoArchived(parentFolder))
             {
-                Log.Debug("Archiving email in folder: " + parentFolder.Name);
+                Log.Debug("Archiving email from folder: " + parentFolder.Name);
                 ProcessNewMailItem(objMail, archiveType);
             }
             else
             {
-                Log.Debug("Should not be archived: " + parentFolder.Name);
+                Log.Debug("NOT archiving email from folder: " + parentFolder.Name);
             }
         }
 
