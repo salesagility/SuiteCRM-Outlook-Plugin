@@ -187,16 +187,14 @@ namespace SuiteCRMAddIn
             {
                 foreach (Folder objFolder in folders)
                 {
-                    if (objFolder.Name.ToUpper() == "SENT ITEMS" || objFolder.Name.ToUpper() == "OUTBOX")
-                        continue;
-
                     var objNode = new TreeNode() { Tag = objFolder.EntryID, Text = objFolder.Name };
                     if (this.settings.AutoArchiveFolders.Contains(objFolder.EntryID))
                         objNode.Checked = true;
                     nodes.Add(objNode);
-                    if (objFolder.Folders.Count > 0)
+                    var nestedFolders = objFolder.Folders;
+                    if (nestedFolders.Count > 0)
                     {
-                        GetMailFolders(objFolder.Folders, objNode.Nodes);
+                        GetMailFolders(nestedFolders, objNode.Nodes);
                     }
                 }
             }
