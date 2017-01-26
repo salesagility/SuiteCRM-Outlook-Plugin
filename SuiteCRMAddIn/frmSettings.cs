@@ -29,6 +29,9 @@ using SuiteCRMClient.Logging;
 
 namespace SuiteCRMAddIn
 {
+    using Microsoft.Office.Interop.Outlook;
+    using Exception = System.Exception;
+
     public partial class frmSettings : Form
     {
         private clsSettings settings = Globals.ThisAddIn.settings;
@@ -150,20 +153,7 @@ namespace SuiteCRMAddIn
             this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tree_search_results_NodeMouseClick);
             this.tsResults.Nodes.Clear();
             this.tsResults.CheckBoxes = true;
-            foreach (Microsoft.Office.Interop.Outlook.Folder objFolder in Globals.ThisAddIn.Application.Session.Folders)
-            {
-                if (objFolder.Name.ToUpper() == "SENT ITEMS" || objFolder.Name.ToUpper() == "OUTBOX")
-                    continue;
-
-                TreeNode objNode = new TreeNode() {Tag = objFolder.EntryID, Text = objFolder.Name};
-                if (this.settings.AutoArchiveFolders.Contains(objFolder.EntryID))
-                    objNode.Checked = true;
-                tsResults.Nodes.Add(objNode);
-                if (objFolder.Folders.Count > 0)
-                {
-                    GetMailFolders(objFolder, objNode);
-                }
-            }
+            GetMailFolders(Globals.ThisAddIn.Application.Session.Folders);
             this.tsResults.ExpandAll();
 
             txtAutoSync.Text = settings.ExcludedEmails;
@@ -186,28 +176,27 @@ namespace SuiteCRMAddIn
             DetailedLoggingCheckBox.Checked = settings.LogLevel <= LogEntryType.Debug;
         }
 
-        private void GetMailFolders(Microsoft.Office.Interop.Outlook.Folder objInpFolder, TreeNode objInpNode)
+        private void GetMailFolders(Folders folders)
+        {
+            GetMailFolders(folders, tsResults.Nodes);
+        }
+
+        private void GetMailFolders(Folders folders, TreeNodeCollection nodes)
         {
             try
             {
-                foreach (Microsoft.Office.Interop.Outlook.Folder objFolder in objInpFolder.Folders)
+                foreach (Folder objFolder in folders)
                 {
                     if (objFolder.Name.ToUpper() == "SENT ITEMS" || objFolder.Name.ToUpper() == "OUTBOX")
                         continue;
+
+                    var objNode = new TreeNode() { Tag = objFolder.EntryID, Text = objFolder.Name };
+                    if (this.settings.AutoArchiveFolders.Contains(objFolder.EntryID))
+                        objNode.Checked = true;
+                    nodes.Add(objNode);
                     if (objFolder.Folders.Count > 0)
                     {
-                        TreeNode objNode = new TreeNode() { Tag = objFolder.EntryID, Text = objFolder.Name };
-                        if (this.settings.AutoArchiveFolders.Contains(objFolder.EntryID))
-                            objNode.Checked = true;
-                        objInpNode.Nodes.Add(objNode);
-                        GetMailFolders(objFolder, objNode);
-                    }
-                    else
-                    {
-                        TreeNode objNode = new TreeNode() { Tag = objFolder.EntryID, Text = objFolder.Name };
-                        if (this.settings.AutoArchiveFolders.Contains(objFolder.EntryID))
-                            objNode.Checked = true;
-                        objInpNode.Nodes.Add(objNode);
+                        GetMailFolders(objFolder.Folders, objNode.Nodes);
                     }
                 }
             }
