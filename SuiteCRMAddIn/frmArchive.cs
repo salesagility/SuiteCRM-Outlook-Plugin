@@ -38,6 +38,8 @@ using System.Web;
 
 namespace SuiteCRMAddIn
 {
+    using BusinessLogic;
+    using SuiteCRMClient.Email;
     using SuiteCRMClient.Exceptions;
     using SuiteCRMClient.Logging;
     using Exception = System.Exception;
@@ -415,111 +417,6 @@ namespace SuiteCRMAddIn
             }
         }
 
-        public ArchiveResult SaveEmailToCrm(MailItem mailItem)
-        {
-            try
-            {
-                SaveMailItemIfNecessary(mailItem);
-
-                eNameValue[] data = new eNameValue[12];
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? "");
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem).ToString("yyyy-MM-dd HH:mm:ss"));
-                data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
-                data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
-                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", mailItem.Body ?? "");
-                data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", mailItem.HTMLBody);
-                data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(mailItem, this.type));
-                data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", mailItem.To);
-                data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", mailItem.CC);
-                data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", mailItem.BCC);
-                data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", mailItem.ReplyRecipientNames);
-                data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
-
-                string crmEmailId;
-                try
-                {
-                    crmEmailId = clsSuiteCRMHelper.SetEntry(data, "Emails");
-                }
-                catch (System.Exception firstFailure)
-                {
-                    Log.Warn("1st attempt to upload email failed", firstFailure);
-                    data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", "");
-                    try
-                    {
-                        crmEmailId = clsSuiteCRMHelper.SetEntry(data, "Emails");
-                    }
-                    catch(System.Exception secondFailure)
-                    {
-                        Log.Warn("2nd attempt to upload email failed", secondFailure);
-                        return ArchiveResult.Failure(new [] {firstFailure, secondFailure});
-                    }
-                }
-                
-                mailItem.Categories = "SuiteCRM";
-                mailItem.Save();
-                var warnings = new List<System.Exception>();
-                if (settings.ArchiveAttachmentsDefault)
-                {
-                    foreach (Attachment attachment in mailItem.Attachments)
-                    {
-                        try
-                        {
-                            clsSuiteCRMHelper.UploadAttachment(
-                                new clsEmailAttachments
-                                {
-                                    DisplayName = attachment.DisplayName,
-                                    FileContentInBase64String = Globals.ThisAddIn.Base64Encode(attachment, mailItem)
-                                },
-                                crmEmailId);
-                        }
-                        catch (System.Exception problem)
-                        {
-                            Log.Warn("Failed to upload email attachment", problem);
-                            warnings.Add(problem);
-                        }
-                    }
-                }
-                return ArchiveResult.Success(crmEmailId, warnings);
-            }
-            catch (System.Exception failure)
-            {
-                Log.Warn("Could not upload email to CRM", failure);
-                return ArchiveResult.Failure(failure);
-            }
-        }
-
-        private DateTime DateTimeOfMailItem(MailItem mailItem)
-        {
-            DateTime dateTime;
-            switch (this.type)
-            {
-                case "autoOUTBOUND":
-                case "SendArchive":
-                    dateTime = mailItem.CreationTime;
-                    break;
-                case null:
-                case "autoINBOUND":
-                default:
-                    dateTime = mailItem.SentOn;
-                    break;
-            }
-            return dateTime;
-        }
-
-        public void CreateEmailRelationshipOrFail(string emailId, CrmEntity entity)
-        {
-            var success = clsSuiteCRMHelper.SetRelationship(
-                new eSetRelationshipValue
-                {
-                    module2 = "emails",
-                    module2_id = emailId,
-                    module1 = entity.ModuleName,
-                    module1_id = entity.EntityId,
-                });
-
-            if (!success) throw new CrmSaveDataException($"Cannot create email relationship with {entity.ModuleName} ('set_relationship' failed)");
-        }
-
         private void frmArchive_FormClosed(object sender, FormClosedEventArgs e)
         {
             try
@@ -635,10 +532,11 @@ namespace SuiteCRMAddIn
                 List<ArchiveResult> emailArchiveResults;
                 using (WaitCursor.For(this, disableForm: true))
                 {
+                    var archiver = new EmailArchiving();
                     emailArchiveResults =
                         Globals.ThisAddIn.SelectedEmails
                             .Select(mailItem =>
-                                ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities))
+                                archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.type))
                             .ToList();
                 }
 
@@ -688,42 +586,6 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private ArchiveResult ArchiveEmailWithEntityRelationships(MailItem mailItem, List<CrmEntity> selectedCrmEntities)
-        {
-            var result = this.SaveEmailToCrm(mailItem);
-            if (result.IsFailure) return result;
-            var warnings = CreateEmailRelationshipsWithEntities(result.EmailId, selectedCrmEntities);
-            return ArchiveResult.Success(
-                result.EmailId,
-                result.Problems.Concat(warnings));
-        }
-
-        private IList<System.Exception> CreateEmailRelationshipsWithEntities(string crmMailId, List<CrmEntity> selectedCrmEntities)
-        {
-            var failures = new List<System.Exception>();
-            foreach (var entity in selectedCrmEntities)
-            {
-                try
-                {
-                    CreateEmailRelationshipOrFail(crmMailId, entity);
-                }
-                catch (System.Exception failure)
-                {
-                    Log.Error("CreateEmailRelationshipsWithEntities", failure);
-                    failures.Add(failure);
-                }
-            }
-            return failures;
-        }
-
-        private void SaveMailItemIfNecessary(MailItem o)
-        {
-            if (this.type == "SendArchive")
-            {
-                o.Save();
-            }
-        }
-
         private void btnCancel_Click(object sender, EventArgs e)
         {
             base.Close();
@@ -740,34 +602,6 @@ namespace SuiteCRMAddIn
         private void txtSearch_Leave(object sender, EventArgs e)
         {
             this.AcceptButton = btnArchive;
-        }
-
-        public class ArchiveResult
-        {
-            public static ArchiveResult Success(string emailId, IEnumerable<System.Exception> warnings)
-            {
-                return new ArchiveResult
-                {
-                    EmailId = emailId,
-                    Problems = warnings,
-                };
-            }
-
-            public static ArchiveResult Failure(params System.Exception[] exceptions)
-            {
-                return new ArchiveResult
-                {
-                    Problems = exceptions,
-                };
-            }
-
-            public string EmailId { get; set; }
-
-            public IEnumerable<System.Exception> Problems { get; set; }
-
-            public bool IsSuccess => !string.IsNullOrEmpty(EmailId);
-
-            public bool IsFailure => !IsSuccess;
         }
     }
 }

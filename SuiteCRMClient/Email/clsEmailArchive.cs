@@ -25,7 +25,7 @@ using System.Collections.Generic;
 using System.Collections;
 using SuiteCRMClient.Logging;
 
-namespace SuiteCRMClient
+namespace SuiteCRMClient.Email
 {
     public class clsEmailArchive
     {
@@ -38,7 +38,7 @@ namespace SuiteCRMClient
         public string HTMLBody { get; set; }
         public string CC { get; set; }
         public List<clsEmailAttachments> Attachments { get; set; }
-        public int ArchiveType { get; set; } //1-Manual, 2-Inbound, 3-Sent
+        public EmailArchiveType ArchiveType { get; set; }
         public object contactData;
 
         public clsUsersession SuiteCRMUserSession;
@@ -110,19 +110,8 @@ namespace SuiteCRMClient
                 }
                 catch (Exception ex)
                 {
-                    string strLog;
-                    strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                    strLog += "clsEmailArchive.GetValidContactIDs method General Exception:\n";
-                    strLog += "Message:" + ex.Message + "\n";
-                    strLog += "Source:" + ex.Source + "\n";
-                    strLog += "StackTrace:" + ex.StackTrace + "\n";
-                    strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                    strLog += "Inputs:" + "\n";
-                    strLog += "Data:" + contactData.ToString() + "\n";
-                    strLog += "-------------------------------------------------------------------------\n";
-                    _log.Warn(strLog);
-
-                    throw ex;
+                    _log.Warn("GetValidContactIDs error", ex);
+                    throw;
                 }
             }
             return arrRet;
@@ -221,6 +210,5 @@ namespace SuiteCRMClient
                 throw;
             }
         }
-
     }
 }

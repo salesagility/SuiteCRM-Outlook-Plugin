@@ -185,15 +185,8 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "listViewAvailableModules_SubItemClicked General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                Log.Warn(strLog);
+                // Suppress exception
+                Log.Error("Subitem clicked error", ex);
             }
         }
 
@@ -256,18 +249,9 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
+                Log.Warn("frmCustomModules_Load error", ex);
                 base.Close();
                 MessageBox.Show("Please check the Internet connection", "Network Failure", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "frmCustomModules_Load General Exception\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                Log.Warn(strLog);
             }
         }
 
@@ -301,15 +285,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "buttonSaveClose_Click General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                Log.Warn(strLog);
+                Log.Error("btnSave_Click error", ex);
                 // Swallow exception(!)
             }
         }

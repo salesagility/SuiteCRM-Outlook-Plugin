@@ -57,7 +57,7 @@ namespace SuiteCRMAddIn
             this.label7 = new System.Windows.Forms.Label();
             this.txtAutoSync = new System.Windows.Forms.TextBox();
             this.tsResults = new System.Windows.Forms.TreeView();
-            this.label6 = new System.Windows.Forms.Label();
+            this.LimitArchivingLabel = new System.Windows.Forms.Label();
             this.chkAutoArchive = new System.Windows.Forms.CheckBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
@@ -89,6 +89,7 @@ namespace SuiteCRMAddIn
             this.label1 = new System.Windows.Forms.Label();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.InformationTabPage = new System.Windows.Forms.TabPage();
+            this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.DetailedLoggingCheckBox = new System.Windows.Forms.CheckBox();
             this.LinkToLogFileDir = new System.Windows.Forms.LinkLabel();
@@ -96,7 +97,6 @@ namespace SuiteCRMAddIn
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.tabPage3.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -117,7 +117,7 @@ namespace SuiteCRMAddIn
             this.tabPage3.Controls.Add(this.label7);
             this.tabPage3.Controls.Add(this.txtAutoSync);
             this.tabPage3.Controls.Add(this.tsResults);
-            this.tabPage3.Controls.Add(this.label6);
+            this.tabPage3.Controls.Add(this.LimitArchivingLabel);
             this.tabPage3.Controls.Add(this.chkAutoArchive);
             this.tabPage3.Location = new System.Drawing.Point(23, 4);
             this.tabPage3.Name = "tabPage3";
@@ -151,9 +151,9 @@ namespace SuiteCRMAddIn
             this.label7.AutoSize = true;
             this.label7.Location = new System.Drawing.Point(18, 229);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(218, 13);
+            this.label7.Size = new System.Drawing.Size(267, 13);
             this.label7.TabIndex = 14;
-            this.label7.Text = "Exclude emails From/To the following emails ";
+            this.label7.Text = "Exclude Messages From/To The Following Addresses :";
             // 
             // txtAutoSync
             // 
@@ -174,24 +174,25 @@ namespace SuiteCRMAddIn
             this.tsResults.TabIndex = 12;
             this.tsResults.Tag = "tree_search_results";
             // 
-            // label6
+            // LimitArchivingLabel
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(15, 48);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(226, 13);
-            this.label6.TabIndex = 11;
-            this.label6.Text = "Automatically Archive the following folders only";
+            this.LimitArchivingLabel.AutoSize = true;
+            this.LimitArchivingLabel.Location = new System.Drawing.Point(15, 48);
+            this.LimitArchivingLabel.Name = "LimitArchivingLabel";
+            this.LimitArchivingLabel.Size = new System.Drawing.Size(224, 13);
+            this.LimitArchivingLabel.TabIndex = 11;
+            this.LimitArchivingLabel.Text = "Limit Archiving To Only The Following Folders:";
             // 
             // chkAutoArchive
             // 
             this.chkAutoArchive.AutoSize = true;
             this.chkAutoArchive.Location = new System.Drawing.Point(15, 20);
             this.chkAutoArchive.Name = "chkAutoArchive";
-            this.chkAutoArchive.Size = new System.Drawing.Size(279, 17);
+            this.chkAutoArchive.Size = new System.Drawing.Size(292, 17);
             this.chkAutoArchive.TabIndex = 9;
-            this.chkAutoArchive.Text = "Automatically Archive all Inbound and Outbound mails";
+            this.chkAutoArchive.Text = "Automatically Archive Inbound And Outbound Messages";
             this.chkAutoArchive.UseVisualStyleBackColor = true;
+            this.chkAutoArchive.CheckedChanged += new System.EventHandler(this.chkAutoArchive_CheckedChanged);
             // 
             // tabPage2
             // 
@@ -501,6 +502,16 @@ namespace SuiteCRMAddIn
             this.InformationTabPage.Text = "Information";
             this.InformationTabPage.UseVisualStyleBackColor = true;
             // 
+            // AddInVersionLabel
+            // 
+            this.AddInVersionLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.AddInVersionLabel.Location = new System.Drawing.Point(13, 61);
+            this.AddInVersionLabel.Name = "AddInVersionLabel";
+            this.AddInVersionLabel.Size = new System.Drawing.Size(332, 25);
+            this.AddInVersionLabel.TabIndex = 6;
+            this.AddInVersionLabel.Text = "version 0.0.0.0";
+            this.AddInVersionLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            // 
             // groupBox4
             // 
             this.groupBox4.Controls.Add(this.DetailedLoggingCheckBox);
@@ -576,16 +587,6 @@ namespace SuiteCRMAddIn
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // AddInVersionLabel
-            // 
-            this.AddInVersionLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.AddInVersionLabel.Location = new System.Drawing.Point(13, 61);
-            this.AddInVersionLabel.Name = "AddInVersionLabel";
-            this.AddInVersionLabel.Size = new System.Drawing.Size(332, 25);
-            this.AddInVersionLabel.TabIndex = 6;
-            this.AddInVersionLabel.Text = "version 0.0.0.0";
-            this.AddInVersionLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            // 
             // frmSettings
             // 
             this.AcceptButton = this.btnSave;
@@ -636,7 +637,7 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox txtAutoSync;
         private System.Windows.Forms.TreeView tsResults;
-        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Label LimitArchivingLabel;
         private System.Windows.Forms.CheckBox chkAutoArchive;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.GroupBox groupBox2;

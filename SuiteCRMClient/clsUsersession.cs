@@ -106,18 +106,10 @@ namespace SuiteCRMClient
             }
             catch (Exception ex)
             {
+                _log.Error("Login error", ex);
                 id = "";
                 SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "clsUsersession.Login method General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                _log.Warn(strLog);
-                throw ex;
+                throw;
             }
 
         }
@@ -165,11 +157,11 @@ namespace SuiteCRMClient
                 SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
                 AwaitingAuthentication = false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 id = "";
                 SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
-                throw ex;
+                throw;
             }
         }
 
@@ -188,15 +180,7 @@ namespace SuiteCRMClient
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "clsUsersession.LogOut method General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                _log.Warn(strLog);
+                _log.Error("Log out error", ex);
             }
         }
 

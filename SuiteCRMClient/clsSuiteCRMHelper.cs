@@ -29,6 +29,7 @@ namespace SuiteCRMClient
     using System.Collections;
     using Exceptions;
     using Logging;
+    using Email;
 
     public static class clsSuiteCRMHelper
     {
