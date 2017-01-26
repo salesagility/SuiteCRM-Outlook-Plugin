@@ -40,6 +40,7 @@ namespace SuiteCRMAddIn
 {
     using System.Reflection;
     using BusinessLogic;
+    using SuiteCRMClient.Email;
 
     public partial class ThisAddIn
     {
@@ -1954,7 +1955,7 @@ namespace SuiteCRMAddIn
             {
                 ProcessNewMailItem(
                     () => item as Outlook.MailItem,
-                    intArchiveType: 3);
+                   EmailArchiveType.Sent);
             }
             catch (Exception ex)
             {
@@ -1968,7 +1969,7 @@ namespace SuiteCRMAddIn
             {
                 ProcessNewMailItem(
                     () => Globals.ThisAddIn.Application.Session.GetItemFromID(EntryID) as Outlook.MailItem,
-                    intArchiveType: 2);
+                    EmailArchiveType.Inbound);
             }
             catch (Exception ex)
             {
@@ -1976,12 +1977,12 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void ProcessNewMailItem(Func<Outlook.MailItem> mailItemGetter, int intArchiveType)
+        private void ProcessNewMailItem(Func<Outlook.MailItem> mailItemGetter, EmailArchiveType archiveType)
         {
             if (!settings.AutoArchive) return;
             var mailItem = mailItemGetter();
             if (mailItem == null) return;
-            new EmailArchiving().ProcessNewMailItem(mailItem, intArchiveType);
+            new EmailArchiving().ProcessNewMailItem(mailItem, archiveType);
         }
 
         /// <summary>

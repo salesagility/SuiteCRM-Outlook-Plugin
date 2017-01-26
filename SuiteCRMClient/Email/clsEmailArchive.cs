@@ -38,7 +38,7 @@ namespace SuiteCRMClient.Email
         public string HTMLBody { get; set; }
         public string CC { get; set; }
         public List<clsEmailAttachments> Attachments { get; set; }
-        public int ArchiveType { get; set; } //1-Manual, 2-Inbound, 3-Sent
+        public EmailArchiveType ArchiveType { get; set; }
         public object contactData;
 
         public clsUsersession SuiteCRMUserSession;
@@ -221,6 +221,5 @@ namespace SuiteCRMClient.Email
                 throw;
             }
         }
-
     }
 }

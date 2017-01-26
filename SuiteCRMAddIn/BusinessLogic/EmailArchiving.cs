@@ -73,7 +73,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         if (objMail.UserProperties["SuiteCRM"] != null)
                             break;
 
-                        ProcessNewMailItem(objMail, intArchiveType: 2);
+                        ProcessNewMailItem(objMail, EmailArchiveType.Inbound);
                     }
                 }
             }
@@ -83,18 +83,18 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public void ProcessNewMailItem(Outlook.MailItem objMail, int intArchiveType)
+        public void ProcessNewMailItem(Outlook.MailItem objMail, EmailArchiveType archiveType)
         {
             if (objMail.UserProperties["SuiteCRM"] == null)
             {
-                ArchiveEmail(objMail, intArchiveType, this.settings.ExcludedEmails);
+                ArchiveEmail(objMail, archiveType, this.settings.ExcludedEmails);
                 objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
                 objMail.UserProperties["SuiteCRM"].Value = "True";
                 objMail.Save();
             }
         }
 
-        private void ArchiveEmail(Outlook.MailItem objMail, int intArchiveType, string strExcludedEmails = "")
+        private void ArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
             try
             {
@@ -111,12 +111,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 objEmail.Subject = objMail.Subject;
                 objEmail.Body = objMail.Body;
                 objEmail.HTMLBody = objMail.HTMLBody;
-                objEmail.ArchiveType = intArchiveType;
+                objEmail.ArchiveType = archiveType;
                 foreach (Outlook.Attachment objMailAttachments in objMail.Attachments)
                 {
                     objEmail.Attachments.Add(new clsEmailAttachments { DisplayName = objMailAttachments.DisplayName, FileContentInBase64String = GetAttachmentBytes(objMailAttachments, objMail) });
                 }
-                Thread objThread = new Thread(() => ArchiveEmailThread(objEmail, intArchiveType, strExcludedEmails));
+                Thread objThread = new Thread(() => ArchiveEmailThread(objEmail, archiveType, strExcludedEmails));
                 objThread.Start();
                 objMail.Categories = "SuiteCRM";
                 objMail.Save();
@@ -127,7 +127,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void ArchiveEmailThread(clsEmailArchive objEmail, int intArchiveType, string strExcludedEmails = "")
+        private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
             try
             {

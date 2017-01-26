@@ -64,6 +64,7 @@
     <Compile Include="Email\clsEmailArchive.cs" />
     <Compile Include="Email\clsEmailAttachments.cs" />
     <Compile Include="CrmEntity.cs" />
+    <Compile Include="Email\EmailArchiveType.cs" />
     <Compile Include="Exceptions\CrmSaveDataException.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\LogEntryType.cs" />
