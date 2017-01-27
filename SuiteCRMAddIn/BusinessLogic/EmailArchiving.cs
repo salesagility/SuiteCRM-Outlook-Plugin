@@ -12,7 +12,6 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
-
     public class EmailArchiving
     {
         private ILogger Log => Globals.ThisAddIn.Log;
