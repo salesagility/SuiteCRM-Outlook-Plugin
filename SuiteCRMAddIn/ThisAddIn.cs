@@ -86,11 +86,10 @@ namespace SuiteCRMAddIn
                 outlookExplorer.FolderSwitch -= objExplorer_FolderSwitch;
                 outlookExplorer.FolderSwitch += objExplorer_FolderSwitch;
                 
-                if (this.settings.AutoArchive)
-                {
-                    outlookApp.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
-                    outlookApp.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
-                }
+                // TODO: install/remove these event handlers when settings.AutoArchive changes:
+                outlookApp.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
+                outlookApp.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
+
                 if (OutlookVersion < 14)
                 {
                     outlookApp.ItemContextMenuDisplay += new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
