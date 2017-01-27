@@ -118,6 +118,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
+                Log.Info($"Archiving email '{objMail.Subject}'");
                 clsEmailArchive objEmail = new clsEmailArchive();
                 objEmail.From = objMail.SenderEmailAddress;
                 objEmail.To = "";
