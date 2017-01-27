@@ -3,7 +3,10 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System.Linq;
+    using SuiteCRMClient;
     using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
 
     public class Syncing
     {
@@ -31,6 +34,21 @@ namespace SuiteCRMAddIn.BusinessLogic
         public string GetStartDateString()
         {
             return " AND [Start] >='" + GetStartDate().ToString("MM/dd/yyyy HH:mm") + "'";
+        }
+
+        protected bool HasAccess(string moduleName, string permission)
+        {
+            try
+            {
+                eModuleList oList = clsSuiteCRMHelper.GetModules();
+                return oList.modules1.FirstOrDefault(a => a.module_label == moduleName)
+                    .module_acls1.FirstOrDefault(b => b.action == permission).access;
+            }
+            catch (Exception)
+            {
+                Log.Warn($"Cannot detect access {moduleName}/{permission}");
+                return false;
+            }
         }
     }
 }

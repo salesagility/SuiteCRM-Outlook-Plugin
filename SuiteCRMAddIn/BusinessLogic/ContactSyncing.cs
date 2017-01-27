@@ -14,7 +14,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     public class ContactSyncing: Syncing
     {
         List<ContactSyncState> lContactItems;
-        private string sDelContactId = "";
 
         public ContactSyncing(SyncContext context)
             : base(context)
@@ -56,47 +55,31 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 int iOffset = 0;
-                bool IsDone = false;
                 while (true)
                 {
-                    bool HasAccess = false;
-                    try
-                    {
-                        eModuleList oList = clsSuiteCRMHelper.GetModules();
-                        HasAccess = oList.modules1.FirstOrDefault(a => a.module_label == "Contacts")
-                            .module_acls1.FirstOrDefault(b => b.action == "export").access;
-                    }
-                    catch (Exception)
-                    {
-
-                    }
-                    if (!HasAccess)
+                    if (!HasAccess("Contacts", "export")) // TODO: Should probably exit method if no permission
                         break;
                     eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Contacts",
                                     "contacts.assigned_user_id = '" + clsSuiteCRMHelper.GetUserId() + "'",
                                     0, "date_entered DESC", iOffset, false, clsSuiteCRMHelper.GetSugarFields("Contacts"));
-                    if (_result2 != null)
-                    {
-                        if (iOffset == _result2.next_offset)
-                            break;
-                        foreach (var oResult in _result2.entry_list)
-                        {
-                            try
-                            {
-                                UpdateContactFromCrm(contactFolder, oResult);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("ThisAddIn.SyncContacts", ex);
-                            }
-                        }
+                    var nextOffset = _result2.next_offset;
+                    if (iOffset == nextOffset)
+                        break;
 
+                    foreach (var oResult in _result2.entry_list)
+                    {
+                        try
+                        {
+                            UpdateFromCrm(contactFolder, oResult);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("ThisAddIn.SyncContacts", ex);
+                        }
                     }
-                    if (iOffset == _result2.next_offset)
-                        iOffset = 0;
-                    else
-                        iOffset = _result2.next_offset;
-                    if (iOffset == 0 || IsDone)
+
+                    iOffset = nextOffset;
+                    if (iOffset == 0)
                         break;
                 }
                 try
@@ -125,7 +108,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void UpdateContactFromCrm(Outlook.MAPIFolder contactFolder, eEntryValue oResult)
+        private void UpdateFromCrm(Outlook.MAPIFolder contactFolder, eEntryValue oResult)
         {
             dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
 
@@ -235,15 +218,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                     Outlook.Items items = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
                     foreach (Outlook.ContactItem oItem in items)
                     {
-                        //if (oItem.Sensitivity != Outlook.OlSensitivity.olPrivate)
-                        //{
-                        //Outlook.UserProperty sensitivityCached = oItem.UserProperties["SensitivityCached"];
-                        //sensitivityCached.Value = "olNormal";
                         Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
                         if (oProp != null)
                         {
                             Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
-                            //clsSuiteCRMHelper.WriteLog("GetLocalContacts SOModifiedDate: " + oProp.Value.ToString());
                             DateTime modDateTime = DateTime.UtcNow;
                             if (!DateTime.TryParseExact(oProp.Value.ToString(), "yyyy-MM-dd HH:mm:ss", null, DateTimeStyles.None, out modDateTime))
                             {
@@ -263,7 +241,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                                 OutlookItem = oItem
                             });
                         }
-                        //}
                     }
                 }
             }
@@ -455,8 +432,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
         void CItems_ItemRemove()
         {
-            if (!IsContactView) return;
-            if (sDelContactId != "")
+            if (IsContactView && false)
             {
                 try
                 {
@@ -484,7 +460,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                     Log.Error("ThisAddIn.CItems_ItemRemove", ex);
                 }
             }
-            sDelContactId = "";
         }
 
         public Outlook.MAPIFolder GetDefaultFolder()

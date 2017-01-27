@@ -13,7 +13,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     public class TaskSyncing: Syncing
     {
         List<TaskSyncState> lTaskItems;
-        private string sDelTaskId = "";
 
         public TaskSyncing(SyncContext context)
             : base(context)
@@ -88,162 +87,28 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 int iOffset = 0;
-                bool IsDone = false;
                 while (true)
                 {
                     eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Tasks", "",
                                     0, "date_start DESC", iOffset, false, clsSuiteCRMHelper.GetSugarFields("Tasks"));
-                    if (_result2 != null)
+                    var nextOffset = _result2.next_offset;
+                    if (iOffset == nextOffset)
+                        break;
+
+                    foreach (var oResult in _result2.entry_list)
                     {
-                        if (iOffset == _result2.next_offset)
-                            break;
-
-
-                        foreach (var oResult in _result2.entry_list)
+                        try
                         {
-                            try
-                            {
-                                dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
-                                //
-                                if (clsSuiteCRMHelper.GetUserId() != dResult.assigned_user_id.value.ToString())
-                                    continue;
-
-                                /*DateTime date_start = new DateTime();
-                                DateTime date_due = new DateTime();*/
-
-                                DateTime? date_start = null;
-                                DateTime? date_due = null;
-
-                                string time_start = "--:--", time_due = "--:--";
-
-
-                                /* clsSuiteCRMHelper.WriteLog("---------------------------------");
-                                 clsSuiteCRMHelper.WriteLog("dResult= "+ Convert.ToString(dResult));
-                                 clsSuiteCRMHelper.WriteLog("---------------------------------");*/
-
-
-                                if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()) && !string.IsNullOrEmpty(dResult.date_start.value.ToString()))
-                                {
-                                    Log.Warn("    SET date_start = dResult.date_start");
-                                    date_start = DateTime.ParseExact(dResult.date_start.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
-
-                                    date_start = date_start.Value.Add(new DateTimeOffset(DateTime.Now).Offset);
-                                    time_start = TimeSpan.FromHours(date_start.Value.Hour).Add(TimeSpan.FromMinutes(date_start.Value.Minute)).ToString(@"hh\:mm");
-                                }
-                                /*else
-                                {
-                                    clsSuiteCRMHelper.WriteLog("    SET date_start = dResult.date_modified");
-                                    date_start = DateTime.Parse(dResult.date_modified.value.ToString());
-                                }
-
-                                date_start = date_start.Value.Add(new DateTimeOffset(DateTime.Now).Offset);
-                                time_start = TimeSpan.FromHours(date_start.Value.Hour).Add(TimeSpan.FromMinutes(date_start.Value.Minute)).ToString(@"hh\:mm");*/
-
-                                if (date_start != null && date_start < GetStartDate())
-                                {
-                                    Log.Warn("    date_start=" + date_start.ToString() + ", GetStartDate= " + GetStartDate().ToString());
-                                    continue;
-                                }
-
-                                if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
-                                {
-                                    date_due = DateTime.ParseExact(dResult.date_due.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
-                                    date_due = date_due.Value.Add(new DateTimeOffset(DateTime.Now).Offset);
-                                    time_due = TimeSpan.FromHours(date_due.Value.Hour).Add(TimeSpan.FromMinutes(date_due.Value.Minute)).ToString(@"hh\:mm"); ;
-                                }
-
-                                foreach (var lt in lTaskItems)
-                                {
-                                    Log.Warn("    Task= " + lt.SEntryID);
-                                }
-
-                                var oItem = lTaskItems.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString());
-
-
-                                if (oItem == default(TaskSyncState))
-                                {
-                                    Log.Warn("    if default");
-                                    Outlook.TaskItem tItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
-                                    tItem.Subject = dResult.name.value.ToString();
-
-                                    if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
-                                    {
-                                        tItem.StartDate = date_start.Value;
-                                    }
-                                    if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
-                                    {
-                                        tItem.DueDate = date_due.Value;// DateTime.Parse(dResult.date_due.value.ToString());
-                                    }
-
-                                    string body = dResult.description.value.ToString();
-                                    tItem.Body = string.Concat(body, "#<", time_start, "#", time_due);
-                                    tItem.Status = GetStatus(dResult.status.value.ToString());
-                                    tItem.Importance = GetImportance(dResult.priority.value.ToString());
-
-                                    Outlook.UserProperty oProp = tItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
-                                    oProp.Value = dResult.date_modified.value.ToString();
-                                    Outlook.UserProperty oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
-                                    oProp2.Value = dResult.id.value.ToString();
-                                    lTaskItems.Add(new TaskSyncState
-                                    {
-                                        OutlookItem = tItem,
-                                        OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
-                                        SEntryID = dResult.id.value.ToString(),
-                                        Touched = true
-                                    });
-                                    Log.Warn("    save 0");
-                                    tItem.Save();
-                                }
-                                else
-                                {
-                                    Log.Warn("    else not default");
-                                    oItem.Touched = true;
-                                    Outlook.TaskItem tItem = oItem.OutlookItem;
-                                    Outlook.UserProperty oProp = tItem.UserProperties["SOModifiedDate"];
-
-                                    Log.Warn((string)("    oProp.Value= " + oProp.Value + ", dResult.date_modified=" + dResult.date_modified.value.ToString()));
-                                    if (oProp.Value != dResult.date_modified.value.ToString())
-                                    {
-                                        tItem.Subject = dResult.name.value.ToString();
-
-                                        if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
-                                        {
-                                            Log.Warn("    tItem.StartDate= " + tItem.StartDate + ", date_start=" + date_start);
-                                            tItem.StartDate = date_start.Value;
-                                        }
-                                        if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
-                                        {
-                                            tItem.DueDate = date_due.Value;// DateTime.Parse(dResult.date_due.value.ToString());
-                                        }
-
-                                        string body = dResult.description.value.ToString();
-                                        tItem.Body = string.Concat(body, "#<", time_start, "#", time_due);
-                                        tItem.Status = GetStatus(dResult.status.value.ToString());
-                                        tItem.Importance = GetImportance(dResult.priority.value.ToString());
-                                        if (oProp == null)
-                                            oProp = tItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
-                                        oProp.Value = dResult.date_modified.value.ToString();
-                                        Outlook.UserProperty oProp2 = tItem.UserProperties["SEntryID"];
-                                        if (oProp2 == null)
-                                            oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
-                                        oProp2.Value = dResult.id.value.ToString();
-                                        Log.Warn("    save 1");
-                                        tItem.Save();
-                                    }
-                                    oItem.OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("ThisAddIn.SyncTasks", ex);
-                            }
+                            UpdateFromCrm(tasksFolder, oResult);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("ThisAddIn.SyncTasks", ex);
                         }
                     }
-                    if (iOffset == _result2.next_offset)
-                        iOffset = 0;
-                    else
-                        iOffset = _result2.next_offset;
-                    if (iOffset == 0 || IsDone)
+
+                    iOffset = nextOffset;
+                    if (iOffset == 0)
                         break;
                 }
                 try
@@ -271,6 +136,132 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Error("ThisAddIn.SyncTasks", ex);
             }
         }
+
+        private void UpdateFromCrm(Outlook.MAPIFolder tasksFolder, eEntryValue oResult)
+        {
+            dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
+            //
+            if (clsSuiteCRMHelper.GetUserId() != dResult.assigned_user_id.value.ToString())
+                return;
+
+            DateTime? date_start = null;
+            DateTime? date_due = null;
+
+            string time_start = "--:--", time_due = "--:--";
+
+
+            if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()) &&
+                !string.IsNullOrEmpty(dResult.date_start.value.ToString()))
+            {
+                Log.Warn("    SET date_start = dResult.date_start");
+                date_start = DateTime.ParseExact(dResult.date_start.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
+
+                date_start = date_start.Value.Add(new DateTimeOffset(DateTime.Now).Offset);
+                time_start =
+                    TimeSpan.FromHours(date_start.Value.Hour)
+                        .Add(TimeSpan.FromMinutes(date_start.Value.Minute))
+                        .ToString(@"hh\:mm");
+            }
+
+            if (date_start != null && date_start < GetStartDate())
+            {
+                Log.Warn("    date_start=" + date_start.ToString() + ", GetStartDate= " + GetStartDate().ToString());
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
+            {
+                date_due = DateTime.ParseExact(dResult.date_due.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
+                date_due = date_due.Value.Add(new DateTimeOffset(DateTime.Now).Offset);
+                time_due =
+                    TimeSpan.FromHours(date_due.Value.Hour).Add(TimeSpan.FromMinutes(date_due.Value.Minute)).ToString(@"hh\:mm");
+                ;
+            }
+
+            foreach (var lt in lTaskItems)
+            {
+                Log.Warn("    Task= " + lt.SEntryID);
+            }
+
+            var oItem = lTaskItems.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString());
+
+
+            if (oItem == default(TaskSyncState))
+            {
+                Log.Warn("    if default");
+                Outlook.TaskItem tItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
+                tItem.Subject = dResult.name.value.ToString();
+
+                if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
+                {
+                    tItem.StartDate = date_start.Value;
+                }
+                if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
+                {
+                    tItem.DueDate = date_due.Value; // DateTime.Parse(dResult.date_due.value.ToString());
+                }
+
+                string body = dResult.description.value.ToString();
+                tItem.Body = string.Concat(body, "#<", time_start, "#", time_due);
+                tItem.Status = GetStatus(dResult.status.value.ToString());
+                tItem.Importance = GetImportance(dResult.priority.value.ToString());
+
+                Outlook.UserProperty oProp = tItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+                oProp.Value = dResult.date_modified.value.ToString();
+                Outlook.UserProperty oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+                oProp2.Value = dResult.id.value.ToString();
+                lTaskItems.Add(new TaskSyncState
+                {
+                    OutlookItem = tItem,
+                    OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
+                    SEntryID = dResult.id.value.ToString(),
+                    Touched = true
+                });
+                Log.Warn("    save 0");
+                tItem.Save();
+            }
+            else
+            {
+                Log.Warn("    else not default");
+                oItem.Touched = true;
+                Outlook.TaskItem tItem = oItem.OutlookItem;
+                Outlook.UserProperty oProp = tItem.UserProperties["SOModifiedDate"];
+
+                Log.Warn(
+                    (string)
+                    ("    oProp.Value= " + oProp.Value + ", dResult.date_modified=" + dResult.date_modified.value.ToString()));
+                if (oProp.Value != dResult.date_modified.value.ToString())
+                {
+                    tItem.Subject = dResult.name.value.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(dResult.date_start.value.ToString()))
+                    {
+                        Log.Warn("    tItem.StartDate= " + tItem.StartDate + ", date_start=" + date_start);
+                        tItem.StartDate = date_start.Value;
+                    }
+                    if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
+                    {
+                        tItem.DueDate = date_due.Value; // DateTime.Parse(dResult.date_due.value.ToString());
+                    }
+
+                    string body = dResult.description.value.ToString();
+                    tItem.Body = string.Concat(body, "#<", time_start, "#", time_due);
+                    tItem.Status = GetStatus(dResult.status.value.ToString());
+                    tItem.Importance = GetImportance(dResult.priority.value.ToString());
+                    if (oProp == null)
+                        oProp = tItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+                    oProp.Value = dResult.date_modified.value.ToString();
+                    Outlook.UserProperty oProp2 = tItem.UserProperties["SEntryID"];
+                    if (oProp2 == null)
+                        oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+                    oProp2.Value = dResult.id.value.ToString();
+                    Log.Warn("    save 1");
+                    tItem.Save();
+                }
+                oItem.OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
+            }
+        }
+
         private void GetOutlookTItems(Outlook.MAPIFolder taskFolder)
         {
             try
@@ -537,35 +528,31 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
         void TItems_ItemRemove()
         {
-            if (IsTaskView)
+            if (IsTaskView && false)
             {
-                if (sDelTaskId != "")
+                try
                 {
-                    try
+                    foreach (var oItem in lTaskItems)
                     {
-                        foreach (var oItem in lTaskItems)
+                        try
                         {
-                            try
-                            {
-                                string sID = oItem.OutlookItem.EntryID;
-                            }
-                            catch (COMException)
-                            {
-                                eNameValue[] data = new eNameValue[2];
-                                data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
-                                data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                                clsSuiteCRMHelper.SetEntryUnsafe(data, "Tasks");
-                                oItem.Delete = true;
-                            }
+                            string sID = oItem.OutlookItem.EntryID;
                         }
-                        lTaskItems.RemoveAll(a => a.Delete);
+                        catch (COMException)
+                        {
+                            eNameValue[] data = new eNameValue[2];
+                            data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
+                            data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
+                            clsSuiteCRMHelper.SetEntryUnsafe(data, "Tasks");
+                            oItem.Delete = true;
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Error("ThisAddIn.TItems_ItemRemove", ex);
-                    }
+                    lTaskItems.RemoveAll(a => a.Delete);
                 }
-                sDelTaskId = "";
+                catch (Exception ex)
+                {
+                    Log.Error("ThisAddIn.TItems_ItemRemove", ex);
+                }
             }
         }
 
