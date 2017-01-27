@@ -112,7 +112,8 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                AddInVersionLabel.Text = "version " + Globals.ThisAddIn.VersionString;
+                AddInTitleLabel.Text = ThisAddIn.AddInTitle;
+                AddInVersionLabel.Text = "version " + ThisAddIn.AddInVersion;
 
                 if (Globals.ThisAddIn.SuiteCRMUserSession == null)
                     Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "", "", Log);

@@ -1,5 +1,6 @@
 ﻿namespace SuiteCRMAddIn
 {
+    using System;
     using log4net;
     using log4net.Appender;
     using log4net.Core;
@@ -7,6 +8,7 @@
     using log4net.Repository.Hierarchy;
     using SuiteCRMClient.Logging;
     using System.Text;
+    using System.Collections.Generic;
 
     public class Log4NetLogger: SuiteCRMClient.Logging.ILogger
     {
@@ -17,11 +19,11 @@
             log = LogManager.GetLogger(area);
         }
 
-        public static Log4NetLogger FromFilePath(string area, string filePath)
+        public static Log4NetLogger FromFilePath(string area, string filePath, Func<IEnumerable<string>> headerFunction)
         {
             var hierarchy = (Hierarchy)LogManager.GetRepository();
 
-            var patternLayout = new PatternLayout("%date | %-2thread | %-5level | %message%newline");
+            var patternLayout = new PatternLayoutWithHeader("%date | %-2thread | %-5level | %message%newline", headerFunction);
             patternLayout.ActivateOptions();
 
             var appender = new RollingFileAppender
@@ -70,6 +72,30 @@
         public void Dispose()
         {
             // Do nothing.
+        }
+
+        private class PatternLayoutWithHeader : PatternLayout
+        {
+            private readonly Func<IEnumerable<string>> _headerFunction;
+
+            public PatternLayoutWithHeader(string pattern, Func<IEnumerable<string>> headerFunc)
+                : base(pattern)
+            {
+                _headerFunction = headerFunc;
+            }
+
+            public override string Header
+            {
+                get
+                {
+                    const string separator = "-----------------------------";
+                    var newline = Environment.NewLine;
+                    return
+                        separator + newline +
+                        string.Join(newline, _headerFunction()) + newline +
+                        separator + newline;
+                }
+            }
         }
     }
 }

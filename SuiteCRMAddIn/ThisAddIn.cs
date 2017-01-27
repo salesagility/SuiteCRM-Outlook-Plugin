@@ -44,6 +44,8 @@ namespace SuiteCRMAddIn
 
     public partial class ThisAddIn
     {
+        public static readonly string AddInTitle, AddInVersion;
+
         public SuiteCRMClient.clsUsersession SuiteCRMUserSession;
         public clsSettings settings;
         private Outlook.Explorer objExplorer;
@@ -66,6 +68,11 @@ namespace SuiteCRMAddIn
 
         public ILogger Log;
 
+        static ThisAddIn()
+        {
+            GetTitleAndVersion(out AddInTitle, out AddInVersion);
+        }
+
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             try
@@ -74,8 +81,8 @@ namespace SuiteCRMAddIn
                 OutlookVersion = Convert.ToInt32(outlookApp.Version.Split('.')[0]);
                 var outlookExplorer = outlookApp.ActiveExplorer();
                 this.objExplorer = outlookExplorer;
-                ResetLog();
                 this.settings = new clsSettings();
+                StartLogging(settings);
                 outlookExplorer.FolderSwitch -= objExplorer_FolderSwitch;
                 outlookExplorer.FolderSwitch += objExplorer_FolderSwitch;
                 
@@ -133,11 +140,30 @@ namespace SuiteCRMAddIn
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
             "\\SuiteCRMOutlookAddIn\\Logs\\";
 
-        private void ResetLog()
+        private void StartLogging(clsSettings settings)
         {
-            Log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log");
+            Log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log", () => GetLogHeader(settings));
             clsSuiteCRMHelper.SetLog(Log);
             SuiteCRMClient.clsGlobals.SetLog(Log);
+        }
+
+        private void LogKeySettings(clsSettings settings)
+        {
+            foreach (var s in GetKeySettings(settings))
+            {
+                Log.Info(s);
+            }
+        }
+
+        private IEnumerable<string> GetLogHeader(clsSettings settings)
+        {
+            yield return $"{AddInTitle} v{AddInVersion}";
+            foreach (var s in GetKeySettings(settings)) yield return s;
+        }
+
+        private IEnumerable<string> GetKeySettings(clsSettings settings)
+        {
+            yield return "Auto-archiving: " + (settings.AutoArchive ? "ON" : "off");
         }
 
         void objExplorer_FolderSwitch()
@@ -1834,7 +1860,7 @@ namespace SuiteCRMAddIn
         public void ShowSettingsForm()
         {
             var settingsForm = new frmSettings();
-            settingsForm.SettingsChanged += (sender, args) => this.ResetLog(settings);
+            settingsForm.SettingsChanged += (sender, args) => this.LogKeySettings(settings);
             settingsForm.ShowDialog();
         }
 
@@ -2157,16 +2183,19 @@ namespace SuiteCRMAddIn
             }
         }
 
-        public string VersionString
+        private static void GetTitleAndVersion(out string title, out string versionString)
         {
-            get
-            {
-                var version = Assembly.GetExecutingAssembly().GetName().Version;
+            var assembly = Assembly.GetExecutingAssembly();
+            var name = assembly.GetName();
+            var version = name.Version;
 
-                // 'Build' is what we'd call the 'revision number' and
-                // 'Revision' is what we'd call the 'build number'.
-                return $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
-            }
+            title = (assembly.GetCustomAttributes(typeof(AssemblyTitleAttribute)).SingleOrDefault() as
+                        AssemblyTitleAttribute)?.Title
+                    ?? name.Name;
+
+            // 'Build' is what we'd call the 'revision number' and
+            // 'Revision' is what we'd call the 'build number'.
+            versionString = $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
         }
     }
 }
