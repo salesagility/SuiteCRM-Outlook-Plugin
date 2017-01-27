@@ -44,9 +44,8 @@ namespace SuiteCRMAddIn
             this.InitializeComponent();
             if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
             {
-                frmSettings objacbbSettings = new frmSettings();
-                objacbbSettings.ShowDialog();                
-            }            
+                Globals.ThisAddIn.ShowSettingsForm();
+            }
         }
        
         private void btnAddBCC_Click(object sender, EventArgs e)

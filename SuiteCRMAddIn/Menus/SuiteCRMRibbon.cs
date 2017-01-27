@@ -136,8 +136,7 @@ namespace SuiteCRMAddIn
 
         public void btnSettings_Action(IRibbonControl control)
         {
-            frmSettings objSettings = new frmSettings();
-            objSettings.ShowDialog();
+            Globals.ThisAddIn.ShowSettingsForm();
         }
 
         public void btnAddressBook_Action(IRibbonControl control)
@@ -151,11 +150,9 @@ namespace SuiteCRMAddIn
         {
             if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
             {
-                frmSettings objacbbSettings = new frmSettings();
-                objacbbSettings.ShowDialog();
+                Globals.ThisAddIn.ShowSettingsForm();
             }
-            frmArchive objForm = new frmArchive();
-            objForm.ShowDialog();
+            Globals.ThisAddIn.ShowArchiveForm();
         }
         #endregion
 

@@ -1828,22 +1828,31 @@ namespace SuiteCRMAddIn
 
         private void cbtnSettings_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
+            ShowSettingsForm();
+        }
+
+        public void ShowSettingsForm()
+        {
             var settingsForm = new frmSettings();
-            settingsForm.SettingsChanged += (sender, args) => this.ResetLog();
+            settingsForm.SettingsChanged += (sender, args) => this.ResetLog(settings);
             settingsForm.ShowDialog();
+        }
+
+        public void ShowArchiveForm()
+        {
+            frmArchive objForm = new frmArchive();
+            objForm.ShowDialog();
         }
 
         private void ManualArchive()
         {
             if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
             {
-                frmSettings objacbbSettings = new frmSettings();
-                objacbbSettings.ShowDialog();
+                ShowSettingsForm();
             }
             if (Globals.ThisAddIn.SuiteCRMUserSession.id != "")
             {
-                frmArchive objForm = new frmArchive();
-                objForm.ShowDialog();
+                ShowArchiveForm();
             }
         }
 
@@ -1942,11 +1951,9 @@ namespace SuiteCRMAddIn
         {
             if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
             {
-                frmSettings objacbbSettings = new frmSettings();
-                objacbbSettings.ShowDialog();
+                ShowSettingsForm();
             }
-            frmArchive objForm = new frmArchive();
-            objForm.ShowDialog();
+            ShowArchiveForm();
         }
 
         private void Application_ItemSend(object item, ref bool target)
