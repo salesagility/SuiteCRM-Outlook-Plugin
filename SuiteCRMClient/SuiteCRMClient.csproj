@@ -59,7 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="clsAddValue.cs" />
-    <Compile Include="clsGlobals.cs" />
+    <Compile Include="CrmRestServer.cs" />
     <Compile Include="Email\ArchiveResult.cs" />
     <Compile Include="Email\clsEmailArchive.cs" />
     <Compile Include="Email\clsEmailAttachments.cs" />

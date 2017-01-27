@@ -144,7 +144,7 @@ namespace SuiteCRMAddIn
         {
             Log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log", () => GetLogHeader(settings));
             clsSuiteCRMHelper.SetLog(Log);
-            SuiteCRMClient.clsGlobals.SetLog(Log);
+            SuiteCRMClient.CrmRestServer.SetLog(Log);
         }
 
         private void LogKeySettings(clsSettings settings)

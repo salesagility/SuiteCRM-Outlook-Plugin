@@ -45,7 +45,7 @@ namespace SuiteCRMClient
             _log = log;
             if (URL != "")
             {
-                clsGlobals.SuiteCRMURL = new Uri(URL);
+                CrmRestServer.SuiteCRMURL = new Uri(URL);
                 SuiteCRMUsername = Username;
                 SuiteCRMPassword = Password;
                 LDAPKey = strLDAPKey;
@@ -72,7 +72,7 @@ namespace SuiteCRMClient
                             @password = GetMD5Hash(SuiteCRMPassword)
                         }
                     };
-                    var loginReturn = clsGlobals.GetCrmResponse<RESTObjects.Login>("login", loginData);
+                    var loginReturn = CrmRestServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
                     if (loginReturn.ErrorName != null)
                     {
                         loginData = new
@@ -83,7 +83,7 @@ namespace SuiteCRMClient
                                 @password = SuiteCRMPassword
                             }
                         };
-                        loginReturn = clsGlobals.GetCrmResponse<RESTObjects.Login>("login", loginData);
+                        loginReturn = CrmRestServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
                         if (loginReturn.ErrorName != null)
                         {
                             id = "";
@@ -146,7 +146,7 @@ namespace SuiteCRMClient
                         @password = builder2.ToString()
                     }
                 };
-                eSetEntryResult _result = SuiteCRMClient.clsGlobals.GetCrmResponse<eSetEntryResult>("login", loginData);
+                eSetEntryResult _result = SuiteCRMClient.CrmRestServer.GetCrmResponse<eSetEntryResult>("login", loginData);
                 if (_result.id == null || _result.id == "")
                 {
                     id = "";
@@ -175,7 +175,7 @@ namespace SuiteCRMClient
                     {
                         @session = id
                     };
-                    var objRet = clsGlobals.GetCrmResponse<object>("logout", logoutData);
+                    var objRet = CrmRestServer.GetCrmResponse<object>("logout", logoutData);
                 }
             }
             catch (Exception ex)

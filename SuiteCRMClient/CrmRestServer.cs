@@ -29,12 +29,12 @@ using SuiteCRMClient.Logging;
 
 namespace SuiteCRMClient
 {
-    public static class clsGlobals
+    public static class CrmRestServer
     {
         private static readonly JsonSerializer Serializer;
         private static ILogger Log;
 
-        static clsGlobals()
+        static CrmRestServer()
         {
             Serializer = new JsonSerializer();
             Serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
@@ -53,25 +53,46 @@ namespace SuiteCRMClient
             try
             {
                 var request = CreateCrmRestRequest(strMethod, objInput);
-                var buffer = GetResponseString(strMethod, objInput, request);
-                return JsonConvert.DeserializeObject<T>(buffer);
+                var jsonResponse = GetResponseString(request);
+                return DeserializeJson<T>(jsonResponse);
             }
             catch (Exception ex)
             {
-                Log.Warn("Problem calling " + strMethod, ex);
+                Log.Warn($"Tried calling '{strMethod}' with parameter '{objInput}'");
+                Log.Error($"Failed calling '{strMethod}'", ex);
                 throw;
+            }
+        }
+
+        private static T DeserializeJson<T>(string responseJson)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<T>(responseJson);
+            }
+            catch (JsonReaderException parseError)
+            {
+                throw new Exception($"Failed to parse JSON ({parseError.Message}): {responseJson}");
             }
         }
 
         private static HttpWebRequest CreateCrmRestRequest(string strMethod, object objInput)
         {
-            var requestUrl = SuiteCRMURL.AbsoluteUri + "service/v4_1/rest.php";
-            var restData = SerialiseJson(objInput);
-            var jsonData = $"method={WebUtility.UrlEncode(strMethod)}&input_type=JSON&response_type=JSON&rest_data={WebUtility.UrlEncode(restData)}";
+            try
+            {
+                var requestUrl = SuiteCRMURL.AbsoluteUri + "service/v4_1/rest.php";
+                var restData = SerialiseJson(objInput);
+                var jsonData =
+                    $"method={WebUtility.UrlEncode(strMethod)}&input_type=JSON&response_type=JSON&rest_data={WebUtility.UrlEncode(restData)}";
 
-            var contentTypeAndEncoding = "application/x-www-form-urlencoded; charset=utf-8";
-            var bytes = Encoding.UTF8.GetBytes(jsonData);
-            return CreatePostRequest(requestUrl, bytes, contentTypeAndEncoding);
+                var contentTypeAndEncoding = "application/x-www-form-urlencoded; charset=utf-8";
+                var bytes = Encoding.UTF8.GetBytes(jsonData);
+                return CreatePostRequest(requestUrl, bytes, contentTypeAndEncoding);
+            }
+            catch (Exception problem)
+            {
+                throw new Exception($"Could not construct '{strMethod}' request", problem);
+            }
         }
 
         private static string SerialiseJson(object parameters)
@@ -82,14 +103,13 @@ namespace SuiteCRMClient
             return buffer.ToString();
         }
 
-        private static string GetResponseString(string strMethod, object objInput, HttpWebRequest request)
+        private static string GetResponseString(HttpWebRequest request)
         {
             using (var response = request.GetResponse() as HttpWebResponse)
             {
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
-                    LogFailedRequest(strMethod, objInput, response);
-                    throw new Exception(response.StatusDescription);
+                    throw new Exception($"{response.StatusCode} {response.StatusDescription} from {response.Method} {response.ResponseUri}");
                 }
 
                return GetStringFromWebResponse(response);
@@ -118,20 +138,6 @@ namespace SuiteCRMClient
                 requestStream.Write(bytes, 0, bytes.Length);
             }
             return request;
-        }
-
-        private static void LogFailedRequest(string strMethod, object objInput, HttpWebResponse response)
-        {
-            Log.Warn(
-                "GetResponse method Webserver Exception:" + "\n" +
-                "Status Description:" + response.StatusDescription + "\n" +
-                "Status Code:" + response.StatusCode + "\n"+
-                "Method:" + response.Method + "\n"+
-                "Response URI:" + response.ResponseUri.ToString() + "\n" +
-                "Inputs:" + "\n"+
-                "Method:" + strMethod + "\n"+
-                "Data:" + objInput.ToString() + "\n" +
-                "-------------------------------------------------------------------------" + "\n");
         }
     }
 }
