@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
+                Log.Info("TaskSync thread started");
                 Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
                 Outlook.MAPIFolder taskFolder = GetDefaultFolder();
                 Outlook.Items items = taskFolder.Items;
@@ -42,6 +43,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             catch (Exception ex)
             {
                 Log.Error("ThisAddIn.StartTaskSync", ex);
+            }
+            finally
+            {
+                Log.Info("TaskSync thread completed");
             }
         }
         private Outlook.OlImportance GetImportance(string sImportance)

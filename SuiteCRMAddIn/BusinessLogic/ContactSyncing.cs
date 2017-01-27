@@ -25,6 +25,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
+                Log.Info("ContactSync thread starting");
                 Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
                 Outlook.MAPIFolder contactsFolder = GetDefaultFolder();
                 Outlook.Items items = contactsFolder.Items;
@@ -42,6 +43,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             catch (Exception ex)
             {
                 Log.Error("ThisAddIn.StartContactSync", ex);
+            }
+            finally
+            {
+                Log.Info("ContactSync thread completed");
             }
         }
 

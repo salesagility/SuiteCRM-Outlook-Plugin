@@ -23,6 +23,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
+                Log.Info("AppointmentSync thread started");
                 Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
                 if (oNS.Categories["SuiteCRM"] == null)
                 {
@@ -45,6 +46,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             catch (Exception ex)
             {
                 Log.Error("ThisAddIn.StartCalendarSync", ex);
+            }
+            finally
+            {
+                Log.Info("AppointmentSync thread completed");
             }
         }
 
