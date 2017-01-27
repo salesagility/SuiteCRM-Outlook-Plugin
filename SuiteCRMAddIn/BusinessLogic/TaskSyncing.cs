@@ -12,7 +12,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public class TaskSyncing: Syncing
     {
-        List<cTaskItem> lTaskItems;
+        List<TaskSyncState> lTaskItems;
         private string sDelTaskId = "";
 
         public TaskSyncing(SyncContext context)
@@ -155,7 +155,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                                 var oItem = lTaskItems.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString());
 
 
-                                if (oItem == default(cTaskItem))
+                                if (oItem == default(TaskSyncState))
                                 {
                                     Log.Warn("    if default");
                                     Outlook.TaskItem tItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
@@ -179,9 +179,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                                     oProp.Value = dResult.date_modified.value.ToString();
                                     Outlook.UserProperty oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                                     oProp2.Value = dResult.id.value.ToString();
-                                    lTaskItems.Add(new cTaskItem
+                                    lTaskItems.Add(new TaskSyncState
                                     {
-                                        oItem = tItem,
+                                        OutlookItem = tItem,
                                         OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
                                         SEntryID = dResult.id.value.ToString(),
                                         Touched = true
@@ -193,7 +193,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                                 {
                                     Log.Warn("    else not default");
                                     oItem.Touched = true;
-                                    Outlook.TaskItem tItem = oItem.oItem;
+                                    Outlook.TaskItem tItem = oItem.OutlookItem;
                                     Outlook.UserProperty oProp = tItem.UserProperties["SOModifiedDate"];
 
                                     Log.Warn((string)("    oProp.Value= " + oProp.Value + ", dResult.date_modified=" + dResult.date_modified.value.ToString()));
@@ -246,14 +246,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                     var lItemToBeDeletedO = lTaskItems.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeDeletedO)
                     {
-                        oItem.oItem.Delete();
+                        oItem.OutlookItem.Delete();
                     }
                     lTaskItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
 
                     var lItemToBeAddedToS = lTaskItems.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeAddedToS)
                     {
-                        AddTaskToS(oItem.oItem);
+                        AddTaskToS(oItem.OutlookItem);
                     }
                 }
                 catch (Exception ex)
@@ -272,7 +272,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (lTaskItems == null)
                 {
-                    lTaskItems = new List<cTaskItem>();
+                    lTaskItems = new List<TaskSyncState>();
                     Outlook.Items items = taskFolder.Items; //.Restrict("[MessageClass] = 'IPM.Task'" + GetStartDateString());
                     foreach (Outlook.TaskItem oItem in items)
                     {
@@ -282,9 +282,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                         if (oProp != null)
                         {
                             Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
-                            lTaskItems.Add(new cTaskItem
+                            lTaskItems.Add(new TaskSyncState
                             {
-                                oItem = oItem,
+                                OutlookItem = oItem,
                                 //OModifiedDate = "Fresh",
                                 OModifiedDate = DateTime.UtcNow,
 
@@ -293,9 +293,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                         else
                         {
-                            lTaskItems.Add(new cTaskItem
+                            lTaskItems.Add(new TaskSyncState
                             {
-                                oItem = oItem
+                                OutlookItem = oItem
                             });
                         }
                     }
@@ -316,8 +316,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 string entryId = oItem.EntryID;
                 Log.Warn("    oItem.EntryID= " + entryId);
 
-                cTaskItem taskitem = lTaskItems.FirstOrDefault(a => a.oItem.EntryID == entryId);
-                if (taskitem != default(cTaskItem))
+                TaskSyncState taskitem = lTaskItems.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+                if (taskitem != default(TaskSyncState))
                 {
                     if ((DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 5)
                     {
@@ -334,7 +334,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         taskitem.IsUpdate++;
                     }
 
-                    Log.Warn("callitem = " + taskitem.oItem.Subject);
+                    Log.Warn("callitem = " + taskitem.OutlookItem.Subject);
                     Log.Warn("callitem.SEntryID = " + taskitem.SEntryID);
                     Log.Warn("callitem mod_date= " + taskitem.OModifiedDate.ToString());
                     Log.Warn("UtcNow - callitem.OModifiedDate= " + (DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds.ToString());
@@ -345,7 +345,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
 
 
-                if (IsTaskView && lTaskItems.Exists(a => a.oItem.EntryID == entryId //// if (IsTaskView && lTaskItems.Exists(a => a.oItem.EntryID == entryId && a.OModifiedDate != "Fresh"))
+                if (IsTaskView && lTaskItems.Exists(a => a.OutlookItem.EntryID == entryId //// if (IsTaskView && lTaskItems.Exists(a => a.oItem.EntryID == entryId && a.OModifiedDate != "Fresh"))
                                  && taskitem.IsUpdate == 1
                                  )
                 )
@@ -511,16 +511,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                     string entryId = oItem.EntryID;
                     oItem.Save();
 
-                    var sItem = lTaskItems.FirstOrDefault(a => a.oItem.EntryID == entryId);
-                    if (sItem != default(cTaskItem))
+                    var sItem = lTaskItems.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+                    if (sItem != default(TaskSyncState))
                     {
                         sItem.Touched = true;
-                        sItem.oItem = oItem;
+                        sItem.OutlookItem = oItem;
                         sItem.OModifiedDate = DateTime.UtcNow;
                         sItem.SEntryID = _result;
                     }
                     else
-                        lTaskItems.Add(new cTaskItem { Touched = true, SEntryID = _result, OModifiedDate = DateTime.UtcNow, oItem = oItem });
+                        lTaskItems.Add(new TaskSyncState { Touched = true, SEntryID = _result, OModifiedDate = DateTime.UtcNow, OutlookItem = oItem });
 
                     Log.Warn("    date_start= " + str + ", date_due=" + str2);
                 }
@@ -542,7 +542,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             try
                             {
-                                string sID = oItem.oItem.EntryID;
+                                string sID = oItem.OutlookItem.EntryID;
                             }
                             catch (COMException)
                             {

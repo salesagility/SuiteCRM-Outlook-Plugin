@@ -57,7 +57,7 @@ namespace SuiteCRMAddIn
         private SyncContext _syncContext;
         private ContactSyncing _contactSyncing;
         private TaskSyncing _taskSyncing;
-        private CalendarSyncing _calendarSyncing;
+        private AppointmentSyncing _appointmentSyncing;
 
         public Office.IRibbonUI RibbonUI { get; set; }
 
@@ -79,7 +79,7 @@ namespace SuiteCRMAddIn
                 _syncContext = new SyncContext(outlookApp, settings);
                 _contactSyncing = new ContactSyncing(_syncContext);
                 _taskSyncing = new TaskSyncing(_syncContext);
-                _calendarSyncing = new CalendarSyncing(_syncContext);
+                _appointmentSyncing = new AppointmentSyncing(_syncContext);
 
                 var outlookExplorer = outlookApp.ActiveExplorer();
                 this.objExplorer = outlookExplorer;
@@ -191,7 +191,7 @@ namespace SuiteCRMAddIn
                         {
                             //StartCalendarSync();
                             // for test !!!
-                            Thread oThread = new Thread(() =>_calendarSyncing.StartCalendarSync());
+                            Thread oThread = new Thread(() =>_appointmentSyncing.StartCalendarSync());
                             oThread.Start();
                             //StartTaskSync();
                             Thread oThread1 = new Thread(() => _taskSyncing.StartTaskSync());
