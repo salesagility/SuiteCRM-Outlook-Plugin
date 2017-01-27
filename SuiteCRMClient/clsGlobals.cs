@@ -48,12 +48,12 @@ namespace SuiteCRMClient
 
         public static Uri SuiteCRMURL { get; set; }
 
-        public static T GetCrmResponse<T>(string strMethod, object objInput, byte[] strFileContent = null, bool islog = false)
+        public static T GetCrmResponse<T>(string strMethod, object objInput)
         {
             try
             {
                 var request = CreateCrmRestRequest(strMethod, objInput);
-                var buffer = GetResponseString(strMethod, objInput, islog, request);
+                var buffer = GetResponseString(strMethod, objInput, request);
                 return JsonConvert.DeserializeObject<T>(buffer);
             }
             catch (Exception ex)
@@ -82,7 +82,7 @@ namespace SuiteCRMClient
             return buffer.ToString();
         }
 
-        private static string GetResponseString(string strMethod, object objInput, bool islog, HttpWebRequest request)
+        private static string GetResponseString(string strMethod, object objInput, HttpWebRequest request)
         {
             using (var response = request.GetResponse() as HttpWebResponse)
             {
@@ -92,21 +92,16 @@ namespace SuiteCRMClient
                     throw new Exception(response.StatusDescription);
                 }
 
-               return GetStringFromWebResponse(response, islog);
+               return GetStringFromWebResponse(response);
             }
         }
 
-        private static string GetStringFromWebResponse(HttpWebResponse response, bool isLog)
+        private static string GetStringFromWebResponse(HttpWebResponse response)
         {
             using (var input = response.GetResponseStream())
-            using(var reader = new StreamReader(input))
+            using (var reader = new StreamReader(input))
             {
-                var result = reader.ReadToEnd();
-                if (isLog)
-                {
-                    Log.Debug("Response : " + result);
-                }
-                return result;
+                return reader.ReadToEnd();
             }
         }
 
