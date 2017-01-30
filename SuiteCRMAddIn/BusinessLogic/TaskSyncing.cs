@@ -523,33 +523,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
         }
+
         void Items_ItemRemove()
         {
-            if (IsCurrentView && PropagatesLocalDeletions)
+            try
             {
-                try
-                {
-                    foreach (var oItem in ItemsSyncState)
-                    {
-                        try
-                        {
-                            string sID = oItem.OutlookItem.EntryID;
-                        }
-                        catch (COMException)
-                        {
-                            eNameValue[] data = new eNameValue[2];
-                            data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.CrmEntryId);
-                            data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                            clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.CrmType);
-                            oItem.Delete = true;
-                        }
-                    }
-                    ItemsSyncState.RemoveAll(a => a.Delete);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("ThisAddIn.TItems_ItemRemove", ex);
-                }
+                RemoveDeletedItems(checkItemSensitivity: false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("TaskSyncing.Items_ItemRemove", ex);
             }
         }
 

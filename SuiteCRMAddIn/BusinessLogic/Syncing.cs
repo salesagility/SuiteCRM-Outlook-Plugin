@@ -8,6 +8,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
+    using System.Runtime.InteropServices;
 
     public abstract class Syncing<OutlookItemType>
     {
@@ -61,5 +62,31 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Returns true iff local (Outlook) deletions should be propagated to the server.
         /// </summary>
         protected abstract bool PropagatesLocalDeletions { get; }
+
+        protected void RemoveDeletedItems(bool checkItemSensitivity)
+        {
+            if (IsCurrentView && PropagatesLocalDeletions)
+            {
+                foreach (var oItem in ItemsSyncState)
+                {
+                    try
+                    {
+                        // Has the side-effect of throwing an exception if the item has been deleted:
+                        if (checkItemSensitivity && oItem.OutlookItemSensitivity != Outlook.OlSensitivity.olNormal)
+                            continue;
+                        var sID = oItem.OutlookItemEntryId;
+                    }
+                    catch (COMException)
+                    {
+                        eNameValue[] data = new eNameValue[2];
+                        data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.CrmEntryId);
+                        data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
+                        clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.CrmType);
+                        oItem.Delete = true;
+                    }
+                }
+                ItemsSyncState.RemoveAll(a => a.Delete);
+            }
+        }
     }
 }

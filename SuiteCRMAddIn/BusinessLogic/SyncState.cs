@@ -2,6 +2,8 @@
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using Outlook = Microsoft.Office.Interop.Outlook;
+
     public abstract class SyncState<ItemType>
     {
         public abstract string CrmType { get; }
@@ -17,5 +19,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         public bool Delete { get; set; }
 
         public int IsUpdate { get; set; }
+
+        /// <summary>
+        /// Precisely 'this.OutlookItem.EntryId'.
+        /// </summary>
+        /// <remarks>Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.EntryId'.</remarks>
+        public abstract string OutlookItemEntryId { get; }
+
+        /// <summary>
+        /// Precisely 'this.OutlookItem.Sensitivity'.
+        /// </summary>
+        /// <remarks>Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.</remarks>
+        public abstract Outlook.OlSensitivity OutlookItemSensitivity { get; }
     }
 }
