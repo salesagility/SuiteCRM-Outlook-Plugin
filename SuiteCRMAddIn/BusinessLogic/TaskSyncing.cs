@@ -113,14 +113,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 try
                 {
-                    var lItemToBeDeletedO = untouched.Where(a => !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeDeletedO = untouched.Where(a => a.ExistedInCrm);
                     foreach (var oItem in lItemToBeDeletedO)
                     {
                         oItem.OutlookItem.Delete();
                         ItemsSyncState.Remove(oItem);
                     }
 
-                    var lItemToBeAddedToS = untouched.Where(a => string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeAddedToS = untouched.Where(a => !a.ExistedInCrm);
                     foreach (var oItem in lItemToBeAddedToS)
                     {
                         AddToCrm(oItem.OutlookItem);

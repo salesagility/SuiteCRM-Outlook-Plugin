@@ -394,7 +394,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     // TODO: unclear why this is only for 'meetings' and not for 'calls'
                     if (sModule == "Meetings")
                     {
-                        var lItemToBeDeletedO = untouched.Where(a => !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.CrmType == sModule);
+                        var lItemToBeDeletedO = untouched.Where(a => a.ExistedInCrm && a.CrmType == sModule);
                         foreach (var oItem in lItemToBeDeletedO)
                         {
                             try
@@ -408,7 +408,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                             ItemsSyncState.Remove(oItem);
                         }
                     }
-                    var lItemToBeAddedToS = untouched.Where(a => string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.CrmType == sModule);
+
+                    var lItemToBeAddedToS = untouched.Where(a => !a.ExistedInCrm && a.CrmType == sModule);
                     foreach (var oItem in lItemToBeAddedToS)
                     {
                         AddToCrm(oItem.OutlookItem, sModule);

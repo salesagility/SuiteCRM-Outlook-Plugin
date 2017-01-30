@@ -16,6 +16,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public int IsUpdate { get; set; }
 
+        public bool ExistedInCrm => !string.IsNullOrEmpty(CrmEntryId);
+
         /// <summary>
         /// Precisely 'this.OutlookItem.EntryId'.
         /// </summary>
