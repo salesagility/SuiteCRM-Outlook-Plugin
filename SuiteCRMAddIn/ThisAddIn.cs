@@ -191,16 +191,16 @@ namespace SuiteCRMAddIn
                         {
                             //StartCalendarSync();
                             // for test !!!
-                            Thread oThread = new Thread(() =>_appointmentSyncing.StartCalendarSync());
+                            Thread oThread = new Thread(() =>_appointmentSyncing.StartSync());
                             oThread.Start();
                             //StartTaskSync();
-                            Thread oThread1 = new Thread(() => _taskSyncing.StartTaskSync());
+                            Thread oThread1 = new Thread(() => _taskSyncing.StartSync());
                             oThread1.Start();
                         }
                         if (settings.SyncContacts)
                         {
                             //StartContactSync();
-                            Thread oThread = new Thread(() => _contactSyncing.StartContactSync());
+                            Thread oThread = new Thread(() => _contactSyncing.StartSync());
                             oThread.Start();
                         }
                     }

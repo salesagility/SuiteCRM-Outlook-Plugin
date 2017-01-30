@@ -17,7 +17,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
         }
 
-        public void StartCalendarSync()
+        public void StartSync()
         {
             try
             {
@@ -27,8 +27,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     oNS.Categories.Add("SuiteCRM", Outlook.OlCategoryColor.olCategoryColorGreen, Outlook.OlCategoryShortcutKey.olCategoryShortcutKeyNone);
                 }
-                Outlook.MAPIFolder appointmentsFolder = GetDefaultFolder("appointments");
-                Outlook.Items items = appointmentsFolder.Items;
+                Outlook.MAPIFolder folder = GetDefaultFolder();
+                Outlook.Items items = folder.Items;
 
                 items.ItemAdd -= Items_ItemAdd;
                 items.ItemChange -= Items_ItemChange;
@@ -37,9 +37,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 items.ItemChange += Items_ItemChange;
                 items.ItemRemove += Items_ItemRemove;
 
-                GetOutlookCalItems(appointmentsFolder);
-                SyncMeetings(appointmentsFolder, "Meetings");
-                SyncMeetings(appointmentsFolder, "Calls");
+                GetOutlookItems(folder);
+                SyncFolder(folder, "Meetings");
+                SyncFolder(folder, "Calls");
             }
             catch (Exception ex)
             {
@@ -151,7 +151,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void GetOutlookCalItems(Outlook.MAPIFolder appointmentsFolder)
+        private void GetOutlookItems(Outlook.MAPIFolder appointmentsFolder)
         {
             try
             {
@@ -368,7 +368,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void SyncMeetings(Outlook.MAPIFolder appointmentsFolder, string sModule)
+        private void SyncFolder(Outlook.MAPIFolder appointmentsFolder, string sModule)
         {
             Log.Warn("SyncMeetings");
             try
@@ -606,12 +606,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             return "";
         }
 
-        public Outlook.MAPIFolder GetDefaultFolder(string type)
+        public Outlook.MAPIFolder GetDefaultFolder()
         {
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
         }
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olAppointmentItem;
+
         // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
         // (but not for Appointments).
         protected override bool PropagatesLocalDeletions => false;

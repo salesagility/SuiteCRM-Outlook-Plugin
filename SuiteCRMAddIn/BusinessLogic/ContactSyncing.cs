@@ -18,24 +18,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
         }
 
-        public void StartContactSync()
+        public void StartSync()
         {
             try
             {
                 Log.Info("ContactSync thread starting");
                 Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
-                Outlook.MAPIFolder contactsFolder = GetDefaultFolder();
-                Outlook.Items items = contactsFolder.Items;
+                Outlook.MAPIFolder folder = GetDefaultFolder();
+                Outlook.Items items = folder.Items;
 
-                items.ItemAdd -= CItems_ItemAdd;
-                items.ItemChange -= CItems_ItemChange;
-                items.ItemRemove -= CItems_ItemRemove;
-                items.ItemAdd += CItems_ItemAdd;
-                items.ItemChange += CItems_ItemChange;
-                items.ItemRemove += CItems_ItemRemove;
+                items.ItemAdd -= Items_ItemAdd;
+                items.ItemChange -= Items_ItemChange;
+                items.ItemRemove -= Items_ItemRemove;
+                items.ItemAdd += Items_ItemAdd;
+                items.ItemChange += Items_ItemChange;
+                items.ItemRemove += Items_ItemRemove;
 
-                GetOutlookCItems(contactsFolder);
-                SyncContacts(contactsFolder);
+                GetOutlookItems(folder);
+                SyncFolder(folder);
             }
             catch (Exception ex)
             {
@@ -47,7 +47,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void SyncContacts(Outlook.MAPIFolder contactFolder)
+        private void SyncFolder(Outlook.MAPIFolder contactFolder)
         {
             Log.Warn("ThisAddIn.SyncContacts");
             try
@@ -210,7 +210,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void GetOutlookCItems(Outlook.MAPIFolder taskFolder)
+        private void GetOutlookItems(Outlook.MAPIFolder taskFolder)
         {
             try
             {
@@ -252,7 +252,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        void CItems_ItemChange(object Item)
+        void Items_ItemChange(object Item)
         {
             Log.Warn("ItemChange");
 
@@ -320,7 +320,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        void CItems_ItemAdd(object Item)
+        void Items_ItemAdd(object Item)
         {
             try
             {
@@ -433,7 +433,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        void CItems_ItemRemove()
+        void Items_ItemRemove()
         {
             try
             {
