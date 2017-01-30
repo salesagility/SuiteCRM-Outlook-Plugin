@@ -160,7 +160,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     CrmEntryId = dResult.id.value.ToString(),
                 };
                 ItemsSyncState.Add(newState);
-                Log.Warn(cItem.FullName + "     is saving with " + cItem.Sensitivity.ToString());
+                Log.Warn(cItem.FullName + "     is saving with " + cItem.Sensitivity);
                 cItem.Save();
                 return newState;
             }
@@ -203,7 +203,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                     oProp2.Value = dResult.id.value.ToString();
                     Log.Warn("    save not default");
-                    Log.Warn(cItem.FullName + "     is saving with" + cItem.Sensitivity.ToString());
+                    Log.Warn(cItem.FullName + "     is saving with" + cItem.Sensitivity);
                     cItem.Save();
                 }
                 Log.Warn((string) (cItem.FullName + " dResult.date_modified= " + dResult.date_modified.ToString()));
@@ -267,7 +267,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Warn("oItem.EntryID: " + entryId);
                 var contact = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                 Log.Warn("EntryID=  " + oItem.EntryID);
-                if (contact != default(ContactSyncState))
+                if (contact != null)
                 {
                     if ((int)Math.Abs((DateTime.UtcNow - contact.OModifiedDate).TotalSeconds) > 5)
                     {
@@ -358,7 +358,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (!settings.SyncContacts)
                 return;
-            if (oItem != null && oItem.Sensitivity.ToString() == "olNormal")
+            if (oItem != null && oItem.Sensitivity == Outlook.OlSensitivity.olNormal)
             {
                 try
                 {
@@ -402,15 +402,12 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                     Log.Warn(oItem.FullName + " from save Sensitivity= " + oItem.Sensitivity);
 
-                    if (oItem.Sensitivity.ToString() != "olNormal")
-                        return;
-
                     Log.Warn("        Save");
                     oItem.Save();
 
                     string entryId = oItem.EntryID;
                     var sItem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
-                    if (sItem != default(ContactSyncState))
+                    if (sItem != null)
                     {
                         sItem.OutlookItem = oItem;
                         Log.Warn("ThisAddIn.AddContactToS (DateTime.UtcNow - sItem.OModifiedDate).Milliseconds = " +

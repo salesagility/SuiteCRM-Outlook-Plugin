@@ -313,7 +313,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Warn("    oItem.EntryID= " + entryId);
 
                 var taskitem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
-                if (taskitem != default(TaskSyncState))
+                if (taskitem != null)
                 {
                     if ((DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 5)
                     {
@@ -507,7 +507,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 oItem.Save();
 
                 var sItem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
-                if (sItem != default(TaskSyncState))
+                if (sItem != null)
                 {
                     sItem.OutlookItem = oItem;
                     sItem.OModifiedDate = DateTime.UtcNow;

@@ -73,7 +73,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 string entryId = aItem.EntryID;
                 var callitem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                 Log.Warn("CalItem EntryID=  " + aItem.EntryID);
-                if (callitem != default(AppointmentSyncState))
+                if (callitem != null)
                 {
                     var utcNow = DateTime.UtcNow;
                     if (Math.Abs((int)(utcNow - callitem.OModifiedDate).TotalSeconds) > 5)
@@ -552,7 +552,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     aItem.Save();
                     string entryId = aItem.EntryID;
                     var sItem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
-                    if (sItem != default(AppointmentSyncState))
+                    if (sItem != null)
                     {
                         sItem.OutlookItem = aItem;
                         sItem.OModifiedDate = DateTime.UtcNow;
