@@ -42,7 +42,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 eModuleList oList = clsSuiteCRMHelper.GetModules();
                 return oList.modules1.FirstOrDefault(a => a.module_label == moduleName)
-                    .module_acls1.FirstOrDefault(b => b.action == permission).access;
+                    ?.module_acls1.FirstOrDefault(b => b.action == permission)
+                    ?.access ?? false;
             }
             catch (Exception)
             {

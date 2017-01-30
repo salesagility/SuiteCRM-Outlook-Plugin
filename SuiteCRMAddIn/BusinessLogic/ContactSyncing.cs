@@ -54,11 +54,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             Log.Warn("ThisAddIn.SyncContacts");
             try
             {
+                if (!HasAccess("Contacts", "export"))
+                {
+                    Log.Warn("CRM server denied access to export Contacts");
+                    return;
+                }
+
                 int iOffset = 0;
                 while (true)
                 {
-                    if (!HasAccess("Contacts", "export")) // TODO: Should probably exit method if no permission
-                        break;
                     eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Contacts",
                                     "contacts.assigned_user_id = '" + clsSuiteCRMHelper.GetUserId() + "'",
                                     0, "date_entered DESC", iOffset, false, clsSuiteCRMHelper.GetSugarFields("Contacts"));
