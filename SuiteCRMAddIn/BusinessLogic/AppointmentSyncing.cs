@@ -22,11 +22,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 Log.Info("AppointmentSync thread started");
-                Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
-                if (oNS.Categories["SuiteCRM"] == null)
-                {
-                    oNS.Categories.Add("SuiteCRM", Outlook.OlCategoryColor.olCategoryColorGreen, Outlook.OlCategoryShortcutKey.olCategoryShortcutKeyNone);
-                }
+                AddSuiteCrmOutlookCategory();
                 Outlook.MAPIFolder folder = GetDefaultFolder();
                 Outlook.Items items = folder.Items;
 
@@ -48,6 +44,18 @@ namespace SuiteCRMAddIn.BusinessLogic
             finally
             {
                 Log.Info("AppointmentSync thread completed");
+            }
+        }
+
+        // TODO: Should _not_ be here. This category is used by all Syncing classes and email archiving,
+        // so should be added near add-in start-up.
+        private void AddSuiteCrmOutlookCategory()
+        {
+            Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
+            if (oNS.Categories["SuiteCRM"] == null)
+            {
+                oNS.Categories.Add("SuiteCRM", Outlook.OlCategoryColor.olCategoryColorGreen,
+                    Outlook.OlCategoryShortcutKey.olCategoryShortcutKeyNone);
             }
         }
 
@@ -383,6 +391,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 try
                 {
+                    // TODO: unclear why this is only for 'meetings' and not for 'calls'
                     if (sModule == "Meetings")
                     {
                         var lItemToBeDeletedO = untouched.Where(a => !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.CrmType == sModule);
