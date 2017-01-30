@@ -16,8 +16,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public bool Touched { get; set; }
 
-        public bool Delete { get; set; }
-
         public int IsUpdate { get; set; }
 
         /// <summary>

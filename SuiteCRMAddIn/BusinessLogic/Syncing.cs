@@ -67,6 +67,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (IsCurrentView && PropagatesLocalDeletions)
             {
+                var toBeDeleted = new HashSet<SyncState<OutlookItemType>>();
                 foreach (var oItem in ItemsSyncState)
                 {
                     try
@@ -82,10 +83,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                         data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.CrmEntryId);
                         data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
                         clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.CrmType);
-                        oItem.Delete = true;
+                        toBeDeleted.Add(oItem);
                     }
                 }
-                ItemsSyncState.RemoveAll(a => a.Delete);
+                ItemsSyncState.RemoveAll(a => toBeDeleted.Contains(a));
             }
         }
     }
