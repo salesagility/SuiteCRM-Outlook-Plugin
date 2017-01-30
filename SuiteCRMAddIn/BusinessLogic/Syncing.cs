@@ -3,12 +3,13 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System.Collections.Generic;
     using System.Linq;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
 
-    public abstract class Syncing
+    public abstract class Syncing<OutlookItemType>
     {
         private readonly SyncContext _context;
 
@@ -24,6 +25,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected clsSettings settings => Context.settings;
 
         protected ILogger Log => Context.Log;
+
+        protected List<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = null;
 
         public DateTime GetStartDate()
         {

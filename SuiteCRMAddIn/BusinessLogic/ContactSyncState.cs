@@ -5,5 +5,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
+        public override string CrmType => "Contacts";
     }
 }

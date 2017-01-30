@@ -4,7 +4,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public abstract class SyncState<ItemType>
     {
-        public string SEntryID { get; set; }
+        public abstract string CrmType { get; }
+
+        public string CrmEntryId { get; set; }
 
         public DateTime OModifiedDate { get; set; }
 

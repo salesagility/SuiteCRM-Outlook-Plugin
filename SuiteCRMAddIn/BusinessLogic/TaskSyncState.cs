@@ -5,5 +5,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public class TaskSyncState: SyncState<Outlook.TaskItem>
     {
+        public override string CrmType => "Tasks";
     }
 }
