@@ -113,7 +113,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     if (oProp != null && oProp1 != null)
                     {
                         callitem.IsUpdate++;
-                        AddAppointmentToS(aItem, oProp.Value.ToString(), oProp1.Value.ToString());
+                        AddToCrm(aItem, oProp.Value.ToString(), oProp1.Value.ToString());
                     }
                 }
             }
@@ -129,7 +129,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             var aItem = Item as Outlook.AppointmentItem;
             if (IsCurrentView && !ItemsSyncState.Exists(a => a.OutlookItem.EntryID == aItem.EntryID))
             {
-                AddAppointmentToS(aItem, "Meetings");
+                AddToCrm(aItem, "Meetings");
             }
         }
 
@@ -398,7 +398,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     var lItemToBeAddedToS = ItemsSyncState.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.CrmType == sModule);
                     foreach (var oItem in lItemToBeAddedToS)
                     {
-                        AddAppointmentToS(oItem.OutlookItem, sModule);
+                        AddToCrm(oItem.OutlookItem, sModule);
                     }
                 }
                 catch (Exception ex)
@@ -412,7 +412,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void AddAppointmentToS(Outlook.AppointmentItem aItem, string crmType, string sID = "")
+        private void AddToCrm(Outlook.AppointmentItem aItem, string crmType, string sID = "")
         {
             Log.Warn("AddAppointmentToS");
             if (!settings.SyncCalendar)

@@ -96,7 +96,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     var lItemToBeAddedToS = ItemsSyncState.Where(a => !a.Touched && a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeAddedToS)
                     {
-                        AddContactToS(oItem.OutlookItem);
+                        AddToCrm(oItem.OutlookItem);
                     }
                 }
                 catch (Exception ex)
@@ -302,11 +302,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         contact.IsUpdate++;
                         Log.Warn("Go to AddContactToS");
-                        AddContactToS(oItem, oProp1.Value.ToString());
+                        AddToCrm(oItem, oProp1.Value.ToString());
                     }
                     else
                     {
-                        AddContactToS(oItem);
+                        AddToCrm(oItem);
                     }
                 }
             }
@@ -339,11 +339,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Outlook.UserProperty oProp2 = item.UserProperties["SEntryID"];  // to avoid duplicating of the contact
                 if (oProp2 != null)
                 {
-                    AddContactToS(item, oProp2.Value);
+                    AddToCrm(item, oProp2.Value);
                 }
                 else
                 {
-                    AddContactToS(item);
+                    AddToCrm(item);
                 }
 
             }
@@ -352,7 +352,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Error("ThisAddIn.CItems_ItemAdd", ex);
             }
         }
-        private void AddContactToS(Outlook.ContactItem oItem, string sID = "")
+        private void AddToCrm(Outlook.ContactItem oItem, string sID = "")
         {
             if (!settings.SyncContacts)
                 return;
