@@ -12,7 +12,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public class AppointmentSyncing: Syncing
     {
-        List<AppointmentSyncState> lCalItems;
+        List<AppointmentSyncState> ItemsSyncState;
 
         public AppointmentSyncing(SyncContext context)
             : base(context)
@@ -57,29 +57,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (IsCalendarView)
+                if (IsCurrentView && PropagatesLocalDeletions)
                 {
-                    try
+                    foreach (var oItem in ItemsSyncState)
                     {
-                        foreach (var oItem in lCalItems)
+                        try
                         {
-                            try
-                            {
-                                string sID = oItem.OutlookItem.EntryID;
-                            }
-                            catch (COMException)
-                            {
-                                eNameValue[] data = new eNameValue[2];
-                                data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
-                                data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                                clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.SType);
-                                oItem.Delete = true;
-                            }
+                            string sID = oItem.OutlookItem.EntryID;
                         }
-                        lCalItems.RemoveAll(a => a.Delete);
+                        catch (COMException)
+                        {
+                            eNameValue[] data = new eNameValue[2];
+                            data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.SEntryID);
+                            data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
+                            clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.SType);
+                            oItem.Delete = true;
+                        }
                     }
-                    catch
-                    { }
+                    ItemsSyncState.RemoveAll(a => a.Delete);
                 }
             }
             catch (Exception ex)
@@ -96,7 +91,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var aItem = Item as Outlook.AppointmentItem;
 
                 string entryId = aItem.EntryID;
-                AppointmentSyncState callitem = lCalItems.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+                AppointmentSyncState callitem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                 Log.Warn("CalItem EntryID=  " + aItem.EntryID);
                 if (callitem != default(AppointmentSyncState))
                 {
@@ -128,7 +123,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
 
 
-                if (IsCalendarView && lCalItems.Exists(a => a.OutlookItem.EntryID == aItem.EntryID
+                if (IsCurrentView && ItemsSyncState.Exists(a => a.OutlookItem.EntryID == aItem.EntryID
                                  && callitem.IsUpdate == 1
                                  )
                 )
@@ -152,7 +147,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             Log.Warn("Items_ItemAdd");
             var aItem = Item as Outlook.AppointmentItem;
-            if (IsCalendarView && !lCalItems.Exists(a => a.OutlookItem.EntryID == aItem.EntryID))
+            if (IsCurrentView && !ItemsSyncState.Exists(a => a.OutlookItem.EntryID == aItem.EntryID))
             {
                 AddAppointmentToS(aItem, "Meetings");
             }
@@ -162,9 +157,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (lCalItems == null)
+                if (ItemsSyncState == null)
                 {
-                    lCalItems = new List<AppointmentSyncState>();
+                    ItemsSyncState = new List<AppointmentSyncState>();
                     Outlook.Items items = appointmentsFolder.Items; //.Restrict("[MessageClass] = 'IPM.Appointment'" + GetStartDateString());
                     foreach (Outlook.AppointmentItem aItem in items)
                     {
@@ -175,7 +170,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             Outlook.UserProperty oProp1 = aItem.UserProperties["SType"];
                             Outlook.UserProperty oProp2 = aItem.UserProperties["SEntryID"];
-                            lCalItems.Add(new AppointmentSyncState
+                            ItemsSyncState.Add(new AppointmentSyncState
                             {
                                 OutlookItem = aItem,
                                 OModifiedDate = DateTime.UtcNow,
@@ -185,7 +180,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                         else
                         {
-                            lCalItems.Add(new AppointmentSyncState
+                            ItemsSyncState.Add(new AppointmentSyncState
                             {
                                 OutlookItem = aItem,
                                 SType = "Meetings"
@@ -262,7 +257,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 return;
             }
 
-            var oItem = lCalItems.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString() && a.SType == sModule);
+            var oItem = ItemsSyncState.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString() && a.SType == sModule);
             if (oItem == default(AppointmentSyncState))
             {
                 Outlook.AppointmentItem aItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
@@ -307,7 +302,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 oProp1.Value = sModule;
                 Outlook.UserProperty oProp2 = aItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                 oProp2.Value = dResult.id.value.ToString();
-                lCalItems.Add(new AppointmentSyncState
+                ItemsSyncState.Add(new AppointmentSyncState
                 {
                     OutlookItem = aItem,
                     OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
@@ -408,7 +403,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     if (sModule == "Meetings")
                     {
-                        var lItemToBeDeletedO = lCalItems.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.SType == sModule);
+                        var lItemToBeDeletedO = ItemsSyncState.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.SType == sModule);
                         foreach (var oItem in lItemToBeDeletedO)
                         {
                             try
@@ -420,9 +415,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                                 Log.Warn("   Exception  oItem.oItem.Delete");
                             }
                         }
-                        lCalItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.SType == sModule);
+                        ItemsSyncState.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.SType == sModule);
                     }
-                    var lItemToBeAddedToS = lCalItems.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.SType == sModule);
+                    var lItemToBeAddedToS = ItemsSyncState.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()) && a.SType == sModule);
                     foreach (var oItem in lItemToBeAddedToS)
                     {
                         AddAppointmentToS(oItem.OutlookItem, sModule);
@@ -574,7 +569,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     Log.Warn("    AddAppointmentToS Save ");
                     aItem.Save();
                     string entryId = aItem.EntryID;
-                    var sItem = lCalItems.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+                    var sItem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                     if (sItem != default(AppointmentSyncState))
                     {
                         sItem.OutlookItem = aItem;
@@ -584,7 +579,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     else
                     {
-                        lCalItems.Add(new AppointmentSyncState { SEntryID = _result, SType = sModule, OModifiedDate = DateTime.UtcNow, OutlookItem = aItem });
+                        ItemsSyncState.Add(new AppointmentSyncState { SEntryID = _result, SType = sModule, OModifiedDate = DateTime.UtcNow, OutlookItem = aItem });
                         Log.Warn("    AddAppointmentToS New ");
                     }
                 }
@@ -620,6 +615,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
         }
 
-        protected bool IsCalendarView => Context.CurrentFolderItemType == Outlook.OlItemType.olAppointmentItem;
+        protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olAppointmentItem;
+        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
+        // (but not for Appointments).
+        protected override bool PropagatesLocalDeletions => false;
     }
 }

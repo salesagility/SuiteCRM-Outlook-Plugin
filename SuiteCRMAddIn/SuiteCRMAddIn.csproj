@@ -209,6 +209,7 @@
     <Compile Include="BusinessLogic\EmailArchiving.cs" />
     <Compile Include="BusinessLogic\SyncContext.cs" />
     <Compile Include="BusinessLogic\Syncing.cs" />
+    <Compile Include="BusinessLogic\SyncState.cs" />
     <Compile Include="BusinessLogic\TaskSyncing.cs" />
     <Compile Include="BusinessLogic\TaskSyncState.cs" />
     <Compile Include="clsGlobals.cs" />

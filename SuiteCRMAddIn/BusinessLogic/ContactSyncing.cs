@@ -13,7 +13,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public class ContactSyncing: Syncing
     {
-        List<ContactSyncState> lContactItems;
+        List<ContactSyncState> ItemsSyncState;
 
         public ContactSyncing(SyncContext context)
             : base(context)
@@ -88,14 +88,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 try
                 {
-                    var lItemToBeDeletedO = lContactItems.Where(a => !a.Touched && a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeDeletedO = ItemsSyncState.Where(a => !a.Touched && a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeDeletedO)
                     {
                         oItem.OutlookItem.Delete();
                     }
-                    lContactItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    ItemsSyncState.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
 
-                    var lItemToBeAddedToS = lContactItems.Where(a => !a.Touched && a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeAddedToS = ItemsSyncState.Where(a => !a.Touched && a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeAddedToS)
                     {
                         AddContactToS(oItem.OutlookItem);
@@ -116,7 +116,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
 
-            var oItem = lContactItems.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString());
+            var oItem = ItemsSyncState.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString());
             if (oItem == null)
             {
                 if (dResult.sync_contact.value.ToString() != "True")
@@ -153,7 +153,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 oProp.Value = dResult.date_modified.value.ToString();
                 Outlook.UserProperty oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                 oProp2.Value = dResult.id.value.ToString();
-                lContactItems.Add(new ContactSyncState
+                ItemsSyncState.Add(new ContactSyncState
                 {
                     OutlookItem = cItem,
                     OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
@@ -216,9 +216,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (lContactItems == null)
+                if (ItemsSyncState == null)
                 {
-                    lContactItems = new List<ContactSyncState>();
+                    ItemsSyncState = new List<ContactSyncState>();
                     Outlook.Items items = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
                     foreach (Outlook.ContactItem oItem in items)
                     {
@@ -231,7 +231,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             {
                                 DateTime.TryParse(oProp.Value.ToString(), out modDateTime);
                             }
-                            lContactItems.Add(new ContactSyncState
+                            ItemsSyncState.Add(new ContactSyncState
                             {
                                 OutlookItem = oItem,
                                 OModifiedDate = modDateTime,
@@ -240,7 +240,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                         else
                         {
-                            lContactItems.Add(new ContactSyncState
+                            ItemsSyncState.Add(new ContactSyncState
                             {
                                 OutlookItem = oItem
                             });
@@ -265,7 +265,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Warn(oItem.FullName + " Sensitivity= " + oItem.Sensitivity);
                 string entryId = oItem.EntryID;
                 Log.Warn("oItem.EntryID: " + entryId);
-                ContactSyncState contact = lContactItems.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+                ContactSyncState contact = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                 Log.Warn("EntryID=  " + oItem.EntryID);
                 if (contact != default(ContactSyncState))
                 {
@@ -294,7 +294,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     Log.Warn("not found contact. AddContactToS(oItem) ");
                 }
                 // oItem.Sensitivity == Outlook.OlSensitivity.olNormal
-                if (IsContactView && lContactItems.Exists(a => a.OutlookItem.EntryID == oItem.EntryID
+                if (IsCurrentView && ItemsSyncState.Exists(a => a.OutlookItem.EntryID == oItem.EntryID
                                                                && contact.IsUpdate == 1
                                                                && oItem.Sensitivity == Outlook.OlSensitivity.olNormal))
                 {
@@ -318,7 +318,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                Log.Warn("lContactItems.Count = " + lContactItems.Count);
+                Log.Warn("lContactItems.Count = " + ItemsSyncState.Count);
             }
         }
 
@@ -326,13 +326,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (!IsContactView)
+                if (!IsCurrentView)
                     return;
 
                 var item = Item as Outlook.ContactItem;
                 if (item.Sensitivity != Outlook.OlSensitivity.olNormal)
                 {
-                    lContactItems.Add(new ContactSyncState { OModifiedDate = DateTime.UtcNow, OutlookItem = item });
+                    ItemsSyncState.Add(new ContactSyncState { OModifiedDate = DateTime.UtcNow, OutlookItem = item });
                     Log.Warn("Contact with abnormal Sensitivity was added to lContactItems - " + item.FullName);
                     return;
                 }
@@ -409,7 +409,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     oItem.Save();
 
                     string entryId = oItem.EntryID;
-                    var sItem = lContactItems.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+                    var sItem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                     if (sItem != default(ContactSyncState))
                     {
                         sItem.OutlookItem = oItem;
@@ -424,7 +424,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     else
                     {
                         Log.Warn("ThisAddIn.AddContactToS ADD lContactItemsFresh");
-                        lContactItems.Add(new ContactSyncState { SEntryID = _result, OModifiedDate = DateTime.UtcNow, OutlookItem = oItem });
+                        ItemsSyncState.Add(new ContactSyncState { SEntryID = _result, OModifiedDate = DateTime.UtcNow, OutlookItem = oItem });
                     }
 
                 }
@@ -434,19 +434,21 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
         }
+
         void CItems_ItemRemove()
         {
-            if (IsContactView && false)
+            try
             {
-                try
+                if (IsCurrentView && PropagatesLocalDeletions)
                 {
-                    foreach (var oItem in lContactItems)
+                    foreach (var oItem in ItemsSyncState)
                     {
                         try
                         {
+                            // Has the side-effect of throwing an exception if the item has been deleted:
                             if (oItem.OutlookItem.Sensitivity != Outlook.OlSensitivity.olNormal)
                                 continue;
-                            string sID = oItem.OutlookItem.EntryID;
+                            var sID = oItem.OutlookItem.EntryID;
                         }
                         catch (COMException)
                         {
@@ -457,12 +459,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                             oItem.Delete = true;
                         }
                     }
-                    lContactItems.RemoveAll(a => a.Delete);
+                    ItemsSyncState.RemoveAll(a => a.Delete);
                 }
-                catch (Exception ex)
-                {
-                    Log.Error("ThisAddIn.CItems_ItemRemove", ex);
-                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("ThisAddIn.CItems_ItemRemove", ex);
             }
         }
 
@@ -471,6 +473,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
         }
 
-        protected bool IsContactView => Context.CurrentFolderItemType == Outlook.OlItemType.olContactItem;
+        protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olContactItem;
+
+        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
+        // (but not for Appointments).
+        protected override bool PropagatesLocalDeletions => false;
     }
 }

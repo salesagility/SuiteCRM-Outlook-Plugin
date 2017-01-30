@@ -8,7 +8,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
 
-    public class Syncing
+    public abstract class Syncing
     {
         private readonly SyncContext _context;
 
@@ -51,5 +51,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 return false;
             }
         }
+
+        protected abstract bool IsCurrentView { get; }
+
+        /// <summary>
+        /// Returns true iff local (Outlook) deletions should be propagated to the server.
+        /// </summary>
+        protected abstract bool PropagatesLocalDeletions { get; }
     }
 }

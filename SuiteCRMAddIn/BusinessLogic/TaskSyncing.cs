@@ -12,7 +12,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public class TaskSyncing: Syncing
     {
-        List<TaskSyncState> lTaskItems;
+        List<TaskSyncState> ItemsSyncState;
 
         public TaskSyncing(SyncContext context)
             : base(context)
@@ -113,14 +113,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 try
                 {
-                    var lItemToBeDeletedO = lTaskItems.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeDeletedO = ItemsSyncState.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeDeletedO)
                     {
                         oItem.OutlookItem.Delete();
                     }
-                    lTaskItems.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    ItemsSyncState.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
 
-                    var lItemToBeAddedToS = lTaskItems.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeAddedToS = ItemsSyncState.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeAddedToS)
                     {
                         AddTaskToS(oItem.OutlookItem);
@@ -178,12 +178,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 ;
             }
 
-            foreach (var lt in lTaskItems)
+            foreach (var lt in ItemsSyncState)
             {
                 Log.Warn("    Task= " + lt.SEntryID);
             }
 
-            var oItem = lTaskItems.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString());
+            var oItem = ItemsSyncState.FirstOrDefault(a => a.SEntryID == dResult.id.value.ToString());
 
 
             if (oItem == default(TaskSyncState))
@@ -210,7 +210,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 oProp.Value = dResult.date_modified.value.ToString();
                 Outlook.UserProperty oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                 oProp2.Value = dResult.id.value.ToString();
-                lTaskItems.Add(new TaskSyncState
+                ItemsSyncState.Add(new TaskSyncState
                 {
                     OutlookItem = tItem,
                     OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
@@ -266,9 +266,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (lTaskItems == null)
+                if (ItemsSyncState == null)
                 {
-                    lTaskItems = new List<TaskSyncState>();
+                    ItemsSyncState = new List<TaskSyncState>();
                     Outlook.Items items = taskFolder.Items; //.Restrict("[MessageClass] = 'IPM.Task'" + GetStartDateString());
                     foreach (Outlook.TaskItem oItem in items)
                     {
@@ -278,7 +278,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         if (oProp != null)
                         {
                             Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
-                            lTaskItems.Add(new TaskSyncState
+                            ItemsSyncState.Add(new TaskSyncState
                             {
                                 OutlookItem = oItem,
                                 //OModifiedDate = "Fresh",
@@ -289,7 +289,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                         else
                         {
-                            lTaskItems.Add(new TaskSyncState
+                            ItemsSyncState.Add(new TaskSyncState
                             {
                                 OutlookItem = oItem
                             });
@@ -312,7 +312,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 string entryId = oItem.EntryID;
                 Log.Warn("    oItem.EntryID= " + entryId);
 
-                TaskSyncState taskitem = lTaskItems.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+                TaskSyncState taskitem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                 if (taskitem != default(TaskSyncState))
                 {
                     if ((DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 5)
@@ -341,7 +341,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
 
 
-                if (IsTaskView && lTaskItems.Exists(a => a.OutlookItem.EntryID == entryId //// if (IsTaskView && lTaskItems.Exists(a => a.oItem.EntryID == entryId && a.OModifiedDate != "Fresh"))
+                if (IsCurrentView && ItemsSyncState.Exists(a => a.OutlookItem.EntryID == entryId //// if (IsTaskView && lTaskItems.Exists(a => a.oItem.EntryID == entryId && a.OModifiedDate != "Fresh"))
                                  && taskitem.IsUpdate == 1
                                  )
                 )
@@ -366,7 +366,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (IsTaskView)
+                if (IsCurrentView)
                 {
                     var item = Item as Outlook.TaskItem;
                     Outlook.UserProperty oProp2 = item.UserProperties["SEntryID"];  // to avoid duplicating of the task
@@ -507,7 +507,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     string entryId = oItem.EntryID;
                     oItem.Save();
 
-                    var sItem = lTaskItems.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+                    var sItem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                     if (sItem != default(TaskSyncState))
                     {
                         sItem.Touched = true;
@@ -516,7 +516,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         sItem.SEntryID = _result;
                     }
                     else
-                        lTaskItems.Add(new TaskSyncState { Touched = true, SEntryID = _result, OModifiedDate = DateTime.UtcNow, OutlookItem = oItem });
+                        ItemsSyncState.Add(new TaskSyncState { Touched = true, SEntryID = _result, OModifiedDate = DateTime.UtcNow, OutlookItem = oItem });
 
                     Log.Warn("    date_start= " + str + ", date_due=" + str2);
                 }
@@ -528,11 +528,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
         void TItems_ItemRemove()
         {
-            if (IsTaskView && false)
+            if (IsCurrentView && PropagatesLocalDeletions)
             {
                 try
                 {
-                    foreach (var oItem in lTaskItems)
+                    foreach (var oItem in ItemsSyncState)
                     {
                         try
                         {
@@ -547,7 +547,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             oItem.Delete = true;
                         }
                     }
-                    lTaskItems.RemoveAll(a => a.Delete);
+                    ItemsSyncState.RemoveAll(a => a.Delete);
                 }
                 catch (Exception ex)
                 {
@@ -593,6 +593,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderTasks);
         }
 
-        protected bool IsTaskView => Context.CurrentFolderItemType == Outlook.OlItemType.olTaskItem;
+        protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olTaskItem;
+
+        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
+        // (but not for Appointments).
+        protected override bool PropagatesLocalDeletions => false;
     }
 }
