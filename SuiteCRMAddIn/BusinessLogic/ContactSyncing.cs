@@ -58,6 +58,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     return;
                 }
 
+                var untouched = new HashSet<SyncState<Outlook.ContactItem>>(ItemsSyncState);
                 int iOffset = 0;
                 while (true)
                 {
@@ -72,7 +73,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         try
                         {
-                            UpdateFromCrm(contactFolder, oResult);
+                            var state = UpdateFromCrm(contactFolder, oResult);
+                            if (state != null) untouched.Remove(state);
                         }
                         catch (Exception ex)
                         {
@@ -86,14 +88,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 try
                 {
-                    var lItemToBeDeletedO = ItemsSyncState.Where(a => !a.Touched && a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeDeletedO = untouched.Where(a => a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeDeletedO)
                     {
                         oItem.OutlookItem.Delete();
+                        ItemsSyncState.Remove(oItem);
                     }
-                    ItemsSyncState.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
 
-                    var lItemToBeAddedToS = ItemsSyncState.Where(a => !a.Touched && a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeAddedToS = untouched.Where(a => a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeAddedToS)
                     {
                         AddToCrm(oItem.OutlookItem);
@@ -110,7 +112,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void UpdateFromCrm(Outlook.MAPIFolder contactFolder, eEntryValue oResult)
+        private SyncState<Outlook.ContactItem> UpdateFromCrm(Outlook.MAPIFolder contactFolder, eEntryValue oResult)
         {
             dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
 
@@ -120,7 +122,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (dResult.sync_contact.value.ToString() != "True")
                 {
                     Log.Warn("not sync!");
-                    return;
+                    return null;
                 }
 
                 Log.Warn("    default sync");
@@ -151,20 +153,19 @@ namespace SuiteCRMAddIn.BusinessLogic
                 oProp.Value = dResult.date_modified.value.ToString();
                 Outlook.UserProperty oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                 oProp2.Value = dResult.id.value.ToString();
-                ItemsSyncState.Add(new ContactSyncState
+                var newState = new ContactSyncState
                 {
                     OutlookItem = cItem,
                     OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
                     CrmEntryId = dResult.id.value.ToString(),
-                    Touched = true
-                });
+                };
+                ItemsSyncState.Add(newState);
                 Log.Warn(cItem.FullName + "     is saving with " + cItem.Sensitivity.ToString());
                 cItem.Save();
+                return newState;
             }
             else
             {
-                oItem.Touched = true;
-
                 Outlook.ContactItem cItem = oItem.OutlookItem;
                 Outlook.UserProperty oProp = cItem.UserProperties["SOModifiedDate"];
 
@@ -207,6 +208,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 Log.Warn((string) (cItem.FullName + " dResult.date_modified= " + dResult.date_modified.ToString()));
                 oItem.OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
+                return oItem;
             }
         }
 

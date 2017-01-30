@@ -84,6 +84,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             Log.Warn("My UserId= " + clsSuiteCRMHelper.GetUserId());
             try
             {
+                var untouched = new HashSet<SyncState<Outlook.TaskItem>>(ItemsSyncState);
                 int iOffset = 0;
                 while (true)
                 {
@@ -97,7 +98,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         try
                         {
-                            UpdateFromCrm(tasksFolder, oResult);
+                            var state = UpdateFromCrm(tasksFolder, oResult);
+                            if (state != null) untouched.Remove(state);
                         }
                         catch (Exception ex)
                         {
@@ -111,14 +113,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 try
                 {
-                    var lItemToBeDeletedO = ItemsSyncState.Where(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeDeletedO = untouched.Where(a => !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeDeletedO)
                     {
                         oItem.OutlookItem.Delete();
+                        ItemsSyncState.Remove(oItem);
                     }
-                    ItemsSyncState.RemoveAll(a => !a.Touched && !string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
 
-                    var lItemToBeAddedToS = ItemsSyncState.Where(a => !a.Touched && string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
+                    var lItemToBeAddedToS = untouched.Where(a => string.IsNullOrWhiteSpace(a.OModifiedDate.ToString()));
                     foreach (var oItem in lItemToBeAddedToS)
                     {
                         AddToCrm(oItem.OutlookItem);
@@ -135,12 +137,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void UpdateFromCrm(Outlook.MAPIFolder tasksFolder, eEntryValue oResult)
+        private SyncState<Outlook.TaskItem> UpdateFromCrm(Outlook.MAPIFolder tasksFolder, eEntryValue oResult)
         {
             dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
             //
             if (clsSuiteCRMHelper.GetUserId() != dResult.assigned_user_id.value.ToString())
-                return;
+                return null;
 
             DateTime? date_start = null;
             DateTime? date_due = null;
@@ -164,7 +166,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (date_start != null && date_start < GetStartDate())
             {
                 Log.Warn("    date_start=" + date_start.ToString() + ", GetStartDate= " + GetStartDate().ToString());
-                return;
+                return null;
             }
 
             if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
@@ -183,7 +185,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             var oItem = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == dResult.id.value.ToString());
 
-            if (oItem == default(TaskSyncState))
+            if (oItem == null)
             {
                 Log.Warn("    if default");
                 Outlook.TaskItem tItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
@@ -207,20 +209,20 @@ namespace SuiteCRMAddIn.BusinessLogic
                 oProp.Value = dResult.date_modified.value.ToString();
                 Outlook.UserProperty oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                 oProp2.Value = dResult.id.value.ToString();
-                ItemsSyncState.Add(new TaskSyncState
+                var newState = new TaskSyncState
                 {
                     OutlookItem = tItem,
                     OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
                     CrmEntryId = dResult.id.value.ToString(),
-                    Touched = true
-                });
+                };
+                ItemsSyncState.Add(newState);
                 Log.Warn("    save 0");
                 tItem.Save();
+                return newState;
             }
             else
             {
                 Log.Warn("    else not default");
-                oItem.Touched = true;
                 Outlook.TaskItem tItem = oItem.OutlookItem;
                 Outlook.UserProperty oProp = tItem.UserProperties["SOModifiedDate"];
 
@@ -256,6 +258,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     tItem.Save();
                 }
                 oItem.OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
+                return oItem;
             }
         }
 
@@ -506,13 +509,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var sItem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                 if (sItem != default(TaskSyncState))
                 {
-                    sItem.Touched = true;
                     sItem.OutlookItem = oItem;
                     sItem.OModifiedDate = DateTime.UtcNow;
                     sItem.CrmEntryId = _result;
                 }
                 else
-                    ItemsSyncState.Add(new TaskSyncState { Touched = true, CrmEntryId = _result, OModifiedDate = DateTime.UtcNow, OutlookItem = oItem });
+                    ItemsSyncState.Add(new TaskSyncState { CrmEntryId = _result, OModifiedDate = DateTime.UtcNow, OutlookItem = oItem });
 
                 Log.Warn("    date_start= " + str + ", date_due=" + str2);
             }

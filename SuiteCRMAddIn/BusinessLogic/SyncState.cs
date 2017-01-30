@@ -14,8 +14,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public ItemType OutlookItem { get; set; }
 
-        public bool Touched { get; set; }
-
         public int IsUpdate { get; set; }
 
         /// <summary>
