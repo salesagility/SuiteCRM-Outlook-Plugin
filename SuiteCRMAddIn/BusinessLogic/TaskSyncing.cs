@@ -385,6 +385,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Error("ThisAddIn.TItems_ItemAdd", ex);
             }
         }
+
         private void AddToCrm(Outlook.TaskItem oItem, string sID = "")
         {
             Log.Warn("AddTaskToS");
@@ -528,7 +529,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                RemoveDeletedItems(checkItemSensitivity: false);
+                RemoveDeletedItems();
             }
             catch (Exception ex)
             {

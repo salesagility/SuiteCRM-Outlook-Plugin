@@ -68,30 +68,30 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <remarks>TODO: Why should this ever be false?</remarks>
         protected abstract bool PropagatesLocalDeletions { get; }
 
-        protected void RemoveDeletedItems(bool checkItemSensitivity)
+        protected void RemoveDeletedItems()
         {
             if (IsCurrentView && PropagatesLocalDeletions)
             {
-                var toBeDeleted = new HashSet<SyncState<OutlookItemType>>();
-                foreach (var oItem in ItemsSyncState)
+                // Make a copy of the list to avoid mutation error while iterating:
+                var syncStatesCopy = new List<SyncState<OutlookItemType>>(ItemsSyncState);
+                foreach (var oItem in syncStatesCopy)
                 {
-                    try
-                    {
-                        // Has the side-effect of throwing an exception if the item has been deleted:
-                        if (checkItemSensitivity && oItem.OutlookItemSensitivity != Outlook.OlSensitivity.olNormal)
-                            continue;
-                        var sID = oItem.OutlookItemEntryId;
-                    }
-                    catch (COMException)
-                    {
-                        eNameValue[] data = new eNameValue[2];
-                        data[0] = clsSuiteCRMHelper.SetNameValuePair("id", oItem.CrmEntryId);
-                        data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                        clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.CrmType);
-                        toBeDeleted.Add(oItem);
-                    }
+                    var shouldDeleteFromCrm = oItem.IsDeletedInOutlook || !oItem.ShouldSyncWithCrm;
+                    if (shouldDeleteFromCrm) RemoveFromCrm(oItem);
+                    if (oItem.IsDeletedInOutlook) ItemsSyncState.Remove(oItem);
                 }
-                ItemsSyncState.RemoveAll(a => toBeDeleted.Contains(a));
+            }
+        }
+
+        private static void RemoveFromCrm(SyncState<OutlookItemType> oItem)
+        {
+            var crmEntryId = oItem.CrmEntryId;
+            if (!string.IsNullOrEmpty(crmEntryId))
+            {
+                eNameValue[] data = new eNameValue[2];
+                data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);
+                data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
+                clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.CrmType);
             }
         }
     }

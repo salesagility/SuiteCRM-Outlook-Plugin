@@ -63,7 +63,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                RemoveDeletedItems(checkItemSensitivity: false);
+                RemoveDeletedItems();
             }
             catch (Exception ex)
             {

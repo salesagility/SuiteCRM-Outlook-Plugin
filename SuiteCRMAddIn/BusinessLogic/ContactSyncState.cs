@@ -7,6 +7,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     {
         public override string CrmType => "Contacts";
 
+        public override bool ShouldSyncWithCrm => IsPublic;
+
         public override string OutlookItemEntryId => OutlookItem.EntryID;
 
         public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;

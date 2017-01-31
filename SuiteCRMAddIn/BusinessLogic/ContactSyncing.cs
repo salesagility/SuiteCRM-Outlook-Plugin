@@ -88,14 +88,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 try
                 {
-                    var lItemToBeDeletedO = untouched.Where(a => a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && a.ExistedInCrm);
+                    var lItemToBeDeletedO = untouched.Where(a => a.ExistedInCrm && a.ShouldSyncWithCrm);
                     foreach (var oItem in lItemToBeDeletedO)
                     {
                         oItem.OutlookItem.Delete();
                         ItemsSyncState.Remove(oItem);
                     }
 
-                    var lItemToBeAddedToS = untouched.Where(a => a.OutlookItem.Sensitivity == Outlook.OlSensitivity.olNormal && !a.ExistedInCrm);
+                    var lItemToBeAddedToS = untouched.Where(a => !a.ExistedInCrm && a.ShouldSyncWithCrm);
                     foreach (var oItem in lItemToBeAddedToS)
                     {
                         AddToCrm(oItem.OutlookItem);
@@ -436,7 +436,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                RemoveDeletedItems(checkItemSensitivity: true);
+                RemoveDeletedItems();
             }
             catch (Exception ex)
             {
