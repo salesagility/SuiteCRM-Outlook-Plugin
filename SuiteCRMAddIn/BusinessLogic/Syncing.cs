@@ -56,11 +56,16 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        /// <summary>
+        /// Returns true iif user is currently focussed on this (Contacts/Appointments/Tasks) tab.
+        /// </summary>
+        /// <remarks>TODO: Why should this make a difference?</remarks>
         protected abstract bool IsCurrentView { get; }
 
         /// <summary>
         /// Returns true iff local (Outlook) deletions should be propagated to the server.
         /// </summary>
+        /// <remarks>TODO: Why should this ever be false?</remarks>
         protected abstract bool PropagatesLocalDeletions { get; }
 
         protected void RemoveDeletedItems(bool checkItemSensitivity)
