@@ -5,8 +5,7 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
-
-    public abstract class SyncState<ItemType>
+    public abstract class SyncState
     {
         private bool _wasDeleted = false;
 
@@ -15,8 +14,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         public string CrmEntryId { get; set; }
 
         public DateTime OModifiedDate { get; set; }
-
-        public ItemType OutlookItem { get; set; }
 
         public int IsUpdate { get; set; }
 
@@ -38,6 +35,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <remarks>Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.</remarks>
         public abstract Outlook.OlSensitivity OutlookItemSensitivity { get; }
 
+        public abstract Outlook.UserProperties OutlookUserProperties { get; }
+
         public bool IsDeletedInOutlook
         {
             get
@@ -56,6 +55,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                     _wasDeleted = true;
                     return true;
                 }
+            }
+        }
+
+        public void RemoveCrmLink()
+        {
+            CrmEntryId = null;
+            if (!IsDeletedInOutlook)
+            {
+                OutlookUserProperties["SOModifiedDate"]?.Delete();
+                OutlookUserProperties["SEntryID"]?.Delete();
             }
         }
     }

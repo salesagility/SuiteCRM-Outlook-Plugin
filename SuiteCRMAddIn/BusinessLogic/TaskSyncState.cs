@@ -10,5 +10,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override string OutlookItemEntryId => OutlookItem.EntryID;
 
         public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
+
+        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
     }
 }

@@ -83,16 +83,18 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private static void RemoveFromCrm(SyncState<OutlookItemType> oItem)
+        protected static void RemoveFromCrm(SyncState state)
         {
-            var crmEntryId = oItem.CrmEntryId;
+            var crmEntryId = state.CrmEntryId;
             if (!string.IsNullOrEmpty(crmEntryId))
             {
                 eNameValue[] data = new eNameValue[2];
                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);
                 data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                clsSuiteCRMHelper.SetEntryUnsafe(data, oItem.CrmType);
+                clsSuiteCRMHelper.SetEntryUnsafe(data, state.CrmType);
             }
+
+            state.RemoveCrmLink();
         }
     }
 }
