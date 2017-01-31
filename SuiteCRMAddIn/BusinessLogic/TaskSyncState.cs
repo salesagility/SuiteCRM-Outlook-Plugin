@@ -3,18 +3,14 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    public class TaskSyncState
+    public class TaskSyncState: SyncState<Outlook.TaskItem>
     {
-        public string SEntryID { get; set; }
+        public override string CrmType => "Tasks";
 
-        public DateTime OModifiedDate { get; set; }
+        public override string OutlookItemEntryId => OutlookItem.EntryID;
 
-        public Outlook.TaskItem OutlookItem { get; set; }
+        public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
 
-        public bool Touched { get; set; }
-
-        public bool Delete { get; set; }
-
-        public int IsUpdate { get; set; }
+        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
     }
 }

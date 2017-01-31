@@ -3,20 +3,19 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    public class AppointmentSyncState
+    public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
-        public string SEntryID { get; set; }
+        public AppointmentSyncState(string crmType)
+        {
+            CrmType = crmType;
+        }
 
-        public string SType { get; set; }
+        public override string CrmType { get; }
 
-        public DateTime OModifiedDate { get; set; }
+        public override string OutlookItemEntryId => OutlookItem.EntryID;
 
-        public Outlook.AppointmentItem OutlookItem { get; set; }
+        public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
 
-        public bool Touched { get; set; }
-
-        public bool Delete { get; set; }
-
-        public int IsUpdate { get; set; }
+        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
     }
 }

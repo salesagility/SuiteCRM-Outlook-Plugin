@@ -3,18 +3,16 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    public class ContactSyncState
+    public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
-        public string SEntryID { get; set; }
+        public override string CrmType => "Contacts";
 
-        public DateTime OModifiedDate { get; set; }
+        public override bool ShouldSyncWithCrm => IsPublic;
 
-        public Outlook.ContactItem OutlookItem { get; set; }
+        public override string OutlookItemEntryId => OutlookItem.EntryID;
 
-        public bool Touched { get; set; }
+        public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
 
-        public bool Delete { get; set; }
-
-        public int IsUpdate { get; set; }
+        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
     }
 }
