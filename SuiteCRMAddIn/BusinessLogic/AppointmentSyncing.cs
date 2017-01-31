@@ -17,6 +17,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
         }
 
+        public override bool SyncingEnabled => settings.SyncCalendar;
+
         public void StartSync()
         {
             try

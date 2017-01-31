@@ -18,6 +18,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
         }
 
+        public override bool SyncingEnabled => settings.SyncContacts;
+
         public void StartSync()
         {
             try

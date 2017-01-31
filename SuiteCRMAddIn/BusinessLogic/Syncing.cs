@@ -29,6 +29,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected List<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = null;
 
+        public abstract bool SyncingEnabled { get; }
+
         public DateTime GetStartDate()
         {
             DateTime dtRet = DateTime.Now.AddDays(-5);
