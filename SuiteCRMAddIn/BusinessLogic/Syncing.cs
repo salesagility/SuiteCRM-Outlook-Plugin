@@ -9,6 +9,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System.Runtime.InteropServices;
+    using System.Globalization;
 
     public abstract class Syncing<OutlookItemType>
     {
@@ -85,8 +86,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        protected static void RemoveFromCrm(SyncState state)
+        protected void RemoveFromCrm(SyncState state)
         {
+            if (!SyncingEnabled) return;
             var crmEntryId = state.CrmEntryId;
             if (!string.IsNullOrEmpty(crmEntryId))
             {
@@ -97,6 +99,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             state.RemoveCrmLink();
+        }
+
+        protected DateTime ParseDateTimeFromUserProperty(string propertyValue)
+        {
+            if (propertyValue == null) return default(DateTime);
+            var modDateTime = DateTime.UtcNow;
+            if (!DateTime.TryParseExact(propertyValue, "yyyy-MM-dd HH:mm:ss", null, DateTimeStyles.None, out modDateTime))
+            {
+                DateTime.TryParse(propertyValue, out modDateTime);
+            }
+            return modDateTime;
         }
     }
 }
