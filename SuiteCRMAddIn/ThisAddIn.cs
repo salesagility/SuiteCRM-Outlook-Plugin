@@ -76,6 +76,8 @@ namespace SuiteCRMAddIn
                 OutlookVersion = Convert.ToInt32(outlookApp.Version.Split('.')[0]);
 
                 this.settings = new clsSettings();
+                StartLogging(settings);
+
                 _syncContext = new SyncContext(outlookApp, settings);
                 _contactSyncing = new ContactSyncing(_syncContext);
                 _taskSyncing = new TaskSyncing(_syncContext);
@@ -83,7 +85,6 @@ namespace SuiteCRMAddIn
 
                 var outlookExplorer = outlookApp.ActiveExplorer();
                 this.objExplorer = outlookExplorer;
-                StartLogging(settings);
                 outlookExplorer.FolderSwitch -= objExplorer_FolderSwitch;
                 outlookExplorer.FolderSwitch += objExplorer_FolderSwitch;
                 
@@ -128,7 +129,7 @@ namespace SuiteCRMAddIn
                     //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
                 }
                 SuiteCRMAuthenticate();
-                Sync();
+                new Thread(() => Sync()).Start();
             }
             catch (Exception ex)
             {
@@ -302,7 +303,30 @@ namespace SuiteCRMAddIn
                 Log.Error("ThisAddIn.UnregisterEvents", ex);
             }
 
-
+            try
+            {
+                _appointmentSyncing.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("AppointmentSyncing.Dispose", ex);
+            }
+            try
+            {
+                _contactSyncing.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("ContactSyncing.Dispose", ex);
+            }
+            try
+            {
+                _taskSyncing.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("TaskSyncing.Dispose", ex);
+            }
         }
 
         private bool CommandBarExists(string name)

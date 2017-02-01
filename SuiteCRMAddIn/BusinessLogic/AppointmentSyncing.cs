@@ -26,14 +26,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Info("AppointmentSync thread started");
                 AddSuiteCrmOutlookCategory();
                 Outlook.MAPIFolder folder = GetDefaultFolder();
-                Outlook.Items items = folder.Items;
 
-                items.ItemAdd -= Items_ItemAdd;
-                items.ItemChange -= Items_ItemChange;
-                items.ItemRemove -= Items_ItemRemove;
-                items.ItemAdd += Items_ItemAdd;
-                items.ItemChange += Items_ItemChange;
-                items.ItemRemove += Items_ItemRemove;
+                InstallEventHandlers(folder.Items);
 
                 GetOutlookItems(folder);
                 SyncFolder(folder, "Meetings");
@@ -61,25 +55,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        void Items_ItemRemove()
+        override protected void OutlookItemRemoved()
         {
-            try
-            {
-                RemoveDeletedItems();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("AppointmentSyncing.Items_ItemRemove", ex);
-            }
+            RemoveDeletedItems();
         }
 
-        void Items_ItemChange(object Item)
+        override protected void OutlookItemChanged(Outlook.AppointmentItem aItem)
         {
-            Log.Warn("Items_ItemChange");
             try
             {
-                var aItem = Item as Outlook.AppointmentItem;
-
                 string entryId = aItem.EntryID;
                 var callitem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
                 Log.Warn("CalItem EntryID=  " + aItem.EntryID);
@@ -127,16 +111,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                 }
             }
-            catch (Exception ex)
+            finally
             {
-                Log.Error("ThisAddIn.Items_ItemChange", ex);
             }
         }
 
-        void Items_ItemAdd(object Item)
+        override protected void OutlookItemAdded(Outlook.AppointmentItem aItem)
         {
-            Log.Warn("Items_ItemAdd");
-            var aItem = Item as Outlook.AppointmentItem;
             if (IsCurrentView && !ItemsSyncState.Exists(a => a.OutlookItem.EntryID == aItem.EntryID))
             {
                 AddToCrm(aItem, "Meetings");
@@ -604,7 +585,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return "";
         }
 
-        public Outlook.MAPIFolder GetDefaultFolder()
+        override public Outlook.MAPIFolder GetDefaultFolder()
         {
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
         }

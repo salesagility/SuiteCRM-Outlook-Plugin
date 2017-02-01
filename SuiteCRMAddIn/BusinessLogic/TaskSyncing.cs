@@ -26,14 +26,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Info("TaskSync thread started");
                 Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
                 Outlook.MAPIFolder folder = GetDefaultFolder();
-                Outlook.Items items = folder.Items;
 
-                items.ItemAdd -= Items_ItemAdd;
-                items.ItemChange -= Items_ItemChange;
-                items.ItemRemove -= Items_ItemRemove;
-                items.ItemAdd += Items_ItemAdd;
-                items.ItemChange += Items_ItemChange;
-                items.ItemRemove += Items_ItemRemove;
+                InstallEventHandlers(folder.Items);
 
                 GetOutlookItems(folder);
                 SyncFolder(folder);
@@ -305,12 +299,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        void Items_ItemChange(object Item)
+        override protected void OutlookItemChanged(Outlook.TaskItem oItem)
         {
-            Log.Warn("TItems_ItemChange");
-            try
-            {
-                var oItem = Item as Outlook.TaskItem;
+            Log.Debug("Outlook Tasks ItemChange");
                 string entryId = oItem.EntryID;
                 Log.Warn("    oItem.EntryID= " + entryId);
 
@@ -357,20 +348,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                         AddToCrm(oItem, oProp1.Value.ToString());
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.TItems_ItemChange", ex);
-            }
         }
 
-        void Items_ItemAdd(object Item)
+        override protected void OutlookItemAdded(Outlook.TaskItem item)
         {
-            try
-            {
                 if (IsCurrentView)
                 {
-                    var item = Item as Outlook.TaskItem;
                     Outlook.UserProperty oProp2 = item.UserProperties["SEntryID"];  // to avoid duplicating of the task
                     if (oProp2 != null)
                     {
@@ -381,11 +364,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                         AddToCrm(item);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.TItems_ItemAdd", ex);
-            }
         }
 
         private void AddToCrm(Outlook.TaskItem oItem, string sID = "")
@@ -527,16 +505,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        void Items_ItemRemove()
+        override protected void OutlookItemRemoved()
         {
-            try
-            {
-                RemoveDeletedItems();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("TaskSyncing.Items_ItemRemove", ex);
-            }
+            RemoveDeletedItems();
         }
 
         private TimeSpan[] ParseTimesFromTaskBody(string body)
@@ -571,7 +542,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public Outlook.MAPIFolder GetDefaultFolder()
+        public override Outlook.MAPIFolder GetDefaultFolder()
         {
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderTasks);
         }

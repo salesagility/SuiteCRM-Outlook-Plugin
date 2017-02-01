@@ -25,14 +25,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Info("ContactSync thread starting");
                 Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
                 Outlook.MAPIFolder folder = GetDefaultFolder();
-                Outlook.Items items = folder.Items;
 
-                items.ItemAdd -= Items_ItemAdd;
-                items.ItemChange -= Items_ItemChange;
-                items.ItemRemove -= Items_ItemRemove;
-                items.ItemAdd += Items_ItemAdd;
-                items.ItemChange += Items_ItemChange;
-                items.ItemRemove += Items_ItemRemove;
+                InstallEventHandlers(folder.Items);
 
                 GetOutlookItems(folder);
                 SyncFolder(folder);
@@ -232,22 +226,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        void Items_ItemChange(object Item)
+        override protected void OutlookItemChanged(Outlook.ContactItem item)
         {
-            Log.Debug("ItemChange");
-            try
-            {
-                var item = Item as Outlook.ContactItem;
-                if (item != null) SaveChangedItem(item);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.CItems_ItemChange", ex);
-            }
-            finally
-            {
-                Log.Warn("lContactItems.Count = " + ItemsSyncState.Count);
-            }
+            if (item != null) SaveChangedItem(item);
         }
 
         private void SaveChangedItem(Outlook.ContactItem oItem)
@@ -289,20 +270,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             return (IsCurrentView && contact.IsUpdate == 1);
         }
 
-        void Items_ItemAdd(object Item)
+        override protected void OutlookItemAdded(Outlook.ContactItem item)
         {
-            try
-            {
-                var item = Item as Outlook.ContactItem;
-                if (!IsCurrentView || item == null)
-                    return;
-
+            if (IsCurrentView && item != null)
                 AddNewItem(item);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.CItems_ItemAdd", ex);
-            }
         }
 
         private void AddNewItem(Outlook.ContactItem item)
@@ -401,19 +372,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        void Items_ItemRemove()
+        override protected void OutlookItemRemoved()
         {
-            try
-            {
-                RemoveDeletedItems();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ContactSyncing.Items_ItemRemove", ex);
-            }
+            RemoveDeletedItems();
         }
 
-        public Outlook.MAPIFolder GetDefaultFolder()
+        public override Outlook.MAPIFolder GetDefaultFolder()
         {
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
         }
