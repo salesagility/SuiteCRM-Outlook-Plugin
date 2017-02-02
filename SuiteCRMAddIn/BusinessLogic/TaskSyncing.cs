@@ -27,8 +27,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
                 Outlook.MAPIFolder folder = GetDefaultFolder();
 
-                InstallEventHandlers(folder.Items);
-
                 GetOutlookItems(folder);
                 SyncFolder(folder);
 
@@ -503,11 +501,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Error("ThisAddIn.AddTaskToS", ex);
             }
-        }
-
-        override protected void OutlookItemRemoved()
-        {
-            RemoveDeletedItems();
         }
 
         private TimeSpan[] ParseTimesFromTaskBody(string body)

@@ -1,27 +1,30 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using SuiteCRMClient;
+using SuiteCRMClient.Logging;
+using SuiteCRMClient.RESTObjects;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using System.Collections.Generic;
-    using System.Linq;
-    using SuiteCRMClient;
-    using SuiteCRMClient.Logging;
-    using SuiteCRMClient.RESTObjects;
-    using System.Runtime.InteropServices;
-    using System.Globalization;
-
+    // TODO: Make syncing thread-safe.
     public abstract class Syncing<OutlookItemType>: IDisposable
         where OutlookItemType: class
     {
         private readonly SyncContext _context;
-        private readonly string _folderName;
-        private bool _eventHandlersInstalled = false;
+
+        // Keep a reference to the COM object on which we have event handlers, otherwise
+        // when the reference is garbage-collected, the event-handlers are removed!
+        private Outlook.Items _itemsCollection = null;
+
+        private string _folderName;
 
         public Syncing(SyncContext context)
         {
             _context = context;
-            _folderName = GetDefaultFolder().Name;
+            InstallEventHandlers();
         }
 
         protected SyncContext Context => _context;
@@ -121,29 +124,30 @@ namespace SuiteCRMAddIn.BusinessLogic
             RemoveEventHandlers();
         }
 
-        protected void InstallEventHandlers(Outlook.Items items)
+        protected void InstallEventHandlers()
         {
-            // Don't yet know why we can't look up GetDefaultFolder() and just install event handlers from that.
-            // Probably some weird COM thing. Seems we can only attach event handlers when pass Outlook.Items
-            // from the Syncing thread.
-            if (!_eventHandlersInstalled)
+            if (_itemsCollection == null)
             {
+                var folder = GetDefaultFolder();
+                _itemsCollection = folder.Items;
+                _folderName = folder.Name;
                 Log.Debug("Adding event handlers for folder " + _folderName);
-                items.ItemAdd += Items_ItemAdd;
-                items.ItemChange += Items_ItemChange;
-                items.ItemRemove += Items_ItemRemove;
-                _eventHandlersInstalled = true;
+                _itemsCollection.ItemAdd += Items_ItemAdd;
+                _itemsCollection.ItemChange += Items_ItemChange;
+                _itemsCollection.ItemRemove += Items_ItemRemove;
             }
         }
 
         private void RemoveEventHandlers()
         {
-            var defaultFolder = GetDefaultFolder();
-            Log.Debug("Removing event handlers for folder " + defaultFolder.Name);
-            var items = defaultFolder.Items;
-            items.ItemAdd -= Items_ItemAdd;
-            items.ItemChange -= Items_ItemChange;
-            items.ItemRemove -= Items_ItemRemove;
+            if (_itemsCollection != null)
+            {
+                Log.Debug("Removing event handlers for folder " + _folderName);
+                _itemsCollection.ItemAdd -= Items_ItemAdd;
+                _itemsCollection.ItemChange -= Items_ItemChange;
+                _itemsCollection.ItemRemove -= Items_ItemRemove;
+                _itemsCollection = null;
+            }
         }
 
         protected void Items_ItemAdd(object outlookItem)
@@ -177,7 +181,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             Log.Debug($"Outlook {_folderName} ItemRemove");
             try
             {
-                OutlookItemRemoved();
+                RemoveDeletedItems();
             }
             catch (Exception problem)
             {
@@ -188,8 +192,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected abstract void OutlookItemAdded(OutlookItemType outlookItem);
 
         protected abstract void OutlookItemChanged(OutlookItemType outlookItem);
-
-        protected abstract void OutlookItemRemoved();
 
         public abstract Outlook.MAPIFolder GetDefaultFolder();
     }

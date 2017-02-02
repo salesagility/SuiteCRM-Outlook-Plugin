@@ -26,8 +26,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
                 Outlook.MAPIFolder folder = GetDefaultFolder();
 
-                InstallEventHandlers(folder.Items);
-
                 GetOutlookItems(folder);
                 SyncFolder(folder);
             }
@@ -82,15 +80,18 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 try
                 {
-                    var lItemToBeDeletedO = untouched.Where(a => a.ExistedInCrm && a.ShouldSyncWithCrm);
-                    foreach (var oItem in lItemToBeDeletedO)
+                    // Create the lists first, because deleting items changes the value of 'ExistedInCrm'.
+                    var syncableButNotOnCrm = untouched.Where(s => s.ShouldSyncWithCrm);
+                    var toDeleteFromOutlook = syncableButNotOnCrm.Where(a => a.ExistedInCrm).ToList();
+                    var toCreateOnCrmServer = syncableButNotOnCrm.Where(a => !a.ExistedInCrm).ToList();
+
+                    foreach (var oItem in toDeleteFromOutlook)
                     {
                         oItem.OutlookItem.Delete();
                         ItemsSyncState.Remove(oItem);
                     }
 
-                    var lItemToBeAddedToS = untouched.Where(a => !a.ExistedInCrm && a.ShouldSyncWithCrm);
-                    foreach (var oItem in lItemToBeAddedToS)
+                    foreach (var oItem in toCreateOnCrmServer)
                     {
                         AddToCrm(oItem.OutlookItem);
                     }
@@ -370,11 +371,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 ItemsSyncState.Add(newState);
                 return newState;
             }
-        }
-
-        override protected void OutlookItemRemoved()
-        {
-            RemoveDeletedItems();
         }
 
         public override Outlook.MAPIFolder GetDefaultFolder()
