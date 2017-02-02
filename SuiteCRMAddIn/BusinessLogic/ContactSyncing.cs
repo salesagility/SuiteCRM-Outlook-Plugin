@@ -26,8 +26,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
                 Outlook.MAPIFolder folder = GetDefaultFolder();
 
-                InstallEventHandlers(folder.Items);
-
                 GetOutlookItems(folder);
                 SyncFolder(folder);
             }
@@ -370,11 +368,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 ItemsSyncState.Add(newState);
                 return newState;
             }
-        }
-
-        override protected void OutlookItemRemoved()
-        {
-            RemoveDeletedItems();
         }
 
         public override Outlook.MAPIFolder GetDefaultFolder()

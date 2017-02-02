@@ -27,8 +27,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 AddSuiteCrmOutlookCategory();
                 Outlook.MAPIFolder folder = GetDefaultFolder();
 
-                InstallEventHandlers(folder.Items);
-
                 GetOutlookItems(folder);
                 SyncFolder(folder, "Meetings");
                 SyncFolder(folder, "Calls");
@@ -53,11 +51,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 oNS.Categories.Add("SuiteCRM", Outlook.OlCategoryColor.olCategoryColorGreen,
                     Outlook.OlCategoryShortcutKey.olCategoryShortcutKeyNone);
             }
-        }
-
-        override protected void OutlookItemRemoved()
-        {
-            RemoveDeletedItems();
         }
 
         override protected void OutlookItemChanged(Outlook.AppointmentItem aItem)
