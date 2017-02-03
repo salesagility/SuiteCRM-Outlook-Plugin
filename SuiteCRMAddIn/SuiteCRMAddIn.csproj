@@ -206,6 +206,7 @@
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
     <Compile Include="BusinessLogic\ContactSyncing.cs" />
     <Compile Include="BusinessLogic\ContactSyncState.cs" />
+    <Compile Include="BusinessLogic\EmailAccountsArchiveSettings.cs" />
     <Compile Include="BusinessLogic\EmailArchiving.cs" />
     <Compile Include="BusinessLogic\SyncContext.cs" />
     <Compile Include="BusinessLogic\Syncing.cs" />
@@ -215,6 +216,12 @@
     <Compile Include="BusinessLogic\TaskSyncState.cs" />
     <Compile Include="clsGlobals.cs" />
     <Compile Include="clsSettings.cs" />
+    <Compile Include="EmailAccountArchiveSettingsControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="EmailAccountArchiveSettingsControl.Designer.cs">
+      <DependentUpon>EmailAccountArchiveSettingsControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="frmArchive.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -244,6 +251,9 @@
     <Compile Include="WaitCursor.cs" />
     <EmbeddedResource Include="AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="EmailAccountArchiveSettingsControl.resx">
+      <DependentUpon>EmailAccountArchiveSettingsControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="frmArchive.resx">
       <DependentUpon>frmArchive.cs</DependentUpon>

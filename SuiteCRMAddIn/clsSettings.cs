@@ -218,11 +218,35 @@ namespace SuiteCRMAddIn
         {
             get
             {
-                return (System.Collections.Generic.List<string>)this["AutoArchiveFolders"];               
+                return (System.Collections.Generic.List<string>)this["AutoArchiveFolders"];
             }
             set
             {
                 this["AutoArchiveFolders"] = value;
+            }
+        }
+        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        public System.Collections.Generic.List<string> AccountsToArchiveInbound
+        {
+            get
+            {
+                return (System.Collections.Generic.List<string>)this["AccountsToArchiveInbound"];
+            }
+            set
+            {
+                this["AccountsToArchiveInbound"] = value;
+            }
+        }
+        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        public System.Collections.Generic.List<string> AccountsToArchiveOutbound
+        {
+            get
+            {
+                return (System.Collections.Generic.List<string>)this["AccountsToArchiveOutbound"];
+            }
+            set
+            {
+                this["AccountsToArchiveOutbound"] = value;
             }
         }
         [UserScopedSetting, DefaultSettingValue(""), DebuggerNonUserCode]

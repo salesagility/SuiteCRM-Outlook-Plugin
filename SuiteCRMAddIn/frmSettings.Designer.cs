@@ -52,13 +52,12 @@ namespace SuiteCRMAddIn
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmSettings));
             this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.EmailArchiveAccountTabs = new System.Windows.Forms.TabControl();
+            this.tabPage4 = new System.Windows.Forms.TabPage();
             this.chkSyncContacts = new System.Windows.Forms.CheckBox();
             this.chkSyncCalendar = new System.Windows.Forms.CheckBox();
             this.label7 = new System.Windows.Forms.Label();
             this.txtAutoSync = new System.Windows.Forms.TextBox();
-            this.tsResults = new System.Windows.Forms.TreeView();
-            this.LimitArchivingLabel = new System.Windows.Forms.Label();
-            this.chkAutoArchive = new System.Windows.Forms.CheckBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.chkShowConfirmationMessageArchive = new System.Windows.Forms.CheckBox();
@@ -98,6 +97,7 @@ namespace SuiteCRMAddIn
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
             this.tabPage3.SuspendLayout();
+            this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -112,13 +112,11 @@ namespace SuiteCRMAddIn
             // 
             // tabPage3
             // 
+            this.tabPage3.Controls.Add(this.EmailArchiveAccountTabs);
             this.tabPage3.Controls.Add(this.chkSyncContacts);
             this.tabPage3.Controls.Add(this.chkSyncCalendar);
             this.tabPage3.Controls.Add(this.label7);
             this.tabPage3.Controls.Add(this.txtAutoSync);
-            this.tabPage3.Controls.Add(this.tsResults);
-            this.tabPage3.Controls.Add(this.LimitArchivingLabel);
-            this.tabPage3.Controls.Add(this.chkAutoArchive);
             this.tabPage3.Location = new System.Drawing.Point(23, 4);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Size = new System.Drawing.Size(360, 374);
@@ -126,10 +124,29 @@ namespace SuiteCRMAddIn
             this.tabPage3.Text = "Auto Archive";
             this.tabPage3.UseVisualStyleBackColor = true;
             // 
+            // EmailArchiveAccountTabs
+            // 
+            this.EmailArchiveAccountTabs.Controls.Add(this.tabPage4);
+            this.EmailArchiveAccountTabs.Location = new System.Drawing.Point(11, 3);
+            this.EmailArchiveAccountTabs.Name = "EmailArchiveAccountTabs";
+            this.EmailArchiveAccountTabs.SelectedIndex = 0;
+            this.EmailArchiveAccountTabs.Size = new System.Drawing.Size(340, 246);
+            this.EmailArchiveAccountTabs.TabIndex = 17;
+            // 
+            // tabPage4
+            // 
+            this.tabPage4.Location = new System.Drawing.Point(4, 22);
+            this.tabPage4.Name = "tabPage4";
+            this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage4.Size = new System.Drawing.Size(332, 220);
+            this.tabPage4.TabIndex = 0;
+            this.tabPage4.Text = "Account#1";
+            this.tabPage4.UseVisualStyleBackColor = true;
+            // 
             // chkSyncContacts
             // 
             this.chkSyncContacts.AutoSize = true;
-            this.chkSyncContacts.Location = new System.Drawing.Point(15, 332);
+            this.chkSyncContacts.Location = new System.Drawing.Point(15, 342);
             this.chkSyncContacts.Name = "chkSyncContacts";
             this.chkSyncContacts.Size = new System.Drawing.Size(95, 17);
             this.chkSyncContacts.TabIndex = 16;
@@ -139,7 +156,7 @@ namespace SuiteCRMAddIn
             // chkSyncCalendar
             // 
             this.chkSyncCalendar.AutoSize = true;
-            this.chkSyncCalendar.Location = new System.Drawing.Point(15, 308);
+            this.chkSyncCalendar.Location = new System.Drawing.Point(15, 319);
             this.chkSyncCalendar.Name = "chkSyncCalendar";
             this.chkSyncCalendar.Size = new System.Drawing.Size(95, 17);
             this.chkSyncCalendar.TabIndex = 15;
@@ -149,7 +166,7 @@ namespace SuiteCRMAddIn
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(18, 229);
+            this.label7.Location = new System.Drawing.Point(12, 252);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(267, 13);
             this.label7.TabIndex = 14;
@@ -158,41 +175,11 @@ namespace SuiteCRMAddIn
             // txtAutoSync
             // 
             this.txtAutoSync.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtAutoSync.Location = new System.Drawing.Point(18, 248);
+            this.txtAutoSync.Location = new System.Drawing.Point(15, 269);
             this.txtAutoSync.Multiline = true;
             this.txtAutoSync.Name = "txtAutoSync";
-            this.txtAutoSync.Size = new System.Drawing.Size(311, 44);
+            this.txtAutoSync.Size = new System.Drawing.Size(336, 44);
             this.txtAutoSync.TabIndex = 13;
-            // 
-            // tsResults
-            // 
-            this.tsResults.AccessibleName = "";
-            this.tsResults.CheckBoxes = true;
-            this.tsResults.Location = new System.Drawing.Point(18, 64);
-            this.tsResults.Name = "tsResults";
-            this.tsResults.Size = new System.Drawing.Size(311, 148);
-            this.tsResults.TabIndex = 12;
-            this.tsResults.Tag = "tree_search_results";
-            // 
-            // LimitArchivingLabel
-            // 
-            this.LimitArchivingLabel.AutoSize = true;
-            this.LimitArchivingLabel.Location = new System.Drawing.Point(15, 48);
-            this.LimitArchivingLabel.Name = "LimitArchivingLabel";
-            this.LimitArchivingLabel.Size = new System.Drawing.Size(224, 13);
-            this.LimitArchivingLabel.TabIndex = 11;
-            this.LimitArchivingLabel.Text = "Limit Archiving To Only The Following Folders:";
-            // 
-            // chkAutoArchive
-            // 
-            this.chkAutoArchive.AutoSize = true;
-            this.chkAutoArchive.Location = new System.Drawing.Point(15, 20);
-            this.chkAutoArchive.Name = "chkAutoArchive";
-            this.chkAutoArchive.Size = new System.Drawing.Size(292, 17);
-            this.chkAutoArchive.TabIndex = 9;
-            this.chkAutoArchive.Text = "Automatically Archive Inbound And Outbound Messages";
-            this.chkAutoArchive.UseVisualStyleBackColor = true;
-            this.chkAutoArchive.CheckedChanged += new System.EventHandler(this.chkAutoArchive_CheckedChanged);
             // 
             // tabPage2
             // 
@@ -611,6 +598,7 @@ namespace SuiteCRMAddIn
             this.Load += new System.EventHandler(this.frmSettings_Load);
             this.tabPage3.ResumeLayout(false);
             this.tabPage3.PerformLayout();
+            this.EmailArchiveAccountTabs.ResumeLayout(false);
             this.tabPage2.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
@@ -636,9 +624,6 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.TabPage tabPage3;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox txtAutoSync;
-        private System.Windows.Forms.TreeView tsResults;
-        private System.Windows.Forms.Label LimitArchivingLabel;
-        private System.Windows.Forms.CheckBox chkAutoArchive;
         private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.CheckBox checkBoxShowRightClick;
@@ -679,5 +664,7 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.CheckBox DetailedLoggingCheckBox;
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.Label AddInVersionLabel;
+        private System.Windows.Forms.TabControl EmailArchiveAccountTabs;
+        private System.Windows.Forms.TabPage tabPage4;
     }
 }

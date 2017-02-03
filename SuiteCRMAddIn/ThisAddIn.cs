@@ -378,6 +378,7 @@ namespace SuiteCRMAddIn
 
         private void Application_ItemSend(object item, ref bool target)
         {
+            Log.Debug("Outlook ItemSend: email sent event");
             try
             {
                 if (!settings.AutoArchive) return;
@@ -391,6 +392,7 @@ namespace SuiteCRMAddIn
 
         private void Application_NewMail(string EntryID)
         {
+            Log.Debug("Outlook NewMail: email received event");
             try
             {
                 if (!settings.AutoArchive) return;
@@ -411,7 +413,6 @@ namespace SuiteCRMAddIn
                 Log.Info("New 'mail item' was null");
                 return;
             }
-            Log.Info("Processing new mail item: " + mailItem.Subject);
             new EmailArchiving().ProcessEligibleNewMailItem(mailItem, archiveType);
         }
 
