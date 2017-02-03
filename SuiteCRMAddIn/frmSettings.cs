@@ -128,8 +128,7 @@ namespace SuiteCRMAddIn
 
             txtAutoSync.Text = settings.ExcludedEmails;
 
-            gbFirstTime.Visible = settings.IsFirstTime;
-            dtpAutoArchiveFrom.Value = System.DateTime.Now.AddDays(-10);
+            dtpAutoArchiveFrom.Value = DateTime.Now.AddDays(0 - settings.DaysOldEmailToAutoArchive);
             chkShowConfirmationMessageArchive.Checked = this.settings.ShowConfirmationMessageArchive;
 
             if (chkEnableLDAPAuthentication.Checked)
@@ -341,12 +340,17 @@ namespace SuiteCRMAddIn
             }
 
             settings.LogLevel = DetailedLoggingCheckBox.Checked ? LogEntryType.Debug : LogEntryType.Information;
+            settings.DaysOldEmailToAutoArchive =
+                (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 
             if (settings.IsFirstTime)
             {
                 settings.IsFirstTime = false;
                 System.Threading.Thread objThread =
-                    new System.Threading.Thread(() => Globals.ThisAddIn.ProcessMails(dtpAutoArchiveFrom.Value));
+                    new System.Threading.Thread(() =>
+                    {
+                        new EmailArchiving().ProcessMails(dtpAutoArchiveFrom.Value);
+                    });
                 objThread.Start();
             }
 

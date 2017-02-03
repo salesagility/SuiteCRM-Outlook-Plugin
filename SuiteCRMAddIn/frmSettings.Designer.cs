@@ -74,7 +74,6 @@ namespace SuiteCRMAddIn
             this.labelKey = new System.Windows.Forms.Label();
             this.txtLDAPAuthenticationKey = new System.Windows.Forms.TextBox();
             this.chkEnableLDAPAuthentication = new System.Windows.Forms.CheckBox();
-            this.gbFirstTime = new System.Windows.Forms.GroupBox();
             this.dtpAutoArchiveFrom = new System.Windows.Forms.DateTimePicker();
             this.label8 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -103,7 +102,6 @@ namespace SuiteCRMAddIn
             this.groupBox3.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.gbLDAPAuthentication.SuspendLayout();
-            this.gbFirstTime.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.tabControl1.SuspendLayout();
             this.InformationTabPage.SuspendLayout();
@@ -112,6 +110,8 @@ namespace SuiteCRMAddIn
             // 
             // tabPage3
             // 
+            this.tabPage3.Controls.Add(this.dtpAutoArchiveFrom);
+            this.tabPage3.Controls.Add(this.label8);
             this.tabPage3.Controls.Add(this.EmailArchiveAccountTabs);
             this.tabPage3.Controls.Add(this.chkSyncContacts);
             this.tabPage3.Controls.Add(this.chkSyncCalendar);
@@ -302,7 +302,6 @@ namespace SuiteCRMAddIn
             // tabPage1
             // 
             this.tabPage1.Controls.Add(this.gbLDAPAuthentication);
-            this.tabPage1.Controls.Add(this.gbFirstTime);
             this.tabPage1.Controls.Add(this.groupBox1);
             this.tabPage1.Location = new System.Drawing.Point(23, 4);
             this.tabPage1.Name = "tabPage1";
@@ -349,21 +348,10 @@ namespace SuiteCRMAddIn
             this.chkEnableLDAPAuthentication.UseVisualStyleBackColor = true;
             this.chkEnableLDAPAuthentication.CheckedChanged += new System.EventHandler(this.chkEnableLDAPAuthentication_CheckedChanged);
             // 
-            // gbFirstTime
-            // 
-            this.gbFirstTime.Controls.Add(this.dtpAutoArchiveFrom);
-            this.gbFirstTime.Controls.Add(this.label8);
-            this.gbFirstTime.Location = new System.Drawing.Point(6, 225);
-            this.gbFirstTime.Name = "gbFirstTime";
-            this.gbFirstTime.Size = new System.Drawing.Size(353, 59);
-            this.gbFirstTime.TabIndex = 2;
-            this.gbFirstTime.TabStop = false;
-            this.gbFirstTime.Text = "First Time Parameters";
-            // 
             // dtpAutoArchiveFrom
             // 
             this.dtpAutoArchiveFrom.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpAutoArchiveFrom.Location = new System.Drawing.Point(147, 21);
+            this.dtpAutoArchiveFrom.Location = new System.Drawing.Point(146, 339);
             this.dtpAutoArchiveFrom.Name = "dtpAutoArchiveFrom";
             this.dtpAutoArchiveFrom.Size = new System.Drawing.Size(94, 20);
             this.dtpAutoArchiveFrom.TabIndex = 1;
@@ -371,7 +359,7 @@ namespace SuiteCRMAddIn
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(7, 27);
+            this.label8.Location = new System.Drawing.Point(143, 320);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(131, 13);
             this.label8.TabIndex = 0;
@@ -607,8 +595,6 @@ namespace SuiteCRMAddIn
             this.tabPage1.ResumeLayout(false);
             this.gbLDAPAuthentication.ResumeLayout(false);
             this.gbLDAPAuthentication.PerformLayout();
-            this.gbFirstTime.ResumeLayout(false);
-            this.gbFirstTime.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.tabControl1.ResumeLayout(false);
@@ -632,7 +618,6 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.CheckBox cbShowCustomModules;
         private System.Windows.Forms.CheckBox checkBoxAutomaticSearch;
         private System.Windows.Forms.CheckBox cbEmailAttachments;
-        private System.Windows.Forms.GroupBox gbFirstTime;
         private System.Windows.Forms.DateTimePicker dtpAutoArchiveFrom;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.GroupBox groupBox1;

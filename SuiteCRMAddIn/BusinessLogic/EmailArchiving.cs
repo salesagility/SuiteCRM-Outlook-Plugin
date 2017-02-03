@@ -20,7 +20,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private clsSettings settings => Globals.ThisAddIn.settings;
 
-        public void ProcessMails(DateTime? dtAutoArchiveFrom = null)
+        public void ProcessMails(DateTime dtAutoArchiveFrom)
         {
             if (settings.AutoArchive == false)
                 return;
@@ -41,8 +41,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     Log.Error("ThisAddIn.ProcessMails", ex);
                 }
-                if (dtAutoArchiveFrom != null)
-                    break;
+
+                break; // (!)
 
                 Thread.Sleep(5000);
             }
@@ -53,14 +53,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         private bool FolderShouldBeAutoArchived(string folderEntryId)
             => settings.AutoArchiveFolders?.Contains(folderEntryId) ?? false;
 
-        private void ProcessFolderItems(Outlook.Folder objFolder, DateTime? dtAutoArchiveFrom = null)
+        private void ProcessFolderItems(Outlook.Folder objFolder, DateTime dtAutoArchiveFrom)
         {
             try
             {
-                var unreadEmails = dtAutoArchiveFrom == null
-                    ? objFolder.Items.Restrict("[Unread]=true")
-                    : objFolder.Items.Restrict(
-                        $"[ReceivedTime] >= \'{dtAutoArchiveFrom.Value.AddDays(-1):yyyy-MM-dd HH:mm}\'");
+                var unreadEmails = objFolder.Items.Restrict(
+                        $"[ReceivedTime] >= \'{dtAutoArchiveFrom.AddDays(-1):yyyy-MM-dd HH:mm}\'");
 
                 for (int intItr = 1; intItr <= unreadEmails.Count; intItr++)
                 {

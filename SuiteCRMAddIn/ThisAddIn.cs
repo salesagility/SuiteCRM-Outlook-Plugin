@@ -481,11 +481,6 @@ namespace SuiteCRMAddIn
             }
         }
 
-        public void ProcessMails(DateTime? dtAutoArchiveFrom = null)
-        {
-            new EmailArchiving().ProcessMails(dtAutoArchiveFrom);
-        }
-
         public int SelectedEmailCount => Application.ActiveExplorer()?.Selection.Count ?? 0;
 
         public IEnumerable<Outlook.MailItem> SelectedEmails

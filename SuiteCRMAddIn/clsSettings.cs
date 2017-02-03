@@ -343,6 +343,13 @@ namespace SuiteCRMAddIn
             set { this["LogLevel"] = value; }
         }
 
+        [DefaultSettingValue("10"), UserScopedSetting, DebuggerNonUserCode]
+        public int DaysOldEmailToAutoArchive
+        {
+            get { return (int) this["DaysOldEmailToAutoArchive"]; } 
+            set { this["DaysOldEmailToAutoArchive"] = value; }
+        }
+
         public static Hashtable accountEntrys = new Hashtable();
         public static AutoCompleteStringCollection accounts = new AutoCompleteStringCollection();
     }
