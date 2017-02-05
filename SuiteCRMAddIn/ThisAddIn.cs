@@ -62,6 +62,7 @@ namespace SuiteCRMAddIn
         public Office.IRibbonUI RibbonUI { get; set; }
 
         public ILogger Log;
+        private static readonly TimeSpan SyncPeriod = TimeSpan.FromMinutes(5);
 
         static ThisAddIn()
         {
@@ -185,32 +186,25 @@ namespace SuiteCRMAddIn
         }
 
         public async void Sync()
-        //public void Sync()
         {
             try
             {
                 while (true)
                 {
-                    if (HasCrmUserSession)
+                    if (HasCrmUserSession && settings.SyncCalendar)
                     {
-                        if (settings.SyncCalendar)
-                        {
-                            //StartCalendarSync();
-                            // for test !!!
-                            Thread oThread = new Thread(() =>_appointmentSyncing.StartSync());
-                            oThread.Start();
-                            //StartTaskSync();
-                            Thread oThread1 = new Thread(() => _taskSyncing.StartSync());
-                            oThread1.Start();
-                        }
-                        if (settings.SyncContacts)
-                        {
-                            //StartContactSync();
-                            Thread oThread = new Thread(() => _contactSyncing.StartSync());
-                            oThread.Start();
-                        }
+                        new Thread(() => _appointmentSyncing.StartSync())
+                            .Start();
+
+                        new Thread(() => _taskSyncing.StartSync())
+                            .Start();
                     }
-                    await Task.Delay(300000); //5 mins delay
+                    if (HasCrmUserSession && settings.SyncContacts)
+                    {
+                        new Thread(() => _contactSyncing.StartSync())
+                            .Start();
+                    }
+                    await Task.Delay(SyncPeriod);
                 }
             }
             catch (Exception ex)
@@ -218,6 +212,7 @@ namespace SuiteCRMAddIn
                 Log.Error("ThisAddIn.Sync", ex);
             }
         }
+
         private void cbtnArchive_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
             ManualArchive();
