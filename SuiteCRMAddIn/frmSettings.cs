@@ -270,7 +270,7 @@ namespace SuiteCRMAddIn
                     {
                         Globals.ThisAddIn.SuiteCRMUserSession.Login();
                     }
-                    if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+                    if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                     {
                         MessageBox.Show("Authentication failed!!!", "Authentication failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
@@ -348,7 +348,7 @@ namespace SuiteCRMAddIn
                 Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(),
                     txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Log);
                 Globals.ThisAddIn.SuiteCRMUserSession.Login();
-                if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+                if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                 {
                     MessageBox.Show("Authentication failed!!!", "Authentication failed", MessageBoxButtons.OK,
                         MessageBoxIcon.Error);

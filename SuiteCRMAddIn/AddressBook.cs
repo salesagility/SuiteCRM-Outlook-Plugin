@@ -42,7 +42,7 @@ namespace SuiteCRMAddIn
         public frmAddressBook()
         {
             this.InitializeComponent();
-            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+            if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
             {
                 Globals.ThisAddIn.ShowSettingsForm();
             }

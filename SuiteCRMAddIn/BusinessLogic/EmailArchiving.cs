@@ -157,7 +157,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         Thread.Sleep(1000);
                     }
-                    if (SuiteCRMUserSession.id != "")
+                    if (SuiteCRMUserSession.IsLoggedIn)
                     {
                         objEmail.SuiteCRMUserSession = SuiteCRMUserSession;
                         objEmail.Save(strExcludedEmails);

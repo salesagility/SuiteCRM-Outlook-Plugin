@@ -148,7 +148,7 @@ namespace SuiteCRMAddIn
         
         private void ManualArchive()
         {
-            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+            if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
             {
                 Globals.ThisAddIn.ShowSettingsForm();
             }

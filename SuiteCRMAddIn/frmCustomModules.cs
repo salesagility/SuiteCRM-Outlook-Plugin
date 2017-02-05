@@ -196,7 +196,7 @@ namespace SuiteCRMAddIn
             {
                 clsSuiteCRMHelper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
 
-                if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+                if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                 {
                     MessageBox.Show("Please enter SuiteCRM details in General tab and try again", "Invalid Authentication");
                     base.Close();

@@ -68,6 +68,11 @@ namespace SuiteCRMAddIn
             GetTitleAndVersion(out AddInTitle, out AddInVersion);
         }
 
+        private bool HasCrmUserSession
+        {
+            get { return SuiteCRMUserSession?.IsLoggedIn ?? false; }
+        }
+
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             try
@@ -186,7 +191,7 @@ namespace SuiteCRMAddIn
             {
                 while (true)
                 {
-                    if (SuiteCRMUserSession != null && SuiteCRMUserSession.id != "")
+                    if (HasCrmUserSession)
                     {
                         if (settings.SyncCalendar)
                         {
@@ -238,11 +243,11 @@ namespace SuiteCRMAddIn
 
         private void ManualArchive()
         {
-            if (SuiteCRMUserSession.id == "")
+            if (!HasCrmUserSession)
             {
                 ShowSettingsForm();
             }
-            if (SuiteCRMUserSession.id != "")
+            if (HasCrmUserSession)
             {
                 ShowArchiveForm();
             }
@@ -364,7 +369,7 @@ namespace SuiteCRMAddIn
 
         private void contextMenuArchiveButton_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
-            if (SuiteCRMUserSession.id == "")
+            if (!HasCrmUserSession)
             {
                 ShowSettingsForm();
             }
@@ -429,16 +434,10 @@ namespace SuiteCRMAddIn
 
         public void SuiteCRMAuthenticate()
         {
-            if (SuiteCRMUserSession == null)
+            if (!HasCrmUserSession)
             {
                 Authenticate();
             }
-            else
-            {
-                if (SuiteCRMUserSession.id == "")
-                    Authenticate();
-            }
-
         }
 
         public void Authenticate()
@@ -465,7 +464,7 @@ namespace SuiteCRMAddIn
                             SuiteCRMUserSession.Login();
                         }
 
-                        if (SuiteCRMUserSession.id != "")
+                        if (SuiteCRMUserSession.IsLoggedIn)
                             return;
                     }
                     catch (Exception)

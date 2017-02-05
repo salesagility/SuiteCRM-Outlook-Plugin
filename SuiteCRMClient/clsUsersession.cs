@@ -40,6 +40,10 @@ namespace SuiteCRMClient
         public bool AwaitingAuthentication { get; set; }
         public string id { get; set; }
 
+        public bool IsLoggedIn => !string.IsNullOrEmpty(id);
+
+        public bool NotLoggedIn => !IsLoggedIn;
+
         public clsUsersession(string URL, string Username, string Password, string strLDAPKey, ILogger log)
         {
             _log = log;
