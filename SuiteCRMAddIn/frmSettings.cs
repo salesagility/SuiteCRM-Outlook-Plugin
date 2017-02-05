@@ -344,17 +344,6 @@ namespace SuiteCRMAddIn
             settings.DaysOldEmailToAutoArchive =
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 
-            if (settings.IsFirstTime && settings.AutoArchive)
-            {
-                settings.IsFirstTime = false;
-                new Thread(() =>
-                {
-                    Thread.Sleep(5000);
-                    new EmailArchiving().ArchiveMailInAutoArchiveFolders();
-                })
-                .Start();
-            }
-
             this.settings.Save();
             this.settings.Reload();
             base.Close();

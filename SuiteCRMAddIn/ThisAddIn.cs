@@ -135,7 +135,7 @@ namespace SuiteCRMAddIn
                     //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
                 }
                 SuiteCRMAuthenticate();
-                new Thread(() => Sync()).Start();
+                new Thread(() => SyncAndAutoArchive()).Start();
             }
             catch (Exception ex)
             {
@@ -185,7 +185,7 @@ namespace SuiteCRMAddIn
             }
         }
 
-        public async void Sync()
+        public async void SyncAndAutoArchive()
         {
             try
             {
@@ -203,6 +203,15 @@ namespace SuiteCRMAddIn
                     {
                         new Thread(() => _contactSyncing.StartSync())
                             .Start();
+                    }
+                    if (HasCrmUserSession && settings.AutoArchive)
+                    {
+                        new Thread(() =>
+                        {
+                            Thread.Sleep(5000);
+                            new EmailArchiving().ArchiveMailInAutoArchiveFolders();
+                        })
+                        .Start();
                     }
                     await Task.Delay(SyncPeriod);
                 }

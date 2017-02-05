@@ -261,18 +261,6 @@ namespace SuiteCRMAddIn
                 this["ExcludedEmails"] = value;
             }
         }
-        [UserScopedSetting, DefaultSettingValue("True"), DebuggerNonUserCode]
-        public bool IsFirstTime
-        {
-            get
-            {
-                return (bool)this["IsFirstTime"];
-            }
-            set
-            {
-                this["IsFirstTime"] = value;
-            }
-        }
       
         [DefaultSettingValue("False"), UserScopedSetting, DebuggerNonUserCode]
         public bool IsLDAPAuthentication
