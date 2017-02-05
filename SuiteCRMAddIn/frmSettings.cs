@@ -33,6 +33,7 @@ namespace SuiteCRMAddIn
     using BusinessLogic;
     using Microsoft.Office.Interop.Outlook;
     using Exception = System.Exception;
+    using System.Threading;
 
     public partial class frmSettings : Form
     {
@@ -343,15 +344,15 @@ namespace SuiteCRMAddIn
             settings.DaysOldEmailToAutoArchive =
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 
-            if (settings.IsFirstTime)
+            if (settings.IsFirstTime && settings.AutoArchive)
             {
                 settings.IsFirstTime = false;
-                System.Threading.Thread objThread =
-                    new System.Threading.Thread(() =>
-                    {
-                        new EmailArchiving().ProcessMails(dtpAutoArchiveFrom.Value);
-                    });
-                objThread.Start();
+                new Thread(() =>
+                {
+                    Thread.Sleep(5000);
+                    new EmailArchiving().ArchiveMailInAutoArchiveFolders();
+                })
+                .Start();
             }
 
             this.settings.Save();

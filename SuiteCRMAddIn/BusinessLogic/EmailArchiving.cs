@@ -20,31 +20,22 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private clsSettings settings => Globals.ThisAddIn.settings;
 
-        public void ProcessMails(DateTime dtAutoArchiveFrom)
+        public void ArchiveMailInAutoArchiveFolders()
         {
-            if (settings.AutoArchive == false)
-                return;
-            Thread.Sleep(5000);
-            while (true)
+            var minReceivedDateTime = DateTime.UtcNow.AddDays(0 - settings.DaysOldEmailToAutoArchive);
+            try
             {
-                try
+                var foldersToBeArchived = GetMailFolders(Globals.ThisAddIn.Application.Session.Folders)
+                    .Where(FolderShouldBeAutoArchived);
+
+                foreach (var objFolder in foldersToBeArchived)
                 {
-                    var foldersToBeArchived = GetMailFolders(Globals.ThisAddIn.Application.Session.Folders)
-                        .Where(f => FolderShouldBeAutoArchived(f));
-
-                    foreach (var objFolder in foldersToBeArchived)
-                    {
-                        ProcessFolderItems(objFolder, dtAutoArchiveFrom);
-                    }
+                    ArchiveFolderItems(objFolder, minReceivedDateTime);
                 }
-                catch (Exception ex)
-                {
-                    Log.Error("ThisAddIn.ProcessMails", ex);
-                }
-
-                break; // (!)
-
-                Thread.Sleep(5000);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("ThisAddIn.ProcessMails", ex);
             }
         }
 
@@ -53,12 +44,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         private bool FolderShouldBeAutoArchived(string folderEntryId)
             => settings.AutoArchiveFolders?.Contains(folderEntryId) ?? false;
 
-        private void ProcessFolderItems(Outlook.Folder objFolder, DateTime dtAutoArchiveFrom)
+        private void ArchiveFolderItems(Outlook.Folder objFolder, DateTime minReceivedDateTime)
         {
             try
             {
                 var unreadEmails = objFolder.Items.Restrict(
-                        $"[ReceivedTime] >= \'{dtAutoArchiveFrom.AddDays(-1):yyyy-MM-dd HH:mm}\'");
+                        $"[ReceivedTime] >= \'{minReceivedDateTime.AddDays(-1):yyyy-MM-dd HH:mm}\'");
 
                 for (int intItr = 1; intItr <= unreadEmails.Count; intItr++)
                 {
