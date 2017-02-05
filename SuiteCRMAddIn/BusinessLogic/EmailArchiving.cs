@@ -22,6 +22,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public void ArchiveMailInAutoArchiveFolders()
         {
+            Log.Debug("Auto-Archive thread started");
             var minReceivedDateTime = DateTime.UtcNow.AddDays(0 - settings.DaysOldEmailToAutoArchive);
             try
             {
@@ -35,7 +36,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.ProcessMails", ex);
+                Log.Error("ArchiveMailInAutoArchiveFolders", ex);
+            }
+            finally
+            {
+                Log.Info("Auto-Archive thread completed");
             }
         }
 
