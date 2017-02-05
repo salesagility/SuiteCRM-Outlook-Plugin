@@ -238,11 +238,11 @@ namespace SuiteCRMAddIn
 
         private void ManualArchive()
         {
-            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+            if (SuiteCRMUserSession.id == "")
             {
                 ShowSettingsForm();
             }
-            if (Globals.ThisAddIn.SuiteCRMUserSession.id != "")
+            if (SuiteCRMUserSession.id != "")
             {
                 ShowArchiveForm();
             }
@@ -333,7 +333,7 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                string text1 = Globals.ThisAddIn.Application.ActiveExplorer().CommandBars[name].Name;
+                string text1 = Application.ActiveExplorer().CommandBars[name].Name;
                 return true;
             }
             catch (System.Exception)
@@ -364,7 +364,7 @@ namespace SuiteCRMAddIn
 
         private void contextMenuArchiveButton_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
-            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+            if (SuiteCRMUserSession.id == "")
             {
                 ShowSettingsForm();
             }
@@ -429,13 +429,13 @@ namespace SuiteCRMAddIn
 
         public void SuiteCRMAuthenticate()
         {
-            if (Globals.ThisAddIn.SuiteCRMUserSession == null)
+            if (SuiteCRMUserSession == null)
             {
                 Authenticate();
             }
             else
             {
-                if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+                if (SuiteCRMUserSession.id == "")
                     Authenticate();
             }
 
@@ -445,27 +445,27 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                string strUsername = Globals.ThisAddIn.settings.username;
-                string strPassword = Globals.ThisAddIn.settings.password;                
+                string strUsername = settings.username;
+                string strPassword = settings.password;                
 
-                Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","", Log);
-                string strURL = Globals.ThisAddIn.settings.host;
+                SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","", Log);
+                string strURL = settings.host;
                 if (strURL != "")
                 {
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, Globals.ThisAddIn.settings.LDAPKey, Log);
-                    Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
+                    SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, settings.LDAPKey, Log);
+                    SuiteCRMUserSession.AwaitingAuthentication = true;
                     try
                     {
                         if (settings.IsLDAPAuthentication)
                         {
-                            Globals.ThisAddIn.SuiteCRMUserSession.AuthenticateLDAP();
+                            SuiteCRMUserSession.AuthenticateLDAP();
                         }
                         else
                         {
-                            Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                            SuiteCRMUserSession.Login();
                         }
 
-                        if (Globals.ThisAddIn.SuiteCRMUserSession.id != "")
+                        if (SuiteCRMUserSession.id != "")
                             return;
                     }
                     catch (Exception)
@@ -473,7 +473,7 @@ namespace SuiteCRMAddIn
                         // Swallow exception(!)
                     }
                 }
-                Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = false;
+                SuiteCRMUserSession.AwaitingAuthentication = false;
             }
             catch (Exception ex)
             {
