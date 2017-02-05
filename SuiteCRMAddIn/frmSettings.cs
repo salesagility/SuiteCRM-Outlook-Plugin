@@ -29,8 +29,11 @@ using SuiteCRMClient.Logging;
 
 namespace SuiteCRMAddIn
 {
+    using System.Linq;
+    using BusinessLogic;
     using Microsoft.Office.Interop.Outlook;
     using Exception = System.Exception;
+    using System.Threading;
 
     public partial class frmSettings : Form
     {
@@ -45,32 +48,7 @@ namespace SuiteCRMAddIn
 
         private ILogger Log => Globals.ThisAddIn.Log;
 
-        private void GetCheckedFolders(TreeNode objInpNode)
-        {
-            try
-            {
-                if (objInpNode.Checked)
-                    this.settings.AutoArchiveFolders.Add(objInpNode.Tag.ToString());
-
-                foreach (TreeNode objNode in objInpNode.Nodes)
-                {
-                    if (objNode.Nodes.Count > 0)
-                    {
-                        GetCheckedFolders(objNode);
-                    }
-                    else
-                    {
-                        if (objNode.Checked)
-                            this.settings.AutoArchiveFolders.Add(objNode.Tag.ToString());
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Suppress exception.
-                Log.Error("GetCheckedFolders error", ex);
-            }
-        }
+        private Application Application => Globals.ThisAddIn.Application;
 
         private bool ValidateDetails()
         {
@@ -121,7 +99,6 @@ namespace SuiteCRMAddIn
                 Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                 LoadSettings();
                 LinkToLogFileDir.Text = ThisAddIn.LogDirPath;
-                UpdateUIState();
             }
             catch (Exception ex)
             {
@@ -146,21 +123,13 @@ namespace SuiteCRMAddIn
             this.cbShowCustomModules.Checked = settings.ShowCustomModules;
             this.txtSyncMaxRecords.Text = this.settings.SyncMaxRecords.ToString();
             this.checkBoxShowRightClick.Checked = this.settings.PopulateContextLookupList;
-            this.chkAutoArchive.Checked = this.settings.AutoArchive;
+            GetAccountAutoArchivingSettings();
             this.chkSyncCalendar.Checked = this.settings.SyncCalendar;
             this.chkSyncContacts.Checked = this.settings.SyncContacts;
-            this.tsResults.AfterCheck += new TreeViewEventHandler(this.tree_search_results_AfterCheck);
-            this.tsResults.AfterExpand += new TreeViewEventHandler(this.tree_search_results_AfterExpand);
-            this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tree_search_results_NodeMouseClick);
-            this.tsResults.Nodes.Clear();
-            this.tsResults.CheckBoxes = true;
-            GetMailFolders(Globals.ThisAddIn.Application.Session.Folders);
-            this.tsResults.ExpandAll();
 
             txtAutoSync.Text = settings.ExcludedEmails;
 
-            gbFirstTime.Visible = settings.IsFirstTime;
-            dtpAutoArchiveFrom.Value = System.DateTime.Now.AddDays(-10);
+            dtpAutoArchiveFrom.Value = DateTime.Now.AddDays(0 - settings.DaysOldEmailToAutoArchive);
             chkShowConfirmationMessageArchive.Checked = this.settings.ShowConfirmationMessageArchive;
 
             if (chkEnableLDAPAuthentication.Checked)
@@ -177,65 +146,42 @@ namespace SuiteCRMAddIn
             DetailedLoggingCheckBox.Checked = settings.LogLevel <= LogEntryType.Debug;
         }
 
-        private void GetMailFolders(Folders folders)
+        private void GetAccountAutoArchivingSettings()
         {
-            GetMailFolders(folders, tsResults.Nodes);
-        }
+            var settings = new EmailAccountsArchiveSettings();
+            settings.Load(this.settings);
+            EmailArchiveAccountTabs.TabPages.Clear();
+            foreach (Account account in Application.Session.Accounts)
+            {
+                var name = account.DisplayName;
+                var store = account.DeliveryStore;
+                var rootFolder = store.GetRootFolder();
 
-        private void GetMailFolders(Folders folders, TreeNodeCollection nodes)
-        {
-            try
-            {
-                foreach (Folder objFolder in folders)
-                {
-                    var objNode = new TreeNode() { Tag = objFolder.EntryID, Text = objFolder.Name };
-                    if (this.settings.AutoArchiveFolders.Contains(objFolder.EntryID))
-                        objNode.Checked = true;
-                    nodes.Add(objNode);
-                    var nestedFolders = objFolder.Folders;
-                    if (nestedFolders.Count > 0)
-                    {
-                        GetMailFolders(nestedFolders, objNode.Nodes);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Swallow exception(!)
-                Log.Error("GetMailFolders error", ex);
+                var pageControl = AddTabPage(account);
+                pageControl.LoadSettings(settings);
             }
         }
 
-        private void tree_search_results_AfterCheck(object sender, TreeViewEventArgs e)
+        private EmailAccountArchiveSettingsControl AddTabPage(Account outlookAccount)
         {
-            if ((e.Action != TreeViewAction.Unknown) && (e.Node.Nodes.Count > 0))
-            {
-                this.CheckAllChildNodes(e.Node, e.Node.Checked);
-            }
-        }
-        private void CheckAllChildNodes(TreeNode treeNode, bool nodeChecked)
-        {
-            foreach (TreeNode node in treeNode.Nodes)
-            {
-                node.Checked = nodeChecked;
-                if (node.Nodes.Count > 0)
-                {
-                    this.CheckAllChildNodes(node, nodeChecked);
-                }
-            }
+            var newPage = new TabPage();
+            newPage.Text = outlookAccount.DisplayName;
+            var pageControl = new EmailAccountArchiveSettingsControl(outlookAccount);
+            newPage.Controls.Add(pageControl);
+            EmailArchiveAccountTabs.TabPages.Add(newPage);
+            return pageControl;
         }
 
-        private void tree_search_results_AfterExpand(object sender, TreeViewEventArgs e)
+        private void SaveAccountAutoArchivingSettings()
         {
-            TreeViewAction action = e.Action;
-        }
+            var allSettings = EmailArchiveAccountTabs.TabPages.Cast<TabPage>()
+                .SelectMany(tabPage => tabPage.Controls.OfType<EmailAccountArchiveSettingsControl>())
+                .Select(accountSettingsControl => accountSettingsControl.SaveSettings())
+                .ToList();
 
-        private void tree_search_results_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
-        {
-            if (((e.Button == MouseButtons.Right) && (e.Node.Tag.ToString() != "root_node")) && (e.Node.Tag.ToString() != "sub_root_node"))
-            {
-                this.tsResults.SelectedNode = e.Node;
-            }
+            var conbinedSettings = EmailAccountsArchiveSettings.Combine(allSettings);
+            conbinedSettings.Save(settings);
+            settings.AutoArchive = conbinedSettings.HasAny;
         }
 
         private void frmSettings_FormClosing(object sender, FormClosingEventArgs e)
@@ -380,15 +326,8 @@ namespace SuiteCRMAddIn
 
             settings.AutoArchiveFolders = new List<string>();
 
-            foreach (TreeNode objNode in this.tsResults.Nodes)
-            {
-                if (objNode.Nodes.Count > 0)
-                {
-                    GetCheckedFolders(objNode);
-                }
-            }
+            SaveAccountAutoArchivingSettings();
 
-            settings.AutoArchive = this.chkAutoArchive.Checked;
             settings.SyncCalendar = this.chkSyncCalendar.Checked;
             settings.SyncContacts = this.chkSyncContacts.Checked;
             settings.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked;
@@ -402,14 +341,8 @@ namespace SuiteCRMAddIn
             }
 
             settings.LogLevel = DetailedLoggingCheckBox.Checked ? LogEntryType.Debug : LogEntryType.Information;
-
-            if (settings.IsFirstTime)
-            {
-                settings.IsFirstTime = false;
-                System.Threading.Thread objThread =
-                    new System.Threading.Thread(() => Globals.ThisAddIn.ProcessMails(dtpAutoArchiveFrom.Value));
-                objThread.Start();
-            }
+            settings.DaysOldEmailToAutoArchive =
+                (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 
             this.settings.Save();
             this.settings.Reload();
@@ -426,17 +359,6 @@ namespace SuiteCRMAddIn
         private void LinkToLogFileDir_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             Process.Start(ThisAddIn.LogDirPath);
-        }
-
-        private void chkAutoArchive_CheckedChanged(object sender, EventArgs e)
-        {
-            UpdateUIState();
-        }
-
-        private void UpdateUIState()
-        {
-            LimitArchivingLabel.Enabled = chkAutoArchive.Checked;
-            tsResults.Enabled = chkAutoArchive.Checked;
         }
     }
 }

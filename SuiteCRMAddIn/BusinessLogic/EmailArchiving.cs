@@ -20,59 +20,49 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private clsSettings settings => Globals.ThisAddIn.settings;
 
-        public void ProcessMails(DateTime? dtAutoArchiveFrom = null)
+        public void ArchiveMailInAutoArchiveFolders()
         {
-            if (settings.AutoArchive == false)
-                return;
-            Thread.Sleep(5000);
-            while (true)
+            Log.Debug("Auto-Archive thread started");
+            var minReceivedDateTime = DateTime.UtcNow.AddDays(0 - settings.DaysOldEmailToAutoArchive);
+            try
             {
-                try
-                {
-                    var foldersToBeArchived = GetMailFolders(Globals.ThisAddIn.Application.Session.Folders)
-                        .Where(f => FolderShouldBeAutoArchived(f));
+                var foldersToBeArchived = GetMailFolders(Globals.ThisAddIn.Application.Session.Folders)
+                    .Where(FolderShouldBeAutoArchived);
 
-                    foreach (var objFolder in foldersToBeArchived)
-                    {
-                        ProcessFolderItems(objFolder, dtAutoArchiveFrom);
-                    }
-                }
-                catch (Exception ex)
+                foreach (var objFolder in foldersToBeArchived)
                 {
-                    Log.Error("ThisAddIn.ProcessMails", ex);
+                    ArchiveFolderItems(objFolder, minReceivedDateTime);
                 }
-                if (dtAutoArchiveFrom != null)
-                    break;
-
-                Thread.Sleep(5000);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("ArchiveMailInAutoArchiveFolders", ex);
+            }
+            finally
+            {
+                Log.Info("Auto-Archive thread completed");
             }
         }
 
         private bool FolderShouldBeAutoArchived(Outlook.Folder folder) => FolderShouldBeAutoArchived(folder.EntryID);
 
         private bool FolderShouldBeAutoArchived(string folderEntryId)
-            => settings.AutoArchiveFolders == null ||
-                settings.AutoArchiveFolders.Count == 0 ||
-                settings.AutoArchiveFolders.Contains(folderEntryId);
+            => settings.AutoArchiveFolders?.Contains(folderEntryId) ?? false;
 
-        private void ProcessFolderItems(Outlook.Folder objFolder, DateTime? dtAutoArchiveFrom = null)
+        private void ArchiveFolderItems(Outlook.Folder objFolder, DateTime minReceivedDateTime)
         {
             try
             {
-                var unreadEmails = dtAutoArchiveFrom == null
-                    ? objFolder.Items.Restrict("[Unread]=true")
-                    : objFolder.Items.Restrict(
-                        $"[ReceivedTime] >= \'{dtAutoArchiveFrom.Value.AddDays(-1):yyyy-MM-dd HH:mm}\'");
+                var unreadEmails = objFolder.Items.Restrict(
+                        $"[ReceivedTime] >= \'{minReceivedDateTime.AddDays(-1):yyyy-MM-dd HH:mm}\'");
 
                 for (int intItr = 1; intItr <= unreadEmails.Count; intItr++)
                 {
                     var objMail = unreadEmails[intItr] as Outlook.MailItem;
                     if (objMail != null)
                     {
-                        if (objMail.UserProperties["SuiteCRM"] != null)
-                            break;
-
-                        ProcessNewMailItem(objMail, EmailArchiveType.Inbound);
+                        // If this throws an exception here, we skip the rest of the folder
+                        ArchiveNewMailItem(objMail, EmailArchiveType.Inbound);
                     }
                 }
             }
@@ -87,64 +77,79 @@ namespace SuiteCRMAddIn.BusinessLogic
             var parentFolder = objMail.Parent as Outlook.Folder;
             if (parentFolder == null)
             {
-                Log.Debug("NULL email folder for " + objMail.Subject);
+                Log.Debug($"NULL email folder for {archiveType} “{objMail.Subject}”");
                 return;
             }
 
-            if (FolderShouldBeAutoArchived(parentFolder))
+            if (EmailShouldBeArchived(archiveType, parentFolder.Store))
             {
-                Log.Debug("Archiving email from folder: " + parentFolder.Name);
-                ProcessNewMailItem(objMail, archiveType);
+                ArchiveNewMailItem(objMail, archiveType);
             }
             else
             {
-                Log.Debug("NOT archiving email from folder: " + parentFolder.Name);
+                Log.Debug($"NOT archiving {archiveType} email (folder {parentFolder.Name})");
             }
         }
 
-        public void ProcessNewMailItem(Outlook.MailItem objMail, EmailArchiveType archiveType)
+        private bool EmailShouldBeArchived(EmailArchiveType type, Outlook.Store store)
+        {
+            var storeId = store.StoreID;
+            switch (type)
+            {
+                case EmailArchiveType.Inbound:
+                    return settings.AccountsToArchiveInbound.Contains(storeId);
+                case EmailArchiveType.Sent:
+                    return settings.AccountsToArchiveOutbound.Contains(storeId);
+                default:
+                    return false;
+            }
+        }
+
+        public void ArchiveNewMailItem(Outlook.MailItem objMail, EmailArchiveType archiveType)
         {
             if (objMail.UserProperties["SuiteCRM"] == null)
             {
                 ArchiveEmail(objMail, archiveType, this.settings.ExcludedEmails);
                 objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
                 objMail.UserProperties["SuiteCRM"].Value = "True";
+                objMail.Categories = "SuiteCRM";
                 objMail.Save();
             }
         }
 
         private void ArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
-            try
+            Log.Info($"Archiving {archiveType} email “{objMail.Subject}”");
+            var objEmail = SerialiseEmailObject(objMail, archiveType);
+            Thread objThread = new Thread(() => ArchiveEmailThread(objEmail, archiveType, strExcludedEmails));
+            objThread.Start();
+        }
+
+        private clsEmailArchive SerialiseEmailObject(Outlook.MailItem objMail, EmailArchiveType archiveType)
+        {
+            clsEmailArchive objEmail = new clsEmailArchive();
+            objEmail.From = objMail.SenderEmailAddress;
+            objEmail.To = "";
+            foreach (Outlook.Recipient objRecepient in objMail.Recipients)
             {
-                Log.Info($"Archiving email '{objMail.Subject}'");
-                clsEmailArchive objEmail = new clsEmailArchive();
-                objEmail.From = objMail.SenderEmailAddress;
-                objEmail.To = "";
-                foreach (Outlook.Recipient objRecepient in objMail.Recipients)
-                {
-                    if (objEmail.To == "")
-                        objEmail.To = objRecepient.Address;
-                    else
-                        objEmail.To += ";" + objRecepient.Address;
-                }
-                objEmail.Subject = objMail.Subject;
-                objEmail.Body = objMail.Body;
-                objEmail.HTMLBody = objMail.HTMLBody;
-                objEmail.ArchiveType = archiveType;
-                foreach (Outlook.Attachment objMailAttachments in objMail.Attachments)
-                {
-                    objEmail.Attachments.Add(new clsEmailAttachments { DisplayName = objMailAttachments.DisplayName, FileContentInBase64String = GetAttachmentBytes(objMailAttachments, objMail) });
-                }
-                Thread objThread = new Thread(() => ArchiveEmailThread(objEmail, archiveType, strExcludedEmails));
-                objThread.Start();
-                objMail.Categories = "SuiteCRM";
-                objMail.Save();
+                if (objEmail.To == "")
+                    objEmail.To = objRecepient.Address;
+                else
+                    objEmail.To += ";" + objRecepient.Address;
             }
-            catch (Exception ex)
+            objEmail.Subject = objMail.Subject;
+            objEmail.Body = objMail.Body;
+            objEmail.HTMLBody = objMail.HTMLBody;
+            objEmail.ArchiveType = archiveType;
+            foreach (Outlook.Attachment objMailAttachments in objMail.Attachments)
             {
-                Log.Error("ThisAddIn.ArchiveEmail", ex);
+                objEmail.Attachments.Add(new clsEmailAttachments
+                {
+                    DisplayName = objMailAttachments.DisplayName,
+                    FileContentInBase64String = GetAttachmentBytes(objMailAttachments, objMail)
+                });
             }
+            return objEmail;
         }
 
         private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = "")

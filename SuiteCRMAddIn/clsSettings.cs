@@ -218,11 +218,35 @@ namespace SuiteCRMAddIn
         {
             get
             {
-                return (System.Collections.Generic.List<string>)this["AutoArchiveFolders"];               
+                return (System.Collections.Generic.List<string>)this["AutoArchiveFolders"];
             }
             set
             {
                 this["AutoArchiveFolders"] = value;
+            }
+        }
+        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        public System.Collections.Generic.List<string> AccountsToArchiveInbound
+        {
+            get
+            {
+                return (System.Collections.Generic.List<string>)this["AccountsToArchiveInbound"];
+            }
+            set
+            {
+                this["AccountsToArchiveInbound"] = value;
+            }
+        }
+        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        public System.Collections.Generic.List<string> AccountsToArchiveOutbound
+        {
+            get
+            {
+                return (System.Collections.Generic.List<string>)this["AccountsToArchiveOutbound"];
+            }
+            set
+            {
+                this["AccountsToArchiveOutbound"] = value;
             }
         }
         [UserScopedSetting, DefaultSettingValue(""), DebuggerNonUserCode]
@@ -235,18 +259,6 @@ namespace SuiteCRMAddIn
             set
             {
                 this["ExcludedEmails"] = value;
-            }
-        }
-        [UserScopedSetting, DefaultSettingValue("True"), DebuggerNonUserCode]
-        public bool IsFirstTime
-        {
-            get
-            {
-                return (bool)this["IsFirstTime"];
-            }
-            set
-            {
-                this["IsFirstTime"] = value;
             }
         }
       
@@ -317,6 +329,13 @@ namespace SuiteCRMAddIn
         {
             get { return (LogEntryType) this["LogLevel"]; }
             set { this["LogLevel"] = value; }
+        }
+
+        [DefaultSettingValue("10"), UserScopedSetting, DebuggerNonUserCode]
+        public int DaysOldEmailToAutoArchive
+        {
+            get { return (int) this["DaysOldEmailToAutoArchive"]; } 
+            set { this["DaysOldEmailToAutoArchive"] = value; }
         }
 
         public static Hashtable accountEntrys = new Hashtable();
