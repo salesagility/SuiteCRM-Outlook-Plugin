@@ -158,7 +158,7 @@ namespace SuiteCRMAddIn
                 var rootFolder = store.GetRootFolder();
 
                 var pageControl = AddTabPage(account);
-                pageControl.LoadSettings(settings);
+                pageControl.LoadSettings(account, settings);
             }
         }
 
@@ -166,7 +166,7 @@ namespace SuiteCRMAddIn
         {
             var newPage = new TabPage();
             newPage.Text = outlookAccount.DisplayName;
-            var pageControl = new EmailAccountArchiveSettingsControl(outlookAccount);
+            var pageControl = new EmailAccountArchiveSettingsControl();
             newPage.Controls.Add(pageControl);
             EmailArchiveAccountTabs.TabPages.Add(newPage);
             return pageControl;

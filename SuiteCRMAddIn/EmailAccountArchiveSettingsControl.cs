@@ -1,11 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -16,41 +10,40 @@ namespace SuiteCRMAddIn
 
     public partial class EmailAccountArchiveSettingsControl : UserControl
     {
-        private readonly Outlook.Account _outlookAccount;
+        private string _outlookStoreId;
 
-        public EmailAccountArchiveSettingsControl(Outlook.Account outlookAccount)
+        public EmailAccountArchiveSettingsControl()
         {
-            _outlookAccount = outlookAccount;
             InitializeComponent();
         }
 
         protected ILogger Log => Globals.ThisAddIn.Log;
 
-        public void LoadSettings(EmailAccountsArchiveSettings settings)
+        public void LoadSettings(Outlook.Account outlookAccount, EmailAccountsArchiveSettings settings)
         {
-            var store = _outlookAccount.DeliveryStore;
+            var store = outlookAccount.DeliveryStore;
+            _outlookStoreId = store.StoreID;
             var rootFolder = store.GetRootFolder();
-            var smtpAddress = _outlookAccount.SmtpAddress;
+            var smtpAddress = outlookAccount.SmtpAddress;
             ArchiveInboundCheckbox.Text = $"Archive Mail Received by {smtpAddress}";
             ArchiveOutboundCheckbox.Text = $"Archive Mail Sent by {smtpAddress}";
 
-            var storeId = store.StoreID;
             GetMailFolders(settings, rootFolder.Folders);
-            ArchiveInboundCheckbox.Checked = settings.AccountsToArchiveInbound.Contains(storeId);
-            ArchiveOutboundCheckbox.Checked = settings.AccountsToArchiveOutbound.Contains(storeId);
+            ArchiveInboundCheckbox.Checked = settings.AccountsToArchiveInbound.Contains(_outlookStoreId);
+            ArchiveOutboundCheckbox.Checked = settings.AccountsToArchiveOutbound.Contains(_outlookStoreId);
         }
 
         public EmailAccountsArchiveSettings SaveSettings()
         {
-            var store = _outlookAccount.DeliveryStore;
             var result = new EmailAccountsArchiveSettings().Clear();
-
-            var storeId = store.StoreID;
-            GetCheckedFoldersHelper(tsResults.Nodes, result.SelectedFolderEntryIds);
-            if (ArchiveInboundCheckbox.Checked)
-                result.AccountsToArchiveInbound.Add(storeId);
-            if (ArchiveOutboundCheckbox.Checked)
-                result.AccountsToArchiveOutbound.Add(storeId);
+            if (_outlookStoreId != null)
+            {
+                GetCheckedFoldersHelper(tsResults.Nodes, result.SelectedFolderEntryIds);
+                if (ArchiveInboundCheckbox.Checked)
+                    result.AccountsToArchiveInbound.Add(_outlookStoreId);
+                if (ArchiveOutboundCheckbox.Checked)
+                    result.AccountsToArchiveOutbound.Add(_outlookStoreId);
+            }
 
             return result;
         }

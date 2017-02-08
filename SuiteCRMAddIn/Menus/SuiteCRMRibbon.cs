@@ -131,12 +131,14 @@ namespace SuiteCRMAddIn
         #region Click Events
         public void btnArchive_Action(IRibbonControl control)
         {
-            ManualArchive();
+            DoOrLogError(() =>
+                ManualArchive());
         }
 
         public void btnSettings_Action(IRibbonControl control)
         {
-            Globals.ThisAddIn.ShowSettingsForm();
+            DoOrLogError(() =>
+                Globals.ThisAddIn.ShowSettingsForm());
         }
 
         public void btnAddressBook_Action(IRibbonControl control)
@@ -179,5 +181,10 @@ namespace SuiteCRMAddIn
         }
 
         #endregion
+
+        private void DoOrLogError(Action action)
+        {
+            Robustness.DoOrLogError(Globals.ThisAddIn.Log, action);
+        }
     }
 }

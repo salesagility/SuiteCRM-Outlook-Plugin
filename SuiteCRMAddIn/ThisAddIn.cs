@@ -229,7 +229,8 @@ namespace SuiteCRMAddIn
 
         private void cbtnSettings_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
-            ShowSettingsForm();
+            DoOrLogError(() =>
+                ShowSettingsForm());
         }
 
         public void ShowSettingsForm()
@@ -373,11 +374,14 @@ namespace SuiteCRMAddIn
 
         private void contextMenuArchiveButton_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
-            if (!HasCrmUserSession)
+            DoOrLogError(() =>
             {
-                ShowSettingsForm();
-            }
-            ShowArchiveForm();
+                if (!HasCrmUserSession)
+                {
+                    ShowSettingsForm();
+                }
+                ShowArchiveForm();
+            });
         }
 
         private void Application_ItemSend(object item, ref bool target)
@@ -515,6 +519,11 @@ namespace SuiteCRMAddIn
             // 'Build' is what we'd call the 'revision number' and
             // 'Revision' is what we'd call the 'build number'.
             versionString = $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+        }
+
+        private void DoOrLogError(Action action)
+        {
+            Robustness.DoOrLogError(Log, action);
         }
     }
 }
