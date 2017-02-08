@@ -52,7 +52,7 @@ namespace SuiteCRMAddIn
         public Office.CommandBarPopup objSuiteCRMMenuBar2007;
         public Office.CommandBarButton btnArvive;
         public Office.CommandBarButton btnSettings;
-        public int OutlookVersion;
+        public OutlookMajorVersion OutlookVersion;
 
         private SyncContext _syncContext;
         private ContactSyncing _contactSyncing;
@@ -79,7 +79,7 @@ namespace SuiteCRMAddIn
             try
             {
                 var outlookApp = this.Application;
-                OutlookVersion = Convert.ToInt32(outlookApp.Version.Split('.')[0]);
+                OutlookVersion = (OutlookMajorVersion)Convert.ToInt32(outlookApp.Version.Split('.')[0]);
 
                 this.settings = new clsSettings();
                 StartLogging(settings);
@@ -98,7 +98,7 @@ namespace SuiteCRMAddIn
                 outlookApp.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
                 outlookApp.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
 
-                if (OutlookVersion < 14)
+                if (OutlookVersion < OutlookMajorVersion.Outlook2010)
                 {
                     outlookApp.ItemContextMenuDisplay += new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
                     var menuBar = outlookExplorer.CommandBars.ActiveMenuBar;

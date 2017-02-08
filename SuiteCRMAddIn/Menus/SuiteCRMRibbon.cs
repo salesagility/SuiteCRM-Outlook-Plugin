@@ -103,7 +103,7 @@ namespace SuiteCRMAddIn
             }
             if ((ribbonID == "Microsoft.Outlook.Mail.Read") || (ribbonID=="Microsoft.Outlook.Explorer"))
             {
-                if (Globals.ThisAddIn.OutlookVersion < 14)
+                if (Globals.ThisAddIn.OutlookVersion <= OutlookMajorVersion.Outlook2013)
                     return GetResourceText("SuiteCRMAddIn.Menus.MailRead2007.xml");
                 else
                     return GetResourceText("SuiteCRMAddIn.Menus.MailRead.xml");
