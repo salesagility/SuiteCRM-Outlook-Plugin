@@ -151,14 +151,20 @@ namespace SuiteCRMAddIn
             var settings = new EmailAccountsArchiveSettings();
             settings.Load(this.settings);
             EmailArchiveAccountTabs.TabPages.Clear();
-            foreach (Account account in Application.Session.Accounts)
+            var outlookSession = Application.Session;
+            if (Globals.ThisAddIn.OutlookVersion >= OutlookMajorVersion.Outlook2013)
             {
-                var name = account.DisplayName;
-                var store = account.DeliveryStore;
-                var rootFolder = store.GetRootFolder();
+                // Uses a Outlook 2013 APIs on Account object: DeliveryStore and GetRootFolder()
+                // Needs work to make it work on Outlook 2010 and below.
+                foreach (Account account in outlookSession.Accounts)
+                {
+                    var name = account.DisplayName;
+                    var store = account.DeliveryStore;
+                    var rootFolder = store.GetRootFolder();
 
-                var pageControl = AddTabPage(account);
-                pageControl.LoadSettings(account, settings);
+                    var pageControl = AddTabPage(account);
+                    pageControl.LoadSettings(account, settings);
+                }
             }
         }
 
