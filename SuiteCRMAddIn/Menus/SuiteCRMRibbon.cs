@@ -182,6 +182,11 @@ namespace SuiteCRMAddIn
 
         #endregion
 
+        /// <summary>
+        /// Wrapper around invocation of an action, to provide consistent logging of 
+        /// otherwise-uncaught exceptions.
+        /// </summary>
+        /// <param name="action">The actual action handler to invoke.</param>
         private void DoOrLogError(Action action)
         {
             Robustness.DoOrLogError(Globals.ThisAddIn.Log, action);

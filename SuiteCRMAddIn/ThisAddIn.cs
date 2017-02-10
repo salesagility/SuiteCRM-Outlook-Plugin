@@ -20,34 +20,32 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Outlook = Microsoft.Office.Interop.Outlook;
-using Office = Microsoft.Office.Core;
-using SuiteCRMClient;
-using System.Runtime.InteropServices;
-using SuiteCRMAddIn.Properties;
-using System.Globalization;
-using SuiteCRMClient.RESTObjects;
-using System.Windows.Forms;
-using System.Threading;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using SuiteCRMClient.Logging;
+
 
 namespace SuiteCRMAddIn
 {
-    using System.Reflection;
     using BusinessLogic;
+    using SuiteCRMAddIn.Properties;
+    using SuiteCRMClient;
     using SuiteCRMClient.Email;
+    using SuiteCRMClient.Logging;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
+    using System.Runtime.InteropServices;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Windows.Forms;
+    using Office = Microsoft.Office.Core;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
     public partial class ThisAddIn
     {
         public static readonly string AddInTitle, AddInVersion;
 
         public SuiteCRMClient.clsUsersession SuiteCRMUserSession;
-        public clsSettings settings;
+        private clsSettings settings;
         private Outlook.Explorer objExplorer;
         public Office.CommandBarPopup objSuiteCRMMenuBar2007;
         public Office.CommandBarButton btnArvive;
@@ -61,12 +59,47 @@ namespace SuiteCRMAddIn
 
         public Office.IRibbonUI RibbonUI { get; set; }
 
-        public ILogger Log;
+        private ILogger log;
         private static readonly TimeSpan SyncPeriod = TimeSpan.FromMinutes(5);
 
+        /// <summary>
+        /// Property to allow other classes to get the logger object, but not
+        /// replace it with a new logger object.
+        /// </summary>
+        public ILogger Log
+        {
+            get { return this.log; }
+        }
+
+        /// <summary>
+        /// Property to allow other classes to get the settings object, but not
+        /// replace it with a new settings object.
+        /// </summary>
+        public clsSettings Settings
+        {
+            get
+            {
+                return this.settings;
+            }
+        }
+
+        /// <summary>
+        /// I'm guessing this method is called once when the add-in is added in.
+        /// </summary>
         static ThisAddIn()
         {
             GetTitleAndVersion(out AddInTitle, out AddInVersion);
+        }
+
+        /// <summary>
+        /// Make a call out to store.suitecrm.com with the add-in's public key (global to all 
+        /// instances of the plugin, and stashed probably on the assembly), and this instance's
+        /// key (specific to this instance, and entered by the user through the settings form).
+        /// </summary>
+        /// <returns>true if licence key was verified, or if licence server could not be reached.</returns>
+        private bool VerifyLicenceKey()
+        {
+            return new LicenceValidationHelper(this.Log, Properties.Settings.Default.PublicKey, this.settings.LicenceKey).Validate();
         }
 
         private bool HasCrmUserSession
@@ -134,12 +167,20 @@ namespace SuiteCRMAddIn
                     //var app = this.Application;
                     //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
                 }
+
+                while (!this.VerifyLicenceKey())
+                {
+                    /* if licence key does not validate, show the settings form to allow the user to enter
+                     * a (new) key, and retry. */
+                    this.ShowSettingsForm();
+                }
+
                 SuiteCRMAuthenticate();
                 new Thread(() => SyncAndAutoArchive()).Start();
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.ThisAddIn_Startup", ex);
+                log.Error("ThisAddIn.ThisAddIn_Startup", ex);
             }
         }
 
@@ -149,16 +190,16 @@ namespace SuiteCRMAddIn
 
         private void StartLogging(clsSettings settings)
         {
-            Log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log", () => GetLogHeader(settings));
-            clsSuiteCRMHelper.SetLog(Log);
-            SuiteCRMClient.CrmRestServer.SetLog(Log);
+            log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log", () => GetLogHeader(settings));
+            clsSuiteCRMHelper.SetLog(log);
+            SuiteCRMClient.CrmRestServer.SetLog(log);
         }
 
         private void LogKeySettings(clsSettings settings)
         {
             foreach (var s in GetKeySettings(settings))
             {
-                Log.Info(s);
+                log.Info(s);
             }
         }
 
@@ -181,7 +222,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.objExplorer_FolderSwitch", ex);
+                log.Error("ThisAddIn.objExplorer_FolderSwitch", ex);
             }
         }
 
@@ -218,7 +259,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.Sync", ex);
+                log.Error("ThisAddIn.Sync", ex);
             }
         }
 
@@ -272,7 +313,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.ThisAddIn_Shutdown", ex);
+                log.Error("ThisAddIn.ThisAddIn_Shutdown", ex);
             }
         }
 
@@ -284,7 +325,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.UnregisterEvents", ex);
+                log.Error("ThisAddIn.UnregisterEvents", ex);
             }
             try
             {
@@ -292,7 +333,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.UnregisterEvents", ex);
+                log.Error("ThisAddIn.UnregisterEvents", ex);
             }
 
             try
@@ -301,7 +342,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.UnregisterEvents", ex);
+                log.Error("ThisAddIn.UnregisterEvents", ex);
             }
 
             try
@@ -310,7 +351,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.UnregisterEvents", ex);
+                log.Error("ThisAddIn.UnregisterEvents", ex);
             }
 
             try
@@ -319,7 +360,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("AppointmentSyncing.Dispose", ex);
+                log.Error("AppointmentSyncing.Dispose", ex);
             }
             try
             {
@@ -327,7 +368,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ContactSyncing.Dispose", ex);
+                log.Error("ContactSyncing.Dispose", ex);
             }
             try
             {
@@ -335,7 +376,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("TaskSyncing.Dispose", ex);
+                log.Error("TaskSyncing.Dispose", ex);
             }
         }
 
@@ -386,7 +427,7 @@ namespace SuiteCRMAddIn
 
         private void Application_ItemSend(object item, ref bool target)
         {
-            Log.Debug("Outlook ItemSend: email sent event");
+            log.Debug("Outlook ItemSend: email sent event");
             try
             {
                 if (!settings.AutoArchive) return;
@@ -394,13 +435,13 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.Application_ItemSend", ex);
+                log.Error("ThisAddIn.Application_ItemSend", ex);
             }
         }
 
         private void Application_NewMail(string EntryID)
         {
-            Log.Debug("Outlook NewMail: email received event");
+            log.Debug("Outlook NewMail: email received event");
             try
             {
                 if (!settings.AutoArchive) return;
@@ -410,7 +451,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.Application_NewMail", ex);
+                log.Error("ThisAddIn.Application_NewMail", ex);
             }
         }
 
@@ -418,7 +459,7 @@ namespace SuiteCRMAddIn
         {
             if (mailItem == null)
             {
-                Log.Info("New 'mail item' was null");
+                log.Info("New 'mail item' was null");
                 return;
             }
             new EmailArchiving().ProcessEligibleNewMailItem(mailItem, archiveType);
@@ -456,11 +497,11 @@ namespace SuiteCRMAddIn
                 string strUsername = settings.username;
                 string strPassword = settings.password;                
 
-                SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","", Log);
+                SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","", log);
                 string strURL = settings.host;
                 if (strURL != "")
                 {
-                    SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, settings.LDAPKey, Log);
+                    SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, settings.LDAPKey, log);
                     SuiteCRMUserSession.AwaitingAuthentication = true;
                     try
                     {
@@ -485,7 +526,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.Authenticate", ex);
+                log.Error("ThisAddIn.Authenticate", ex);
             }
         }
 
@@ -523,7 +564,7 @@ namespace SuiteCRMAddIn
 
         private void DoOrLogError(Action action)
         {
-            Robustness.DoOrLogError(Log, action);
+            Robustness.DoOrLogError(log, action);
         }
     }
 }
