@@ -52,7 +52,7 @@ namespace SuiteCRMAddIn
             InitializeComponent();
         }
 
-        private clsSettings settings = Globals.ThisAddIn.settings;
+        private clsSettings settings = Globals.ThisAddIn.Settings;
         public string type;
 
         private ILogger Log => Globals.ThisAddIn.Log;
@@ -79,7 +79,7 @@ namespace SuiteCRMAddIn
 
         private void frmArchive_Load(object sender, EventArgs e)
         {
-            if (Globals.ThisAddIn.settings.ShowCustomModules)
+            if (Globals.ThisAddIn.Settings.ShowCustomModules)
             {
                 this.GetCustomModules();
             }

@@ -38,13 +38,14 @@ namespace SuiteCRMAddIn
 {
     public partial class frmAddressBook : Form
     {
-        private clsSettings settings = Globals.ThisAddIn.settings;
+        private clsSettings settings = Globals.ThisAddIn.Settings;
         public frmAddressBook()
         {
             this.InitializeComponent();
             if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
             {
-                Globals.ThisAddIn.ShowSettingsForm();
+                Robustness.DoOrLogError(Globals.ThisAddIn.Log, 
+                    () => Globals.ThisAddIn.ShowSettingsForm());
             }
         }
        

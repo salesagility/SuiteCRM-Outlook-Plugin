@@ -338,7 +338,19 @@ namespace SuiteCRMAddIn
             set { this["DaysOldEmailToAutoArchive"] = value; }
         }
 
+        /// <summary>
+        /// Purchaser's licence key; see LicenceValidationHelper, documentation at
+        /// https://store.suitecrm.com/selling/license-api
+        /// Set through the Settings dialogue frmSettings.
+        /// </summary>
+        public String LicenceKey
+        {
+            get { return (String)this["LicenceKey"]; }
+            set { this["LicenseKey"] = value; }
+        }
+
         public static Hashtable accountEntrys = new Hashtable();
         public static AutoCompleteStringCollection accounts = new AutoCompleteStringCollection();
     }
 }
+

@@ -34,7 +34,7 @@ namespace SuiteCRMAddIn
 {
     public partial class frmCustomModules : Form
     {
-        private clsSettings settings = Globals.ThisAddIn.settings;
+        private clsSettings settings = Globals.ThisAddIn.Settings;
         private List<string> IgnoreModules = new List<string>();
         private TextBox txtDisplay;
 

@@ -18,7 +18,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private clsUsersession SuiteCRMUserSession => Globals.ThisAddIn.SuiteCRMUserSession;
 
-        private clsSettings settings => Globals.ThisAddIn.settings;
+        private clsSettings settings => Globals.ThisAddIn.Settings;
 
         public void ArchiveMailInAutoArchiveFolders()
         {

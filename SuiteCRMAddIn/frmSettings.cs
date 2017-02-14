@@ -37,7 +37,7 @@ namespace SuiteCRMAddIn
 
     public partial class frmSettings : Form
     {
-        private clsSettings settings = Globals.ThisAddIn.settings;
+        private clsSettings settings = Globals.ThisAddIn.Settings;
 
         public EventHandler SettingsChanged;
 
@@ -322,6 +322,8 @@ namespace SuiteCRMAddIn
 
             settings.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked;
             settings.LDAPKey = txtLDAPAuthenticationKey.Text.Trim();
+
+            settings.LicenceKey = licenceText.Text.Trim();
 
             settings.ArchiveAttachmentsDefault = this.cbEmailAttachments.Checked;
             settings.AutomaticSearch = true;

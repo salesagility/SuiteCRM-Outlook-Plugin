@@ -52,6 +52,8 @@ namespace SuiteCRMAddIn
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmSettings));
             this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.dtpAutoArchiveFrom = new System.Windows.Forms.DateTimePicker();
+            this.label8 = new System.Windows.Forms.Label();
             this.EmailArchiveAccountTabs = new System.Windows.Forms.TabControl();
             this.tabPage4 = new System.Windows.Forms.TabPage();
             this.chkSyncContacts = new System.Windows.Forms.CheckBox();
@@ -70,14 +72,16 @@ namespace SuiteCRMAddIn
             this.checkBoxAutomaticSearch = new System.Windows.Forms.CheckBox();
             this.cbEmailAttachments = new System.Windows.Forms.CheckBox();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.licenceGroup = new System.Windows.Forms.GroupBox();
+            this.licenceText = new System.Windows.Forms.TextBox();
+            this.licenceLabel = new System.Windows.Forms.Label();
             this.gbLDAPAuthentication = new System.Windows.Forms.GroupBox();
             this.labelKey = new System.Windows.Forms.Label();
             this.txtLDAPAuthenticationKey = new System.Windows.Forms.TextBox();
             this.chkEnableLDAPAuthentication = new System.Windows.Forms.CheckBox();
-            this.dtpAutoArchiveFrom = new System.Windows.Forms.DateTimePicker();
-            this.label8 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.btnTestLogin = new System.Windows.Forms.Button();
+            this.textBox2 = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
             this.txtPassword = new System.Windows.Forms.TextBox();
             this.txtUsername = new System.Windows.Forms.TextBox();
@@ -101,6 +105,7 @@ namespace SuiteCRMAddIn
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.tabPage1.SuspendLayout();
+            this.licenceGroup.SuspendLayout();
             this.gbLDAPAuthentication.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.tabControl1.SuspendLayout();
@@ -123,6 +128,23 @@ namespace SuiteCRMAddIn
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "Auto Archive";
             this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // dtpAutoArchiveFrom
+            // 
+            this.dtpAutoArchiveFrom.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dtpAutoArchiveFrom.Location = new System.Drawing.Point(146, 339);
+            this.dtpAutoArchiveFrom.Name = "dtpAutoArchiveFrom";
+            this.dtpAutoArchiveFrom.Size = new System.Drawing.Size(94, 20);
+            this.dtpAutoArchiveFrom.TabIndex = 1;
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(143, 320);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(131, 13);
+            this.label8.TabIndex = 0;
+            this.label8.Text = "Automatically Archive from";
             // 
             // EmailArchiveAccountTabs
             // 
@@ -301,6 +323,7 @@ namespace SuiteCRMAddIn
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.licenceGroup);
             this.tabPage1.Controls.Add(this.gbLDAPAuthentication);
             this.tabPage1.Controls.Add(this.groupBox1);
             this.tabPage1.Location = new System.Drawing.Point(23, 4);
@@ -309,6 +332,32 @@ namespace SuiteCRMAddIn
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Credentials";
             this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // licenceGroup
+            // 
+            this.licenceGroup.Controls.Add(this.licenceText);
+            this.licenceGroup.Controls.Add(this.licenceLabel);
+            this.licenceGroup.Location = new System.Drawing.Point(7, 225);
+            this.licenceGroup.Name = "licenceGroup";
+            this.licenceGroup.Size = new System.Drawing.Size(353, 48);
+            this.licenceGroup.TabIndex = 4;
+            this.licenceGroup.TabStop = false;
+            // 
+            // licenceText
+            // 
+            this.licenceText.Location = new System.Drawing.Point(78, 19);
+            this.licenceText.Name = "licenceText";
+            this.licenceText.Size = new System.Drawing.Size(207, 20);
+            this.licenceText.TabIndex = 1;
+            // 
+            // licenceLabel
+            // 
+            this.licenceLabel.AutoSize = true;
+            this.licenceLabel.Location = new System.Drawing.Point(6, 22);
+            this.licenceLabel.Name = "licenceLabel";
+            this.licenceLabel.Size = new System.Drawing.Size(66, 13);
+            this.licenceLabel.TabIndex = 0;
+            this.licenceLabel.Text = "Licence Key";
             // 
             // gbLDAPAuthentication
             // 
@@ -332,7 +381,7 @@ namespace SuiteCRMAddIn
             // 
             // txtLDAPAuthenticationKey
             // 
-            this.txtLDAPAuthenticationKey.Location = new System.Drawing.Point(64, 40);
+            this.txtLDAPAuthenticationKey.Location = new System.Drawing.Point(78, 40);
             this.txtLDAPAuthenticationKey.Name = "txtLDAPAuthenticationKey";
             this.txtLDAPAuthenticationKey.Size = new System.Drawing.Size(207, 20);
             this.txtLDAPAuthenticationKey.TabIndex = 1;
@@ -348,26 +397,10 @@ namespace SuiteCRMAddIn
             this.chkEnableLDAPAuthentication.UseVisualStyleBackColor = true;
             this.chkEnableLDAPAuthentication.CheckedChanged += new System.EventHandler(this.chkEnableLDAPAuthentication_CheckedChanged);
             // 
-            // dtpAutoArchiveFrom
-            // 
-            this.dtpAutoArchiveFrom.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpAutoArchiveFrom.Location = new System.Drawing.Point(146, 339);
-            this.dtpAutoArchiveFrom.Name = "dtpAutoArchiveFrom";
-            this.dtpAutoArchiveFrom.Size = new System.Drawing.Size(94, 20);
-            this.dtpAutoArchiveFrom.TabIndex = 1;
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(143, 320);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(131, 13);
-            this.label8.TabIndex = 0;
-            this.label8.Text = "Automatically Archive from";
-            // 
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.btnTestLogin);
+            this.groupBox1.Controls.Add(this.textBox2);
             this.groupBox1.Controls.Add(this.label4);
             this.groupBox1.Controls.Add(this.txtPassword);
             this.groupBox1.Controls.Add(this.txtUsername);
@@ -384,13 +417,20 @@ namespace SuiteCRMAddIn
             // btnTestLogin
             // 
             this.btnTestLogin.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnTestLogin.Location = new System.Drawing.Point(290, 103);
+            this.btnTestLogin.Location = new System.Drawing.Point(292, 103);
             this.btnTestLogin.Name = "btnTestLogin";
             this.btnTestLogin.Size = new System.Drawing.Size(42, 23);
             this.btnTestLogin.TabIndex = 7;
             this.btnTestLogin.Text = "&Test";
             this.btnTestLogin.UseVisualStyleBackColor = true;
             this.btnTestLogin.Click += new System.EventHandler(this.btnTestLogin_Click);
+            // 
+            // textBox2
+            // 
+            this.textBox2.Location = new System.Drawing.Point(79, 184);
+            this.textBox2.Name = "textBox2";
+            this.textBox2.Size = new System.Drawing.Size(207, 20);
+            this.textBox2.TabIndex = 1;
             // 
             // label4
             // 
@@ -403,7 +443,7 @@ namespace SuiteCRMAddIn
             // 
             // txtPassword
             // 
-            this.txtPassword.Location = new System.Drawing.Point(65, 105);
+            this.txtPassword.Location = new System.Drawing.Point(79, 105);
             this.txtPassword.Name = "txtPassword";
             this.txtPassword.Size = new System.Drawing.Size(207, 20);
             this.txtPassword.TabIndex = 3;
@@ -411,14 +451,14 @@ namespace SuiteCRMAddIn
             // 
             // txtUsername
             // 
-            this.txtUsername.Location = new System.Drawing.Point(65, 71);
+            this.txtUsername.Location = new System.Drawing.Point(79, 71);
             this.txtUsername.Name = "txtUsername";
             this.txtUsername.Size = new System.Drawing.Size(207, 20);
             this.txtUsername.TabIndex = 2;
             // 
             // txtURL
             // 
-            this.txtURL.Location = new System.Drawing.Point(65, 16);
+            this.txtURL.Location = new System.Drawing.Point(79, 16);
             this.txtURL.Name = "txtURL";
             this.txtURL.Size = new System.Drawing.Size(207, 20);
             this.txtURL.TabIndex = 1;
@@ -568,7 +608,7 @@ namespace SuiteCRMAddIn
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(393, 419);
+            this.ClientSize = new System.Drawing.Size(393, 420);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.tabControl1);
@@ -593,6 +633,8 @@ namespace SuiteCRMAddIn
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
             this.tabPage1.ResumeLayout(false);
+            this.licenceGroup.ResumeLayout(false);
+            this.licenceGroup.PerformLayout();
             this.gbLDAPAuthentication.ResumeLayout(false);
             this.gbLDAPAuthentication.PerformLayout();
             this.groupBox1.ResumeLayout(false);
@@ -651,5 +693,9 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.Label AddInVersionLabel;
         private System.Windows.Forms.TabControl EmailArchiveAccountTabs;
         private System.Windows.Forms.TabPage tabPage4;
+        private System.Windows.Forms.GroupBox licenceGroup;
+        private System.Windows.Forms.Label licenceLabel;
+        private System.Windows.Forms.TextBox licenceText;
+        private System.Windows.Forms.TextBox textBox2;
     }
 }
