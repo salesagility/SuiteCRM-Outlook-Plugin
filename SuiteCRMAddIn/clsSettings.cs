@@ -343,10 +343,11 @@ namespace SuiteCRMAddIn
         /// https://store.suitecrm.com/selling/license-api
         /// Set through the Settings dialogue frmSettings.
         /// </summary>
+        [DefaultSettingValue(""), UserScopedSetting, DebuggerNonUserCode]
         public String LicenceKey
         {
             get { return (String)this["LicenceKey"]; }
-            set { this["LicenseKey"] = value; }
+            set { this["LicenceKey"] = value; }
         }
 
         public static Hashtable accountEntrys = new Hashtable();

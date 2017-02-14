@@ -25,7 +25,7 @@ namespace SuiteCRMAddIn.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("e10a9aff077e983deca51e5d3688636c")]
+        [global::System.Configuration.DefaultSettingValueAttribute("b8794235718652747b82fd713deac078")]
         public string PublicKey {
             get {
                 return ((string)(this["PublicKey"]));

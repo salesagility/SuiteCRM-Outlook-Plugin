@@ -99,7 +99,15 @@ namespace SuiteCRMAddIn
         /// <returns>true if licence key was verified, or if licence server could not be reached.</returns>
         private bool VerifyLicenceKey()
         {
-            return new LicenceValidationHelper(this.Log, Properties.Settings.Default.PublicKey, this.settings.LicenceKey).Validate();
+            bool result = false;
+            try
+            {
+                result = new LicenceValidationHelper(this.Log, Properties.Settings.Default.PublicKey, this.settings.LicenceKey).Validate();
+            } catch (System.Configuration.SettingsPropertyNotFoundException ex)
+            {
+                this.log.Error("Licence key was not yet set up", ex);
+            }
+            return result;
         }
 
         private bool HasCrmUserSession

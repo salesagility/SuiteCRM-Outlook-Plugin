@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="PublicKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)">e10a9aff077e983deca51e5d3688636c</Value>
+      <Value Profile="(Default)">b8794235718652747b82fd713deac078</Value>
     </Setting>
   </Settings>
 </SettingsFile>

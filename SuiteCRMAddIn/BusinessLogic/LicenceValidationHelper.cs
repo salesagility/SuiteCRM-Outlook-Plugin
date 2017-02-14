@@ -1,7 +1,10 @@
 ﻿namespace SuiteCRMAddIn.BusinessLogic
 {
+    using Newtonsoft.Json;
+    using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Text;
 
@@ -13,7 +16,7 @@
         /// <summary>
         /// The URL to which licence validation requests are made.
         /// </summary>
-        private const String validationURL = "https://store.suitecrm.com/api/key/validate";
+        private const String validationURL = "https://store.suitecrm.com/api/v1/key/validate";
 
         /// <summary>
         /// The logger to which I shall log.
@@ -31,6 +34,11 @@
         private String licenceKey;
 
         /// <summary>
+        /// The service to which I despatch validation requests.
+        /// </summary>
+        private RestService service;
+
+        /// <summary>
         /// Construct a new instance of LicenceValidationHelper with this application key and this licence key.
         /// </summary>
         /// <param name="logger">The logger to which this licence validation helper will log.</param>
@@ -39,6 +47,7 @@
         public LicenceValidationHelper(ILogger logger, String applicationKey, String licenceKey)
         {
             this.logger = logger;
+            this.service = new RestService(validationURL, logger);
             this.applicationKey = applicationKey;
             this.licenceKey = licenceKey;
         }
@@ -56,23 +65,24 @@
             {
                 try
                 {
-                    StringBuilder bob = new StringBuilder(validationURL)
-                        .Append("?public+key=")
-                        .Append(this.applicationKey)
-                        .Append("&key=").Append(this.licenceKey);
+                    IDictionary<string,string> parameters = new Dictionary<string, string>();
+                    parameters["public_key"] = this.applicationKey;
+                    parameters["key"] = this.licenceKey;
 
-                    HttpWebResponse asHttp = (HttpWebResponse)(WebRequest.Create(bob.ToString()).GetResponse());
-
-                    switch (asHttp.StatusCode)
+                    using (var asHttp = this.service.CreateGetRequest(parameters).GetResponse() as HttpWebResponse)
                     {
-                        case HttpStatusCode.OK:
-                            /* if the licence validation server says OK, that's OK */
-                            result = true;
-                            break;
-                        case HttpStatusCode.InternalServerError:
-                            /* if the licence validation server breaks, treat that as OK */
-                            result = true;
-                            break;
+
+                        switch (asHttp.StatusCode)
+                        {
+                            case HttpStatusCode.OK:
+                                /* if the licence validation server says OK, that's OK */
+                                result = service.GetPayload<LicenceValidation>(asHttp).validated;
+                                break;
+                            case HttpStatusCode.InternalServerError:
+                                /* if the licence validation server breaks, treat that as OK */
+                                result = true;
+                                break;
+                        }
                     }
                 }
                 catch (WebException badConnection)
@@ -95,7 +105,6 @@
             catch (Exception any)
             {
                 this.logger.Error("LicenceValidationHelper.Validate", any);
-                result = true;
             }
 
             return result;

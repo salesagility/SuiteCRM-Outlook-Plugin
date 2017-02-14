@@ -114,6 +114,7 @@ namespace SuiteCRMAddIn
                 txtURL.Text = settings.host;
                 txtUsername.Text = settings.username;
                 txtPassword.Text = settings.password;
+                licenceText.Text = settings.LicenceKey;
             }
             this.chkEnableLDAPAuthentication.Checked = this.settings.IsLDAPAuthentication;
             this.txtLDAPAuthenticationKey.Text = this.settings.LDAPKey;
