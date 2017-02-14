@@ -524,7 +524,7 @@ namespace SuiteCRMAddIn
             this.AddInVersionLabel.Name = "AddInVersionLabel";
             this.AddInVersionLabel.Size = new System.Drawing.Size(332, 25);
             this.AddInVersionLabel.TabIndex = 6;
-            this.AddInVersionLabel.Text = "version 0.0.0.0";
+            this.AddInVersionLabel.Text = "Version 0.0.0.0";
             this.AddInVersionLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // groupBox4
