@@ -51,8 +51,10 @@
   </Choose>
   <ItemGroup>
     <Compile Include="BusinessLogic\LicenceValidationHelperTests.cs" />
+    <Compile Include="WithLoggerTests.cs" />
     <Compile Include="LDAPAuthenticationHelperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WithRestServiceTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SuiteCRMAddIn\SuiteCRMAddIn.csproj">

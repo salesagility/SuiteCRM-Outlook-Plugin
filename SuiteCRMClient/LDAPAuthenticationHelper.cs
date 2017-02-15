@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMClient
 {
+    using Logging;
     using RESTObjects;
     using System;
     using System.Globalization;
@@ -37,6 +38,7 @@ namespace SuiteCRMClient
         private string password;
         private string key;
         private string iv;
+        private RestService service;
 
         /// <summary>
         /// Construct a new instance of LDAPAuthenticationHelper with these credentials.
@@ -45,12 +47,14 @@ namespace SuiteCRMClient
         /// <param name="password">The password to identify with.</param>
         /// <param name="key">The ?key?</param>
         /// <param name="iv">The ?ldapIV? (in practice always "password").</param>
-        public LDAPAuthenticationHelper( string username, string password, string key, string iv )
+        /// <param name="service">The REST service exposed by the CRM instance.</param>
+        public LDAPAuthenticationHelper( string username, string password, string key, string iv, RestService service)
         {
             this.username = username;
             this.password = password;
             this.key = key;
             this.iv = iv;
+            this.service = service;
         }
 
         /// <summary>
@@ -71,7 +75,7 @@ namespace SuiteCRMClient
                 }
             };
 
-            return SuiteCRMClient.CrmRestServer.GetCrmResponse<eSetEntryResult>("login", loginData).id;
+            return service.GetResponse<eSetEntryResult>("login", loginData).id;
         }
 
         /// <summary>

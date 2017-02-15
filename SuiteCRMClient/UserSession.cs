@@ -157,12 +157,15 @@ namespace SuiteCRMClient
         /// </summary>
         /// <param name="username">The username to authenticate.</param>
         /// <param name="password">The password which should be associated with this username.</param>
-        /// <param name="key">?unknown?</param>
+        /// <param name="key">The LDAP key entered by the user in the settings panel.</param>
         /// <param name="iv">?Purpose unknown, but value is always 'password'?</param>
         /// <returns></returns>
         public string AuthenticateLDAP(string username, string password, string key, string iv)
         {
-            return new LDAPAuthenticationHelper(username, password, key, iv).Authenticate();
+            // TODO: We should have a RestService which we pass around rather than using 
+            // the CrmRestServer static methods, but this will do for now.
+            return new LDAPAuthenticationHelper(username, password, key, iv, 
+                new RestService(CrmRestServer.SuiteCRMURL.ToString(), this._log)).Authenticate();
         }
 
         public void LogOut()
@@ -182,6 +185,9 @@ namespace SuiteCRMClient
             {
                 _log.Error("Log out error", ex);
             }
+
+            this.id = String.Empty;
+            SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
         }
 
         public static string GetMD5Hash(string PlainText)
