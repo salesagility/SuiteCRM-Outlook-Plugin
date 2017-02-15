@@ -41,9 +41,9 @@ namespace SuiteCRMClient.Email
         public EmailArchiveType ArchiveType { get; set; }
         public object contactData;
 
-        public clsUsersession SuiteCRMUserSession;
+        public UserSession SuiteCRMUserSession;
 
-        public clsEmailArchive(clsUsersession SuiteCRMUserSession, ILogger log)
+        public clsEmailArchive(UserSession SuiteCRMUserSession, ILogger log)
         {
             _log = log;
             this.SuiteCRMUserSession = SuiteCRMUserSession;

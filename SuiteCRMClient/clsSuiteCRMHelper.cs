@@ -35,7 +35,7 @@ namespace SuiteCRMClient
     {
         private static ILogger Log;
 
-        public static clsUsersession SuiteCRMUserSession;
+        public static UserSession SuiteCRMUserSession;
 
         public static void SetLog(ILogger log)
         {
@@ -57,7 +57,7 @@ namespace SuiteCRMClient
             EnsureLoggedIn(SuiteCRMUserSession);
         }
 
-        public static void EnsureLoggedIn(clsUsersession userSession)
+        public static void EnsureLoggedIn(UserSession userSession)
         {
             string strUserID = clsSuiteCRMHelper.GetUserId();
             if (strUserID == "")

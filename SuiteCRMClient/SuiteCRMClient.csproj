@@ -66,6 +66,7 @@
     <Compile Include="CrmEntity.cs" />
     <Compile Include="Email\EmailArchiveType.cs" />
     <Compile Include="Exceptions\CrmSaveDataException.cs" />
+    <Compile Include="LDAPAuthenticationHelper.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\LogEntryType.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />
@@ -102,7 +103,7 @@
     <Compile Include="RESTObjects\eUserAuth.cs" />
     <Compile Include="RESTObjects\eUserDetail.cs" />
     <Compile Include="clsSuiteCRMHelper.cs" />
-    <Compile Include="clsUsersession.cs" />
+    <Compile Include="UserSession.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
