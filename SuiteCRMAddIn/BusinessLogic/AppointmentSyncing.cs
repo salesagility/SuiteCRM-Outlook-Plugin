@@ -53,59 +53,55 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        /// <summary>
+        /// Entry point from event handler, called when an Outlook item of class AppointmentItem 
+        /// has changed.
+        /// </summary>
+        /// <param name="aItem">The item which has changed.</param>
         override protected void OutlookItemChanged(Outlook.AppointmentItem aItem)
         {
-            try
+            string entryId = aItem.EntryID;
+            var callitem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+            Log.Warn("CalItem EntryID=  " + aItem.EntryID);
+            if (callitem != null)
             {
-                string entryId = aItem.EntryID;
-                var callitem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
-                Log.Warn("CalItem EntryID=  " + aItem.EntryID);
-                if (callitem != null)
+                var utcNow = DateTime.UtcNow;
+                if (Math.Abs((int)(utcNow - callitem.OModifiedDate).TotalSeconds) > 5)
                 {
-                    var utcNow = DateTime.UtcNow;
-                    if (Math.Abs((int)(utcNow - callitem.OModifiedDate).TotalSeconds) > 5)
-                    {
-                        Log.Warn("2 callitem.IsUpdate = " + callitem.IsUpdate);
-                        callitem.IsUpdate = 0;
-                    }
-
-                    Log.Warn("Before UtcNow - callitem.OModifiedDate= " + (int)(utcNow - callitem.OModifiedDate).TotalSeconds);
-
-                    if (Math.Abs((int)(utcNow - callitem.OModifiedDate).TotalSeconds) > 2 && callitem.IsUpdate == 0)
-                    {
-                        callitem.OModifiedDate = DateTime.UtcNow;
-                        Log.Warn("1 callitem.IsUpdate = " + callitem.IsUpdate);
-                        callitem.IsUpdate++;
-                    }
-
-                    Log.Warn("callitem = " + callitem.OutlookItem.Subject);
-                    Log.Warn("callitem.SEntryID = " + callitem.CrmEntryId);
-                    Log.Warn("callitem mod_date= " + callitem.OModifiedDate.ToString());
-                    Log.Warn("utcNow= " + DateTime.UtcNow.ToString());
-                    Log.Warn("UtcNow - callitem.OModifiedDate= " + (int)(DateTime.UtcNow - callitem.OModifiedDate).TotalSeconds);
-                }
-                else
-                {
-                    Log.Warn("not found callitem ");
+                    Log.Warn("2 callitem.IsUpdate = " + callitem.IsUpdate);
+                    callitem.IsUpdate = 0;
                 }
 
+                Log.Warn("Before UtcNow - callitem.OModifiedDate= " + (int)(utcNow - callitem.OModifiedDate).TotalSeconds);
 
-                if (IsCurrentView && ItemsSyncState.Exists(a => a.OutlookItem.EntryID == aItem.EntryID
-                                 && callitem.IsUpdate == 1
-                                 )
-                )
+                if (Math.Abs((int)(utcNow - callitem.OModifiedDate).TotalSeconds) > 2 && callitem.IsUpdate == 0)
                 {
-                    Outlook.UserProperty olPropertyType = aItem.UserProperties["SType"];
-                    Outlook.UserProperty olPropertyEntryId = aItem.UserProperties["SEntryID"];
-                    if (olPropertyType != null && olPropertyEntryId != null)
-                    {
-                        callitem.IsUpdate++;
-                        AddItemFromOutlookToCrm(aItem, olPropertyType.Value.ToString(), olPropertyEntryId.Value.ToString());
-                    }
+                    callitem.OModifiedDate = DateTime.UtcNow;
+                    Log.Warn("1 callitem.IsUpdate = " + callitem.IsUpdate);
+                    callitem.IsUpdate++;
                 }
+
+                Log.Warn("callitem = " + callitem.OutlookItem.Subject);
+                Log.Warn("callitem.SEntryID = " + callitem.CrmEntryId);
+                Log.Warn("callitem mod_date= " + callitem.OModifiedDate.ToString());
+                Log.Warn("utcNow= " + DateTime.UtcNow.ToString());
+                Log.Warn("UtcNow - callitem.OModifiedDate= " + (int)(DateTime.UtcNow - callitem.OModifiedDate).TotalSeconds);
             }
-            finally
+            else
             {
+                Log.Warn("not found callitem ");
+            }
+
+            if (IsCurrentView && ItemsSyncState.Exists(a => a.OutlookItem.EntryID == aItem.EntryID
+                             && callitem.IsUpdate == 1))
+            {
+                Outlook.UserProperty olPropertyType = aItem.UserProperties["SType"];
+                Outlook.UserProperty olPropertyEntryId = aItem.UserProperties["SEntryID"];
+                if (olPropertyType != null && olPropertyEntryId != null)
+                {
+                    callitem.IsUpdate++;
+                    AddItemFromOutlookToCrm(aItem, olPropertyType.Value.ToString(), olPropertyEntryId.Value.ToString());
+                }
             }
         }
 
@@ -511,7 +507,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The outlook item to add.</param>
         /// <param name="crmType">The CRM type to which it should be added</param>
-        /// <param name="entryId">The id of this item in CRM, if known.</param>
+        /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
+        /// an update, not an add).</param>
         private void AddItemFromOutlookToCrm(Outlook.AppointmentItem olItem, string crmType, string entryId = "")
         {
             Log.Warn("AddItemFromOutlookToCrm");
@@ -568,12 +565,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                     Log.Warn("    AddItemFromOutlookToCrm Save ");
                     olItem.Save();
 
+                    /* Find the existing syncstate whose outlook item has the same EntryId value as the current olItem */
                     var sItem = this.ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == olItem.EntryID);
                     if (sItem != null)
                     {
                         sItem.OutlookItem = olItem;
                         sItem.OModifiedDate = DateTime.UtcNow;
-                        sItem.CrmEntryId = meetingId;
+                        sItem.CrmEntryId = meetingId; /* this is where the CRM entry id gets fixed up in Outlook */
                         Log.Warn("    AddItemFromOutlookToCrm Edit ");
                     }
                     else
