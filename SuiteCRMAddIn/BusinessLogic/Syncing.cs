@@ -39,6 +39,10 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public abstract bool SyncingEnabled { get; }
 
+        /// <summary>
+        /// Get a date stamp for midnight five days ago (why?).
+        /// </summary>
+        /// <returns>A date stamp for midnight five days ago.</returns>
         public DateTime GetStartDate()
         {
             DateTime dtRet = DateTime.Now.AddDays(-5);
