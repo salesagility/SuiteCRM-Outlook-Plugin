@@ -21,7 +21,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public bool IsPublic => OutlookItemSensitivity == Outlook.OlSensitivity.olNormal;
 
-        public virtual bool ShouldSyncWithCrm => true;
+        public virtual bool ShouldSyncWithCrm => IsPublic;
 
         /// <summary>
         /// Precisely 'this.OutlookItem.EntryId'.
