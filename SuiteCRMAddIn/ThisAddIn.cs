@@ -60,6 +60,10 @@ namespace SuiteCRMAddIn
         public Office.IRibbonUI RibbonUI { get; set; }
 
         private ILogger log;
+
+        /// <summary>
+        /// The polling interval; currently hard wired.
+        /// </summary>
         private static readonly TimeSpan SyncPeriod = TimeSpan.FromMinutes(5);
 
         /// <summary>
@@ -242,7 +246,7 @@ namespace SuiteCRMAddIn
                 {
                     if (HasCrmUserSession && settings.SyncCalendar)
                     {
-                        new Thread(() => _appointmentSyncing.StartSync())
+                        new Thread(() => _appointmentSyncing.SynchroniseAll())
                             .Start();
 
                         new Thread(() => _taskSyncing.StartSync())
