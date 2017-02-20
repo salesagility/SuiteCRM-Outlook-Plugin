@@ -82,15 +82,15 @@ namespace SuiteCRMAddIn
             }
         }
         [DefaultSettingValue("False"), UserScopedSetting, DebuggerNonUserCode]
-        public bool ArchiveAttachmentsDefault
+        public bool ArchiveAttachments
         {
             get
             {
-                return (bool)this["ArchiveAttachmentsDefault"];
+                return (bool)this["ArchiveAttachments"];
             }
             set
             {
-                this["ArchiveAttachmentsDefault"] = value;
+                this["ArchiveAttachments"] = value;
             }
         }
         [DebuggerNonUserCode, UserScopedSetting, DefaultSettingValue("False")]

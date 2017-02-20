@@ -119,7 +119,7 @@ namespace SuiteCRMAddIn
             this.chkEnableLDAPAuthentication.Checked = this.settings.IsLDAPAuthentication;
             this.txtLDAPAuthenticationKey.Text = this.settings.LDAPKey;
 
-            this.cbEmailAttachments.Checked = settings.ArchiveAttachmentsDefault;
+            this.cbEmailAttachments.Checked = settings.ArchiveAttachments;
             this.checkBoxAutomaticSearch.Checked = true;
             this.cbShowCustomModules.Checked = settings.ShowCustomModules;
             this.txtSyncMaxRecords.Text = this.settings.SyncMaxRecords.ToString();
@@ -326,7 +326,7 @@ namespace SuiteCRMAddIn
 
             settings.LicenceKey = licenceText.Text.Trim();
 
-            settings.ArchiveAttachmentsDefault = this.cbEmailAttachments.Checked;
+            settings.ArchiveAttachments = this.cbEmailAttachments.Checked;
             settings.AutomaticSearch = true;
             settings.ShowCustomModules = this.cbShowCustomModules.Checked;
             settings.PopulateContextLookupList = this.checkBoxShowRightClick.Checked;

@@ -1,17 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Runtime.InteropServices;
-using SuiteCRMClient;
-using SuiteCRMClient.Email;
-using SuiteCRMClient.Exceptions;
-using SuiteCRMClient.Logging;
-using SuiteCRMClient.RESTObjects;
-using Outlook = Microsoft.Office.Interop.Outlook;
-
+﻿/**
+ * Outlook integration for SuiteCRM.
+ * @package Outlook integration for SuiteCRM
+ * @copyright SalesAgility Ltd http://www.salesagility.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+ * along with this program; if not, see http://www.gnu.org/licenses
+ * or write to the Free Software Foundation,Inc., 51 Franklin Street,
+ * Fifth Floor, Boston, MA 02110-1301  USA
+ *
+ * @author SalesAgility <info@salesagility.com>
+ */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Runtime.InteropServices;
+    using SuiteCRMClient;
+    using SuiteCRMClient.Email;
+    using SuiteCRMClient.Exceptions;
+    using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
+    using Outlook = Microsoft.Office.Interop.Outlook;
+
     public class EmailArchiving
     {
         private ILogger Log => Globals.ThisAddIn.Log;
@@ -125,31 +147,38 @@ namespace SuiteCRMAddIn.BusinessLogic
             objThread.Start();
         }
 
-        private clsEmailArchive SerialiseEmailObject(Outlook.MailItem objMail, EmailArchiveType archiveType)
+        private clsEmailArchive SerialiseEmailObject(Outlook.MailItem mail, EmailArchiveType archiveType)
         {
-            clsEmailArchive objEmail = new clsEmailArchive();
-            objEmail.From = objMail.SenderEmailAddress;
-            objEmail.To = "";
-            foreach (Outlook.Recipient objRecepient in objMail.Recipients)
+            clsEmailArchive mailArchive = new clsEmailArchive();
+            mailArchive.From = mail.SenderEmailAddress;
+            mailArchive.To = "";
+
+            Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {mail.Subject} dated {mail.SentOn}.");
+
+            foreach (Outlook.Recipient objRecepient in mail.Recipients)
             {
-                if (objEmail.To == "")
-                    objEmail.To = objRecepient.Address;
+                if (mailArchive.To == "")
+                    mailArchive.To = objRecepient.Address;
                 else
-                    objEmail.To += ";" + objRecepient.Address;
+                    mailArchive.To += ";" + objRecepient.Address;
             }
-            objEmail.Subject = objMail.Subject;
-            objEmail.Body = objMail.Body;
-            objEmail.HTMLBody = objMail.HTMLBody;
-            objEmail.ArchiveType = archiveType;
-            foreach (Outlook.Attachment objMailAttachments in objMail.Attachments)
+            mailArchive.Subject = mail.Subject;
+            mailArchive.Body = mail.Body;
+            mailArchive.HTMLBody = mail.HTMLBody;
+            mailArchive.ArchiveType = archiveType;
+            if (settings.ArchiveAttachments)
             {
-                objEmail.Attachments.Add(new clsEmailAttachments
+                foreach (Outlook.Attachment objMailAttachments in mail.Attachments)
                 {
-                    DisplayName = objMailAttachments.DisplayName,
-                    FileContentInBase64String = GetAttachmentBytes(objMailAttachments, objMail)
-                });
+                    mailArchive.Attachments.Add(new clsEmailAttachments
+                    {
+                        DisplayName = objMailAttachments.DisplayName,
+                        FileContentInBase64String = GetAttachmentBytes(objMailAttachments, mail)
+                    });
+                }
             }
-            return objEmail;
+
+            return mailArchive;
         }
 
         private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = "")
@@ -178,6 +207,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         public byte[] GetAttachmentBytes(Outlook.Attachment objMailAttachment, Outlook.MailItem objMail)
         {
             byte[] strRet = null;
+
+            Log.Info($"EmailArchiving.GetAttachmentBytes: serialising attachment '{objMailAttachment.FileName}' of email '{objMail.Subject}'.");
+
             if (objMailAttachment != null)
             {
                 var temporaryAttachmentPath = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath";
@@ -334,7 +366,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 mailItem.Categories = "SuiteCRM";
                 mailItem.Save();
                 var warnings = new List<System.Exception>();
-                if (settings.ArchiveAttachmentsDefault)
+                if (settings.ArchiveAttachments)
                 {
                     foreach (Outlook.Attachment attachment in mailItem.Attachments)
                     {

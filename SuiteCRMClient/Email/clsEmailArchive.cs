@@ -103,8 +103,10 @@ namespace SuiteCRMClient.Email
                           };
                         var contactReturn = CrmRestServer.GetCrmResponse<RESTObjects.eContacts>("get_entry_list", contactData);
 
-                        if (contactReturn.entry_list.Count > 0)
+                        if (contactReturn.entry_list != null && contactReturn.entry_list.Count > 0)
+                        {
                             arrRet.Add(contactReturn.entry_list[0].id);
+                        }
                         arrCheckedList.Add(strEmail);
                     }
                 }
