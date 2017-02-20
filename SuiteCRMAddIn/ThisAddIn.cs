@@ -44,7 +44,7 @@ namespace SuiteCRMAddIn
     {
         public static readonly string AddInTitle, AddInVersion;
 
-        public SuiteCRMClient.clsUsersession SuiteCRMUserSession;
+        public SuiteCRMClient.UserSession SuiteCRMUserSession;
         private clsSettings settings;
         private Outlook.Explorer objExplorer;
         public Office.CommandBarPopup objSuiteCRMMenuBar2007;
@@ -509,11 +509,11 @@ namespace SuiteCRMAddIn
                 string strUsername = settings.username;
                 string strPassword = settings.password;                
 
-                SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "","", log);
+                SuiteCRMUserSession = new SuiteCRMClient.UserSession("", "", "","", log);
                 string strURL = settings.host;
                 if (strURL != "")
                 {
-                    SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(strURL, strUsername, strPassword, settings.LDAPKey, log);
+                    SuiteCRMUserSession = new SuiteCRMClient.UserSession(strURL, strUsername, strPassword, settings.LDAPKey, log);
                     SuiteCRMUserSession.AwaitingAuthentication = true;
                     try
                     {

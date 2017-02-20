@@ -20,16 +20,17 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Text;
-using System.Security.Cryptography;
-using System.Globalization;
-using SuiteCRMClient.Logging;
-using SuiteCRMClient.RESTObjects;
-
 namespace SuiteCRMClient
 {
-    public class clsUsersession
+    using System;
+    using System.Text;
+    using System.Security.Cryptography;
+    using System.Globalization;
+    using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
+    using System.Runtime.CompilerServices;
+
+    public class UserSession
     {
         private readonly ILogger _log;
 
@@ -38,30 +39,34 @@ namespace SuiteCRMClient
         public string LDAPKey { get; set; }
         public string LDAPIV = "password";
         public bool AwaitingAuthentication { get; set; }
+
+        /// <summary>
+        /// The SuiteCRM session identifier.
+        /// </summary>
         public string id { get; set; }
 
         public bool IsLoggedIn => !string.IsNullOrEmpty(id);
 
         public bool NotLoggedIn => !IsLoggedIn;
 
-        public clsUsersession(string URL, string Username, string Password, string strLDAPKey, ILogger log)
+        public UserSession(string URL, string Username, string Password, string strLDAPKey, ILogger log)
         {
             _log = log;
-            if (URL != "")
+            if (URL != String.Empty)
             {
                 CrmRestServer.SuiteCRMURL = new Uri(URL);
                 SuiteCRMUsername = Username;
                 SuiteCRMPassword = Password;
                 LDAPKey = strLDAPKey;
             }
-            id = "";
+            id = String.Empty;
         }
 
         public void Login()
         {
             try
             {
-                if (LDAPKey != "" && LDAPKey.Trim().Length != 0)
+                if (! String.IsNullOrWhiteSpace(LDAPKey))
                 {
                     AuthenticateLDAP();
                 }
@@ -90,7 +95,7 @@ namespace SuiteCRMClient
                         loginReturn = CrmRestServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
                         if (loginReturn.ErrorName != null)
                         {
-                            id = "";
+                            id = String.Empty;
                             SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
                             throw new Exception(loginReturn.ErrorDescription);
                         }
@@ -111,73 +116,67 @@ namespace SuiteCRMClient
             catch (Exception ex)
             {
                 _log.Error("Login error", ex);
-                id = "";
+                id = String.Empty;
                 SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
                 throw;
             }
 
         }
 
+        /// <summary>
+        /// Authenticate against LDAP using my configured credentials.
+        /// </summary>
         public void AuthenticateLDAP()
         {
             try
             {
-                AwaitingAuthentication = true;
-                byte[] buffer = new MD5CryptoServiceProvider().ComputeHash(Encoding.UTF8.GetBytes(LDAPKey));
-                StringBuilder builder = new StringBuilder();
-                foreach (byte num in buffer)
+                this.AwaitingAuthentication = true;
+                this.id = this.AuthenticateLDAP(this.SuiteCRMUsername, this.SuiteCRMPassword, this.LDAPKey, this.LDAPIV);
+                if (String.IsNullOrWhiteSpace(this.id))
                 {
-                    builder.Append(num.ToString("x2", CultureInfo.InvariantCulture));
-                }
-                TripleDES edes = new TripleDESCryptoServiceProvider
-                {
-                    Mode = CipherMode.CBC,
-                    Key = Encoding.UTF8.GetBytes(builder.ToString(0, 0x18)),
-                    IV = Encoding.UTF8.GetBytes(LDAPIV),
-                    Padding = PaddingMode.Zeros
-                };
-                byte[] buffer2 = edes.CreateEncryptor().TransformFinalBlock(Encoding.UTF8.GetBytes(SuiteCRMPassword), 0, Encoding.UTF8.GetByteCount(SuiteCRMPassword));
-                StringBuilder builder2 = new StringBuilder();
-                foreach (byte num2 in buffer2)
-                {
-                    builder2.Append(num2.ToString("x2", CultureInfo.InvariantCulture));
-                }
-                object loginData = new
-                {
-                    @user_auth = new
-                    {
-                        @user_name = SuiteCRMUsername,
-                        @password = builder2.ToString()
-                    }
-                };
-                eSetEntryResult _result = SuiteCRMClient.CrmRestServer.GetCrmResponse<eSetEntryResult>("login", loginData);
-                if (_result.id == null || _result.id == "")
-                {
-                    id = "";
+                    this.id = String.Empty; // normalise away nulls
                     SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
-                    return;
                 }
-                id = _result.id;
-                SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
-                AwaitingAuthentication = false;
+                else
+                {
+                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                    this.AwaitingAuthentication = false;
+                }
             }
             catch (Exception)
             {
-                id = "";
+                id = String.Empty;
                 SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Authenticate against the LDAP server ?implied by the SuiteCRM server? using 
+        /// these credentials. Refactored out to assist unit testing.
+        /// </summary>
+        /// <param name="username">The username to authenticate.</param>
+        /// <param name="password">The password which should be associated with this username.</param>
+        /// <param name="key">The LDAP key entered by the user in the settings panel.</param>
+        /// <param name="iv">?Purpose unknown, but value is always 'password'?</param>
+        /// <returns></returns>
+        public string AuthenticateLDAP(string username, string password, string key, string iv)
+        {
+            // TODO: We should have a RestService which we pass around rather than using 
+            // the CrmRestServer static methods, but this will do for now.
+            return new LDAPAuthenticationHelper(username, password, key, iv, 
+                new RestService(CrmRestServer.SuiteCRMURL.ToString(), this._log)).Authenticate();
         }
 
         public void LogOut()
         {
             try
             {
-                if (id != "")
+                if (! String.IsNullOrWhiteSpace( this.id))
                 {
                     object logoutData = new
                     {
-                        @session = id
+                        @session = this.id
                     };
                     var objRet = CrmRestServer.GetCrmResponse<object>("logout", logoutData);
                 }
@@ -186,6 +185,9 @@ namespace SuiteCRMClient
             {
                 _log.Error("Log out error", ex);
             }
+
+            this.id = String.Empty;
+            SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
         }
 
         public static string GetMD5Hash(string PlainText)

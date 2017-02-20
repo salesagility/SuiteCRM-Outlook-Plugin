@@ -339,6 +339,8 @@
 		<col def="S0">ISDotNetInstallerArgsCommit</col>
 		<col def="S0">ISDotNetInstallerArgsUninstall</col>
 		<col def="S0">ISDotNetInstallerArgsRollback</col>
+		<row><td>ISO19770_LocalTag</td><td>{75B31C08-8D84-4EB0-BD42-53BDB0610973}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ISO19770_SystemTag</td><td>{08C4F312-F8A0-4FBF-AE4B-357E8B6D5534}</td><td>CommonAppDataFolder</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td>{47DC3583-1B85-4B83-8898-D4057742C505}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>{ADE5A8CD-7623-41AE-8524-756C4159CB21}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.commo</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>{761371C8-C0DE-4546-ABEF-ED5E3900D48C}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.outlo</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
@@ -1052,6 +1054,9 @@
 	<table name="CreateFolder">
 		<col key="yes" def="s72">Directory_</col>
 		<col key="yes" def="s72">Component_</col>
+		<row><td>CommonAppDataFolder</td><td>ISO19770_SystemTag</td></row>
+		<row><td>INSTALLDIR</td><td>ISO19770_LocalTag</td></row>
+		<row><td>INSTALLDIR</td><td>ISO19770_SystemTag</td></row>
 		<row><td>INSTALLDIR</td><td>SuiteCRMAddIn.Primary_output</td></row>
 	</table>
 
@@ -1862,6 +1867,8 @@
 	<table name="FeatureComponents">
 		<col key="yes" def="s38">Feature_</col>
 		<col key="yes" def="s72">Component_</col>
+		<row><td>AlwaysInstall</td><td>ISO19770_LocalTag</td></row>
+		<row><td>AlwaysInstall</td><td>ISO19770_SystemTag</td></row>
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT</td></row>
 		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td></row>
 		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td></row>
@@ -2031,6 +2038,8 @@
 		<col def="S0">FTPLocation</col>
 		<col def="S0">HTTPLocation</col>
 		<col def="S0">Miscellaneous</col>
+		<row><td>ISO19770_LocalTag</td><td/><td/><td>_2DB9A0FC_8B4F_413D_883F_7B8DBC4C4CAA_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ISO19770_SystemTag</td><td/><td/><td>_A79026B6_3537_45A6_A427_6AEC2528812D_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td/><td/><td>_30B7A77B_5D1A_4D6F_BD4D_E2B0995BFFFF_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td/><td/><td>_DF607E28_DB8D_49DD_B8C4_33BF0DAA73E7_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td/><td/><td>_6F591EF1_6819_4279_A964_8C9A9575396E_FILTER</td><td/><td/><td/><td/></row>
@@ -3763,6 +3772,7 @@
 		<row><td>SfwCreatorName</td><td>SalesAgility</td></row>
 		<row><td>SfwLicensorName</td><td>SalesAgility</td></row>
 		<row><td>TagCreatorName</td><td>SalesAgility</td></row>
+		<row><td>TagCreatorRegid</td><td>regid.2005-12.com.salesagility</td></row>
 		<row><td>UniqueId</td><td>A784C437-58CF-4495-BE4A-F77657600001</td></row>
 	</table>
 
@@ -4016,6 +4026,8 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>SccEnabled</td><td>0</td></row>
 		<row><td>SccPath</td><td/></row>
 		<row><td>SchemaVersion</td><td>776</td></row>
+		<row><td>SwidtagLocalComponent</td><td>ISO19770_LocalTag</td></row>
+		<row><td>SwidtagSystemComponent</td><td>ISO19770_SystemTag</td></row>
 		<row><td>Type</td><td>MSIE</td></row>
 	</table>
 

@@ -16,7 +16,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     {
         private ILogger Log => Globals.ThisAddIn.Log;
 
-        private clsUsersession SuiteCRMUserSession => Globals.ThisAddIn.SuiteCRMUserSession;
+        private UserSession SuiteCRMUserSession => Globals.ThisAddIn.SuiteCRMUserSession;
 
         private clsSettings settings => Globals.ThisAddIn.Settings;
 

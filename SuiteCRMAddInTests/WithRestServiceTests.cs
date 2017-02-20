@@ -20,15 +20,29 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddInTests
 {
+    using SuiteCRMAddIn.Tests;
+    using SuiteCRMClient;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+
     /// <summary>
-    /// The sync state of an item specified type. Contrary to appearances this 
-    /// file is not a backup or a mistake but is vital to the working of the system!
+    /// An abstract superclass for test classes which need a REST service.
     /// </summary>
-    /// <typeparam name="ItemType">The type of the item to be/being synced.</typeparam>
-    public abstract class SyncState<ItemType>: SyncState
+    public abstract class WithRestServiceTests : WithLoggerTests
     {
-        public ItemType OutlookItem { get; set; }
+        /// <summary>
+        /// A lot of the things we will want to test require access to a REST service.
+        /// </summary>
+        protected RestService service;
+
+        public WithRestServiceTests()
+        {
+            this.service = new RestService("http://demo.suitecrm.com/suitecrm77/", this.Log);
+        }
     }
 }

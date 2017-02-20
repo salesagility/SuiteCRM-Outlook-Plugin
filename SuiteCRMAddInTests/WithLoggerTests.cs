@@ -20,15 +20,32 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.Tests
 {
+    using System.Collections.Generic;
+    using SuiteCRMClient.Logging;
+
     /// <summary>
-    /// The sync state of an item specified type. Contrary to appearances this 
-    /// file is not a backup or a mistake but is vital to the working of the system!
+    /// An abstract superclass for test classes which need a logger.
     /// </summary>
-    /// <typeparam name="ItemType">The type of the item to be/being synced.</typeparam>
-    public abstract class SyncState<ItemType>: SyncState
+    public abstract class WithLoggerTests
     {
-        public ItemType OutlookItem { get; set; }
+        /// <summary>
+        /// Many of the things we test need access to a logger.
+        /// </summary>
+        protected readonly ILogger Log;
+
+        /// <summary>
+        /// Construct a new instance of WithLoggerTests.
+        /// </summary>
+        public WithLoggerTests()
+        {
+            this.Log = Log4NetLogger.FromFilePath("add-in-tests", "c:\\temp\\suitecrmoutlook-test.log", () => GetLogHeader());
+        }
+
+        private IEnumerable<string> GetLogHeader()
+        {
+            yield return "Froboz";
+        }
     }
 }

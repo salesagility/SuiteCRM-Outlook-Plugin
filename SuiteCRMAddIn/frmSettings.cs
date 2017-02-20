@@ -94,7 +94,7 @@ namespace SuiteCRMAddIn
                 AddInVersionLabel.Text = "Version " + ThisAddIn.AddInVersion;
 
                 if (Globals.ThisAddIn.SuiteCRMUserSession == null)
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession("", "", "", "", Log);
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.UserSession("", "", "", "", Log);
 
                 Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                 LoadSettings();
@@ -213,7 +213,7 @@ namespace SuiteCRMAddIn
                     {
                         txtLDAPAuthenticationKey.Text = null;
                     }
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Log);
+                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.UserSession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Log);
 
                     if (chkEnableLDAPAuthentication.Checked && txtLDAPAuthenticationKey.Text.Trim().Length != 0)
                     {
@@ -298,7 +298,7 @@ namespace SuiteCRMAddIn
                 {
                     txtLDAPAuthenticationKey.Text = null;
                 }
-                Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.clsUsersession(txtURL.Text.Trim(),
+                Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.UserSession(txtURL.Text.Trim(),
                     txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Log);
                 Globals.ThisAddIn.SuiteCRMUserSession.Login();
                 if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)

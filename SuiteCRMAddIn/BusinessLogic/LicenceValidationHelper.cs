@@ -69,26 +69,18 @@
                     parameters["public_key"] = this.applicationKey;
                     parameters["key"] = this.licenceKey;
 
-                    using (var asHttp = this.service.CreateGetRequest(parameters).GetResponse() as HttpWebResponse)
+                    using (var response = this.service.CreateGetRequest(parameters).GetResponse() as HttpWebResponse)
                     {
-
-                        switch (asHttp.StatusCode)
-                        {
-                            case HttpStatusCode.OK:
-                                /* if the licence validation server says OK, that's OK */
-                                result = service.GetPayload<LicenceValidation>(asHttp).validated;
-                                break;
-                            case HttpStatusCode.InternalServerError:
-                                /* if the licence validation server breaks, treat that as OK */
-                                result = true;
-                                break;
-                        }
+                        result = InterpretStatusCode(response);
                     }
                 }
                 catch (WebException badConnection)
                 {
                     switch (badConnection.Status)
                     {
+                        case WebExceptionStatus.ProtocolError:
+                            result = InterpretStatusCode((HttpWebResponse)badConnection.Response);
+                            break;
                         case WebExceptionStatus.Timeout:
                             /* if the licence validation server fails to respond, treat that as OK */
                             result = true;
@@ -104,7 +96,40 @@
             }
             catch (Exception any)
             {
-                this.logger.Error("LicenceValidationHelper.Validate", any);
+                this.logger.Error("LicenceValidationHelper.Validate ", any);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Interpret the status code returned by the licence validation API. 200 is good,
+        /// 500 is bad but acceptable, 400 is not acceptable.
+        /// </summary>
+        /// <param name="response">A response assumed to be from the validation server.</param>
+        /// <returns>True if validation accepted else false.</returns>
+        private bool InterpretStatusCode(HttpWebResponse response)
+        {
+            bool result;
+
+            switch (response.StatusCode)
+            {
+                case HttpStatusCode.OK:
+                    /* if the licence validation server says OK, that's OK */
+                    result = service.GetPayload<LicenceValidation>(response).validated;
+                    break;
+                case HttpStatusCode.InternalServerError:
+                    /* if the licence validation server breaks, treat that as OK */
+                    result = true;
+                    break;
+                case HttpStatusCode.BadRequest:
+                    /* that's a conventionally signalled fail. */
+                    result = false;
+                    break;
+                default:
+                    logger.Warn(String.Format("Unexpected status code {}", response.StatusCode));
+                    result = false;
+                    break;
             }
 
             return result;
