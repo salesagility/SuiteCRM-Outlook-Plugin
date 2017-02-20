@@ -1,14 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
-using SuiteCRMClient;
-using SuiteCRMClient.RESTObjects;
-using SuiteCRMClient.Logging;
-using Outlook = Microsoft.Office.Interop.Outlook;
-
+﻿/**
+ * Outlook integration for SuiteCRM.
+ * @package Outlook integration for SuiteCRM
+ * @copyright SalesAgility Ltd http://www.salesagility.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+ * along with this program; if not, see http://www.gnu.org/licenses
+ * or write to the Free Software Foundation,Inc., 51 Franklin Street,
+ * Fifth Floor, Boston, MA 02110-1301  USA
+ *
+ * @author SalesAgility <info@salesagility.com>
+ */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Newtonsoft.Json;
+    using SuiteCRMClient;
+    using SuiteCRMClient.RESTObjects;
+    using SuiteCRMClient.Logging;
+    using Outlook = Microsoft.Office.Interop.Outlook;
+
     public class ContactSyncing: Syncing<Outlook.ContactItem>
     {
         public ContactSyncing(SyncContext context)
@@ -109,19 +131,91 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private SyncState<Outlook.ContactItem> UpdateFromCrm(Outlook.MAPIFolder contactFolder, eEntryValue oResult)
         {
+            SyncState<Outlook.ContactItem> result;
             dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
+            String id = dResult.id.value.ToString();
 
-            var oItem = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == dResult.id.value.ToString());
-            if (oItem == null)
+            if (ShouldSyncContact(dResult))
             {
-                if (dResult.sync_contact.value.ToString() != "True")
-                {
-                    Log.Warn("not sync!");
-                    return null;
-                }
+                Log.Info(
+                    string.Format(
+                        "ContactSyncing.UpdateFromCrm, entry id is '{0}', sync_contact is false, not syncing",
+                        id));
+                result = null;
+            }
+            else
+            {
+                Log.Info(
+                    string.Format(
+                        "ContactSyncing.UpdateFromCrm, entry id is '{0}', sync_contact is true, syncing",
+                        id));
 
-                Log.Warn("    default sync");
-                Outlook.ContactItem cItem = contactFolder.Items.Add(Outlook.OlItemType.olContactItem);
+                var oItem = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == dResult.id.value.ToString());
+                if (oItem == null)
+                {
+                    Log.Info(
+                        string.Format(
+                            "ContactSyncing.UpdateFromCrm, entry id is '{0}', creating in Outlook.",
+                            id));
+
+                    Outlook.ContactItem cItem = ConstructOutlookItemFromCrmItem(contactFolder, dResult);
+                    var newState = new ContactSyncState
+                    {
+                        OutlookItem = cItem,
+                        OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
+                        CrmEntryId = dResult.id.value.ToString(),
+                    };
+                    ItemsSyncState.Add(newState);
+                    Log.Warn(cItem.FullName + "     is saving with " + cItem.Sensitivity);
+                    cItem.Save();
+                    result = newState;
+                }
+                else
+                {
+                    Log.Info(
+                        string.Format(
+                            "ContactSyncing.UpdateFromCrm, entry id is '{0}', modifying in Outlook.",
+                            id));
+
+                    result = UpdateExistingOutlookItemFromCrm(dResult, oItem);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Return true if this CRM contact should be synchronised with Outlook.
+        /// </summary>
+        /// <param name="crmContact">The CRM contact.</param>
+        /// <returns>true if this CRM contact should be synchronised with Outlook.</returns>
+        private bool ShouldSyncContact(dynamic crmContact)
+        {
+            bool result = false;
+            String stringValue = crmContact.sync_contact.value.ToString();
+
+            try
+            {
+                result = Boolean.Parse(stringValue);
+            }
+            catch (FormatException fex)
+            {
+                Log.Warn(
+                    String.Format(
+                        "ContactSyncing.ShouldSyncContact: unexpected format for sync_contact, '{0}'", 
+                        stringValue));
+            }
+
+            return result;
+        }
+
+        private SyncState<Outlook.ContactItem> UpdateExistingOutlookItemFromCrm(dynamic dResult, SyncState<Outlook.ContactItem> oItem)
+        {
+            Outlook.ContactItem cItem = oItem.OutlookItem;
+            Outlook.UserProperty oProp = cItem.UserProperties["SOModifiedDate"];
+
+            if (oProp.Value != dResult.date_modified.value.ToString())
+            {
                 cItem.FirstName = dResult.first_name.value.ToString();
                 cItem.LastName = dResult.last_name.value.ToString();
                 cItem.Email1Address = dResult.email1.value.ToString();
@@ -133,78 +227,65 @@ namespace SuiteCRMAddIn.BusinessLogic
                 cItem.BusinessAddressCity = dResult.primary_address_city.value.ToString();
                 cItem.BusinessAddressCountry = dResult.primary_address_country.value.ToString();
                 cItem.BusinessAddressPostalCode = dResult.primary_address_postalcode.value.ToString();
-                cItem.BusinessAddressState = dResult.primary_address_state.value.ToString();
-                cItem.BusinessAddressStreet = dResult.primary_address_street.value.ToString();
+
+                if (dResult.primary_address_street.value != null)
+                    cItem.BusinessAddressStreet = dResult.primary_address_street.value.ToString();
                 cItem.Body = dResult.description.value.ToString();
-                if (dResult.account_name != null)
+                cItem.Account = cItem.CompanyName = "";
+                if (dResult.account_name != null && dResult.account_name.value != null)
                 {
                     cItem.Account = dResult.account_name.value.ToString();
                     cItem.CompanyName = dResult.account_name.value.ToString();
                 }
+
                 cItem.BusinessFaxNumber = dResult.phone_fax.value.ToString();
                 cItem.Title = dResult.salutation.value.ToString();
-
-                Outlook.UserProperty oProp = cItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+                if (oProp == null)
+                    oProp = cItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
                 oProp.Value = dResult.date_modified.value.ToString();
-                Outlook.UserProperty oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+                Outlook.UserProperty oProp2 = cItem.UserProperties["SEntryID"];
+                if (oProp2 == null)
+                    oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
                 oProp2.Value = dResult.id.value.ToString();
-                var newState = new ContactSyncState
-                {
-                    OutlookItem = cItem,
-                    OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
-                    CrmEntryId = dResult.id.value.ToString(),
-                };
-                ItemsSyncState.Add(newState);
-                Log.Warn(cItem.FullName + "     is saving with " + cItem.Sensitivity);
+                Log.Warn("    save not default");
+                Log.Warn(cItem.FullName + "     is saving with" + cItem.Sensitivity);
                 cItem.Save();
-                return newState;
             }
-            else
+            Log.Warn((string)(cItem.FullName + " dResult.date_modified= " + dResult.date_modified.ToString()));
+            oItem.OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
+            return oItem;
+        }
+
+        private static Outlook.ContactItem ConstructOutlookItemFromCrmItem(Outlook.MAPIFolder contactFolder, dynamic dResult)
+        {
+            Outlook.ContactItem cItem = contactFolder.Items.Add(Outlook.OlItemType.olContactItem);
+            cItem.FirstName = dResult.first_name.value.ToString();
+            cItem.LastName = dResult.last_name.value.ToString();
+            cItem.Email1Address = dResult.email1.value.ToString();
+            cItem.BusinessTelephoneNumber = dResult.phone_work.value.ToString();
+            cItem.HomeTelephoneNumber = dResult.phone_home.value.ToString();
+            cItem.MobileTelephoneNumber = dResult.phone_mobile.value.ToString();
+            cItem.JobTitle = dResult.title.value.ToString();
+            cItem.Department = dResult.department.value.ToString();
+            cItem.BusinessAddressCity = dResult.primary_address_city.value.ToString();
+            cItem.BusinessAddressCountry = dResult.primary_address_country.value.ToString();
+            cItem.BusinessAddressPostalCode = dResult.primary_address_postalcode.value.ToString();
+            cItem.BusinessAddressState = dResult.primary_address_state.value.ToString();
+            cItem.BusinessAddressStreet = dResult.primary_address_street.value.ToString();
+            cItem.Body = dResult.description.value.ToString();
+            if (dResult.account_name != null)
             {
-                Outlook.ContactItem cItem = oItem.OutlookItem;
-                Outlook.UserProperty oProp = cItem.UserProperties["SOModifiedDate"];
-
-                if (oProp.Value != dResult.date_modified.value.ToString())
-                {
-                    cItem.FirstName = dResult.first_name.value.ToString();
-                    cItem.LastName = dResult.last_name.value.ToString();
-                    cItem.Email1Address = dResult.email1.value.ToString();
-                    cItem.BusinessTelephoneNumber = dResult.phone_work.value.ToString();
-                    cItem.HomeTelephoneNumber = dResult.phone_home.value.ToString();
-                    cItem.MobileTelephoneNumber = dResult.phone_mobile.value.ToString();
-                    cItem.JobTitle = dResult.title.value.ToString();
-                    cItem.Department = dResult.department.value.ToString();
-                    cItem.BusinessAddressCity = dResult.primary_address_city.value.ToString();
-                    cItem.BusinessAddressCountry = dResult.primary_address_country.value.ToString();
-                    cItem.BusinessAddressPostalCode = dResult.primary_address_postalcode.value.ToString();
-
-                    if (dResult.primary_address_street.value != null)
-                        cItem.BusinessAddressStreet = dResult.primary_address_street.value.ToString();
-                    cItem.Body = dResult.description.value.ToString();
-                    cItem.Account = cItem.CompanyName = "";
-                    if (dResult.account_name != null && dResult.account_name.value != null)
-                    {
-                        cItem.Account = dResult.account_name.value.ToString();
-                        cItem.CompanyName = dResult.account_name.value.ToString();
-                    }
-
-                    cItem.BusinessFaxNumber = dResult.phone_fax.value.ToString();
-                    cItem.Title = dResult.salutation.value.ToString();
-                    if (oProp == null)
-                        oProp = cItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
-                    oProp.Value = dResult.date_modified.value.ToString();
-                    Outlook.UserProperty oProp2 = cItem.UserProperties["SEntryID"];
-                    if (oProp2 == null)
-                        oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
-                    oProp2.Value = dResult.id.value.ToString();
-                    Log.Warn("    save not default");
-                    Log.Warn(cItem.FullName + "     is saving with" + cItem.Sensitivity);
-                    cItem.Save();
-                }
-                Log.Warn((string) (cItem.FullName + " dResult.date_modified= " + dResult.date_modified.ToString()));
-                oItem.OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
-                return oItem;
+                cItem.Account = dResult.account_name.value.ToString();
+                cItem.CompanyName = dResult.account_name.value.ToString();
             }
+            cItem.BusinessFaxNumber = dResult.phone_fax.value.ToString();
+            cItem.Title = dResult.salutation.value.ToString();
+
+            Outlook.UserProperty oProp = cItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
+            oProp.Value = dResult.date_modified.value.ToString();
+            Outlook.UserProperty oProp2 = cItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
+            oProp2.Value = dResult.id.value.ToString();
+            return cItem;
         }
 
         private void GetOutlookItems(Outlook.MAPIFolder taskFolder)
