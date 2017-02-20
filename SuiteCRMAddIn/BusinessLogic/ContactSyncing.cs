@@ -139,14 +139,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Info(
                     string.Format(
-                        "ContactSyncing.UpdateFromCrm, entry id is '{0}', sync_contact is false, not syncing",
-                        id));
-                result = null;
-            }
-            else
-            {
-                Log.Info(
-                    string.Format(
                         "ContactSyncing.UpdateFromCrm, entry id is '{0}', sync_contact is true, syncing",
                         id));
 
@@ -179,6 +171,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                     result = UpdateExistingOutlookItemFromCrm(dResult, oItem);
                 }
+            }
+            else
+            {
+                Log.Info(
+                    string.Format(
+                        "ContactSyncing.UpdateFromCrm, entry id is '{0}', sync_contact is false, not syncing",
+                        id));
+                result = null;
             }
 
             return result;
