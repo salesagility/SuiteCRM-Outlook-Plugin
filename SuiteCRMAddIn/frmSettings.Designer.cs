@@ -135,7 +135,7 @@ namespace SuiteCRMAddIn
             this.dtpAutoArchiveFrom.Location = new System.Drawing.Point(146, 339);
             this.dtpAutoArchiveFrom.Name = "dtpAutoArchiveFrom";
             this.dtpAutoArchiveFrom.Size = new System.Drawing.Size(94, 20);
-            this.dtpAutoArchiveFrom.TabIndex = 1;
+            this.dtpAutoArchiveFrom.TabIndex = 24;
             // 
             // label8
             // 
@@ -171,7 +171,7 @@ namespace SuiteCRMAddIn
             this.chkSyncContacts.Location = new System.Drawing.Point(15, 342);
             this.chkSyncContacts.Name = "chkSyncContacts";
             this.chkSyncContacts.Size = new System.Drawing.Size(95, 17);
-            this.chkSyncContacts.TabIndex = 16;
+            this.chkSyncContacts.TabIndex = 23;
             this.chkSyncContacts.Text = "Sync Contacts";
             this.chkSyncContacts.UseVisualStyleBackColor = true;
             // 
@@ -181,7 +181,7 @@ namespace SuiteCRMAddIn
             this.chkSyncCalendar.Location = new System.Drawing.Point(15, 319);
             this.chkSyncCalendar.Name = "chkSyncCalendar";
             this.chkSyncCalendar.Size = new System.Drawing.Size(95, 17);
-            this.chkSyncCalendar.TabIndex = 15;
+            this.chkSyncCalendar.TabIndex = 22;
             this.chkSyncCalendar.Text = "Sync Calendar";
             this.chkSyncCalendar.UseVisualStyleBackColor = true;
             // 
@@ -201,7 +201,7 @@ namespace SuiteCRMAddIn
             this.txtAutoSync.Multiline = true;
             this.txtAutoSync.Name = "txtAutoSync";
             this.txtAutoSync.Size = new System.Drawing.Size(336, 44);
-            this.txtAutoSync.TabIndex = 13;
+            this.txtAutoSync.TabIndex = 21;
             // 
             // tabPage2
             // 
@@ -234,9 +234,9 @@ namespace SuiteCRMAddIn
             this.chkShowConfirmationMessageArchive.CheckState = System.Windows.Forms.CheckState.Checked;
             this.chkShowConfirmationMessageArchive.Location = new System.Drawing.Point(26, 159);
             this.chkShowConfirmationMessageArchive.Name = "chkShowConfirmationMessageArchive";
-            this.chkShowConfirmationMessageArchive.Size = new System.Drawing.Size(267, 17);
-            this.chkShowConfirmationMessageArchive.TabIndex = 11;
-            this.chkShowConfirmationMessageArchive.Text = "Show confirmation message on Successful Archive";
+            this.chkShowConfirmationMessageArchive.Size = new System.Drawing.Size(269, 17);
+            this.chkShowConfirmationMessageArchive.TabIndex = 14;
+            this.chkShowConfirmationMessageArchive.Text = "Show Confirmation Message on Successful Archive";
             this.chkShowConfirmationMessageArchive.UseVisualStyleBackColor = true;
             // 
             // groupBox3
@@ -257,7 +257,7 @@ namespace SuiteCRMAddIn
             this.btnSelect.Location = new System.Drawing.Point(258, 43);
             this.btnSelect.Name = "btnSelect";
             this.btnSelect.Size = new System.Drawing.Size(57, 23);
-            this.btnSelect.TabIndex = 6;
+            this.btnSelect.TabIndex = 13;
             this.btnSelect.Text = "...";
             this.btnSelect.UseVisualStyleBackColor = true;
             this.btnSelect.Click += new System.EventHandler(this.btnSelect_Click);
@@ -267,47 +267,47 @@ namespace SuiteCRMAddIn
             this.label5.AutoSize = true;
             this.label5.Location = new System.Drawing.Point(8, 21);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(232, 13);
+            this.label5.Size = new System.Drawing.Size(243, 13);
             this.label5.TabIndex = 5;
-            this.label5.Text = "Maximum number of search results per modules:";
+            this.label5.Text = "Maximum Number of Search Results Per Modules:";
             // 
             // txtSyncMaxRecords
             // 
             this.txtSyncMaxRecords.Location = new System.Drawing.Point(258, 18);
             this.txtSyncMaxRecords.Name = "txtSyncMaxRecords";
             this.txtSyncMaxRecords.Size = new System.Drawing.Size(57, 20);
-            this.txtSyncMaxRecords.TabIndex = 4;
+            this.txtSyncMaxRecords.TabIndex = 11;
             // 
             // cbShowCustomModules
             // 
             this.cbShowCustomModules.AutoSize = true;
             this.cbShowCustomModules.Location = new System.Drawing.Point(8, 47);
             this.cbShowCustomModules.Name = "cbShowCustomModules";
-            this.cbShowCustomModules.Size = new System.Drawing.Size(140, 17);
-            this.cbShowCustomModules.TabIndex = 2;
-            this.cbShowCustomModules.Text = "Include custom modules";
+            this.cbShowCustomModules.Size = new System.Drawing.Size(142, 17);
+            this.cbShowCustomModules.TabIndex = 12;
+            this.cbShowCustomModules.Text = "Include Custom Modules";
             this.cbShowCustomModules.UseVisualStyleBackColor = true;
             this.cbShowCustomModules.Click += new System.EventHandler(this.cbShowCustomModules_Click);
             // 
             // checkBoxShowRightClick
             // 
             this.checkBoxShowRightClick.AutoSize = true;
-            this.checkBoxShowRightClick.Location = new System.Drawing.Point(21, 217);
+            this.checkBoxShowRightClick.Location = new System.Drawing.Point(26, 214);
             this.checkBoxShowRightClick.Name = "checkBoxShowRightClick";
-            this.checkBoxShowRightClick.Size = new System.Drawing.Size(239, 17);
-            this.checkBoxShowRightClick.TabIndex = 9;
-            this.checkBoxShowRightClick.Text = "Show SugarCRM records in right click menus";
+            this.checkBoxShowRightClick.Size = new System.Drawing.Size(251, 17);
+            this.checkBoxShowRightClick.TabIndex = 15;
+            this.checkBoxShowRightClick.Text = "Show SugarCRM Records in Right Click Menus";
             this.checkBoxShowRightClick.UseVisualStyleBackColor = true;
             this.checkBoxShowRightClick.Visible = false;
             // 
             // checkBoxAutomaticSearch
             // 
             this.checkBoxAutomaticSearch.AutoSize = true;
-            this.checkBoxAutomaticSearch.Location = new System.Drawing.Point(21, 253);
+            this.checkBoxAutomaticSearch.Location = new System.Drawing.Point(26, 250);
             this.checkBoxAutomaticSearch.Name = "checkBoxAutomaticSearch";
-            this.checkBoxAutomaticSearch.Size = new System.Drawing.Size(299, 17);
-            this.checkBoxAutomaticSearch.TabIndex = 1;
-            this.checkBoxAutomaticSearch.Text = "Automatically Search when the Archive window is opened";
+            this.checkBoxAutomaticSearch.Size = new System.Drawing.Size(304, 17);
+            this.checkBoxAutomaticSearch.TabIndex = 16;
+            this.checkBoxAutomaticSearch.Text = "Automatically Search when the Archive Window is Opened";
             this.checkBoxAutomaticSearch.UseVisualStyleBackColor = true;
             this.checkBoxAutomaticSearch.Visible = false;
             // 
@@ -316,9 +316,9 @@ namespace SuiteCRMAddIn
             this.cbEmailAttachments.AutoSize = true;
             this.cbEmailAttachments.Location = new System.Drawing.Point(26, 30);
             this.cbEmailAttachments.Name = "cbEmailAttachments";
-            this.cbEmailAttachments.Size = new System.Drawing.Size(145, 17);
-            this.cbEmailAttachments.TabIndex = 0;
-            this.cbEmailAttachments.Text = "Archive attachments also";
+            this.cbEmailAttachments.Size = new System.Drawing.Size(147, 17);
+            this.cbEmailAttachments.TabIndex = 10;
+            this.cbEmailAttachments.Text = "Archive Attachments Also";
             this.cbEmailAttachments.UseVisualStyleBackColor = true;
             // 
             // tabPage1
@@ -348,7 +348,7 @@ namespace SuiteCRMAddIn
             this.licenceText.Location = new System.Drawing.Point(78, 19);
             this.licenceText.Name = "licenceText";
             this.licenceText.Size = new System.Drawing.Size(207, 20);
-            this.licenceText.TabIndex = 1;
+            this.licenceText.TabIndex = 7;
             // 
             // licenceLabel
             // 
@@ -384,7 +384,7 @@ namespace SuiteCRMAddIn
             this.txtLDAPAuthenticationKey.Location = new System.Drawing.Point(78, 40);
             this.txtLDAPAuthenticationKey.Name = "txtLDAPAuthenticationKey";
             this.txtLDAPAuthenticationKey.Size = new System.Drawing.Size(207, 20);
-            this.txtLDAPAuthenticationKey.TabIndex = 1;
+            this.txtLDAPAuthenticationKey.TabIndex = 6;
             // 
             // chkEnableLDAPAuthentication
             // 
@@ -392,7 +392,7 @@ namespace SuiteCRMAddIn
             this.chkEnableLDAPAuthentication.Location = new System.Drawing.Point(9, 16);
             this.chkEnableLDAPAuthentication.Name = "chkEnableLDAPAuthentication";
             this.chkEnableLDAPAuthentication.Size = new System.Drawing.Size(161, 17);
-            this.chkEnableLDAPAuthentication.TabIndex = 0;
+            this.chkEnableLDAPAuthentication.TabIndex = 5;
             this.chkEnableLDAPAuthentication.Text = "Enable LDAP Authentication";
             this.chkEnableLDAPAuthentication.UseVisualStyleBackColor = true;
             this.chkEnableLDAPAuthentication.CheckedChanged += new System.EventHandler(this.chkEnableLDAPAuthentication_CheckedChanged);
@@ -420,7 +420,7 @@ namespace SuiteCRMAddIn
             this.btnTestLogin.Location = new System.Drawing.Point(292, 103);
             this.btnTestLogin.Name = "btnTestLogin";
             this.btnTestLogin.Size = new System.Drawing.Size(42, 23);
-            this.btnTestLogin.TabIndex = 7;
+            this.btnTestLogin.TabIndex = 4;
             this.btnTestLogin.Text = "&Test";
             this.btnTestLogin.UseVisualStyleBackColor = true;
             this.btnTestLogin.Click += new System.EventHandler(this.btnTestLogin_Click);
@@ -503,7 +503,7 @@ namespace SuiteCRMAddIn
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(387, 382);
-            this.tabControl1.TabIndex = 6;
+            this.tabControl1.TabIndex = 43;
             // 
             // InformationTabPage
             // 
@@ -544,9 +544,9 @@ namespace SuiteCRMAddIn
             this.DetailedLoggingCheckBox.AutoSize = true;
             this.DetailedLoggingCheckBox.Location = new System.Drawing.Point(9, 82);
             this.DetailedLoggingCheckBox.Name = "DetailedLoggingCheckBox";
-            this.DetailedLoggingCheckBox.Size = new System.Drawing.Size(102, 17);
-            this.DetailedLoggingCheckBox.TabIndex = 0;
-            this.DetailedLoggingCheckBox.Text = "Detailed logging";
+            this.DetailedLoggingCheckBox.Size = new System.Drawing.Size(106, 17);
+            this.DetailedLoggingCheckBox.TabIndex = 31;
+            this.DetailedLoggingCheckBox.Text = "Detailed Logging";
             this.DetailedLoggingCheckBox.UseVisualStyleBackColor = true;
             // 
             // LinkToLogFileDir
@@ -586,7 +586,7 @@ namespace SuiteCRMAddIn
             this.btnCancel.Location = new System.Drawing.Point(306, 390);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
-            this.btnCancel.TabIndex = 8;
+            this.btnCancel.TabIndex = 42;
             this.btnCancel.Text = "&Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
@@ -597,7 +597,7 @@ namespace SuiteCRMAddIn
             this.btnSave.Location = new System.Drawing.Point(225, 390);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(75, 23);
-            this.btnSave.TabIndex = 7;
+            this.btnSave.TabIndex = 41;
             this.btnSave.Text = "&Save";
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
