@@ -26,6 +26,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using Newtonsoft.Json;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
@@ -307,6 +308,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             DateTime date_start)
         {
             Outlook.AppointmentItem aItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
+
+            LogItemAction(aItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
+
             aItem.Subject = crmItem.name.value.ToString();
             aItem.Body = crmItem.description.value.ToString();
             if (!string.IsNullOrWhiteSpace(crmItem.date_start.value.ToString()))
@@ -352,7 +356,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 CrmEntryId = crmId,
             };
             ItemsSyncState.Add(newState);
-            LogItemAction(newState.OutlookItem, "AppointmentSyncing.UpdateExistingOutlookItemFromCrm, saved item");
+            LogItemAction(newState.OutlookItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook, saved item");
 
             aItem.Save();
             return newState;
@@ -543,13 +547,20 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="message">The message to be logged.</param>
         private void LogItemAction(Outlook.AppointmentItem olItem, string message)
         {
-            Outlook.UserProperty olPropertyEntryId = olItem.UserProperties["SEntryID"];
-            string crmId = olPropertyEntryId == null ?
-                "[not present]" :
-                olPropertyEntryId.Value;
-            Log.Info(
-                String.Format("{0}:\n\tOutlook Id  : {1}\n\tCRM Id      : {2}\n\tSubject     : '{3}'\n\tSensitivity : {4}",
-                message, olItem.EntryID, crmId, olItem.Subject, olItem.Sensitivity));
+            try
+            {
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties["SEntryID"];
+                string crmId = olPropertyEntryId == null ?
+                    "[not present]" :
+                    olPropertyEntryId.Value;
+                Log.Info(
+                    String.Format("{0}:\n\tOutlook Id  : {1}\n\tCRM Id      : {2}\n\tSubject     : '{3}'\n\tSensitivity : {4}",
+                    message, olItem.EntryID, crmId, olItem.Subject, olItem.Sensitivity));
+            }
+            catch (COMException)
+            {
+                // Ignore: happens if the outlook item is already deleted.
+            }
         }
 
         /// <summary>
@@ -594,9 +605,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="item">The sync state of the item to remove.</param>
         private void RemoveItemSyncState(SyncState<Outlook.AppointmentItem> item)
         {
-            ItemsSyncState.Remove(item);
             LogItemAction(item.OutlookItem, "AppointmentSyncing.RemoveItemSyncState, removed item from queue");
-
+            ItemsSyncState.Remove(item);
         }
 
         /// <summary>
@@ -660,13 +670,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             return sCID;
         }
 
-        private void SetRecipients(Outlook.AppointmentItem aItem, string sMeetingID, string sModule)
+        private void SetRecipients(Outlook.AppointmentItem olAppointment, string sMeetingID, string sModule)
         {
-            aItem.MeetingStatus = Outlook.OlMeetingStatus.olMeeting;
-            int iCount = aItem.Recipients.Count;
+            olAppointment.MeetingStatus = Outlook.OlMeetingStatus.olMeeting;
+            int iCount = olAppointment.Recipients.Count;
             for (int iItr = 1; iItr <= iCount; iItr++)
             {
-                aItem.Recipients.Remove(1);
+                olAppointment.Recipients.Remove(1);
             }
 
             string[] invitee_categories = { "users", "contacts", "leads" };
@@ -686,10 +696,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                         string phone_work = dResult1.phone_work.value.ToString();
                         string sTemp =
-                            (sModule == "Meetings") || String.IsNullOrEmpty(phone_work) || String.IsNullOrWhiteSpace(phone_work) ?
+                            (sModule == "Meetings") || String.IsNullOrWhiteSpace(phone_work) ?
                                 dResult1.email1.value.ToString() :
                                 dResult1.email1.value.ToString() + ":" + phone_work;
-                        aItem.Recipients.Add(sTemp);
+
+                        if (!String.IsNullOrWhiteSpace(sTemp))
+                        {
+                            olAppointment.Recipients.Add(sTemp);
+                        }
                     }
                 }
             }

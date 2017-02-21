@@ -204,7 +204,6 @@ namespace SuiteCRMAddIn
         {
             log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log", () => GetLogHeader(settings));
             clsSuiteCRMHelper.SetLog(log);
-            SuiteCRMClient.CrmRestServer.SetLog(log);
         }
 
         private void LogKeySettings(clsSettings settings)
@@ -506,14 +505,16 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                string strUsername = settings.username;
-                string strPassword = settings.password;                
-
-                SuiteCRMUserSession = new SuiteCRMClient.UserSession("", "", "","", log);
-                string strURL = settings.host;
-                if (strURL != "")
+                if (settings.host != "")
                 {
-                    SuiteCRMUserSession = new SuiteCRMClient.UserSession(strURL, strUsername, strPassword, settings.LDAPKey, log);
+                    SuiteCRMUserSession = 
+                        new SuiteCRMClient.UserSession(
+                            settings.host,
+                            settings.username,
+                            settings.password, 
+                            settings.LDAPKey, 
+                            log, 
+                            Settings.RestTimeout);
                     SuiteCRMUserSession.AwaitingAuthentication = true;
                     try
                     {
@@ -534,6 +535,13 @@ namespace SuiteCRMAddIn
                         // Swallow exception(!)
                     }
                 }
+                else
+                {
+                    // We don't have a URL to connect to, dummy the connection.
+                    SuiteCRMUserSession =
+                        new SuiteCRMClient.UserSession("", "", "", "", log, Settings.RestTimeout);
+                }
+
                 SuiteCRMUserSession.AwaitingAuthentication = false;
             }
             catch (Exception ex)

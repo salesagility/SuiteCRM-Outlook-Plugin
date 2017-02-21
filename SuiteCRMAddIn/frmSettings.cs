@@ -94,7 +94,11 @@ namespace SuiteCRMAddIn
                 AddInVersionLabel.Text = "Version " + ThisAddIn.AddInVersion;
 
                 if (Globals.ThisAddIn.SuiteCRMUserSession == null)
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.UserSession("", "", "", "", Log);
+                {
+                    Globals.ThisAddIn.SuiteCRMUserSession =
+                        new SuiteCRMClient.UserSession(
+                            "", "", "", "", Log, settings.RestTimeout);
+                }
 
                 Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                 LoadSettings();
@@ -213,7 +217,14 @@ namespace SuiteCRMAddIn
                     {
                         txtLDAPAuthenticationKey.Text = null;
                     }
-                    Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.UserSession(txtURL.Text.Trim(), txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Log);
+                    Globals.ThisAddIn.SuiteCRMUserSession = 
+                        new SuiteCRMClient.UserSession(
+                            txtURL.Text.Trim(), 
+                            txtUsername.Text.Trim(), 
+                            txtPassword.Text.Trim(), 
+                            txtLDAPAuthenticationKey.Text.Trim(), 
+                            Log, 
+                            settings.RestTimeout);
 
                     if (chkEnableLDAPAuthentication.Checked && txtLDAPAuthenticationKey.Text.Trim().Length != 0)
                     {
@@ -298,8 +309,14 @@ namespace SuiteCRMAddIn
                 {
                     txtLDAPAuthenticationKey.Text = null;
                 }
-                Globals.ThisAddIn.SuiteCRMUserSession = new SuiteCRMClient.UserSession(txtURL.Text.Trim(),
-                    txtUsername.Text.Trim(), txtPassword.Text.Trim(), txtLDAPAuthenticationKey.Text.Trim(), Log);
+                Globals.ThisAddIn.SuiteCRMUserSession =
+                    new SuiteCRMClient.UserSession(
+                        txtURL.Text.Trim(),
+                        txtUsername.Text.Trim(),
+                        txtPassword.Text.Trim(),
+                        txtLDAPAuthenticationKey.Text.Trim(),
+                        Log, 
+                        Globals.ThisAddIn.Settings.RestTimeout);
                 Globals.ThisAddIn.SuiteCRMUserSession.Login();
                 if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                 {

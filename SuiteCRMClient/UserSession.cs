@@ -40,6 +40,8 @@ namespace SuiteCRMClient
         public string LDAPIV = "password";
         public bool AwaitingAuthentication { get; set; }
 
+        private CrmRestServer restServer;
+
         /// <summary>
         /// The SuiteCRM session identifier.
         /// </summary>
@@ -49,15 +51,34 @@ namespace SuiteCRMClient
 
         public bool NotLoggedIn => !IsLoggedIn;
 
-        public UserSession(string URL, string Username, string Password, string strLDAPKey, ILogger log)
+        public CrmRestServer RestServer
+        {
+            get { return this.restServer; }
+        }
+
+        /// <summary>
+        /// Construct a new instance of a UserSession. Note that all these parameters (except log) 
+        /// come from the settings object, and it would be much simpler to just pass that in; 
+        /// unfortunately, that's in the SuiteCRMAddIn assembly, and that is dependent on this, so
+        /// can't be included. TODO: see if this could be refactored.
+        /// </summary>
+        /// <param name="URL">The URL of the rest handler to connect to.</param>
+        /// <param name="Username">The username to authenticate as.</param>
+        /// <param name="Password">The password to authenticate with.</param>
+        /// <param name="ldapKey">The LDAP key to authenticate with.</param>
+        /// <param name="log">The logger to log to.</param>
+        /// <param name="timeout">The timeout for calls to the URL.</param>
+        public UserSession(string URL, string Username, string Password, string ldapKey, ILogger log, int timeout)
         {
             _log = log;
+            this.restServer = new CrmRestServer(log, timeout);
+
             if (URL != String.Empty)
             {
-                CrmRestServer.SuiteCRMURL = new Uri(URL);
+                this.restServer.SuiteCRMURL = new Uri(URL);
                 SuiteCRMUsername = Username;
                 SuiteCRMPassword = Password;
-                LDAPKey = strLDAPKey;
+                LDAPKey = ldapKey;
             }
             id = String.Empty;
         }
@@ -81,7 +102,7 @@ namespace SuiteCRMClient
                             @password = GetMD5Hash(SuiteCRMPassword)
                         }
                     };
-                    var loginReturn = CrmRestServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
+                    var loginReturn = this.restServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
                     if (loginReturn.ErrorName != null)
                     {
                         loginData = new
@@ -92,7 +113,7 @@ namespace SuiteCRMClient
                                 @password = SuiteCRMPassword
                             }
                         };
-                        loginReturn = CrmRestServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
+                        loginReturn = this.restServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
                         if (loginReturn.ErrorName != null)
                         {
                             id = String.Empty;
@@ -162,10 +183,8 @@ namespace SuiteCRMClient
         /// <returns></returns>
         public string AuthenticateLDAP(string username, string password, string key, string iv)
         {
-            // TODO: We should have a RestService which we pass around rather than using 
-            // the CrmRestServer static methods, but this will do for now.
             return new LDAPAuthenticationHelper(username, password, key, iv, 
-                new RestService(CrmRestServer.SuiteCRMURL.ToString(), this._log)).Authenticate();
+                new RestService(this.restServer.SuiteCRMURL.ToString(), this._log)).Authenticate();
         }
 
         public void LogOut()
@@ -178,7 +197,7 @@ namespace SuiteCRMClient
                     {
                         @session = this.id
                     };
-                    var objRet = CrmRestServer.GetCrmResponse<object>("logout", logoutData);
+                    var objRet = this.restServer.GetCrmResponse<object>("logout", logoutData);
                 }
             }
             catch (Exception ex)
