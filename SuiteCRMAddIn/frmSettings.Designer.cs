@@ -267,9 +267,9 @@ namespace SuiteCRMAddIn
             this.label5.AutoSize = true;
             this.label5.Location = new System.Drawing.Point(8, 21);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(243, 13);
+            this.label5.Size = new System.Drawing.Size(223, 13);
             this.label5.TabIndex = 5;
-            this.label5.Text = "Maximum Number of Search Results Per Modules:";
+            this.label5.Text = "Maximum No. of Search Results Per Modules:";
             // 
             // txtSyncMaxRecords
             // 
