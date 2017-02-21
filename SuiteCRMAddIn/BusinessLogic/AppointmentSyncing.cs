@@ -747,7 +747,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var untouched = new HashSet<SyncState<Outlook.AppointmentItem>>(this.ItemsSyncState);
                 int nextOffset = -1; // offset of the next page of entries, if any.
 
-                for (int iOffset = 0; nextOffset != 0; iOffset = nextOffset)
+                for (int iOffset = 0; iOffset != nextOffset && iOffset != 0; iOffset = nextOffset)
                 {
                     /* get candidates for syncrhonisation from SuiteCRM one page at a time */
                     eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(sModule,
@@ -776,22 +776,19 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 try
                 {
-                    // TODO: unclear why this is only for 'meetings' and not for 'calls'. Bug #7?
-                    if (sModule == "Meetings")
+                    var itemsToBeDeletedFromOutlook = untouched.Where(a => a.ExistedInCrm && a.CrmType == sModule);
+                    foreach (var item in itemsToBeDeletedFromOutlook)
                     {
-                        var itemsToBeDeletedFromOutlook = untouched.Where(a => a.ExistedInCrm && a.CrmType == sModule);
-                        foreach (var item in itemsToBeDeletedFromOutlook)
+                        this.LogItemAction(item.OutlookItem, "AppointmentSyncing.SyncFolder, deleting item");
+                        try
                         {
-                            try
-                            {
-                                item.OutlookItem.Delete();
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("AppointmentSyncing.SyncFolder: Exception  oItem.oItem.Delete", ex);
-                            }
-                            RemoveItemSyncState(item);
+                            item.OutlookItem.Delete();
                         }
+                        catch (Exception ex)
+                        {
+                            Log.Error("AppointmentSyncing.SyncFolder: Exception  oItem.oItem.Delete", ex);
+                        }
+                        RemoveItemSyncState(item);
                     }
 
                     var itemsToBeAddedToCrm = untouched.Where(a => a.ShouldSyncWithCrm && !a.ExistedInCrm && a.CrmType == sModule);
@@ -853,7 +850,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
         /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
         /// <param name="oItem">The outlook item assumed to correspond with the CRM item.</param>
-        /// <returns></returns>
+        /// <returns>An appropriate sync state.</returns>
         private SyncState<Outlook.AppointmentItem> UpdateExistingOutlookItemFromCrm(
             string crmType, 
             dynamic crmItem, 
@@ -870,29 +867,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olAppointment.Body = crmItem.description.value.ToString();
                 if (!string.IsNullOrWhiteSpace(crmItem.date_start.value.ToString()))
                 {
-                    olAppointment.Start = date_start;
-                    int iMin = 0, iHour = 0;
-                    if (!string.IsNullOrWhiteSpace(crmItem.duration_minutes.value.ToString()))
-                    {
-                        iMin = int.Parse(crmItem.duration_minutes.value.ToString());
-                    }
-                    if (!string.IsNullOrWhiteSpace(crmItem.duration_hours.value.ToString()))
-                    {
-                        iHour = int.Parse(crmItem.duration_hours.value.ToString());
-                    }
-                    /* TODO: Why only meetings? Is this bug #7? */
-                    if (crmType == "Meetings")
-                    {
-                        olAppointment.Location = crmItem.location.value.ToString();
-                        olAppointment.End = olAppointment.Start;
-                        if (iHour > 0)
-                            olAppointment.End.AddHours(iHour);
-                        if (iMin > 0)
-                            olAppointment.End.AddMinutes(iMin);
-                        Log.Warn("    SetRecepients");
-                        SetRecipients(olAppointment, crmItem.id.value.ToString(), crmType);
-                    }
-                    olAppointment.Duration = iMin + iHour * 60;
+                    UpdateOutlookStartAndDuration(crmType, crmItem, date_start, olAppointment);
                 }
 
                 SetupSynchronisationPropertiesForOutlookItem(olAppointment, crmType, crmItem);
@@ -903,6 +878,36 @@ namespace SuiteCRMAddIn.BusinessLogic
             oItem.OModifiedDate = DateTime.ParseExact(crmItem.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
 
             return oItem;
+        }
+
+        /// <summary>
+        /// Update this Outlook appointment's start and duration from this CRM object.
+        /// </summary>
+        /// <param name="crmType">The CRM type of the item from which values are to be taken.</param>
+        /// <param name="crmItem">The CRM item from which values are to be taken.</param>
+        /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
+        /// <param name="olAppointment">The outlook item assumed to correspond with the CRM item.</param>
+        private void UpdateOutlookStartAndDuration(string crmType, dynamic crmItem, DateTime date_start, Outlook.AppointmentItem olAppointment)
+        {
+            olAppointment.Start = date_start;
+            var minutesString = crmItem.duration_minutes.value.ToString();
+            var hoursString = crmItem.duration_hours.value.ToString();
+
+            int minutes = string.IsNullOrWhiteSpace(minutesString) ? 0 : int.Parse(minutesString);
+            int hours = string.IsNullOrWhiteSpace(hoursString) ? 0 : int.Parse(hoursString);
+
+            if (crmType == "Meetings")
+            {
+                olAppointment.Location = crmItem.location.value.ToString();
+                olAppointment.End = olAppointment.Start;
+                if (hours > 0)
+                    olAppointment.End.AddHours(hours);
+                if (minutes > 0)
+                    olAppointment.End.AddMinutes(minutes);
+                Log.Warn("    SetRecepients");
+                SetRecipients(olAppointment, crmItem.id.value.ToString(), crmType);
+            }
+            olAppointment.Duration = minutes + hours * 60;
         }
     }
 }
