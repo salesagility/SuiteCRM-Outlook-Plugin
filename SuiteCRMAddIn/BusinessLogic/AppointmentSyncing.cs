@@ -82,7 +82,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (IsCurrentView && !this.ItemsSyncState.Exists(a => a.OutlookItem.EntryID == appointment.EntryID))
             {
-                AddItemFromOutlookToCrm(appointment, "Meetings");
+                AddOrUpdateItemFromOutlookToCrm(appointment, "Meetings");
             }
             else
             {
@@ -131,7 +131,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     if (olPropertyType != null && olPropertyEntryId != null)
                     {
                         syncStateForItem.IsUpdate++;
-                        AddItemFromOutlookToCrm(olItem, olPropertyType.Value.ToString(), olPropertyEntryId.Value.ToString());
+                        AddOrUpdateItemFromOutlookToCrm(olItem, olPropertyType.Value.ToString(), olPropertyEntryId.Value.ToString());
                     }
                 }
             }
@@ -184,74 +184,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 module1_id = clsSuiteCRMHelper.GetUserId()
             };
             clsSuiteCRMHelper.SetRelationshipUnsafe(info);
-        }
-
-        /// <summary>
-        /// Add this Outlook item, which may not exist in CRM, to CRM.
-        /// </summary>
-        /// <param name="olItem">The outlook item to add.</param>
-        /// <param name="crmType">The CRM type to which it should be added</param>
-        /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
-        /// an update, not an add).</param>
-        private void AddItemFromOutlookToCrm(Outlook.AppointmentItem olItem, string crmType, string entryId = "")
-        {
-            if (ShouldDeleteFromCrm(olItem))
-            {
-                /* Issue #14: if it is non-public, it should be removed from or not copied to CRM */
-                LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Deleting");
-                var syncStateForItem = this.GetSyncStateForItem(olItem);
-
-                DeleteFromCrm(olItem);
-            }
-            else if (ShouldDespatchToCrm(olItem))
-            {
-                LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, Despatching");
-
-                try
-                {
-                    string meetingId = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
-
-                    if (String.IsNullOrEmpty(entryId))
-                    {
-                        AddCurrentUserAsOwner(olItem, meetingId);
-                    }
-                    if (olItem.Recipients != null)
-                    {
-                        AddMeetingRecipientsFromOutlookToCrm(olItem, meetingId);
-                    }
-
-                    /* this is where the CRM entry id gets fixed up in Outlook */
-                    EnsureSynchronisationPropertiesForOutlookItem(olItem, DateTime.UtcNow.ToString(), crmType, meetingId);
-
-                    LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Save");
-                    olItem.Save();
-
-                    /* Find the existing syncstate whose outlook item has the same EntryId value as the current olItem */
-                    var syncStateForItem = this.GetSyncStateForItem(olItem);
-
-                    if (syncStateForItem != null)
-                    {
-                        syncStateForItem.OutlookItem = olItem;
-                        syncStateForItem.OModifiedDate = DateTime.UtcNow;
-                        syncStateForItem.CrmEntryId = meetingId;
-                        LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Edit sync state");
-                    }
-                    else
-                    {
-                        this.ItemsSyncState.Add(new AppointmentSyncState(crmType) { CrmEntryId = meetingId, OModifiedDate = DateTime.UtcNow, OutlookItem = olItem });
-                        LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Create sync state");
-                    }   
-                        
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("AppointementSyncing.AddItemFromOutlookToCrm", ex);
-                } 
-            }
-            else
-            {
-                LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, Not despatching");
-            }
         }
 
         private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem aItem, string meetingId)
@@ -363,6 +295,74 @@ namespace SuiteCRMAddIn.BusinessLogic
             return newState;
         }
 
+        /// <summary>
+        /// Add this Outlook item, which may not exist in CRM, to CRM.
+        /// </summary>
+        /// <param name="olItem">The outlook item to add.</param>
+        /// <param name="crmType">The CRM type to which it should be added</param>
+        /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
+        /// an update, not an add).</param>
+        private void AddOrUpdateItemFromOutlookToCrm(Outlook.AppointmentItem olItem, string crmType, string entryId = "")
+        {
+            if (ShouldDeleteFromCrm(olItem))
+            {
+                /* Issue #14: if it is non-public, it should be removed from or not copied to CRM */
+                LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Deleting");
+                var syncStateForItem = this.GetSyncStateForItem(olItem);
+
+                DeleteFromCrm(olItem);
+            }
+            else if (ShouldDespatchToCrm(olItem))
+            {
+                LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, Despatching");
+
+                try
+                {
+                    string meetingId = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
+
+                    if (String.IsNullOrEmpty(entryId))
+                    {
+                        AddCurrentUserAsOwner(olItem, meetingId);
+                    }
+                    if (olItem.Recipients != null)
+                    {
+                        AddMeetingRecipientsFromOutlookToCrm(olItem, meetingId);
+                    }
+
+                    /* this is where the CRM entry id gets fixed up in Outlook */
+                    EnsureSynchronisationPropertiesForOutlookItem(olItem, DateTime.UtcNow.ToString(), crmType, meetingId);
+
+                    LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Save");
+                    olItem.Save();
+
+                    /* Find the existing syncstate whose outlook item has the same EntryId value as the current olItem */
+                    var syncStateForItem = this.GetSyncStateForItem(olItem);
+
+                    if (syncStateForItem != null)
+                    {
+                        syncStateForItem.OutlookItem = olItem;
+                        syncStateForItem.OModifiedDate = DateTime.UtcNow;
+                        syncStateForItem.CrmEntryId = meetingId;
+                        LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Edit sync state");
+                    }
+                    else
+                    {
+                        this.ItemsSyncState.Add(new AppointmentSyncState(crmType) { CrmEntryId = meetingId, OModifiedDate = DateTime.UtcNow, OutlookItem = olItem });
+                        LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Create sync state");
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("AppointementSyncing.AddItemFromOutlookToCrm", ex);
+                }
+            }
+            else
+            {
+                LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, Not despatching");
+            }
+        }
+
         // TODO: Should _not_ be here. This category is used by all Syncing classes and email archiving,
         // so should be added near add-in start-up.
         private void AddSuiteCrmOutlookCategory()
@@ -435,6 +435,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// was modified, the type of CRM item it is to be synchronised with, and the id of the
         /// CRM item it is to be synchronised with.
         /// </summary>
+        /// <remarks>
+        /// TODO: Candidate for refactoring to superclass.
+        /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="modifiedDate">The value for the SOModifiedDate property.</param>
         /// <param name="type">The value for the SType property.</param>
@@ -449,6 +452,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Ensure that this Outlook item has a property of this name with this value.
         /// </summary>
+        /// <remarks>
+        /// TODO: Candidate for refactoring to superclass.
+        /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
@@ -824,7 +830,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     var itemsToBeAddedToCrm = untouched.Where(a => a.ShouldSyncWithCrm && !a.ExistedInCrm && a.CrmType == crmModule);
                     foreach (var item in itemsToBeAddedToCrm)
                     {
-                        AddItemFromOutlookToCrm(item.OutlookItem, crmModule);
+                        AddOrUpdateItemFromOutlookToCrm(item.OutlookItem, crmModule);
                     }
                 }
                 catch (Exception ex)
