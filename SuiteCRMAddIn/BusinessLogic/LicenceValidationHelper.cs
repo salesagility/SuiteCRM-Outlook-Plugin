@@ -99,6 +99,10 @@
                 this.logger.Error("LicenceValidationHelper.Validate ", any);
             }
 
+            logger.Info(
+                String.Format(
+                    "LicenceValidationHelper.Validate: returning {0}", result));
+
             return result;
         }
 
@@ -127,10 +131,19 @@
                     result = false;
                     break;
                 default:
-                    logger.Warn(String.Format("Unexpected status code {}", response.StatusCode));
+                    logger.Warn(
+                        String.Format(
+                            "LicenceValidationHelper.InterpretStatusCode: Unexpected status code {0}", 
+                            response.StatusCode));
                     result = false;
                     break;
             }
+
+            logger.Info(
+                String.Format(
+                    "LicenceValidationHelper.InterpretStatusCode: status code {0}, returning {1}",
+                    response.StatusCode, 
+                    result));
 
             return result;
         }
