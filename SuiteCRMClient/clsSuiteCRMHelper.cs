@@ -49,7 +49,7 @@ namespace SuiteCRMClient
             {
                 @session = SuiteCRMUserSession.id
             };
-            return CrmRestServer.GetCrmResponse<eModuleList>("get_available_modules", data);            
+            return SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);            
         }
 
         public static void EnsureLoggedIn()
@@ -76,7 +76,7 @@ namespace SuiteCRMClient
                 {
                     @session = SuiteCRMUserSession.id
                 };
-                userId = CrmRestServer.GetCrmResponse<string>("get_user_id", data);
+                userId = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_user_id", data);
                 return userId;
             }
             catch (Exception)
@@ -117,7 +117,7 @@ namespace SuiteCRMClient
                 @module_name = moduleName,
                 @name_value_list = values
             };
-            eSetEntryResult _result = CrmRestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
+            eSetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
             return _result.id.ToString();
         }
 
@@ -137,7 +137,7 @@ namespace SuiteCRMClient
                     @query = ""
                     //@limit = 1*/
                 };
-                eGetRelationshipResult _result = CrmRestServer.GetCrmResponse<eGetRelationshipResult>("get_relationships", data);
+                eGetRelationshipResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eGetRelationshipResult>("get_relationships", data);
                 if (_result.entry_list.Length > 0)
                     return _result.entry_list[0].id;
                 return "";
@@ -165,7 +165,7 @@ namespace SuiteCRMClient
                     @query = ""
                     //@limit = 1*/
                 };
-                eGetRelationshipResult _result = CrmRestServer.GetCrmResponse<eGetRelationshipResult>("get_relationships", data);
+                eGetRelationshipResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eGetRelationshipResult>("get_relationships", data);
                 if (_result.entry_list.Length > 0)
                     return _result.entry_list;
                 return null;
@@ -207,7 +207,7 @@ namespace SuiteCRMClient
                 @link_field_name = info.module2,
                 @related_ids = new string[] {info.module2_id}
             };
-            var _value = CrmRestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+            var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
             return (_value.Created != 0);
         }
 
@@ -224,7 +224,7 @@ namespace SuiteCRMClient
                     new RESTObjects.eNameValue() {name = "name", value = objAttachment.DisplayName}
                 }
             };
-            var res = CrmRestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", initNoteDataWebFormat);
+            var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", initNoteDataWebFormat);
 
             //upload the attachment  
             RESTObjects.eNewNoteAttachment attachment = new RESTObjects.eNewNoteAttachment();
@@ -238,7 +238,7 @@ namespace SuiteCRMClient
                 @note = attachment
             };
 
-            var attachmentResult = CrmRestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_note_attachment", attachmentDataWebFormat);
+            var attachmentResult = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_note_attachment", attachmentDataWebFormat);
 
             //Relate the email and the attachment
             object contacRelationshipData = new
@@ -249,7 +249,7 @@ namespace SuiteCRMClient
                 @link_field_name = "notes",
                 @related_ids = new string[] { attachmentResult.id }
             };
-            var rel = CrmRestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", contacRelationshipData);
+            var rel = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", contacRelationshipData);
 
             if (rel.Created == 0)
             {
@@ -278,7 +278,7 @@ namespace SuiteCRMClient
                     new {@name = "employees", @value=new string[]{"email1"}}
                 } }*/
             };
-            _result = CrmRestServer.GetCrmResponse<string>("get_relationships", data);                
+            _result = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_relationships", data);                
             return _result;
         }
         
@@ -297,7 +297,7 @@ namespace SuiteCRMClient
                 @max_results = limit,
                 @deleted = Convert.ToInt32(GetDeleted)
             };
-            _result = CrmRestServer.GetCrmResponse<RESTObjects.eGetEntryListResult>("get_entry_list", data);                
+            _result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eGetEntryListResult>("get_entry_list", data);                
             if (_result.error != null)
             {
                 throw new Exception(_result.error.description);                    
@@ -357,7 +357,7 @@ namespace SuiteCRMClient
                 @session = SuiteCRMUserSession.id,
                 @module_name = module
             };
-            foreach (eField field in CrmRestServer.GetCrmResponse<eModuleFields>("get_module_fields", data).module_fields1)
+            foreach (eField field in SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data).module_fields1)
             {
                 list.Add(field.name);
             }
@@ -402,7 +402,7 @@ namespace SuiteCRMClient
                 @module_name = "Accounts",
                 @name_value_list = Data
             };
-            eSetEntryResult _result = CrmRestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
+            eSetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
             return _result;
       
         }
@@ -415,7 +415,7 @@ namespace SuiteCRMClient
                 @module_name = "Opportunities",
                 @name_value_list = Data
             };
-            eSetEntryResult _result = CrmRestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
+            eSetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
             return _result;
 
         }

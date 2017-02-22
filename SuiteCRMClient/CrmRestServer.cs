@@ -20,35 +20,33 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Text;
-using System.Net;
-using System.IO;
-using Newtonsoft.Json;
-using SuiteCRMClient.Logging;
-
 namespace SuiteCRMClient
 {
-    public static class CrmRestServer
+    using System;
+    using System.Text;
+    using System.Net;
+    using System.IO;
+    using Newtonsoft.Json;
+    using SuiteCRMClient.Logging;
+
+    public class CrmRestServer
     {
-        private static readonly JsonSerializer Serializer;
-        private static ILogger Log;
+        private readonly JsonSerializer serialiser;
+        private ILogger log;
+        private int timeout = 0;
 
-        static CrmRestServer()
+        public CrmRestServer(ILogger log, int timeout)
         {
-            Serializer = new JsonSerializer();
-            Serializer.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
-            Serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+            this.log = log;
+            this.timeout = timeout;
+            serialiser = new JsonSerializer();
+            serialiser.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
+            serialiser.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
         }
 
-        public static void SetLog(ILogger log)
-        {
-            Log = log;
-        }
+        public Uri SuiteCRMURL { get; set; }
 
-        public static Uri SuiteCRMURL { get; set; }
-
-        public static T GetCrmResponse<T>(string strMethod, object objInput)
+        public T GetCrmResponse<T>(string strMethod, object objInput)
         {
             try
             {
@@ -58,13 +56,13 @@ namespace SuiteCRMClient
             }
             catch (Exception ex)
             {
-                Log.Warn($"Tried calling '{strMethod}' with parameter '{objInput}'");
-                Log.Error($"Failed calling '{strMethod}'", ex);
+                log.Warn($"Tried calling '{strMethod}' with parameter '{objInput}', timeout is {this.timeout}ms");
+                log.Error($"Failed calling '{strMethod}'", ex);
                 throw;
             }
         }
 
-        private static T DeserializeJson<T>(string responseJson)
+        private T DeserializeJson<T>(string responseJson)
         {
             try
             {
@@ -76,7 +74,7 @@ namespace SuiteCRMClient
             }
         }
 
-        private static HttpWebRequest CreateCrmRestRequest(string strMethod, object objInput)
+        private HttpWebRequest CreateCrmRestRequest(string strMethod, object objInput)
         {
             try
             {
@@ -95,15 +93,15 @@ namespace SuiteCRMClient
             }
         }
 
-        private static string SerialiseJson(object parameters)
+        private string SerialiseJson(object parameters)
         {
             var buffer = new StringBuilder();
             var swriter = new StringWriter(buffer);
-            Serializer.Serialize(swriter, parameters);
+            serialiser.Serialize(swriter, parameters);
             return buffer.ToString();
         }
 
-        private static string GetResponseString(HttpWebRequest request)
+        private string GetResponseString(HttpWebRequest request)
         {
             using (var response = request.GetResponse() as HttpWebResponse)
             {
@@ -116,7 +114,7 @@ namespace SuiteCRMClient
             }
         }
 
-        private static string GetStringFromWebResponse(HttpWebResponse response)
+        private string GetStringFromWebResponse(HttpWebResponse response)
         {
             using (var input = response.GetResponseStream())
             using (var reader = new StreamReader(input))
@@ -125,13 +123,14 @@ namespace SuiteCRMClient
             }
         }
 
-        private static HttpWebRequest CreatePostRequest(string requestUrl, byte[] bytes, string contentTypeAndEncoding)
+        private HttpWebRequest CreatePostRequest(string requestUrl, byte[] bytes, string contentTypeAndEncoding)
         {
             var request = WebRequest.Create(requestUrl) as HttpWebRequest;
 
             request.Method = "POST";
             request.ContentLength = bytes.Length;
             request.ContentType = contentTypeAndEncoding;
+            request.Timeout = this.timeout;
 
             using (var requestStream = request.GetRequestStream())
             {

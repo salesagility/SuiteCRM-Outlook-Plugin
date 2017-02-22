@@ -350,6 +350,16 @@ namespace SuiteCRMAddIn
             set { this["LicenceKey"] = value; }
         }
 
+        /// <summary>
+        /// REST Server request timeout in milliseconds.
+        /// </summary>
+        [DefaultSettingValue("300000"), UserScopedSetting, DebuggerNonUserCode]
+        public int RestTimeout
+        {
+            get { return (int)this["RestTimeout"]; }
+            set { this["RestTimeout"] = value; }
+        }
+
         public static Hashtable accountEntrys = new Hashtable();
         public static AutoCompleteStringCollection accounts = new AutoCompleteStringCollection();
     }
