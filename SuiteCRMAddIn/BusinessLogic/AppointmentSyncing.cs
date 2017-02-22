@@ -300,22 +300,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmType">The CRM type of the item from which values are to be taken.</param>
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
         /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
-        /// <returns></returns>
+        /// <returns>A sync state object for the new item.</returns>
         private SyncState<Outlook.AppointmentItem> AddNewItemFromCrmToOutlook(
             Outlook.MAPIFolder appointmentsFolder,
             string crmType,
             dynamic crmItem,
             DateTime date_start)
         {
-            Outlook.AppointmentItem aItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
+            Outlook.AppointmentItem olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
 
-            LogItemAction(aItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
+            LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
 
-            aItem.Subject = crmItem.name.value.ToString();
-            aItem.Body = crmItem.description.value.ToString();
+            olItem.Subject = crmItem.name.value.ToString();
+            olItem.Body = crmItem.description.value.ToString();
             if (!string.IsNullOrWhiteSpace(crmItem.date_start.value.ToString()))
             {
-                aItem.Start = date_start;
+                olItem.Start = date_start;
                 int iMin = 0, iHour = 0;
                 if (!string.IsNullOrWhiteSpace(crmItem.duration_minutes.value.ToString()))
                 {
@@ -327,19 +327,19 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 if (crmType == "Meetings")
                 {
-                    aItem.Location = crmItem.location.value.ToString();
-                    aItem.End = aItem.Start;
+                    olItem.Location = crmItem.location.value.ToString();
+                    olItem.End = olItem.Start;
                     if (iHour > 0)
-                        aItem.End.AddHours(iHour);
+                        olItem.End.AddHours(iHour);
                     if (iMin > 0)
-                        aItem.End.AddMinutes(iMin);
+                        olItem.End.AddMinutes(iMin);
                 }
                 Log.Warn("   default SetRecepients");
-                SetRecipients(aItem, crmItem.id.value.ToString(), crmType);
+                SetRecipients(olItem, crmItem.id.value.ToString(), crmType);
 
                 try
                 {
-                    aItem.Duration = iMin + iHour * 60;
+                    olItem.Duration = iMin + iHour * 60;
                 }
                 catch (Exception)
                 {
@@ -347,18 +347,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             string crmId = crmItem.id.value.ToString();
-            EnsureSynchronisationPropertiesForOutlookItem(aItem, crmItem.date_modified.value.ToString(), crmType, crmId);
+            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.date_modified.value.ToString(), crmType, crmId);
 
             var newState = new AppointmentSyncState(crmType)
             {
-                OutlookItem = aItem,
+                OutlookItem = olItem,
                 OModifiedDate = DateTime.ParseExact(crmItem.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
                 CrmEntryId = crmId,
             };
             ItemsSyncState.Add(newState);
+            olItem.Save();
+
             LogItemAction(newState.OutlookItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook, saved item");
 
-            aItem.Save();
             return newState;
         }
 
@@ -567,12 +568,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Update a single appointment in the specified Outlook folder with changes from CRM, but 
         /// only if its start date is fewer than five days in the past.
         /// </summary>
-        /// <param name="appointmentsFolder">The folder to synchronise into.</param>
+        /// <param name="folder">The folder to synchronise into.</param>
         /// <param name="crmType">The CRM type of the candidate item.</param>
         /// <param name="candidateItem">The candidate item from CRM.</param>
         /// <returns>The synchronisation state of the item updated (if it was updated).</returns>
         private SyncState<Outlook.AppointmentItem> MaybeUpdateAppointmentFromCrmToOutlook(
-            Outlook.MAPIFolder appointmentsFolder,
+            Outlook.MAPIFolder folder,
             string crmType,
             eEntryValue candidateItem)
         {
@@ -587,7 +588,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (oItem == null)
                 {
                     /* didn't find it, so add it to Outlook */
-                    result = AddNewItemFromCrmToOutlook(appointmentsFolder, crmType, crmItem, date_start);
+                    result = AddNewItemFromCrmToOutlook(folder, crmType, crmItem, date_start);
                 }
                 else
                 {
@@ -600,13 +601,37 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
+        /// Remove an outlook item and its associated sync state.
+        /// </summary>
+        /// <remarks>
+        /// TODO: candidate for refactoring to superclass.
+        /// </remarks>
+        /// <param name="syncState">The sync state of the item to remove.</param>
+        private void RemoveItemAndSyncState(SyncState<Outlook.AppointmentItem> syncState)
+        {
+            this.LogItemAction(syncState.OutlookItem, "AppointmentSyncing.SyncFolder, deleting item");
+            try
+            {
+                syncState.OutlookItem.Delete();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("AppointmentSyncing.SyncFolder: Exception  oItem.oItem.Delete", ex);
+            }
+            this.RemoveItemSyncState(syncState);
+        }
+
+        /// <summary>
         /// Remove an item from ItemsSyncState.
         /// </summary>
+        /// <remarks>
+        /// TODO: candidate for refactoring to superclass.
+        /// </remarks>
         /// <param name="item">The sync state of the item to remove.</param>
         private void RemoveItemSyncState(SyncState<Outlook.AppointmentItem> item)
         {
-            LogItemAction(item.OutlookItem, "AppointmentSyncing.RemoveItemSyncState, removed item from queue");
-            ItemsSyncState.Remove(item);
+            this.LogItemAction(item.OutlookItem, "AppointmentSyncing.RemoveItemSyncState, removed item from queue");
+            this.ItemsSyncState.Remove(item);
         }
 
         /// <summary>
@@ -748,67 +773,58 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Synchronise appointments in the specified folder with the specified SuiteCRM module.
+        /// Synchronise items in the specified folder with the specified SuiteCRM module.
         /// </summary>
-        /// <param name="appointmentsFolder">The folder.</param>
-        /// <param name="sModule">The module.</param>
-        private void SyncFolder(Outlook.MAPIFolder appointmentsFolder, string sModule)
+        /// <remarks>
+        /// TODO: candidate for refactoring upwards, in concert with ContactSyncing.SyncFolder.
+        /// </remarks>
+        /// <param name="folder">The folder.</param>
+        /// <param name="crmModule">The module.</param>
+        private void SyncFolder(Outlook.MAPIFolder folder, string crmModule)
         {
-            Log.Info(String.Format("AppointmentSyncing.SyncFolder: '{0}'", sModule));
+            Log.Info(String.Format("AppointmentSyncing.SyncFolder: '{0}'", crmModule));
             try
             {
-                /* this.ItemsSyncState already contains items to be synced */
+                /* this.ItemsSyncState already contains items to be synced. */
                 var untouched = new HashSet<SyncState<Outlook.AppointmentItem>>(this.ItemsSyncState);
                 int nextOffset = -1; // offset of the next page of entries, if any.
 
-                for (int iOffset = 0; iOffset != nextOffset && iOffset != 0; iOffset = nextOffset)
+                for (int iOffset = 0; iOffset != nextOffset; iOffset = nextOffset)
                 {
                     /* get candidates for syncrhonisation from SuiteCRM one page at a time */
-                    eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(sModule,
+                    eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(crmModule,
                         String.Format("assigned_user_id = '{0}'", clsSuiteCRMHelper.GetUserId()),
                         0, "date_start DESC", iOffset, false,
-                        clsSuiteCRMHelper.GetSugarFields(sModule));
+                        clsSuiteCRMHelper.GetSugarFields(crmModule));
 
                     nextOffset = entriesPage.next_offset; // get the offset of the next page
 
                     if (iOffset != nextOffset)
                     {
-                        /* if there is a new page of candidates, add those candidates which were 
-                         * not found in Outlook(?) to the untouched list */
-                        UpdateAppointmentsFromCrmToOutlook(entriesPage.entry_list, appointmentsFolder, sModule, untouched);
+                        UpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
                     }
                 }
 
                 eEntryValue[] invited = clsSuiteCRMHelper.getRelationships("Users",
-                    clsSuiteCRMHelper.GetUserId(), sModule.ToLower(),
-                    clsSuiteCRMHelper.GetSugarFields(sModule));
+                    clsSuiteCRMHelper.GetUserId(), crmModule.ToLower(),
+                    clsSuiteCRMHelper.GetSugarFields(crmModule));
                 if (invited != null)
                 {
-                    /* (?)likewise add those invitees not found in Outlook to the untouched list(?) */
-                    UpdateAppointmentsFromCrmToOutlook(invited, appointmentsFolder, sModule, untouched);
+                    UpdateItemsFromCrmToOutlook(invited, folder, untouched, crmModule);
                 }
 
                 try
                 {
-                    var itemsToBeDeletedFromOutlook = untouched.Where(a => a.ExistedInCrm && a.CrmType == sModule);
+                    var itemsToBeDeletedFromOutlook = untouched.Where(a => a.ExistedInCrm && a.CrmType == crmModule);
                     foreach (var item in itemsToBeDeletedFromOutlook)
                     {
-                        this.LogItemAction(item.OutlookItem, "AppointmentSyncing.SyncFolder, deleting item");
-                        try
-                        {
-                            item.OutlookItem.Delete();
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error("AppointmentSyncing.SyncFolder: Exception  oItem.oItem.Delete", ex);
-                        }
-                        RemoveItemSyncState(item);
+                        RemoveItemAndSyncState(item);
                     }
 
-                    var itemsToBeAddedToCrm = untouched.Where(a => a.ShouldSyncWithCrm && !a.ExistedInCrm && a.CrmType == sModule);
+                    var itemsToBeAddedToCrm = untouched.Where(a => a.ShouldSyncWithCrm && !a.ExistedInCrm && a.CrmType == crmModule);
                     foreach (var item in itemsToBeAddedToCrm)
                     {
-                        AddItemFromOutlookToCrm(item.OutlookItem, sModule);
+                        AddItemFromOutlookToCrm(item.OutlookItem, crmModule);
                     }
                 }
                 catch (Exception ex)
@@ -824,24 +840,24 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         /// <summary>
         /// Update these appointments 
+        /// TODO: This is a candidate for refactoring with ContactSyncing.UpdateItemsFromCrmToOutlook
         /// </summary>
-        /// <param name="appointments">The meetings to be synchronised.</param>
-        /// <param name="appointmentsFolder">The outlook folder to synchronise into.</param>
-        /// <param name="crmType">The type of CRM objects represented by the appointments.</param>
+        /// <param name="items">The items to be synchronised.</param>
+        /// <param name="folder">The outlook folder to synchronise into.</param>
         /// <param name="untouched">A list of items which have not yet been synchronised; this list is 
         /// modified (destructuvely changed) by the action of this method.</param>
-        private void UpdateAppointmentsFromCrmToOutlook(
-            eEntryValue[] appointments,
-            Outlook.MAPIFolder appointmentsFolder, 
-            string crmType, 
-            HashSet<SyncState<Outlook.AppointmentItem>> untouched)
+        /// <param name="crmType">The type of CRM objects represented by the appointments.</param>
+        private void UpdateItemsFromCrmToOutlook(
+            eEntryValue[] items,
+            Outlook.MAPIFolder folder, 
+            HashSet<SyncState<Outlook.AppointmentItem>> untouched,
+            string crmType)
         {
-
-            foreach (var appointment in appointments)
+            foreach (var appointment in items)
             {
                 try
                 {
-                    var state = MaybeUpdateAppointmentFromCrmToOutlook(appointmentsFolder, crmType, appointment);
+                    var state = MaybeUpdateAppointmentFromCrmToOutlook(folder, crmType, appointment);
                     if (state != null)
                     {
                         // i.e., the entry was updated...
