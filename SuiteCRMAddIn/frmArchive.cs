@@ -252,7 +252,7 @@ namespace SuiteCRMAddIn
                                     }
                                     catch (System.Exception any)
                                     {
-                                        Globals.ThisAddIn.Log.Error("Failure when custom module included (1)\n\tQuery was '{queryText}'", any);
+                                        Globals.ThisAddIn.Log.Error($"Failure when custom module included (1)\n\tQuery was '{queryText}'", any);
                                         // Swallow exception(!)
                                         try {
                                             queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText.Replace("%", ""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
