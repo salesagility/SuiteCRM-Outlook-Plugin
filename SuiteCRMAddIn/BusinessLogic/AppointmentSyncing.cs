@@ -47,11 +47,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             string str5 = "(" + sModule.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + sModule + "' and ea.email_address LIKE '%" + SuiteCRMAddIn.clsGlobals.MySqlEscape(sEmailID) + "%'))";
 
-            Log.Warn("-------------------GetID-----Start---------------");
+            Log.Info("-------------------GetID-----Start---------------");
 
-            Log.Warn("    str5=" + str5);
+            Log.Info("\tstr5=" + str5);
 
-            Log.Warn("-------------------GetID-----End---------------");
+            Log.Info("-------------------GetID-----End---------------");
 
             string[] fields = new string[1];
             fields[0] = "id";
@@ -60,7 +60,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 return clsSuiteCRMHelper.GetValueByKey(_result.entry_list[0], "id");
             }
-            return "";
+            return String.Empty;
         }
 
         override public Outlook.MAPIFolder GetDefaultFolder()
@@ -105,24 +105,22 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var utcNow = DateTime.UtcNow;
                 if (Math.Abs((utcNow - syncStateForItem.OModifiedDate).TotalSeconds) > 5.0)
                 {
-                    Log.Warn("2 callitem.IsUpdate = " + syncStateForItem.IsUpdate);
+                    Log.Info("2 callitem.IsUpdate = " + syncStateForItem.IsUpdate);
                     syncStateForItem.IsUpdate = 0;
                 }
 
-                Log.Warn("Before UtcNow - callitem.OModifiedDate= " + (int)(utcNow - syncStateForItem.OModifiedDate).TotalSeconds);
+                Log.Info("Before UtcNow - callitem.OModifiedDate= " + (int)(utcNow - syncStateForItem.OModifiedDate).TotalSeconds);
 
                 if (Math.Abs((utcNow - syncStateForItem.OModifiedDate).TotalSeconds) > 2.0 && syncStateForItem.IsUpdate == 0)
                 {
                     syncStateForItem.OModifiedDate = DateTime.UtcNow;
-                    Log.Warn("1 callitem.IsUpdate = " + syncStateForItem.IsUpdate);
+                    Log.Info("1 callitem.IsUpdate = " + syncStateForItem.IsUpdate);
                     syncStateForItem.IsUpdate++;
                 }
 
-                Log.Warn("callitem = " + syncStateForItem.OutlookItem.Subject);
-                Log.Warn("callitem.SEntryID = " + syncStateForItem.CrmEntryId);
-                Log.Warn("callitem mod_date= " + syncStateForItem.OModifiedDate.ToString());
-                Log.Warn("utcNow= " + DateTime.UtcNow.ToString());
-                Log.Warn("UtcNow - callitem.OModifiedDate= " + (int)(DateTime.UtcNow - syncStateForItem.OModifiedDate).TotalSeconds);
+                this.LogItemAction(syncStateForItem.OutlookItem, "AppointmentSyncState.OutlookItemChanged, syncing");
+                Log.Info("utcNow= " + DateTime.UtcNow.ToString());
+                Log.Info("UtcNow - callitem.OModifiedDate= " + (int)(DateTime.UtcNow - syncStateForItem.OModifiedDate).TotalSeconds);
 
                 if (IsCurrentView && syncStateForItem.IsUpdate == 1)
                 {
@@ -193,8 +191,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 try
                 {
-                    Log.Warn("objRecepientName= " + objRecepient.Name.ToString());
-                    Log.Warn("objRecepient= " + objRecepient.Address.ToString());
+                    Log.Info("objRecepientName= " + objRecepient.Name.ToString());
+                    Log.Info("objRecepient= " + objRecepient.Address.ToString());
                 }
                 catch
                 {
@@ -203,11 +201,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
 
                 string sCID = SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Contacts");
-                if (sCID != "")
+                if (sCID != String.Empty)
                 {
                     string AccountID = clsSuiteCRMHelper.getRelationship("Contacts", sCID, "accounts");
 
-                    if (AccountID != "")
+                    if (AccountID != String.Empty)
                     {
                         eSetRelationshipValue info = new eSetRelationshipValue
                         {
@@ -266,7 +264,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     if (iMin > 0)
                         olItem.End.AddMinutes(iMin);
                 }
-                Log.Warn("   default SetRecepients");
+                Log.Info("\tdefault SetRecepients");
                 SetRecipients(olItem, crmItem.id.value.ToString(), crmType);
 
                 try
@@ -686,7 +684,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string SetCrmRelationshipFromOutlook(string _result, Outlook.Recipient objRecepient, string relnName)
         {
             string sCID = GetID(objRecepient.Address, relnName);
-            if (sCID != "")
+            if (sCID != String.Empty)
             {
                 eSetRelationshipValue info = new eSetRelationshipValue
                 {
@@ -721,9 +719,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         dynamic dResult1 = JsonConvert.DeserializeObject(oResult1.name_value_object.ToString());
 
-                        Log.Warn("-------------------SetRecepients-----Start-----dResult1---2-------");
-                        Log.Warn((string)Convert.ToString(dResult1));
-                        Log.Warn("-------------------SetRecepients-----End---------------");
+                        Log.Info("-------------------SetRecepients-----Start-----dResult1---2-------");
+                        Log.Info((string)Convert.ToString(dResult1));
+                        Log.Info("-------------------SetRecepients-----End---------------");
 
                         string phone_work = dResult1.phone_work.value.ToString();
                         string sTemp =
@@ -940,7 +938,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olAppointment.End.AddHours(hours);
                 if (minutes > 0)
                     olAppointment.End.AddMinutes(minutes);
-                Log.Warn("    SetRecepients");
+                Log.Info("\tSetRecepients");
                 SetRecipients(olAppointment, crmItem.id.value.ToString(), crmType);
             }
             olAppointment.Duration = minutes + hours * 60;

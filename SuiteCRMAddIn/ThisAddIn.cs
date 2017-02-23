@@ -505,7 +505,7 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                if (settings.host != "")
+                if (settings.host != String.Empty)
                 {
                     SuiteCRMUserSession = 
                         new SuiteCRMClient.UserSession(
@@ -539,7 +539,13 @@ namespace SuiteCRMAddIn
                 {
                     // We don't have a URL to connect to, dummy the connection.
                     SuiteCRMUserSession =
-                        new SuiteCRMClient.UserSession("", "", "", "", log, Settings.RestTimeout);
+                        new SuiteCRMClient.UserSession(
+                            String.Empty, 
+                            String.Empty, 
+                            String.Empty, 
+                            String.Empty, 
+                            log, 
+                            Settings.RestTimeout);
                 }
 
                 SuiteCRMUserSession.AwaitingAuthentication = false;

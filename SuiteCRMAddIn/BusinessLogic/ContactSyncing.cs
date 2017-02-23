@@ -331,7 +331,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (crmItem.primary_address_street.value != null)
                     cItem.BusinessAddressStreet = crmItem.primary_address_street.value.ToString();
                 cItem.Body = crmItem.description.value.ToString();
-                cItem.Account = cItem.CompanyName = "";
+                cItem.Account = cItem.CompanyName = String.Empty;
                 if (crmItem.account_name != null && crmItem.account_name.value != null)
                 {
                     cItem.Account = crmItem.account_name.value.ToString();
@@ -532,7 +532,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (oItem == null) return;
             try
             {
-                string _result = "";
+                string _result = String.Empty;
                 eNameValue[] data = new eNameValue[19];
 
                 data[0] = clsSuiteCRMHelper.SetNameValuePair("email1", oItem.Email1Address);
