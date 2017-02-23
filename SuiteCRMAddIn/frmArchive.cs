@@ -103,19 +103,35 @@ namespace SuiteCRMAddIn
             this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
             base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
 
-            foreach (var item2 in Globals.ThisAddIn.SelectedEmails)
-            {
-                this.txtSearch.Text = this.txtSearch.Text + clsGlobals.GetSMTPEmailAddress(item2) + ",";
-            }
-            if (this.txtSearch.Text != string.Empty)
-            {
-                string str2 = this.txtSearch.Text.Remove(this.txtSearch.Text.Length - 1, 1);
-                this.txtSearch.Text = str2;
-            }
+            this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
+
             if (this.settings.AutomaticSearch)
             {
                 this.btnSearch_Click(null, null);
             }
+        }
+
+        /// <summary>
+        /// Construct suitable search text from this list of emails.
+        /// </summary>
+        /// <param name="emails">A list of emails, presumably those selected by the user</param>
+        /// <returns>A string comprising the sender addresses from the emails, comma separated.</returns>
+        private static string ConstructSearchText(IEnumerable<MailItem> emails)
+        {
+            List<string> addresses = new List<string>();
+            string searchText = String.Empty;
+
+            foreach (var email in emails)
+            {
+                addresses.Add(clsGlobals.GetSMTPEmailAddress(email));
+            }
+
+            foreach (var address in addresses.OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
+            {
+                searchText += address + ",";
+            }
+
+            return searchText.TrimEnd(',');
         }
 
         private void CheckAllChildNodes(TreeNode treeNode, bool nodeChecked)
@@ -136,7 +152,7 @@ namespace SuiteCRMAddIn
 
             if (this.txtSearch.Text.Contains<char>(','))
             {
-                foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }))
+                foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }).OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
                 {
                     this.Search(str);
                 }
@@ -168,172 +184,186 @@ namespace SuiteCRMAddIn
             base.Close();
         }
 
-        public void Search(string query)
+        public void Search(string searchText)
         {
-            using(WaitCursor.For(this))
-            try
-            {
-                List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
-                this.tsResults.CheckBoxes = true;
-                if (query == string.Empty)
+            using (WaitCursor.For(this))
+                try
                 {
-                    MessageBox.Show("Please enter some text to search", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                else
-                {
-                    query = query.TrimStart(new char[0]);
-                    string[] strArray = query.Split(new char[] { ' ' });
-                    string usString = strArray[0];
-                    string str2 = string.Empty;
-                    string str3 = "OR";
-                    if (strArray.Length > 1)
+                    List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
+                    this.tsResults.CheckBoxes = true;
+                    if (searchText == string.Empty)
                     {
-                        str2 = strArray[1];
-                        str3 = "AND";
+                        MessageBox.Show("Please enter some text to search", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
-                        str2 = strArray[0];
-                    }
-                    foreach (ListViewItem item in this.lstViewSearchModules.Items)
-                    {
-                        try
+                        searchText = searchText.TrimStart(new char[0]);
+                        string[] strArray = searchText.Split(new char[] { ' ' });
+                        string usString = strArray[0];
+                        string str2 = string.Empty;
+                        string str3 = "OR";
+                        if (strArray.Length > 1)
                         {
-                            TreeNode node;
-                            eGetEntryListResult _result;
-                            if (!item.Checked)
-                            {
-                                continue;
-                            }
-                           string text = item.Tag.ToString();
-
-                            if (!(text != "All"))
-                            {
-                                continue;
-                            }
-                            if (this.tsResults.Nodes[text] == null)
-                            {
-                                node = new TreeNode(text)
-                                {
-                                    Tag = "root_node",
-                                    Name = text
-                                };
-                                this.tsResults.Nodes.Add(node);
-                            }
-                            else
-                            {
-                                node = this.tsResults.Nodes[text];
-                            }
-                            string str5 = text.ToLower() + ".name LIKE '%" + clsGlobals.MySqlEscape(query) + "%'";
-                            string[] fields = new string[6];
-                            fields[0] = "id";
-                            fields[1] = "first_name";
-                            fields[2] = "last_name";
-                            fields[3] = "name";
-                            string str6 = text;
-                            if (str6 != null)
-                            {
-                                if (!(str6 == "Contacts"))
-                                {
-                                    if (str6 == "Leads")
-                                    {
-                                        goto Label_030F;
-                                    }
-                                    if (str6 == "Cases")
-                                    {
-                                        goto Label_038F;
-                                    }
-                                    if (str6 == "Bugs")
-                                    {
-                                        goto Label_03E4;
-                                    }
-                                    if (str6 == "Accounts")
-                                    {
-                                        goto Label_03AS;
-                                    }
-                                }
-                                else
-                                {
-                                    str5 = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                                    fields[4] = "account_name";
-                                }
-                            }
-                            goto Label_0446;
-                        Label_030F: ;
-                            str5 = "(leads.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " leads.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (leads.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Leads' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                            fields[4] = "account_name";
-                            goto Label_0446;
-                        Label_038F: ;
-                            str5 = "(cases.name LIKE '%" + clsGlobals.MySqlEscape(query) + "%' OR cases.case_number LIKE '" + clsGlobals.MySqlEscape(query) + "')";
-                            fields[4] = "case_number";
-                            goto Label_0446;
-                        Label_03E4: ;
-                            str5 = "(bugs.name LIKE '%" + clsGlobals.MySqlEscape(query) + "%' " + str3 + " bugs.bug_number LIKE '" + clsGlobals.MySqlEscape(query) + "')";
-                            fields[4] = "bug_number";
-                            goto Label_0446;
-                        Label_03AS: ;
-                            str5 = "(accounts.name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                            fields[4] = "account_name";
-                        Label_0446:
+                            str2 = strArray[1];
+                            str3 = "AND";
+                        }
+                        else
+                        {
+                            str2 = strArray[0];
+                        }
+                        foreach (ListViewItem item in this.lstViewSearchModules.Items)
+                        {
                             try
                             {
-                                _result = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                            }
-                            catch (System.Exception)
-                            {
-                                // Swallow exception(!)
-                                _result = clsSuiteCRMHelper.GetEntryList(text, str5.Replace("%",""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                            }
-                            if (_result.result_count > 0)
-                            {
-                                this.populateTree(_result, text, node);
-                            }
-                            else if (!list.Contains(text) && clsSuiteCRMHelper.GetFields(text).Contains("first_name"))
-                            {
-                                str5 = "(" + text.ToLower() + ".first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " " + text.ToLower() + ".last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (" + text.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + text + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                                eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                                if (_result2.result_count > 0)
+                                TreeNode node;
+                                eGetEntryListResult queryResult;
+                                if (!item.Checked)
                                 {
-                                    this.populateTree(_result2, text, node);
+                                    continue;
+                                }
+                                string moduleName = item.Tag.ToString();
+
+                                if (moduleName != "All")
+                                {
+                                    if (this.tsResults.Nodes[moduleName] == null)
+                                    {
+                                        node = new TreeNode(moduleName)
+                                        {
+                                            Tag = "root_node",
+                                            Name = moduleName
+                                        };
+                                        this.tsResults.Nodes.Add(node);
+                                    }
+                                    else
+                                    {
+                                        node = this.tsResults.Nodes[moduleName];
+                                    }
+                                    string[] fields = new string[6];
+                                    fields[0] = "id";
+                                    fields[1] = "first_name";
+                                    fields[2] = "last_name";
+                                    fields[3] = "name";
+
+                                    string queryText = ConstructQueryTextForModuleName(searchText, usString, str2, str3, moduleName, fields);
+
+                                    try
+                                    {
+                                        queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                                    }
+                                    catch (System.Exception any)
+                                    {
+                                        Globals.ThisAddIn.Log.Error("Failure when custom module included (1)\n\tQuery was '{queryText}'", any);
+                                        // Swallow exception(!)
+                                        try {
+                                            queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText.Replace("%", ""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                                        }
+                                        catch (Exception secondFail)
+                                        {
+                                            queryText = queryText.Replace("%", "");
+                                            Globals.ThisAddIn.Log.Error($"Failure when custom module included (2)\n\tQuery was '{queryText}'", secondFail);
+                                            MessageBox.Show(
+                                                $"An error was encountered while querying module '{moduleName}'. The error has been logged",
+                                                "Query error",
+                                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            queryResult = null;
+                                        }
+                                    }
+                                    if (queryResult != null && queryResult.result_count > 0)
+                                    {
+                                        this.populateTree(queryResult, moduleName, node);
+                                    }
+                                    else if (!list.Contains(moduleName) && clsSuiteCRMHelper.GetFields(moduleName).Contains("first_name"))
+                                    {
+                                        queryText = "(" + moduleName.ToLower() + ".first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " " + moduleName.ToLower() + ".last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (" + moduleName.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + moduleName + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                                        eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                                        if (_result2.result_count > 0)
+                                        {
+                                            this.populateTree(_result2, moduleName, node);
+                                        }
+                                    }
+                                    if (node.GetNodeCount(true) <= 0)
+                                    {
+                                        node.Remove();
+                                    }
                                 }
                             }
-                            if (node.GetNodeCount(true) <= 0)
+                            catch (System.Exception any)
                             {
-                                node.Remove();
+                                Globals.ThisAddIn.Log.Error("Failure when custom module included (3)", any);
+
+                                // Swallow exception(!)
+                                this.tsResults.Nodes.Clear();
                             }
                         }
-                        catch (System.Exception)
+                        if (this.tsResults.Nodes.Count <= 0)
                         {
-                            // Swallow exception(!)
-                            this.tsResults.Nodes.Clear();
+                            TreeNode node2 = new TreeNode("No results found")
+                            {
+                                Name = "No results",
+                                Text = "No Result"
+                            };
+                            this.tsResults.Nodes.Add(node2);
+                            this.tsResults.CheckBoxes = false;
                         }
+                        this.txtSearch.Enabled = true;
                     }
-                    if (this.tsResults.Nodes.Count <= 0)
-                    {
-                        TreeNode node2 = new TreeNode("No results found")
-                        {
-                            Name = "No results",
-                            Text = "No Result"
-                        };
-                        this.tsResults.Nodes.Add(node2);
-                        this.tsResults.CheckBoxes = false;
-                    }
-                    this.txtSearch.Enabled = true;
                 }
-            }
-            catch (System.Exception)
-            {
-                // Swallow exception(!)
-
-                this.tsResults.Nodes.Clear();
-                TreeNode node2 = new TreeNode("No results found")
+                catch (System.Exception)
                 {
-                    Name = "No results",
-                    Text = "No Result"
-                };
-                this.tsResults.Nodes.Add(node2);
-                this.tsResults.CheckBoxes = false;
+                    // Swallow exception(!)
+
+                    this.tsResults.Nodes.Clear();
+                    TreeNode node2 = new TreeNode("No results found")
+                    {
+                        Name = "No results",
+                        Text = "No Result"
+                    };
+                    this.tsResults.Nodes.Add(node2);
+                    this.tsResults.CheckBoxes = false;
+                }
+        }
+
+        /// <summary>
+        /// Refactored from a horrible nest of spaghetti code. I don't yet understand this.
+        /// </summary>
+        /// <param name="searchText"></param>
+        /// <param name="usString"></param>
+        /// <param name="str2"></param>
+        /// <param name="str3"></param>
+        /// <param name="moduleName"></param>
+        /// <param name="fields"></param>
+        /// <returns></returns>
+        private static string ConstructQueryTextForModuleName(string searchText, string usString, string str2, string str3, string moduleName, string[] fields)
+        {
+            string queryText;
+            switch (moduleName)
+            {
+                case "Contacts":
+                    queryText = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                    fields[4] = "account_name";
+                    break;
+                case "Leads":
+                    queryText = "(leads.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " leads.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (leads.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Leads' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                    fields[4] = "account_name";
+                    break;
+                case "Cases":
+                    queryText = "(cases.name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%' OR cases.case_number LIKE '" + clsGlobals.MySqlEscape(searchText) + "')";
+                    fields[4] = "case_number";
+                    break;
+                case "Bugs":
+                    queryText = "(bugs.name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%' " + str3 + " bugs.bug_number LIKE '" + clsGlobals.MySqlEscape(searchText) + "')";
+                    fields[4] = "bug_number";
+                    break;
+                case "Accounts":
+                    queryText = "(accounts.name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                    fields[4] = "account_name";
+                    break;
+                default:
+                    queryText = moduleName.ToLower() + ".name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'";
+                    break;
             }
+
+            return queryText;
         }
 
         private void populateTree(eGetEntryListResult search_result, string module, TreeNode root_node)
