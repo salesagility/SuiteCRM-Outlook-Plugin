@@ -132,6 +132,12 @@ namespace SuiteCRMClient
             request.ContentType = contentTypeAndEncoding;
             request.Timeout = this.timeout;
 
+            log.Debug(
+                String.Format(
+                    "CrmRestServer.CreatePostRequest:\n\tContent type: {0}\n\tPayload     {1}",
+                    contentTypeAndEncoding,
+                    System.Text.Encoding.ASCII.GetString(bytes).Trim()));
+
             using (var requestStream = request.GetRequestStream())
             {
                 requestStream.Write(bytes, 0, bytes.Length);

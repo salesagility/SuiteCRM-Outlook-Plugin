@@ -377,28 +377,34 @@ namespace SuiteCRMAddIn
             // labelKey
             // 
             this.labelKey.AutoSize = true;
+            this.labelKey.Enabled = false;
             this.labelKey.Location = new System.Drawing.Point(6, 43);
             this.labelKey.Name = "labelKey";
             this.labelKey.Size = new System.Drawing.Size(25, 13);
             this.labelKey.TabIndex = 2;
             this.labelKey.Text = "Key";
+            this.labelKey.Visible = false;
             // 
             // txtLDAPAuthenticationKey
             // 
+            this.txtLDAPAuthenticationKey.Enabled = false;
             this.txtLDAPAuthenticationKey.Location = new System.Drawing.Point(78, 40);
             this.txtLDAPAuthenticationKey.Name = "txtLDAPAuthenticationKey";
             this.txtLDAPAuthenticationKey.Size = new System.Drawing.Size(207, 20);
             this.txtLDAPAuthenticationKey.TabIndex = 6;
+            this.txtLDAPAuthenticationKey.Visible = false;
             // 
             // chkEnableLDAPAuthentication
             // 
             this.chkEnableLDAPAuthentication.AutoSize = true;
+            this.chkEnableLDAPAuthentication.Enabled = false;
             this.chkEnableLDAPAuthentication.Location = new System.Drawing.Point(9, 16);
             this.chkEnableLDAPAuthentication.Name = "chkEnableLDAPAuthentication";
             this.chkEnableLDAPAuthentication.Size = new System.Drawing.Size(161, 17);
             this.chkEnableLDAPAuthentication.TabIndex = 5;
             this.chkEnableLDAPAuthentication.Text = "Enable LDAP Authentication";
             this.chkEnableLDAPAuthentication.UseVisualStyleBackColor = true;
+            this.chkEnableLDAPAuthentication.Visible = false;
             this.chkEnableLDAPAuthentication.CheckedChanged += new System.EventHandler(this.chkEnableLDAPAuthentication_CheckedChanged);
             // 
             // groupBox1

@@ -560,7 +560,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                  * magic SShouldSync property) then we need to guarantee changes made in CRM are copied back */
                 Outlook.UserProperty syncProperty = oItem.UserProperties["SShouldSync"];
                 string shouldSync = syncProperty == null ?
-                    Boolean.TrueString :
+                    Boolean.TrueString.ToLower() :
                     syncProperty.Value;
 
                 data[18] = clsSuiteCRMHelper.SetNameValuePair("sync_contact", shouldSync);
