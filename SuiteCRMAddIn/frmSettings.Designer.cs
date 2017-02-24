@@ -254,12 +254,14 @@ namespace SuiteCRMAddIn
             // 
             // btnSelect
             // 
+            this.btnSelect.Enabled = false;
             this.btnSelect.Location = new System.Drawing.Point(258, 43);
             this.btnSelect.Name = "btnSelect";
             this.btnSelect.Size = new System.Drawing.Size(57, 23);
             this.btnSelect.TabIndex = 13;
             this.btnSelect.Text = "...";
             this.btnSelect.UseVisualStyleBackColor = true;
+            this.btnSelect.Visible = false;
             this.btnSelect.Click += new System.EventHandler(this.btnSelect_Click);
             // 
             // label5
@@ -281,12 +283,14 @@ namespace SuiteCRMAddIn
             // cbShowCustomModules
             // 
             this.cbShowCustomModules.AutoSize = true;
+            this.cbShowCustomModules.Enabled = false;
             this.cbShowCustomModules.Location = new System.Drawing.Point(8, 47);
             this.cbShowCustomModules.Name = "cbShowCustomModules";
             this.cbShowCustomModules.Size = new System.Drawing.Size(142, 17);
             this.cbShowCustomModules.TabIndex = 12;
             this.cbShowCustomModules.Text = "Include Custom Modules";
             this.cbShowCustomModules.UseVisualStyleBackColor = true;
+            this.cbShowCustomModules.Visible = false;
             this.cbShowCustomModules.Click += new System.EventHandler(this.cbShowCustomModules_Click);
             // 
             // checkBoxShowRightClick
