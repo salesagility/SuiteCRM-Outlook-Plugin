@@ -36,10 +36,10 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// <summary>
     /// Handles the synchronisation of appointments between Outlook and CMS.
     /// </summary>
-    public class AppointmentSyncing: Syncing<Outlook.AppointmentItem>
+    public class AppointmentSyncing: Synchroniser<Outlook.AppointmentItem>
     {
         public AppointmentSyncing(SyncContext context)
-            : base(context)
+            : base("Appointment synchroniser", context)
         {
         }
 
@@ -148,26 +148,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Action method of the thread.
         /// </summary>
-        public void SynchroniseAll()
+        public override void SynchroniseAll()
         {
-            try
-            {
-                Log.Info("AppointmentSync thread started");
-                AddSuiteCrmOutlookCategory();
-                Outlook.MAPIFolder folder = GetDefaultFolder();
+            AddSuiteCrmOutlookCategory();
+            Outlook.MAPIFolder folder = GetDefaultFolder();
 
-                GetOutlookItems(folder);
-                SyncFolder(folder, "Meetings");
-                SyncFolder(folder, "Calls");
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.StartCalendarSync", ex);
-            }
-            finally
-            {
-                Log.Info("AppointmentSync thread completed");
-            }
+            GetOutlookItems(folder);
+            SyncFolder(folder, "Meetings");
+            SyncFolder(folder, "Calls");
         }
 
         private void AddCurrentUserAsOwner(Outlook.AppointmentItem olItem, string meetingId)
@@ -477,7 +465,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (ItemsSyncState == null)
                 {
-                    ItemsSyncState = new List<SyncState<Outlook.AppointmentItem>>();
+                    ItemsSyncState = new ThreadSafeList<SyncState<Outlook.AppointmentItem>>();
 
                     foreach (Outlook.AppointmentItem aItem in appointmentsFolder.Items)
                     {

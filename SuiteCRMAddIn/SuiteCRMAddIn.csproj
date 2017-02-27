@@ -204,18 +204,21 @@
     </Compile>
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
+    <Compile Include="BusinessLogic\RunState.cs" />
     <Compile Include="BusinessLogic\LicenceValidation.cs" />
     <Compile Include="BusinessLogic\LicenceValidationHelper.cs" />
     <Compile Include="BusinessLogic\ContactSyncing.cs" />
     <Compile Include="BusinessLogic\ContactSyncState.cs" />
     <Compile Include="BusinessLogic\EmailAccountsArchiveSettings.cs" />
     <Compile Include="BusinessLogic\EmailArchiving.cs" />
+    <Compile Include="BusinessLogic\RepeatingProcess.cs" />
     <Compile Include="BusinessLogic\SyncContext.cs" />
-    <Compile Include="BusinessLogic\Syncing.cs" />
+    <Compile Include="BusinessLogic\Synchroniser.cs" />
     <Compile Include="BusinessLogic\SyncState.cs" />
     <Compile Include="BusinessLogic\SyncState{1}.cs" />
     <Compile Include="BusinessLogic\TaskSyncing.cs" />
     <Compile Include="BusinessLogic\TaskSyncState.cs" />
+    <Compile Include="BusinessLogic\ThreadSafeList.cs" />
     <Compile Include="clsGlobals.cs" />
     <Compile Include="clsSettings.cs" />
     <Compile Include="EmailAccountArchiveSettingsControl.cs">

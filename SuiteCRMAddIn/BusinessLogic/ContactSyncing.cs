@@ -32,34 +32,22 @@ namespace SuiteCRMAddIn.BusinessLogic
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Runtime.InteropServices;
 
-    public class ContactSyncing: Syncing<Outlook.ContactItem>
+    public class ContactSyncing: Synchroniser<Outlook.ContactItem>
     {
         public ContactSyncing(SyncContext context)
-            : base(context)
+            : base("Contact synchroniser", context)
         {
         }
 
         public override bool SyncingEnabled => settings.SyncContacts;
 
-        public void StartSync()
+        public override void SynchroniseAll()
         {
-            try
-            {
-                Log.Info("ContactSync thread starting");
-                Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
-                Outlook.MAPIFolder folder = GetDefaultFolder();
+            Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
+            Outlook.MAPIFolder folder = GetDefaultFolder();
 
-                GetOutlookItems(folder);
-                SyncFolder(folder);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.StartContactSync", ex);
-            }
-            finally
-            {
-                Log.Info("ContactSync thread completed");
-            }
+            GetOutlookItems(folder);
+            SyncFolder(folder);
         }
 
         /// <summary>
@@ -442,7 +430,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (ItemsSyncState == null)
                 {
-                    ItemsSyncState = new List<SyncState<Outlook.ContactItem>>();
+                    ItemsSyncState = new ThreadSafeList<SyncState<Outlook.ContactItem>>();
                     Outlook.Items items = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
                     foreach (Outlook.ContactItem oItem in items)
                     {

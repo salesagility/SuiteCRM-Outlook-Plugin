@@ -20,22 +20,25 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
- namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.BusinessLogic
 {
+    using SuiteCRMClient;
+    using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
-    using SuiteCRMClient;
-    using SuiteCRMClient.Logging;
-    using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
-    // TODO: Make syncing thread-safe.
-    public abstract class Syncing<OutlookItemType>: IDisposable
-        where OutlookItemType: class
+    /// <summary>
+    /// Synchronise items of the class for which I am responsible.
+    /// </summary>
+    /// <typeparam name="OutlookItemType">The class of item for which I am responsible.</typeparam>
+    public abstract class Synchroniser<OutlookItemType> : RepeatingProcess, IDisposable
+        where OutlookItemType : class
     {
-        private readonly SyncContext _context;
+        private readonly SyncContext context;
 
         // Keep a reference to the COM object on which we have event handlers, otherwise
         // when the reference is garbage-collected, the event-handlers are removed!
@@ -43,19 +46,48 @@
 
         private string _folderName;
 
-        public Syncing(SyncContext context)
+        public Synchroniser(string name, SyncContext context) : base(name, context.Log)
         {
-            _context = context;
+            this.context = context;
             InstallEventHandlers();
         }
 
-        protected SyncContext Context => _context;
+        /// <summary>
+        /// If I am currently configured to do so, synchronise the items for which I am
+        /// responsible once.
+        /// </summary>
+        internal override void PerformIteration()
+        {
+            if (Globals.ThisAddIn.HasCrmUserSession)
+            {
+                if (this.SyncingEnabled)
+                {
+                    Log.Debug($"{this.GetType().Name} SynchroniseAll starting");
+                    this.SynchroniseAll();
+                    Log.Debug($"{this.GetType().Name} SynchroniseAll completed");
+                }
+                else
+                {
+                    Log.Debug($"{this.GetType().Name}.SynchroniseAll not running because not enabled");
+                }
+            }
+            else
+            {
+                Log.Debug($"{this.GetType().Name}.SynchroniseAll not running because no session");
+            }
+        }
+
+        /// <summary>
+        /// Run a single iteration of the synchronisation process for the items for which I am responsible.
+        /// </summary>
+        public abstract void SynchroniseAll();
+
+        protected SyncContext Context => context;
 
         protected Outlook.Application Application => Context.Application;
 
         protected clsSettings settings => Context.settings;
 
-        protected ILogger Log => Context.Log;
 
         /// <summary>
         /// List of the synchronisation state of all items which may require synchronisation.
@@ -63,7 +95,7 @@
         /// Collections, probably ConcurrentBag. See
         /// https://msdn.microsoft.com/en-us/library/dd997305(v=vs.110).aspx
         /// </summary>
-        protected List<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = null;
+        protected ThreadSafeList<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = null;
 
         public abstract bool SyncingEnabled { get; }
 
