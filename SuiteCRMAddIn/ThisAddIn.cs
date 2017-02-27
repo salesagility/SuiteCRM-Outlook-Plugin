@@ -52,19 +52,15 @@ namespace SuiteCRMAddIn
         public Office.CommandBarButton btnSettings;
         public OutlookMajorVersion OutlookVersion;
 
-        private SyncContext _syncContext;
-        private ContactSyncing _contactSyncing;
-        private TaskSyncing _taskSyncing;
-        private AppointmentSyncing _appointmentSyncing;
+        private SyncContext synchronisationContext;
+        private ContactSyncing contactSynchroniser;
+        private TaskSyncing taskSynchroniser;
+        private AppointmentSyncing appointmentSynchroniser;
 
         public Office.IRibbonUI RibbonUI { get; set; }
+        private EmailArchiving emailArchiver;
 
         private ILogger log;
-
-        /// <summary>
-        /// The polling interval; currently hard wired.
-        /// </summary>
-        private static readonly TimeSpan SyncPeriod = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// Property to allow other classes to get the logger object, but not
@@ -114,7 +110,7 @@ namespace SuiteCRMAddIn
             return result;
         }
 
-        private bool HasCrmUserSession
+        public bool HasCrmUserSession
         {
             get { return SuiteCRMUserSession?.IsLoggedIn ?? false; }
         }
@@ -129,10 +125,11 @@ namespace SuiteCRMAddIn
                 this.settings = new clsSettings();
                 StartLogging(settings);
 
-                _syncContext = new SyncContext(outlookApp, settings);
-                _contactSyncing = new ContactSyncing(_syncContext);
-                _taskSyncing = new TaskSyncing(_syncContext);
-                _appointmentSyncing = new AppointmentSyncing(_syncContext);
+                synchronisationContext = new SyncContext(outlookApp, settings);
+                contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
+                taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
+                appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
+                emailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
 
                 var outlookExplorer = outlookApp.ActiveExplorer();
                 this.objExplorer = outlookExplorer;
@@ -188,7 +185,7 @@ namespace SuiteCRMAddIn
                 }
 
                 SuiteCRMAuthenticate();
-                new Thread(() => SyncAndAutoArchive()).Start();
+                StartSynchronisationProcesses();
             }
             catch (Exception ex)
             {
@@ -229,7 +226,7 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                _syncContext.SetCurrentFolder(this.objExplorer.CurrentFolder);
+                synchronisationContext.SetCurrentFolder(this.objExplorer.CurrentFolder);
             }
             catch (Exception ex)
             {
@@ -237,41 +234,12 @@ namespace SuiteCRMAddIn
             }
         }
 
-        public async void SyncAndAutoArchive()
+        public void StartSynchronisationProcesses()
         {
-            try
-            {
-                while (true)
-                {
-                    if (HasCrmUserSession && settings.SyncCalendar)
-                    {
-                        new Thread(() => _appointmentSyncing.SynchroniseAll())
-                            .Start();
-
-                        new Thread(() => _taskSyncing.StartSync())
-                            .Start();
-                    }
-                    if (HasCrmUserSession && settings.SyncContacts)
-                    {
-                        new Thread(() => _contactSyncing.StartSync())
-                            .Start();
-                    }
-                    if (HasCrmUserSession && settings.AutoArchive)
-                    {
-                        new Thread(() =>
-                        {
-                            Thread.Sleep(5000);
-                            new EmailArchiving().ArchiveMailInAutoArchiveFolders();
-                        })
-                        .Start();
-                    }
-                    await Task.Delay(SyncPeriod);
-                }
-            }
-            catch (Exception ex)
-            {
-                log.Error("ThisAddIn.Sync", ex);
-            }
+            DoOrLogError(() => this.appointmentSynchroniser.Start(), "Starting appointments synchroniser");
+            DoOrLogError(() => this.contactSynchroniser.Start(), "Starting contacts synchroniser");
+            DoOrLogError(() => this.taskSynchroniser.Start(), "Starting tasks synchroniser");
+            DoOrLogError(() => this.emailArchiver.Start(), "Starting email archiver");
         }
 
         private void cbtnArchive_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
@@ -367,7 +335,7 @@ namespace SuiteCRMAddIn
 
             try
             {
-                _appointmentSyncing.Dispose();
+                appointmentSynchroniser.Dispose();
             }
             catch (Exception ex)
             {
@@ -375,7 +343,7 @@ namespace SuiteCRMAddIn
             }
             try
             {
-                _contactSyncing.Dispose();
+                contactSynchroniser.Dispose();
             }
             catch (Exception ex)
             {
@@ -383,7 +351,7 @@ namespace SuiteCRMAddIn
             }
             try
             {
-                _taskSyncing.Dispose();
+                taskSynchroniser.Dispose();
             }
             catch (Exception ex)
             {
@@ -473,7 +441,7 @@ namespace SuiteCRMAddIn
                 log.Info("New 'mail item' was null");
                 return;
             }
-            new EmailArchiving().ProcessEligibleNewMailItem(mailItem, archiveType);
+            new EmailArchiving($"EN-{mailItem.SenderEmailAddress}", Globals.ThisAddIn.Log).ProcessEligibleNewMailItem(mailItem, archiveType);
         }
 
         /// <summary>
@@ -591,6 +559,11 @@ namespace SuiteCRMAddIn
         private void DoOrLogError(Action action)
         {
             Robustness.DoOrLogError(log, action);
+        }
+
+        private void DoOrLogError(Action action, string message)
+        {
+            Robustness.DoOrLogError(log, action, message);
         }
     }
 }
