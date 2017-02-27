@@ -38,8 +38,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class AppointmentSyncing: Synchroniser<Outlook.AppointmentItem>
     {
-        public AppointmentSyncing(SyncContext context)
-            : base("Appointment synchroniser", context)
+        public AppointmentSyncing(string name, SyncContext context)
+            : base(name, context)
         {
         }
 

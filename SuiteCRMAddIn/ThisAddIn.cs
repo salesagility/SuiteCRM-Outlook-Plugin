@@ -126,10 +126,10 @@ namespace SuiteCRMAddIn
                 StartLogging(settings);
 
                 synchronisationContext = new SyncContext(outlookApp, settings);
-                contactSynchroniser = new ContactSyncing(synchronisationContext);
-                taskSynchroniser = new TaskSyncing(synchronisationContext);
-                appointmentSynchroniser = new AppointmentSyncing(synchronisationContext);
-                emailArchiver = new EmailArchiving(synchronisationContext.Log);
+                contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
+                taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
+                appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
+                emailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
 
                 var outlookExplorer = outlookApp.ActiveExplorer();
                 this.objExplorer = outlookExplorer;
@@ -441,7 +441,7 @@ namespace SuiteCRMAddIn
                 log.Info("New 'mail item' was null");
                 return;
             }
-            new EmailArchiving(Globals.ThisAddIn.Log).ProcessEligibleNewMailItem(mailItem, archiveType);
+            new EmailArchiving($"EN-{mailItem.SenderEmailAddress}", Globals.ThisAddIn.Log).ProcessEligibleNewMailItem(mailItem, archiveType);
         }
 
         /// <summary>

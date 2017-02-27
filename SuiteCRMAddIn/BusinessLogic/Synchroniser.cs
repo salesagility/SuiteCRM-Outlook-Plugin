@@ -46,7 +46,12 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private string _folderName;
 
-        public Synchroniser(string name, SyncContext context) : base(name, context.Log)
+        /// <summary>
+        /// Construct a new instance of a synchroniser with this thread name and context.
+        /// </summary>
+        /// <param name="threadName">The name of the thread I shall create.</param>
+        /// <param name="context">The context in which I shall work.</param>
+        public Synchroniser(string threadName, SyncContext context) : base(threadName, context.Log)
         {
             this.context = context;
             InstallEventHandlers();

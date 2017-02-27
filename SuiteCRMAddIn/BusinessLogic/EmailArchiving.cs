@@ -40,7 +40,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private clsSettings settings => Globals.ThisAddIn.Settings;
 
-        public EmailArchiving(ILogger log) : base("EmailArchiving", log)
+        public EmailArchiving(string name, ILogger log) : base(name, log)
         {
         }
 

@@ -34,8 +34,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
     public class ContactSyncing: Synchroniser<Outlook.ContactItem>
     {
-        public ContactSyncing(SyncContext context)
-            : base("Contact synchroniser", context)
+        public ContactSyncing(string name, SyncContext context)
+            : base(name, context)
         {
         }
 

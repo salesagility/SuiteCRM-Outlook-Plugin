@@ -12,8 +12,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public class TaskSyncing: Synchroniser<Outlook.TaskItem>
     {
-        public TaskSyncing(SyncContext context)
-            : base("Task synchroniser", context)
+        public TaskSyncing(string name, SyncContext context)
+            : base(name, context)
         {
         }
 
