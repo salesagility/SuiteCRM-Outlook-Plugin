@@ -1,7 +1,0 @@
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\bin\Debug\SugarCRMClient.dll.config
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\bin\Debug\SugarCRMClient.dll
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\bin\Debug\SugarCRMClient.pdb
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\obj\Debug\SugarCRMClient.dll
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\obj\Debug\SugarCRMClient.pdb
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\bin\Debug\Newtonsoft.Json.dll
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\obj\Debug\SugarCRMClient.csprojResolveAssemblyReference.cache
