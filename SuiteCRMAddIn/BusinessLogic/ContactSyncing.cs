@@ -183,7 +183,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             SyncState<Outlook.ContactItem> result;
             dynamic crmItem = JsonConvert.DeserializeObject(candidateItem.name_value_object.ToString());
             String id = crmItem.id.value.ToString();
-            var oItem = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItem.id.value.ToString());
+            var syncStateForItem = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItem.id.value.ToString());
 
             if (ShouldSyncContact(crmItem))
             {
@@ -192,14 +192,36 @@ namespace SuiteCRMAddIn.BusinessLogic
                         "ContactSyncing.UpdateFromCrm, entry id is '{0}', sync_contact is true, syncing",
                         id));
 
-                if (oItem == null)
+                if (syncStateForItem == null)
                 {
                     result = AddNewItemFromCrmToOutlook(folder, crmItem);
                 }
                 else
                 {
-                    result = UpdateExistingOutlookItemFromCrm(crmItem, oItem);
+                    result = UpdateExistingOutlookItemFromCrm(crmItem, syncStateForItem);
                 }
+            }
+            else if (ShouldSyncFlagChanged(syncStateForItem.OutlookItem, crmItem))
+            {
+                /* The date_modified value in CRM does not get updated when the sync_contact value
+                 * is changed. But seeing this value can only be updated at the CRM side, if it
+                 * has changed the change must have been at the CRM side, so we need to update.
+                 * But we should only update the SShouldSync and SOModifiedDate properties, because 
+                 * we're not supposed to be syncing! Note also that it must have changed to 'false',
+                 * because if it had changed to 'true' we would have synced normally in the above
+                 * branch. */
+                Log.Warn($"ContactSyncing.UpdateFromCrm, entry id is '{id}', sync_contact has changed to {crmItem.sync_contact.value}, setting property");
+
+                DateTime now = DateTime.UtcNow;
+
+                EnsureSynchronisationPropertiesForOutlookItem(
+                    syncStateForItem.OutlookItem,
+                    now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    "false",
+                    id);
+                syncStateForItem.OModifiedDate = now;
+
+                result = syncStateForItem;
             }
             else
             {
@@ -208,7 +230,29 @@ namespace SuiteCRMAddIn.BusinessLogic
                         "ContactSyncing.UpdateFromCrm, entry id is '{0}', sync_contact is false, not syncing",
                         id));
                 
-                result = oItem;
+                result = syncStateForItem;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Detect whether the should sync flag value is different between these two representations.
+        /// </summary>
+        /// <param name="outlookItem">An outlook item.</param>
+        /// <param name="crmItem">A CRM item, presumed to represent the same entity.</param>
+        /// <returns>True if the should sync flag values are different, else false.</returns>
+        private bool ShouldSyncFlagChanged(Outlook.ContactItem outlookItem, dynamic crmItem)
+        {
+            bool result = false;
+            Outlook.UserProperty shouldSyncProp = outlookItem.UserProperties["SShouldSync"];
+
+            if (shouldSyncProp != null)
+            {
+                string crmShouldSync = ShouldSyncContact(crmItem).ToString().ToLower();
+                string olShouldSync = shouldSyncProp.Value.ToLower();
+
+                result = crmShouldSync != olShouldSync;
             }
 
             return result;
@@ -268,26 +312,32 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Return true if this CRM contact should be synchronised with Outlook.
         /// </summary>
+        /// <remarks>
+        /// If the 'Sync to Outlook' field is set in CRM, we get 'true' as the value of crmItem.sync_contact. 
+        /// But if the field is not set, we do not (or do not reliably) get 'false'. The sync_contact 
+        /// property may have a value of ''.
+        /// </remarks>
         /// <param name="crmContact">The CRM contact.</param>
         /// <returns>true if this CRM contact should be synchronised with Outlook.</returns>
         private bool ShouldSyncContact(dynamic crmContact)
         {
-            bool result = false;
-            String stringValue = crmContact.sync_contact.value.ToString();
+            return Boolean.TrueString.ToLower().Equals(crmContact.sync_contact.value.ToString().ToLower());
+        }
 
-            try
-            {
-                result = Boolean.Parse(stringValue);
-            }
-            catch (FormatException)
-            {
-                Log.Warn(
-                    String.Format(
-                        "ContactSyncing.ShouldSyncContact: unexpected format for sync_contact, '{0}'", 
-                        stringValue));
-            }
+        /// <summary>
+        /// A CRM item is perceived to have changed if its modified date is different from
+        /// that of its Outlook representation, or if its should sync flag is.
+        /// </summary>
+        /// <param name="crmItem">A CRM item.</param>
+        /// <param name="outlookItem">An Outlook item, assumed to represent the same entity.</param>
+        /// <returns>True if either of these propertyies differ between the representations.</returns>
+        private bool CrmItemChanged(dynamic crmItem, Outlook.ContactItem outlookItem)
+        {
+            Outlook.UserProperty dateModifiedProp = outlookItem.UserProperties["SOModifiedDate"];
+            Outlook.UserProperty shouldSyncProp = outlookItem.UserProperties["SShouldSync"];
 
-            return result;
+            return (dateModifiedProp.Value != crmItem.date_modified.value.ToString() ||
+                ShouldSyncFlagChanged(outlookItem, crmItem));
         }
 
         /// <summary>
@@ -295,39 +345,41 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// this just overwrites all values in the Outlook item.
         /// </summary>
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
-        /// <param name="oItem">The outlook item assumed to correspond with the CRM item.</param>
+        /// <param name="itemSyncState">The sync state of an outlook item assumed to correspond with the CRM item.</param>
         /// <returns>An appropriate sync state.</returns>
-        private SyncState<Outlook.ContactItem> UpdateExistingOutlookItemFromCrm(dynamic crmItem, SyncState<Outlook.ContactItem> oItem)
+        private SyncState<Outlook.ContactItem> UpdateExistingOutlookItemFromCrm(dynamic crmItem, SyncState<Outlook.ContactItem> itemSyncState)
         {
-            Outlook.ContactItem cItem = oItem.OutlookItem;
-            Outlook.UserProperty oProp = cItem.UserProperties["SOModifiedDate"];
+            Outlook.ContactItem outlookItem = itemSyncState.OutlookItem;
+            Outlook.UserProperty dateModifiedProp = outlookItem.UserProperties["SOModifiedDate"];
+            Outlook.UserProperty shouldSyncProp = outlookItem.UserProperties["SShouldSync"];
+            this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
 
-            if (oProp.Value != crmItem.date_modified.value.ToString())
+            if (CrmItemChanged(crmItem, outlookItem))
             {
-                cItem.FirstName = crmItem.first_name.value.ToString();
-                cItem.LastName = crmItem.last_name.value.ToString();
-                cItem.Email1Address = crmItem.email1.value.ToString();
-                cItem.BusinessTelephoneNumber = crmItem.phone_work.value.ToString();
-                cItem.HomeTelephoneNumber = crmItem.phone_home.value.ToString();
-                cItem.MobileTelephoneNumber = crmItem.phone_mobile.value.ToString();
-                cItem.JobTitle = crmItem.title.value.ToString();
-                cItem.Department = crmItem.department.value.ToString();
-                cItem.BusinessAddressCity = crmItem.primary_address_city.value.ToString();
-                cItem.BusinessAddressCountry = crmItem.primary_address_country.value.ToString();
-                cItem.BusinessAddressPostalCode = crmItem.primary_address_postalcode.value.ToString();
+                outlookItem.FirstName = crmItem.first_name.value.ToString();
+                outlookItem.LastName = crmItem.last_name.value.ToString();
+                outlookItem.Email1Address = crmItem.email1.value.ToString();
+                outlookItem.BusinessTelephoneNumber = crmItem.phone_work.value.ToString();
+                outlookItem.HomeTelephoneNumber = crmItem.phone_home.value.ToString();
+                outlookItem.MobileTelephoneNumber = crmItem.phone_mobile.value.ToString();
+                outlookItem.JobTitle = crmItem.title.value.ToString();
+                outlookItem.Department = crmItem.department.value.ToString();
+                outlookItem.BusinessAddressCity = crmItem.primary_address_city.value.ToString();
+                outlookItem.BusinessAddressCountry = crmItem.primary_address_country.value.ToString();
+                outlookItem.BusinessAddressPostalCode = crmItem.primary_address_postalcode.value.ToString();
 
                 if (crmItem.primary_address_street.value != null)
-                    cItem.BusinessAddressStreet = crmItem.primary_address_street.value.ToString();
-                cItem.Body = crmItem.description.value.ToString();
-                cItem.Account = cItem.CompanyName = String.Empty;
+                    outlookItem.BusinessAddressStreet = crmItem.primary_address_street.value.ToString();
+                outlookItem.Body = crmItem.description.value.ToString();
+                outlookItem.Account = outlookItem.CompanyName = String.Empty;
                 if (crmItem.account_name != null && crmItem.account_name.value != null)
                 {
-                    cItem.Account = crmItem.account_name.value.ToString();
-                    cItem.CompanyName = crmItem.account_name.value.ToString();
+                    outlookItem.Account = crmItem.account_name.value.ToString();
+                    outlookItem.CompanyName = crmItem.account_name.value.ToString();
                 }
 
-                cItem.BusinessFaxNumber = crmItem.phone_fax.value.ToString();
-                cItem.Title = crmItem.salutation.value.ToString();
+                outlookItem.BusinessFaxNumber = crmItem.phone_fax.value.ToString();
+                outlookItem.Title = crmItem.salutation.value.ToString();
 
                 try
                 {
@@ -336,21 +388,21 @@ namespace SuiteCRMAddIn.BusinessLogic
                         Boolean.TrueString : 
                         crmItem.sync_contact.value.ToString();
                     var crmId = crmItem.id.value.ToString();
-                    EnsureSynchronisationPropertiesForOutlookItem(cItem, dateModified, shouldSync, crmId);
+                    EnsureSynchronisationPropertiesForOutlookItem(outlookItem, dateModified, shouldSync, crmId);
                 }
                 catch (Exception any)
                 {
                     this.Log.Error("Attempt to read not present value from crmItem?", any);
                 }
 
-                this.LogItemAction(cItem, $"ContactSyncing.UpdateExistingOutlookItemFromCrm, saving with {cItem.Sensitivity}");
+                this.LogItemAction(outlookItem, $"ContactSyncing.UpdateExistingOutlookItemFromCrm, saving with {outlookItem.Sensitivity}");
 
-                cItem.Save();
+                outlookItem.Save();
             }
 
-            this.LogItemAction(cItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
-            oItem.OModifiedDate = DateTime.ParseExact(crmItem.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
-            return oItem;
+            this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
+            itemSyncState.OModifiedDate = DateTime.ParseExact(crmItem.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
+            return itemSyncState;
         }
 
         private Outlook.ContactItem ConstructOutlookItemFromCrmItem(Outlook.MAPIFolder contactFolder, dynamic crmItem)
