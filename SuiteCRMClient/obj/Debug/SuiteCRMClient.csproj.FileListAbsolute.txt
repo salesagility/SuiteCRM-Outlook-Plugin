@@ -18,3 +18,11 @@ D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO ver
 D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SugarCRMClient\obj\Debug\SugarCRMClient.dll
 D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SugarCRMClient\obj\Debug\SugarCRMClient.pdb
 D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SugarCRMClient\obj\Debug\SuiteCRMClient.csprojResolveAssemblyReference.cache
+C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\SuiteCRMClient.dll.config
+C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\SuiteCRMClient.dll
+C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\SuiteCRMClient.pdb
+C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\Newtonsoft.Json.dll
+C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\Newtonsoft.Json.xml
+C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\obj\Debug\SuiteCRMClient.csprojResolveAssemblyReference.cache
+C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\obj\Debug\SuiteCRMClient.dll
+C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\obj\Debug\SuiteCRMClient.pdb
