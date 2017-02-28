@@ -47,3 +47,6 @@ packages/
 *.suo
 *.user
 
+/SuiteCRMClient/obj
+bin
+obj
