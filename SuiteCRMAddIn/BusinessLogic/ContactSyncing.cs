@@ -513,62 +513,92 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The outlook item to add.</param>
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
-        private void AddOrUpdateItemFromOutlookToCrm(Outlook.ContactItem oItem, string sID = null)
+        private void AddOrUpdateItemFromOutlookToCrm(Outlook.ContactItem outlookItem, string sID = null)
         {
             if (!SyncingEnabled)
                 return;
-            if (oItem == null) return;
+            if (outlookItem == null) return;
             try
             {
-                string _result = String.Empty;
-                eNameValue[] data = new eNameValue[19];
+                string contactIdInCRM = clsSuiteCRMHelper.SetEntryUnsafe(ConstructJsonPacket(outlookItem, sID), "Contacts");
 
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("email1", oItem.Email1Address);
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("title", oItem.JobTitle);
-                data[2] = clsSuiteCRMHelper.SetNameValuePair("phone_work", oItem.BusinessTelephoneNumber);
-                data[3] = clsSuiteCRMHelper.SetNameValuePair("phone_home", oItem.HomeTelephoneNumber);
-                data[4] = clsSuiteCRMHelper.SetNameValuePair("phone_mobile", oItem.MobileTelephoneNumber);
-                data[5] = clsSuiteCRMHelper.SetNameValuePair("phone_fax", oItem.BusinessFaxNumber);
-                data[6] = clsSuiteCRMHelper.SetNameValuePair("department", oItem.Department);
-                data[7] = clsSuiteCRMHelper.SetNameValuePair("primary_address_city", oItem.BusinessAddressCity);
-                data[8] = clsSuiteCRMHelper.SetNameValuePair("primary_address_state", oItem.BusinessAddressState);
-                data[9] = clsSuiteCRMHelper.SetNameValuePair("primary_address_postalcode", oItem.BusinessAddressPostalCode);
-                data[10] = clsSuiteCRMHelper.SetNameValuePair("primary_address_country", oItem.BusinessAddressCountry);
-                data[11] = clsSuiteCRMHelper.SetNameValuePair("primary_address_street", oItem.BusinessAddressStreet);
-                data[12] = clsSuiteCRMHelper.SetNameValuePair("description", oItem.Body);
-                data[13] = clsSuiteCRMHelper.SetNameValuePair("last_name", oItem.LastName);
-                data[14] = clsSuiteCRMHelper.SetNameValuePair("first_name", oItem.FirstName);
-                data[15] = clsSuiteCRMHelper.SetNameValuePair("account_name", oItem.CompanyName);
-                data[16] = clsSuiteCRMHelper.SetNameValuePair("salutation", oItem.Title);
-                data[17] = string.IsNullOrEmpty(sID) ?
-                    clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId()) :
-                    clsSuiteCRMHelper.SetNameValuePair("id", sID);
-
-                /* If it was created in Outlook and doesn't exist in CRM,  (in which case it won't yet have a 
-                 * magic SShouldSync property) then we need to guarantee changes made in CRM are copied back */
-                Outlook.UserProperty syncProperty = oItem.UserProperties["SShouldSync"];
+                Outlook.UserProperty syncProperty = outlookItem.UserProperties["SShouldSync"];
                 string shouldSync = syncProperty == null ?
                     Boolean.TrueString.ToLower() :
                     syncProperty.Value;
 
-                data[18] = clsSuiteCRMHelper.SetNameValuePair("sync_contact", shouldSync);
+                EnsureSyncWithOutlookSetInCRM(contactIdInCRM, syncProperty);
 
-                _result = clsSuiteCRMHelper.SetEntryUnsafe(data, "Contacts");
+                EnsureSynchronisationPropertiesForOutlookItem(outlookItem, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), shouldSync, contactIdInCRM);
 
-                EnsureSynchronisationPropertiesForOutlookItem(oItem, DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), shouldSync, _result);
+                this.LogItemAction(outlookItem, "ContactSyncing.AddToCrm, saving");
+                outlookItem.Save();
 
-                this.LogItemAction(oItem, "ContactSyncing.AddToCrm, saving");
-                oItem.Save();
-
-                var state = AddOrGetSyncState(oItem);
+                var state = AddOrGetSyncState(outlookItem);
 
                 state.OModifiedDate = DateTime.UtcNow;
-                state.CrmEntryId = _result;
+                state.CrmEntryId = contactIdInCRM;
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.AddContactToS", ex);
+                Log.Error("ContactSyncing.AddOrUpdateItemFromOutlookToCrm", ex);
             }
+        }
+
+        /// <summary>
+        /// If it was created in Outlook and doesn't exist in CRM,  (in which case it won't yet have a 
+        /// magic SShouldSync property) then we need to guarantee changes made in CRM are copied back
+        /// by setting the Sync to Outlook checkbox in CRM.
+        /// </summary>
+        /// <param name="contactIdInCRM">The identifier of the contact in the CRM system</param>
+        /// <param name="syncProperty">If non null, set the checkbox.</param>
+        private static void EnsureSyncWithOutlookSetInCRM(string contactIdInCRM, Outlook.UserProperty syncProperty)
+        {
+            if (syncProperty == null)
+            {
+                eSetRelationshipValue info = new eSetRelationshipValue
+                {
+                    module1 = "Contacts",
+                    module1_id = contactIdInCRM,
+                    module2 = "user_sync",
+                    module2_id = clsSuiteCRMHelper.GetUserId()
+                };
+                clsSuiteCRMHelper.SetRelationshipUnsafe(info);
+            }
+        }
+
+        /// <summary>
+        /// Construct a JSON packet representing this outlook item.
+        /// </summary>
+        /// <param name="outlookItem">The outlook item to represent.</param>
+        /// <param name="sID">The CRM id of this item if we know it, or null if we don't.</param>
+        /// <returns>A packet representing this item.</returns>
+        private static eNameValue[] ConstructJsonPacket(Outlook.ContactItem outlookItem, string sID)
+        {
+            var packet = new List<eNameValue>();
+
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("email1", outlookItem.Email1Address));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("title", outlookItem.JobTitle));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("phone_work", outlookItem.BusinessTelephoneNumber));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("phone_home", outlookItem.HomeTelephoneNumber));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("phone_mobile", outlookItem.MobileTelephoneNumber));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("phone_fax", outlookItem.BusinessFaxNumber));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("department", outlookItem.Department));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_city", outlookItem.BusinessAddressCity));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_state", outlookItem.BusinessAddressState));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_postalcode", outlookItem.BusinessAddressPostalCode));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_country", outlookItem.BusinessAddressCountry));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_street", outlookItem.BusinessAddressStreet));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("description", outlookItem.Body));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("last_name", outlookItem.LastName));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("first_name", outlookItem.FirstName));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("account_name", outlookItem.CompanyName));
+            packet.Add(clsSuiteCRMHelper.SetNameValuePair("salutation", outlookItem.Title));
+            packet.Add(string.IsNullOrEmpty(sID) ?
+                clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId()) :
+                clsSuiteCRMHelper.SetNameValuePair("id", sID));
+
+            return packet.ToArray();
         }
 
         private SyncState<Outlook.ContactItem> AddOrGetSyncState(Outlook.ContactItem oItem)

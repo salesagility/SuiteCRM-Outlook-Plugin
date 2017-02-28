@@ -34,7 +34,7 @@ namespace SuiteCRMClient.RESTObjects
         [JsonProperty("name")]
         public string name { get; set; }
         [JsonProperty("value")]
-        public string value { get; set; }
+        public object value { get; set; }
     }
 
 }

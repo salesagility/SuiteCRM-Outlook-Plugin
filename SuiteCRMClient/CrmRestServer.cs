@@ -133,12 +133,14 @@ namespace SuiteCRMClient
             request.Timeout = this.timeout;
 
             /* This block is really useful because it allows us to see exactly what gets sent over 
-             * the wire, but it's also extremely dodgy because sensitive data will end up in the log */ 
-            //log.Debug(
-            //    String.Format(
-            //        "CrmRestServer.CreatePostRequest:\n\tContent type: {0}\n\tPayload     {1}",
-            //        contentTypeAndEncoding,
-            //        System.Text.Encoding.ASCII.GetString(bytes).Trim()));
+             * the wire, but it's also extremely dodgy because sensitive data will end up in the log.
+             * TODO remove before stable release! */
+            log.Debug(
+                String.Format(
+                    "CrmRestServer.CreatePostRequest:\n\tContent type: {0}\n\tPayload     {1}",
+                    contentTypeAndEncoding,
+                    System.Web.HttpUtility.UrlDecode(Encoding.ASCII.GetString(bytes).Trim())));
+            log.Debug("CrmRestServer.CreatePostRequest: end of packet.");
 
             using (var requestStream = request.GetRequestStream())
             {
