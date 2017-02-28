@@ -41,3 +41,9 @@ Thumbs.db
 Desktop.ini
 # Disytel
 lang_cmp.php
+
+# Visual Studio
+packages/
+*.suo
+*.user
+

@@ -4,7 +4,7 @@
  * @copyright SalesAgility Ltd http://www.salesagility.com
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE as published by
+ * it under the terms of the GNU LESSER GENERAL PUBLIC LICENCE as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+ * You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENCE
  * along with this program; if not, see http://www.gnu.org/licenses
  * or write to the Free Software Foundation,Inc., 51 Franklin Street,
  * Fifth Floor, Boston, MA 02110-1301  USA
@@ -103,7 +103,7 @@ namespace SuiteCRMAddIn
             }
             if ((ribbonID == "Microsoft.Outlook.Mail.Read") || (ribbonID=="Microsoft.Outlook.Explorer"))
             {
-                if (Globals.ThisAddIn.CurrentVersion < 14)
+                if (Globals.ThisAddIn.OutlookVersion <= OutlookMajorVersion.Outlook2013)
                     return GetResourceText("SuiteCRMAddIn.Menus.MailRead2007.xml");
                 else
                     return GetResourceText("SuiteCRMAddIn.Menus.MailRead.xml");
@@ -131,13 +131,14 @@ namespace SuiteCRMAddIn
         #region Click Events
         public void btnArchive_Action(IRibbonControl control)
         {
-            ManualArchive();
+            DoOrLogError(() =>
+                ManualArchive());
         }
 
         public void btnSettings_Action(IRibbonControl control)
         {
-            frmSettings objSettings = new frmSettings();
-            objSettings.ShowDialog();
+            DoOrLogError(() =>
+                Globals.ThisAddIn.ShowSettingsForm());
         }
 
         public void btnAddressBook_Action(IRibbonControl control)
@@ -149,13 +150,11 @@ namespace SuiteCRMAddIn
         
         private void ManualArchive()
         {
-            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+            if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
             {
-                frmSettings objacbbSettings = new frmSettings();
-                objacbbSettings.ShowDialog();
+                Globals.ThisAddIn.ShowSettingsForm();
             }
-            frmArchive objForm = new frmArchive();
-            objForm.ShowDialog();
+            Globals.ThisAddIn.ShowArchiveForm();
         }
         #endregion
 
@@ -182,5 +181,15 @@ namespace SuiteCRMAddIn
         }
 
         #endregion
+
+        /// <summary>
+        /// Wrapper around invocation of an action, to provide consistent logging of 
+        /// otherwise-uncaught exceptions.
+        /// </summary>
+        /// <param name="action">The actual action handler to invoke.</param>
+        private void DoOrLogError(Action action)
+        {
+            Robustness.DoOrLogError(Globals.ThisAddIn.Log, action);
+        }
     }
 }

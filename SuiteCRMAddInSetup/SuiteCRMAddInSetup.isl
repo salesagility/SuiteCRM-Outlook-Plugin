@@ -60,8 +60,8 @@
 		<lastauthor>Administrator</lastauthor>
 		<revnumber>{729A966D-50D6-4F1A-AA01-418905D45AF2}</revnumber>
 		<lastprinted/>
-		<createdtm>06/21/1999 06:00</createdtm>
-		<lastsavedtm>07/14/2000 09:50</lastsavedtm>
+		<createdtm>06/21/1999 15:00</createdtm>
+		<lastsavedtm>07/14/2000 18:50</lastsavedtm>
 		<pagecount>200</pagecount>
 		<wordcount>0</wordcount>
 		<charcount/>
@@ -339,9 +339,13 @@
 		<col def="S0">ISDotNetInstallerArgsCommit</col>
 		<col def="S0">ISDotNetInstallerArgsUninstall</col>
 		<col def="S0">ISDotNetInstallerArgsRollback</col>
+		<row><td>ISO19770_LocalTag</td><td>{75B31C08-8D84-4EB0-BD42-53BDB0610973}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ISO19770_SystemTag</td><td>{08C4F312-F8A0-4FBF-AE4B-357E8B6D5534}</td><td>CommonAppDataFolder</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td>{47DC3583-1B85-4B83-8898-D4057742C505}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>Newtonsoft.Json.dll</td><td>{13FB21D0-EDD1-47D8-AE25-2B7664FDFE08}</td><td>INSTALLDIR</td><td>2</td><td/><td>newtonsoft.json.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>SuiteCRMAddIn.Primary_output</td><td>{C3AFF890-EE54-47A7-8D90-39F2BF44D01E}</td><td>INSTALLDIR</td><td>2</td><td/><td>suitecrmaddin.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>{ADE5A8CD-7623-41AE-8524-756C4159CB21}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.commo</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>{761371C8-C0DE-4546-ABEF-ED5E3900D48C}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.outlo</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>Newtonsoft.Json.dll</td><td>{8F129954-4BFF-4523-BFD1-9355815F4A5A}</td><td>INSTALLDIR</td><td>2</td><td/><td>newtonsoft.json.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>SuiteCRMAddIn.Primary_output</td><td>{FF8F6348-53B1-4B05-B560-1C33875F375E}</td><td>INSTALLDIR</td><td>2</td><td/><td>suitecrmaddin.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 	</table>
 
 	<table name="Condition">
@@ -552,7 +556,7 @@
 		<row><td>LicenseAgreement</td><td>DlgLine</td><td>Line</td><td>48</td><td>234</td><td>326</td><td>0</td><td>1</td><td/><td/><td/><td/><td>0</td><td/><td/><td/></row>
 		<row><td>LicenseAgreement</td><td>DlgTitle</td><td>Text</td><td>13</td><td>6</td><td>292</td><td>25</td><td>65539</td><td/><td>##IDS__IsLicenseDlg_LicenseAgreement##</td><td/><td/><td>0</td><td/><td/><td/></row>
 		<row><td>LicenseAgreement</td><td>ISPrintButton</td><td>PushButton</td><td>301</td><td>188</td><td>65</td><td>17</td><td>3</td><td/><td>##IDS_PRINT_BUTTON##</td><td>Agree</td><td/><td>0</td><td/><td/><td/></row>
-		<row><td>LicenseAgreement</td><td>Memo</td><td>ScrollableText</td><td>8</td><td>55</td><td>358</td><td>130</td><td>7</td><td/><td/><td/><td/><td>0</td><td/><td>&lt;ISProjectFolder&gt;\GPL3.rtf</td><td/></row>
+		<row><td>LicenseAgreement</td><td>Memo</td><td>ScrollableText</td><td>8</td><td>55</td><td>358</td><td>130</td><td>7</td><td/><td/><td/><td/><td>0</td><td/><td>&lt;ISProjectFolder&gt;\lgpl-3.0.rtf</td><td/></row>
 		<row><td>LicenseAgreement</td><td>Next</td><td>PushButton</td><td>230</td><td>243</td><td>66</td><td>17</td><td>3</td><td/><td>##IDS_NEXT##</td><td>Cancel</td><td/><td>0</td><td/><td/><td/></row>
 		<row><td>MaintenanceType</td><td>Back</td><td>PushButton</td><td>164</td><td>243</td><td>66</td><td>17</td><td>3</td><td/><td>##IDS_BACK##</td><td>Next</td><td/><td>0</td><td/><td/><td/></row>
 		<row><td>MaintenanceType</td><td>Banner</td><td>Bitmap</td><td>0</td><td>0</td><td>374</td><td>44</td><td>1</td><td/><td/><td/><td/><td>0</td><td/><td/><td>NewBinary1</td></row>
@@ -1050,6 +1054,10 @@
 	<table name="CreateFolder">
 		<col key="yes" def="s72">Directory_</col>
 		<col key="yes" def="s72">Component_</col>
+		<row><td>CommonAppDataFolder</td><td>ISO19770_SystemTag</td></row>
+		<row><td>INSTALLDIR</td><td>ISO19770_LocalTag</td></row>
+		<row><td>INSTALLDIR</td><td>ISO19770_SystemTag</td></row>
+		<row><td>INSTALLDIR</td><td>SuiteCRMAddIn.Primary_output</td></row>
 	</table>
 
 	<table name="CustomAction">
@@ -1859,7 +1867,11 @@
 	<table name="FeatureComponents">
 		<col key="yes" def="s38">Feature_</col>
 		<col key="yes" def="s72">Component_</col>
+		<row><td>AlwaysInstall</td><td>ISO19770_LocalTag</td></row>
+		<row><td>AlwaysInstall</td><td>ISO19770_SystemTag</td></row>
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT</td></row>
+		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td></row>
+		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td></row>
 		<row><td>AlwaysInstall</td><td>Newtonsoft.Json.dll</td></row>
 		<row><td>AlwaysInstall</td><td>SuiteCRMAddIn.Primary_output</td></row>
 	</table>
@@ -1876,10 +1888,12 @@
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I4">ISAttributes</col>
 		<col def="S72">ISComponentSubFolder_</col>
-		<row><td>newtonsoft.json.dll</td><td>Newtonsoft.Json.dll</td><td>NEWTON~1.DLL|Newtonsoft.Json.dll</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\Newtonsoft.Json.dll</td><td>1</td><td/></row>
-		<row><td>suitecrmaddin.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.MAN|SuiteCRMAddIn.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.manifest</td><td>1</td><td/></row>
-		<row><td>suitecrmaddin.primary_output</td><td>SuiteCRMAddIn.Primary_output</td><td>SuiteCRMAddIn.Primary output</td><td>0</td><td/><td/><td>0</td><td>1</td><td>&lt;SuiteCRMAddIn&gt;|Built</td><td>3</td><td/></row>
-		<row><td>suitecrmaddin.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.VST|SuiteCRMAddIn.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>D:\Mohan Kumar\Projects\Greg\SuiteCRMOutlookAddIn - V2 (Has both AE and VSTO version of V1)\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.vsto</td><td>1</td><td/></row>
+		<row><td>microsoft.office.tools.commo</td><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>1</td><td/></row>
+		<row><td>microsoft.office.tools.outlo</td><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>1</td><td/></row>
+		<row><td>newtonsoft.json.dll</td><td>Newtonsoft.Json.dll</td><td>NEWTON~1.DLL|Newtonsoft.Json.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\Newtonsoft.Json.dll</td><td>1</td><td/></row>
+		<row><td>suitecrmaddin.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.MAN|SuiteCRMAddIn.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.manifest</td><td>1</td><td/></row>
+		<row><td>suitecrmaddin.primary_output</td><td>SuiteCRMAddIn.Primary_output</td><td>SuiteCRMAddIn.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;SuiteCRMAddIn&gt;|Built</td><td>3</td><td/></row>
+		<row><td>suitecrmaddin.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.VST|SuiteCRMAddIn.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.vsto</td><td>1</td><td/></row>
 	</table>
 
 	<table name="FileSFPCatalog">
@@ -2024,9 +2038,13 @@
 		<col def="S0">FTPLocation</col>
 		<col def="S0">HTTPLocation</col>
 		<col def="S0">Miscellaneous</col>
+		<row><td>ISO19770_LocalTag</td><td/><td/><td>_2DB9A0FC_8B4F_413D_883F_7B8DBC4C4CAA_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ISO19770_SystemTag</td><td/><td/><td>_A79026B6_3537_45A6_A427_6AEC2528812D_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td/><td/><td>_30B7A77B_5D1A_4D6F_BD4D_E2B0995BFFFF_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>Newtonsoft.Json.dll</td><td/><td/><td>_D9CB9BA7_6D56_4E06_88A9_71BF8B49A29C_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>SuiteCRMAddIn.Primary_output</td><td/><td/><td>_99EC7A64_5F26_47A4_8927_317EF14A2FB2_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td/><td/><td>_DF607E28_DB8D_49DD_B8C4_33BF0DAA73E7_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td/><td/><td>_6F591EF1_6819_4279_A964_8C9A9575396E_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>Newtonsoft.Json.dll</td><td/><td/><td>_8B1FE9AB_7FCA_4EB5_BC34_DFD0BAF5FC98_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>SuiteCRMAddIn.Primary_output</td><td/><td/><td>_80CD22B9_9FA5_46A1_95DA_B30A081C0D9C_FILTER</td><td/><td/><td/><td/></row>
 	</table>
 
 	<table name="ISCustomActionReference">
@@ -2338,12 +2356,6 @@
 		<row><td>WindowsFolder</td><td/><td/><td>1</td></row>
 	</table>
 
-	<table name="ISPowerShellWrap">
-		<col key="yes" def="s72">Action_</col>
-		<col key="yes" def="s72">Name</col>
-		<col def="S0">Value</col>
-	</table>
-
 	<table name="ISProductConfiguration">
 		<col key="yes" def="s72">ISProductConfiguration</col>
 		<col def="S255">ProductConfigurationFlags</col>
@@ -2611,7 +2623,7 @@
 		<col def="I2">Order</col>
 		<col def="I2">ISSetupLocation</col>
 		<col def="S255">ISReleaseFlags</col>
-		<row><td>_470891EF_1BF5_47AE_9BBA_DA2872FEAF38_</td><td>Visual Studio 2010 Tools for Office Runtime.prq</td><td/><td>2</td><td/></row>
+		<row><td>_87BC9124_660F_4ED2_B17C_E31E8FE7BCD2_</td><td>Microsoft VSTO 2010 Runtime.prq</td><td/><td>2</td><td/></row>
 		<row><td>_D89610ED_62EC_4583_BEF4_136546520A99_</td><td>Microsoft .NET Framework 4.5 Full.prq</td><td/><td>2</td><td/></row>
 	</table>
 
@@ -2646,7 +2658,7 @@
 		<col def="I2">Encoded</col>
 		<col def="S0">Comment</col>
 		<col def="I4">TimeStamp</col>
-		<row><td>COMPANY_NAME</td><td>1033</td><td>SalesAgility</td><td>0</td><td/><td>-1700637910</td></row>
+		<row><td>COMPANY_NAME</td><td>1033</td><td>SalesAgility</td><td>0</td><td/><td>-215701397</td></row>
 		<row><td>DN_AlwaysInstall</td><td>1033</td><td>Always Install</td><td>0</td><td/><td>849486892</td></row>
 		<row><td>IDPROP_EXPRESS_LAUNCH_CONDITION_COLOR</td><td>1033</td><td>The color settings of your system are not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
 		<row><td>IDPROP_EXPRESS_LAUNCH_CONDITION_OS</td><td>1033</td><td>The operating system is not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
@@ -3746,9 +3758,9 @@
 		<row><td>IDS__TargetReq_DESC_PROCESSOR</td><td>1033</td><td>The processor is not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
 		<row><td>IDS__TargetReq_DESC_RAM</td><td>1033</td><td>The amount of RAM is not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
 		<row><td>IDS__TargetReq_DESC_RESOLUTION</td><td>1033</td><td>The screen resolution is not adequate for running [ProductName].</td><td>0</td><td/><td>849486892</td></row>
-		<row><td>ID_STRING1</td><td>1033</td><td>http://www.SalesAgility.com</td><td>0</td><td/><td>-1700637910</td></row>
-		<row><td>ID_STRING2</td><td>1033</td><td>SalesAgility</td><td>0</td><td/><td>-1700637910</td></row>
-		<row><td>ID_STRING3</td><td>1033</td><td>http://www.SalesAgility.com</td><td>0</td><td/><td>-1700637910</td></row>
+		<row><td>ID_STRING1</td><td>1033</td><td>http://www.SalesAgility.com</td><td>0</td><td/><td>-215701397</td></row>
+		<row><td>ID_STRING2</td><td>1033</td><td>SalesAgility</td><td>0</td><td/><td>-215701397</td></row>
+		<row><td>ID_STRING3</td><td>1033</td><td>http://www.SalesAgility.com</td><td>0</td><td/><td>-215701397</td></row>
 		<row><td>ID_STRING4</td><td>1033</td><td>http://www.salesagility.com</td><td>0</td><td/><td>849487596</td></row>
 		<row><td>ID_STRING5</td><td>1033</td><td>SuiteCRM Outlook AddIn</td><td>0</td><td/><td>849508076</td></row>
 		<row><td>IIDS_UITEXT_FeatureUninstalled</td><td>1033</td><td>This feature will remain uninstalled.</td><td>0</td><td/><td>849486892</td></row>
@@ -3760,6 +3772,7 @@
 		<row><td>SfwCreatorName</td><td>SalesAgility</td></row>
 		<row><td>SfwLicensorName</td><td>SalesAgility</td></row>
 		<row><td>TagCreatorName</td><td>SalesAgility</td></row>
+		<row><td>TagCreatorRegid</td><td>regid.2005-12.com.salesagility</td></row>
 		<row><td>UniqueId</td><td>A784C437-58CF-4495-BE4A-F77657600001</td></row>
 	</table>
 
@@ -3819,6 +3832,12 @@
 		<col key="yes" def="s72">Shortcut_</col>
 		<col key="yes" def="s72">Name</col>
 		<col def="s255">Value</col>
+	</table>
+
+	<table name="ISWSEWrap">
+		<col key="yes" def="s72">Action_</col>
+		<col key="yes" def="s72">Name</col>
+		<col def="S0">Value</col>
 	</table>
 
 	<table name="ISXmlElement">
@@ -3994,7 +4013,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISTheme</td><td>InstallShield Blue.theme</td></row>
 		<row><td>ISUSLock</td><td>{61A790E4-9219-4622-8A29-6BC24DE6B0D0}</td></row>
 		<row><td>ISUSSignature</td><td>{F1280AA3-C75F-4733-84BD-23500D9612AE}</td></row>
-		<row><td>ISVisitedViews</td><td>viewAssistant,viewObjects,viewProject,viewDependencies,viewSystemSearch,viewFeatureFiles,viewRegistry,viewISToday,viewAppV,viewAppFiles,viewSetupTypes,viewSetupDesign,viewRealSetupDesign,viewSupportFiles,viewCustomActions,viewInstallScriptStd,viewCE,viewRelease</td></row>
+		<row><td>ISVisitedViews</td><td>viewAssistant,viewObjects,viewProject,viewDependencies,viewSystemSearch,viewFeatureFiles,viewRegistry,viewISToday,viewAppV,viewAppFiles,viewSetupTypes,viewSetupDesign,viewRealSetupDesign,viewSupportFiles,viewCustomActions,viewInstallScriptStd,viewCE,viewRelease,viewDesignPatches,viewLearnMore,viewUpdateService,viewUpgradePaths,viewEnvironmentVariables,viewTextMessages,viewServices,viewUI</td></row>
 		<row><td>Limited</td><td>1</td></row>
 		<row><td>LockPermissionMode</td><td>1</td></row>
 		<row><td>MsiExecCmdLineOptions</td><td/></row>
@@ -4006,7 +4025,9 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>SaveAsSchema</td><td/></row>
 		<row><td>SccEnabled</td><td>0</td></row>
 		<row><td>SccPath</td><td/></row>
-		<row><td>SchemaVersion</td><td>774</td></row>
+		<row><td>SchemaVersion</td><td>776</td></row>
+		<row><td>SwidtagLocalComponent</td><td>ISO19770_LocalTag</td></row>
+		<row><td>SwidtagSystemComponent</td><td>ISO19770_SystemTag</td></row>
 		<row><td>Type</td><td>MSIE</td></row>
 	</table>
 
@@ -4298,6 +4319,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<col key="yes" def="s72">Property</col>
 		<col def="L0">Value</col>
 		<col def="S255">ISComments</col>
+		<row><td>ALLUSERS</td><td>1</td><td/></row>
 		<row><td>ARPCOMMENTS</td><td>##ID_STRING5##</td><td/></row>
 		<row><td>ARPCONTACT</td><td>##ID_STRING4##</td><td/></row>
 		<row><td>ARPHELPLINK</td><td>##ID_STRING3##</td><td/></row>
@@ -4342,6 +4364,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>InstallChoice</td><td>AR</td><td/></row>
 		<row><td>LAUNCHPROGRAM</td><td>1</td><td/></row>
 		<row><td>LAUNCHREADME</td><td>1</td><td/></row>
+		<row><td>MSIFASTINSTALL</td><td>2</td><td/></row>
 		<row><td>Manufacturer</td><td>##COMPANY_NAME##</td><td/></row>
 		<row><td>PIDKEY</td><td/><td/></row>
 		<row><td>PIDTemplate</td><td>12345&lt;###-%%%%%%%&gt;@@@@@</td><td/></row>
@@ -4370,7 +4393,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{7D2339B3-980B-4AF0-8428-56ABB4CD7EF0}</td><td/></row>
 		<row><td>ProductName</td><td>SuiteCRMAddIn</td><td/></row>
-		<row><td>ProductVersion</td><td>1.1.0.9</td><td/></row>
+		<row><td>ProductVersion</td><td>3.0.0</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
@@ -4437,11 +4460,10 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<col def="S0">Value</col>
 		<col def="s72">Component_</col>
 		<col def="I4">ISAttributes</col>
-		<row><td>Registry10</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Manifest</td><td>file:///[INSTALLDIR]SuiteCRMAddIn.vsto|vstolocal</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
-		<row><td>Registry2</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins</td><td/><td/><td>ISX_DEFAULTCOMPONENT</td><td>1</td></row>
-		<row><td>Registry7</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Description</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
-		<row><td>Registry8</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>FriendlyName</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
-		<row><td>Registry9</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>LoadBehavior</td><td>#3</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry2</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Manifest</td><td>file:///[INSTALLDIR]SuiteCRMAddIn.vsto|vstolocal</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry6</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>Description</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry7</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>FriendlyName</td><td>SuiteCRM Outlook AddIn</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry8</td><td>1</td><td>SOFTWARE\Microsoft\Office\Outlook\Addins\SalesAgility.SuiteCRMAddIn</td><td>LoadBehavior</td><td>#3</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
 	</table>
 
 	<table name="RemoveFile">
@@ -5140,9 +5162,6 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISPathVariable</td><td>TestValue</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>The test value of the path variable.</td></row>
 		<row><td>ISPathVariable</td><td>Type</td><td>N</td><td/><td/><td/><td/><td/><td>1;2;4;8</td><td>The type of the path variable.</td></row>
 		<row><td>ISPathVariable</td><td>Value</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>The value of the path variable.</td></row>
-		<row><td>ISPowerShellWrap</td><td>Action_</td><td>N</td><td/><td/><td>CustomAction</td><td>1</td><td>Identifier</td><td/><td>Foreign key into CustomAction table</td></row>
-		<row><td>ISPowerShellWrap</td><td>Name</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>Property associated with this Action</td></row>
-		<row><td>ISPowerShellWrap</td><td>Value</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Value associated with this Property</td></row>
 		<row><td>ISProductConfiguration</td><td>GeneratePackageCode</td><td>Y</td><td/><td/><td/><td/><td>Number</td><td>0;1</td><td>Indicates whether or not to generate a package code.</td></row>
 		<row><td>ISProductConfiguration</td><td>ISProductConfiguration</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>The name of the product configuration.</td></row>
 		<row><td>ISProductConfiguration</td><td>ProductConfigurationFlags</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Product configuration (release) flags.</td></row>
@@ -5380,6 +5399,9 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISVirtualShortcut</td><td>Name</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Property name</td></row>
 		<row><td>ISVirtualShortcut</td><td>Shortcut_</td><td>N</td><td/><td/><td>Shortcut</td><td>1</td><td>Identifier</td><td/><td>Foreign key into Shortcut table.</td></row>
 		<row><td>ISVirtualShortcut</td><td>Value</td><td>N</td><td/><td/><td/><td/><td/><td/><td>Property value</td></row>
+		<row><td>ISWSEWrap</td><td>Action_</td><td>N</td><td/><td/><td>CustomAction</td><td>1</td><td>Identifier</td><td/><td>Foreign key into CustomAction table</td></row>
+		<row><td>ISWSEWrap</td><td>Name</td><td>N</td><td/><td/><td/><td/><td>Text</td><td/><td>Property associated with this Action</td></row>
+		<row><td>ISWSEWrap</td><td>Value</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Value associated with this Property</td></row>
 		<row><td>ISXmlElement</td><td>Content</td><td>Y</td><td/><td/><td/><td/><td>Text</td><td/><td>Element contents</td></row>
 		<row><td>ISXmlElement</td><td>ISAttributes</td><td>Y</td><td/><td/><td/><td/><td>Number</td><td/><td>Internal XML element attributes</td></row>
 		<row><td>ISXmlElement</td><td>ISXmlElement</td><td>N</td><td/><td/><td/><td/><td>Identifier</td><td/><td>Primary key, non-localized, internal token for Xml element</td></row>
