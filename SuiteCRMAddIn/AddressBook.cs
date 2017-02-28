@@ -4,7 +4,7 @@
  * @copyright SalesAgility Ltd http://www.salesagility.com
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE as published by
+ * it under the terms of the GNU LESSER GENERAL PUBLIC LICENCE as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+ * You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENCE
  * along with this program; if not, see http://www.gnu.org/licenses
  * or write to the Free Software Foundation,Inc., 51 Franklin Street,
  * Fifth Floor, Boston, MA 02110-1301  USA
@@ -38,15 +38,15 @@ namespace SuiteCRMAddIn
 {
     public partial class frmAddressBook : Form
     {
-        private clsSettings settings = Globals.ThisAddIn.settings;
+        private clsSettings settings = Globals.ThisAddIn.Settings;
         public frmAddressBook()
         {
             this.InitializeComponent();
-            if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+            if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
             {
-                frmSettings objacbbSettings = new frmSettings();
-                objacbbSettings.ShowDialog();                
-            }            
+                Robustness.DoOrLogError(Globals.ThisAddIn.Log, 
+                    () => Globals.ThisAddIn.ShowSettingsForm());
+            }
         }
        
         private void btnAddBCC_Click(object sender, EventArgs e)

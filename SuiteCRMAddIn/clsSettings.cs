@@ -4,7 +4,7 @@
  * @copyright SalesAgility Ltd http://www.salesagility.com
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE as published by
+ * it under the terms of the GNU LESSER GENERAL PUBLIC LICENCE as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+ * You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENCE
  * along with this program; if not, see http://www.gnu.org/licenses
  * or write to the Free Software Foundation,Inc., 51 Franklin Street,
  * Fifth Floor, Boston, MA 02110-1301  USA
@@ -28,6 +28,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
+using SuiteCRMClient.Logging;
 
 namespace SuiteCRMAddIn
 {
@@ -81,15 +82,15 @@ namespace SuiteCRMAddIn
             }
         }
         [DefaultSettingValue("False"), UserScopedSetting, DebuggerNonUserCode]
-        public bool ArchiveAttachmentsDefault
+        public bool ArchiveAttachments
         {
             get
             {
-                return (bool)this["ArchiveAttachmentsDefault"];
+                return (bool)this["ArchiveAttachments"];
             }
             set
             {
-                this["ArchiveAttachmentsDefault"] = value;
+                this["ArchiveAttachments"] = value;
             }
         }
         [DebuggerNonUserCode, UserScopedSetting, DefaultSettingValue("False")]
@@ -217,11 +218,35 @@ namespace SuiteCRMAddIn
         {
             get
             {
-                return (System.Collections.Generic.List<string>)this["AutoArchiveFolders"];               
+                return (System.Collections.Generic.List<string>)this["AutoArchiveFolders"];
             }
             set
             {
                 this["AutoArchiveFolders"] = value;
+            }
+        }
+        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        public System.Collections.Generic.List<string> AccountsToArchiveInbound
+        {
+            get
+            {
+                return (System.Collections.Generic.List<string>)this["AccountsToArchiveInbound"];
+            }
+            set
+            {
+                this["AccountsToArchiveInbound"] = value;
+            }
+        }
+        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        public System.Collections.Generic.List<string> AccountsToArchiveOutbound
+        {
+            get
+            {
+                return (System.Collections.Generic.List<string>)this["AccountsToArchiveOutbound"];
+            }
+            set
+            {
+                this["AccountsToArchiveOutbound"] = value;
             }
         }
         [UserScopedSetting, DefaultSettingValue(""), DebuggerNonUserCode]
@@ -234,18 +259,6 @@ namespace SuiteCRMAddIn
             set
             {
                 this["ExcludedEmails"] = value;
-            }
-        }
-        [UserScopedSetting, DefaultSettingValue("True"), DebuggerNonUserCode]
-        public bool IsFirstTime
-        {
-            get
-            {
-                return (bool)this["IsFirstTime"];
-            }
-            set
-            {
-                this["IsFirstTime"] = value;
             }
         }
       
@@ -311,7 +324,44 @@ namespace SuiteCRMAddIn
             }
         }
 
+        [DefaultSettingValue("0"), UserScopedSetting, DebuggerNonUserCode]
+        public LogEntryType LogLevel
+        {
+            get { return (LogEntryType) this["LogLevel"]; }
+            set { this["LogLevel"] = value; }
+        }
+
+        [DefaultSettingValue("10"), UserScopedSetting, DebuggerNonUserCode]
+        public int DaysOldEmailToAutoArchive
+        {
+            get { return (int) this["DaysOldEmailToAutoArchive"]; } 
+            set { this["DaysOldEmailToAutoArchive"] = value; }
+        }
+
+        /// <summary>
+        /// Purchaser's licence key; see LicenceValidationHelper, documentation at
+        /// https://store.suitecrm.com/selling/license-api
+        /// Set through the Settings dialogue frmSettings.
+        /// </summary>
+        [DefaultSettingValue(""), UserScopedSetting, DebuggerNonUserCode]
+        public String LicenceKey
+        {
+            get { return (String)this["LicenceKey"]; }
+            set { this["LicenceKey"] = value; }
+        }
+
+        /// <summary>
+        /// REST Server request timeout in milliseconds.
+        /// </summary>
+        [DefaultSettingValue("300000"), UserScopedSetting, DebuggerNonUserCode]
+        public int RestTimeout
+        {
+            get { return (int)this["RestTimeout"]; }
+            set { this["RestTimeout"] = value; }
+        }
+
         public static Hashtable accountEntrys = new Hashtable();
         public static AutoCompleteStringCollection accounts = new AutoCompleteStringCollection();
     }
 }
+

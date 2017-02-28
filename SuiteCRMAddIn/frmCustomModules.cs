@@ -4,7 +4,7 @@
  * @copyright SalesAgility Ltd http://www.salesagility.com
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE as published by
+ * it under the terms of the GNU LESSER GENERAL PUBLIC LICENCE as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+ * You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENCE
  * along with this program; if not, see http://www.gnu.org/licenses
  * or write to the Free Software Foundation,Inc., 51 Franklin Street,
  * Fifth Floor, Boston, MA 02110-1301  USA
@@ -22,14 +22,10 @@
  */
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using SuiteCRMClient;
+using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
 using ListViewEx;
 using System.Collections.Specialized;
@@ -38,7 +34,7 @@ namespace SuiteCRMAddIn
 {
     public partial class frmCustomModules : Form
     {
-        private clsSettings settings = Globals.ThisAddIn.settings;
+        private clsSettings settings = Globals.ThisAddIn.Settings;
         private List<string> IgnoreModules = new List<string>();
         private TextBox txtDisplay;
 
@@ -176,6 +172,8 @@ namespace SuiteCRMAddIn
             this.IgnoreModules.Add("Dashboard");
         }
 
+        private ILogger Log => Globals.ThisAddIn.Log;
+
         private void listViewAvailableModules_SubItemClicked(object sender, SubItemEventArgs e)
         {
             try
@@ -187,15 +185,8 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "listViewAvailableModules_SubItemClicked General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
+                // Suppress exception
+                Log.Error("Subitem clicked error", ex);
             }
         }
 
@@ -203,12 +194,9 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                string strUserID = clsSuiteCRMHelper.GetUserId();
-                if (strUserID == "")
-                {
-                    Globals.ThisAddIn.SuiteCRMUserSession.Login();
-                }
-                if (Globals.ThisAddIn.SuiteCRMUserSession.id == "")
+                clsSuiteCRMHelper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
+
+                if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                 {
                     MessageBox.Show("Please enter SuiteCRM details in General tab and try again", "Invalid Authentication");
                     base.Close();
@@ -261,18 +249,9 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
+                Log.Warn("frmCustomModules_Load error", ex);
                 base.Close();
                 MessageBox.Show("Please check the Internet connection", "Network Failure", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "frmCustomModules_Load General Exception\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "Data:" + ex.Data.ToString() + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
             }
         }
 
@@ -306,16 +285,8 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                string strLog;
-                strLog = "------------------" + System.DateTime.Now.ToString() + "-----------------\n";
-                strLog += "buttonSaveClose_Click General Exception:\n";
-                strLog += "Message:" + ex.Message + "\n";
-                strLog += "Source:" + ex.Source + "\n";
-                strLog += "StackTrace:" + ex.StackTrace + "\n";
-                strLog += "HResult:" + ex.HResult.ToString() + "\n";
-                strLog += "-------------------------------------------------------------------------\n";
-                clsSuiteCRMHelper.WriteLog(strLog);
-                ex.Data.Clear();
+                Log.Error("btnSave_Click error", ex);
+                // Swallow exception(!)
             }
         }
 

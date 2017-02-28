@@ -4,7 +4,7 @@
  * @copyright SalesAgility Ltd http://www.salesagility.com
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE as published by
+ * it under the terms of the GNU LESSER GENERAL PUBLIC LICENCE as published by
  * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+ * You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENCE
  * along with this program; if not, see http://www.gnu.org/licenses
  * or write to the Free Software Foundation,Inc., 51 Franklin Street,
  * Fifth Floor, Boston, MA 02110-1301  USA
@@ -38,6 +38,12 @@ using System.Web;
 
 namespace SuiteCRMAddIn
 {
+    using BusinessLogic;
+    using SuiteCRMClient.Email;
+    using SuiteCRMClient.Exceptions;
+    using SuiteCRMClient.Logging;
+    using Exception = System.Exception;
+
     public partial class frmArchive : Form
     {
 
@@ -46,9 +52,10 @@ namespace SuiteCRMAddIn
             InitializeComponent();
         }
 
-        private clsSettings settings = Globals.ThisAddIn.settings;
+        private clsSettings settings = Globals.ThisAddIn.Settings;
         public string type;
-        private List<TreeNode> checkedNodes = new List<TreeNode>();
+
+        private ILogger Log => Globals.ThisAddIn.Log;
 
         private void GetCustomModules()
         {
@@ -72,7 +79,7 @@ namespace SuiteCRMAddIn
 
         private void frmArchive_Load(object sender, EventArgs e)
         {
-            if (Globals.ThisAddIn.settings.ShowCustomModules)
+            if (Globals.ThisAddIn.Settings.ShowCustomModules)
             {
                 this.GetCustomModules();
             }
@@ -84,10 +91,11 @@ namespace SuiteCRMAddIn
                     this.lstViewSearchModules.Items[num].Checked = true;
                 }
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
             }
+
             this.tsResults.AfterCheck += new TreeViewEventHandler(this.tsResults_AfterCheck);
             this.tsResults.AfterExpand += new TreeViewEventHandler(this.tsResults_AfterExpand);
             this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
@@ -95,19 +103,35 @@ namespace SuiteCRMAddIn
             this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
             base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
 
-            foreach (MailItem item2 in Globals.ThisAddIn.Application.ActiveExplorer().Selection)
-            {
-                this.txtSearch.Text = this.txtSearch.Text + clsGlobals.GetSMTPEmailAddress(item2) + ",";
-            }
-            if (this.txtSearch.Text != string.Empty)
-            {
-                string str2 = this.txtSearch.Text.Remove(this.txtSearch.Text.Length - 1, 1);
-                this.txtSearch.Text = str2;
-            }
+            this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
+
             if (this.settings.AutomaticSearch)
             {
                 this.btnSearch_Click(null, null);
             }
+        }
+
+        /// <summary>
+        /// Construct suitable search text from this list of emails.
+        /// </summary>
+        /// <param name="emails">A list of emails, presumably those selected by the user</param>
+        /// <returns>A string comprising the sender addresses from the emails, comma separated.</returns>
+        private static string ConstructSearchText(IEnumerable<MailItem> emails)
+        {
+            List<string> addresses = new List<string>();
+            string searchText = String.Empty;
+
+            foreach (var email in emails)
+            {
+                addresses.Add(clsGlobals.GetSMTPEmailAddress(email));
+            }
+
+            foreach (var address in addresses.OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
+            {
+                searchText += address + ",";
+            }
+
+            return searchText.TrimEnd(',');
         }
 
         private void CheckAllChildNodes(TreeNode treeNode, bool nodeChecked)
@@ -125,35 +149,25 @@ namespace SuiteCRMAddIn
         public void btnSearch_Click(object sender, EventArgs e)
         {
             this.tsResults.Nodes.Clear();
-            this.Cursor = Cursors.WaitCursor;
 
-            //if (!UnallowedNumber(this.txtSearch.Text))
-            //{
-                if (this.txtSearch.Text.Contains<char>(','))
+            if (this.txtSearch.Text.Contains<char>(','))
+            {
+                foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }).OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
                 {
-                    foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }))
-                    {
-                        this.Search(str);
-                    }
+                    this.Search(str);
                 }
-                if (this.txtSearch.Text.Contains(";"))
+            }
+            if (this.txtSearch.Text.Contains(";"))
+            {
+                foreach (string str2 in this.txtSearch.Text.Split(new char[] { ';' }))
                 {
-                    foreach (string str2 in this.txtSearch.Text.Split(new char[] { ';' }))
-                    {
-                        this.Search(str2);
-                    }
+                    this.Search(str2);
                 }
-                else
-                {
-                    this.Search(this.txtSearch.Text);
-                }
-            //}
-            //else
-            //{
-            //    this.tsResults.Nodes.Clear();
-            //    this.Cursor = Cursors.Default;
-            //    MessageBox.Show("The search cannot start with a number", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            //}
+            }
+            else
+            {
+                this.Search(this.txtSearch.Text);
+            }
         }
 
         private bool UnallowedNumber(string strText)
@@ -170,175 +184,186 @@ namespace SuiteCRMAddIn
             base.Close();
         }
 
-        public void Search(string query)
+        public void Search(string searchText)
         {
-            try
-            {
-                this.Cursor = Cursors.WaitCursor;
-                List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
-                this.tsResults.CheckBoxes = true;
-                if (query == string.Empty)
+            using (WaitCursor.For(this))
+                try
                 {
-                    MessageBox.Show("Please enter some text to search", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    this.Cursor = Cursors.Default;
-                }
-                else
-                {
-                    query = query.TrimStart(new char[0]);
-                    string[] strArray = query.Split(new char[] { ' ' });
-                    string usString = strArray[0];
-                    string str2 = string.Empty;
-                    string str3 = "OR";
-                    if (strArray.Length > 1)
+                    List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
+                    this.tsResults.CheckBoxes = true;
+                    if (searchText == string.Empty)
                     {
-                        str2 = strArray[1];
-                        str3 = "AND";
+                        MessageBox.Show("Please enter some text to search", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
-                        str2 = strArray[0];
-                    }
-                    foreach (ListViewItem item in this.lstViewSearchModules.Items)
-                    {
-                        try
+                        searchText = searchText.TrimStart(new char[0]);
+                        string[] strArray = searchText.Split(new char[] { ' ' });
+                        string usString = strArray[0];
+                        string str2 = string.Empty;
+                        string str3 = "OR";
+                        if (strArray.Length > 1)
                         {
-                            TreeNode node;
-                            eGetEntryListResult _result;
-                            if (!item.Checked)
-                            {
-                                continue;
-                            }
-                           string text = item.Tag.ToString();
-
-                            if (!(text != "All"))
-                            {
-                                continue;
-                            }
-                            if (this.tsResults.Nodes[text] == null)
-                            {
-                                node = new TreeNode(text)
-                                {
-                                    Tag = "root_node",
-                                    Name = text
-                                };
-                                this.tsResults.Nodes.Add(node);
-                            }
-                            else
-                            {
-                                node = this.tsResults.Nodes[text];
-                            }
-                            string str5 = text.ToLower() + ".name LIKE '%" + clsGlobals.MySqlEscape(query) + "%'";
-                            string[] fields = new string[6];
-                            fields[0] = "id";
-                            fields[1] = "first_name";
-                            fields[2] = "last_name";
-                            fields[3] = "name";
-                            string str6 = text;
-                            if (str6 != null)
-                            {
-                                if (!(str6 == "Contacts"))
-                                {
-                                    if (str6 == "Leads")
-                                    {
-                                        goto Label_030F;
-                                    }
-                                    if (str6 == "Cases")
-                                    {
-                                        goto Label_038F;
-                                    }
-                                    if (str6 == "Bugs")
-                                    {
-                                        goto Label_03E4;
-                                    }
-                                    if (str6 == "Accounts")
-                                    {
-                                        goto Label_03AS;
-                                    }
-                                }
-                                else
-                                {
-                                    str5 = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                                    fields[4] = "account_name";
-                                }
-                            }
-                            goto Label_0446;
-                        Label_030F: ;
-                            str5 = "(leads.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " leads.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (leads.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Leads' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                            fields[4] = "account_name";
-                            goto Label_0446;
-                        Label_038F: ;
-                            str5 = "(cases.name LIKE '%" + clsGlobals.MySqlEscape(query) + "%' OR cases.case_number LIKE '" + clsGlobals.MySqlEscape(query) + "')";
-                            fields[4] = "case_number";
-                            goto Label_0446;
-                        Label_03E4: ;
-                            str5 = "(bugs.name LIKE '%" + clsGlobals.MySqlEscape(query) + "%' " + str3 + " bugs.bug_number LIKE '" + clsGlobals.MySqlEscape(query) + "')";
-                            fields[4] = "bug_number";
-                            goto Label_0446;
-                        Label_03AS: ;
-                            str5 = "(accounts.name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                            fields[4] = "account_name";
-                        Label_0446:
+                            str2 = strArray[1];
+                            str3 = "AND";
+                        }
+                        else
+                        {
+                            str2 = strArray[0];
+                        }
+                        foreach (ListViewItem item in this.lstViewSearchModules.Items)
+                        {
                             try
                             {
-                                _result = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                            }
-                            catch (System.Exception ex1)
-                            {
-                                ex1.Data.Clear();
-                                _result = clsSuiteCRMHelper.GetEntryList(text, str5.Replace("%",""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                            }
-                            if (_result.result_count > 0)
-                            {
-                                this.populateTree(_result, text, node);
-                            }
-                            else if (!list.Contains(text) && clsSuiteCRMHelper.GetFields(text).Contains("first_name"))
-                            {
-                                str5 = "(" + text.ToLower() + ".first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " " + text.ToLower() + ".last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (" + text.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + text + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(query) + "%'))";
-                                eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(text, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                                if (_result2.result_count > 0)
+                                TreeNode node;
+                                eGetEntryListResult queryResult;
+                                if (!item.Checked)
                                 {
-                                    this.populateTree(_result2, text, node);
+                                    continue;
+                                }
+                                string moduleName = item.Tag.ToString();
+
+                                if (moduleName != "All")
+                                {
+                                    if (this.tsResults.Nodes[moduleName] == null)
+                                    {
+                                        node = new TreeNode(moduleName)
+                                        {
+                                            Tag = "root_node",
+                                            Name = moduleName
+                                        };
+                                        this.tsResults.Nodes.Add(node);
+                                    }
+                                    else
+                                    {
+                                        node = this.tsResults.Nodes[moduleName];
+                                    }
+                                    string[] fields = new string[6];
+                                    fields[0] = "id";
+                                    fields[1] = "first_name";
+                                    fields[2] = "last_name";
+                                    fields[3] = "name";
+
+                                    string queryText = ConstructQueryTextForModuleName(searchText, usString, str2, str3, moduleName, fields);
+
+                                    try
+                                    {
+                                        queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                                    }
+                                    catch (System.Exception any)
+                                    {
+                                        Globals.ThisAddIn.Log.Error($"Failure when custom module included (1)\n\tQuery was '{queryText}'", any);
+                                        // Swallow exception(!)
+                                        try {
+                                            queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText.Replace("%", ""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                                        }
+                                        catch (Exception secondFail)
+                                        {
+                                            queryText = queryText.Replace("%", "");
+                                            Globals.ThisAddIn.Log.Error($"Failure when custom module included (2)\n\tQuery was '{queryText}'", secondFail);
+                                            MessageBox.Show(
+                                                $"An error was encountered while querying module '{moduleName}'. The error has been logged",
+                                                "Query error",
+                                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            queryResult = null;
+                                        }
+                                    }
+                                    if (queryResult != null && queryResult.result_count > 0)
+                                    {
+                                        this.populateTree(queryResult, moduleName, node);
+                                    }
+                                    else if (!list.Contains(moduleName) && clsSuiteCRMHelper.GetFields(moduleName).Contains("first_name"))
+                                    {
+                                        queryText = "(" + moduleName.ToLower() + ".first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " " + moduleName.ToLower() + ".last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (" + moduleName.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + moduleName + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                                        eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                                        if (_result2.result_count > 0)
+                                        {
+                                            this.populateTree(_result2, moduleName, node);
+                                        }
+                                    }
+                                    if (node.GetNodeCount(true) <= 0)
+                                    {
+                                        node.Remove();
+                                    }
                                 }
                             }
-                            if (node.GetNodeCount(true) <= 0)
+                            catch (System.Exception any)
                             {
-                                node.Remove();
+                                Globals.ThisAddIn.Log.Error("Failure when custom module included (3)", any);
+
+                                // Swallow exception(!)
+                                this.tsResults.Nodes.Clear();
                             }
                         }
-                        catch (System.Exception ex)
+                        if (this.tsResults.Nodes.Count <= 0)
                         {
-                            ex.Data.Clear();
-                            this.tsResults.Nodes.Clear();
+                            TreeNode node2 = new TreeNode("No results found")
+                            {
+                                Name = "No results",
+                                Text = "No Result"
+                            };
+                            this.tsResults.Nodes.Add(node2);
+                            this.tsResults.CheckBoxes = false;
                         }
+                        this.txtSearch.Enabled = true;
                     }
-                    if (this.tsResults.Nodes.Count <= 0)
-                    {
-                        TreeNode node2 = new TreeNode("No results found")
-                        {
-                            Name = "No results",
-                            Text = "No Result"
-                        };
-                        this.tsResults.Nodes.Add(node2);
-                        this.tsResults.CheckBoxes = false;
-                    }
-                    this.txtSearch.Enabled = true;
-                    this.Cursor = Cursors.Default;
                 }
-            }
-            catch (System.Exception ex)
-            {
-                ex.Data.Clear();
-
-                this.tsResults.Nodes.Clear();
-                this.Cursor = Cursors.Default;
-                TreeNode node2 = new TreeNode("No results found")
+                catch (System.Exception)
                 {
-                    Name = "No results",
-                    Text = "No Result"
-                };
-                this.tsResults.Nodes.Add(node2);
-                this.tsResults.CheckBoxes = false;
+                    // Swallow exception(!)
+
+                    this.tsResults.Nodes.Clear();
+                    TreeNode node2 = new TreeNode("No results found")
+                    {
+                        Name = "No results",
+                        Text = "No Result"
+                    };
+                    this.tsResults.Nodes.Add(node2);
+                    this.tsResults.CheckBoxes = false;
+                }
+        }
+
+        /// <summary>
+        /// Refactored from a horrible nest of spaghetti code. I don't yet understand this.
+        /// </summary>
+        /// <param name="searchText"></param>
+        /// <param name="usString"></param>
+        /// <param name="str2"></param>
+        /// <param name="str3"></param>
+        /// <param name="moduleName"></param>
+        /// <param name="fields"></param>
+        /// <returns></returns>
+        private static string ConstructQueryTextForModuleName(string searchText, string usString, string str2, string str3, string moduleName, string[] fields)
+        {
+            string queryText;
+            switch (moduleName)
+            {
+                case "Contacts":
+                    queryText = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                    fields[4] = "account_name";
+                    break;
+                case "Leads":
+                    queryText = "(leads.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " leads.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (leads.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Leads' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                    fields[4] = "account_name";
+                    break;
+                case "Cases":
+                    queryText = "(cases.name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%' OR cases.case_number LIKE '" + clsGlobals.MySqlEscape(searchText) + "')";
+                    fields[4] = "case_number";
+                    break;
+                case "Bugs":
+                    queryText = "(bugs.name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%' " + str3 + " bugs.bug_number LIKE '" + clsGlobals.MySqlEscape(searchText) + "')";
+                    fields[4] = "bug_number";
+                    break;
+                case "Accounts":
+                    queryText = "(accounts.name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                    fields[4] = "account_name";
+                    break;
+                default:
+                    queryText = moduleName.ToLower() + ".name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'";
+                    break;
             }
+
+            return queryText;
         }
 
         private void populateTree(eGetEntryListResult search_result, string module, TreeNode root_node)
@@ -400,145 +425,26 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private int traverseTree(TreeView tree, int counter)
+        private List<CrmEntity> GetSelectedCrmEntities(TreeView tree)
         {
+            var result = new List<CrmEntity>();
             foreach (TreeNode node in tree.Nodes)
             {
-                counter = this.GetSelectedNodeCount(node, counter);
+                this.GetSelectedCrmEntitiesHelper(node, result);
             }
-            return counter;
+            return result;
         }
 
-        private int GetSelectedNodeCount(TreeNode node, int counter)
+        private void GetSelectedCrmEntitiesHelper(TreeNode node, List<CrmEntity> selectedCrmEntities)
         {
             if (((node.Tag != null) && (node.Tag.ToString() != "root_node")) && ((node.Tag.ToString() != "sub_root_node") && node.Checked))
             {
-                counter++;
-                this.checkedNodes.Add(node);
+                selectedCrmEntities.Add(new CrmEntity(node.Parent.Text, node.Tag.ToString()));
             }
             foreach (TreeNode node2 in node.Nodes)
             {
-                counter = this.GetSelectedNodeCount(node2, counter);
+                this.GetSelectedCrmEntitiesHelper(node2, selectedCrmEntities);
             }
-            return counter;
-        }
-
-        public string archiveEmail(MailItem itemFromID)
-        {
-            try
-            {
-                string body = string.Empty;
-                string subject = string.Empty;
-                string hTMLBody = itemFromID.HTMLBody;
-                eNameValue[] data = new eNameValue[12];
-                body = itemFromID.Body;
-                subject = itemFromID.Subject;
-
-                string type = this.type;
-                if (type == null)
-                {
-                    goto Label_017D;
-                }
-                if (!(type == "autoINBOUND"))
-                {
-                    if (type == "autoOUTBOUND")
-                    {
-                        goto Label_0129;
-                    }
-                    if (type == "SendArchive")
-                    {
-                        goto Label_0153;
-                    }
-                    goto Label_017D;
-                }
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.SentOn.ToString("yyyy-MM-dd HH:mm:ss"));
-                goto Label_01A5;
-            Label_0129:
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                goto Label_01A5;
-            Label_0153:
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                goto Label_01A5;
-            Label_017D:
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", itemFromID.SentOn.ToString("yyyy-MM-dd HH:mm:ss"));
-        Label_01A5:
-            TextBox oTB = new TextBox();
-        oTB.Multiline = true;
-        oTB.WordWrap = false;
-        oTB.ScrollBars = ScrollBars.Both;
-        oTB.Text = itemFromID.Subject.Replace("&", "%26");
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", oTB.Text);
-                data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", itemFromID.EntryID);
-                data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
-                oTB.Text = itemFromID.Body.Replace("&", "%26");
-                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", oTB.Text);
-                data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", hTMLBody);
-                data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(itemFromID, this.type));
-                data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", itemFromID.To);
-                data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", itemFromID.CC);
-                data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", itemFromID.BCC);
-                data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", itemFromID.ReplyRecipientNames);
-                data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
-                string str = clsSuiteCRMHelper.SetEntry(data);
-                if (str.Length < 0x24)
-                {
-                    data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", "");
-                    str = clsSuiteCRMHelper.SetEntry(data);
-                    if (str.Length < 0x24)
-                    {
-                        return "-1";
-                    }
-                }
-                else
-                {
-
-                }
-                
-                itemFromID.Categories = "SuiteCRM";
-                itemFromID.Save();
-                if (settings.ArchiveAttachmentsDefault)
-                {
-                    try
-                    {
-                        if (itemFromID.Attachments.Count > 0)
-                        {
-                            foreach (Attachment attachment in itemFromID.Attachments)
-                            {
-                                if (!clsSuiteCRMHelper.UploadAttahcment(new SuiteCRMClient.clsEmailAttachments { DisplayName = attachment.DisplayName, FileContentInBase64String = Globals.ThisAddIn.Base64Encode(attachment, itemFromID) }, str))
-                                {
-
-                                }
-                            }
-                        }
-                    }
-                    catch (System.Exception exception)
-                    {
-                        exception.Data.Clear();
-                    }
-                }
-                return str;
-            }
-            catch (System.Exception exception2)
-            {
-                exception2.Data.Clear();
-                return "-1";
-            }
-        }
-
-        public bool createEmailRelationship(string emailId, TreeNode node)
-        {
-            eSetRelationshipValue info = new eSetRelationshipValue
-            {
-                module2 = "emails",
-                module2_id = emailId,
-                module1 = node.Parent.Text,
-                module1_id = node.Tag.ToString()
-            };
-            if (!clsSuiteCRMHelper.SetRelationship(info))
-            {
-                return false;
-            }
-            return true;
         }
 
         private void frmArchive_FormClosed(object sender, FormClosedEventArgs e)
@@ -558,9 +464,9 @@ namespace SuiteCRMAddIn
                 this.settings.Save();
                 bool flag1 = this.settings.ParticipateInCeip;
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
-                exception.Data.Clear();
+                // Swallow exception(!)
             }
         }
 
@@ -633,60 +539,80 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                bool flag = false;
-                base.Enabled = false;
-                this.Cursor = Cursors.WaitCursor;
-                foreach (object obj2 in Globals.ThisAddIn.Application.ActiveExplorer().Selection)
+                if (this.tsResults.Nodes.Count == 0)
                 {
-                    MailItem o = obj2 as MailItem;
-                    if (this.type == "SendArchive")
-                    {
-                        o.Save();
-                    }
-                    if (this.tsResults.Nodes.Count > 0)
-                    {
-                        if (this.traverseTree(this.tsResults, 0) > 0)
-                        {
-                            string emailId = this.archiveEmail(o);
-                            if (emailId != "-1")
-                            {
-                                foreach (TreeNode node in this.checkedNodes)
-                                {
-                                    this.createEmailRelationship(emailId, node);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            flag = true;
-                            MessageBox.Show("Error Archiving Email", "Error");
-                        }
-                        this.checkedNodes.Clear();
-                    }
-                    else
-                    {
-                        flag = true;
-                        MessageBox.Show("There are no search results.", "Error");
-                    }
-                    Marshal.ReleaseComObject(o);
+                    MessageBox.Show("There are no search results.", "Error");
+                    return;
                 }
-                base.Enabled = true;
-                this.Cursor = Cursors.Default;
-                if (!flag)
+
+                var selectedCrmEntities = GetSelectedCrmEntities(this.tsResults);
+                if (!selectedCrmEntities.Any())
                 {
-                    if (settings.ShowConfirmationMessageArchive)
-                    {
-                        MessageBox.Show(Globals.ThisAddIn.Application.ActiveExplorer().Selection.Count.ToString() + " Email has been successfully archived", "Success");
-                    }
-                    base.Close();
+                    MessageBox.Show("No selected CRM entities", "Error");
+                    return;
                 }
+
+                var selectedEmailsCount = Globals.ThisAddIn.SelectedEmailCount;
+                if (selectedEmailsCount == 0)
+                {
+                    MessageBox.Show("No emails selected", "Error");
+                    return;
+                }
+
+                List<ArchiveResult> emailArchiveResults;
+                using (WaitCursor.For(this, disableForm: true))
+                {
+                    var archiver = new EmailArchiving($"EB-{Globals.ThisAddIn.SelectedEmailCount}", Globals.ThisAddIn.Log);
+                    emailArchiveResults =
+                        Globals.ThisAddIn.SelectedEmails
+                            .Select(mailItem =>
+                                archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.type))
+                            .ToList();
+                }
+
+                if (ReportOnEmailArchiveSuccess(emailArchiveResults))
+                    Close();
             }
             catch (System.Exception exception)
             {
-                clsSuiteCRMHelper.WriteException(exception, "btnArchive_Click");
-                MessageBox.Show("There was an error while archiving", "Error");             
-                base.Enabled = true;
-                this.Cursor = Cursors.Default;
+                Log.Error("btnArchive_Click", exception);
+                MessageBox.Show("There was an error while archiving", "Error");
+            }
+        }
+
+        private bool ReportOnEmailArchiveSuccess(List<ArchiveResult> emailArchiveResults)
+        {
+            var successCount = emailArchiveResults.Count(r => r.IsSuccess);
+            var failCount = emailArchiveResults.Count - successCount;
+            var fullSuccess = failCount == 0;
+            if (fullSuccess)
+            {
+                if (settings.ShowConfirmationMessageArchive)
+                {
+                    MessageBox.Show(
+                        $"{successCount} email(s) have been successfully archived",
+                        "Success");
+                }
+                return true;
+            }
+            else
+            {
+                var message = successCount == 0
+                    ? $"Failed to archive {failCount} email(s)"
+                    : $"{successCount} emails(s) were successfully archived.";
+
+                var first11Problems = emailArchiveResults.SelectMany(r => r.Problems).Take(11).ToList();
+                if (first11Problems.Any())
+                {
+                    message =
+                        message +
+                        "\n\nThere were some failures:\n" +
+                        string.Join("\n", first11Problems.Take(10)) +
+                        (first11Problems.Count > 10 ? "\n[and more]" : "");
+                }
+
+                MessageBox.Show(message, "Failure");
+                return false;
             }
         }
 
