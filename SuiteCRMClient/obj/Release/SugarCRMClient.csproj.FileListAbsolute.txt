@@ -1,7 +1,0 @@
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\bin\Release\SugarCRMClient.dll.config
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\bin\Release\SugarCRMClient.dll
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\bin\Release\SugarCRMClient.XmlSerializers.dll
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\bin\Release\SugarCRMClient.pdb
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\obj\Release\SugarCRMClient.dll
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\obj\Release\SugarCRMClient.pdb
-C:\Greg\SuiteCRMOutlookAddIn\SugarCRMClient\obj\Release\SugarCRMClient.XmlSerializers.dll
