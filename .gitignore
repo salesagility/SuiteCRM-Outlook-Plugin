@@ -47,3 +47,4 @@ packages/
 *.suo
 *.user
 
+obj
