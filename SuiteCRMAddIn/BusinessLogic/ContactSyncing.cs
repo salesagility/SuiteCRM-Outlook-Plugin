@@ -160,11 +160,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             Outlook.MAPIFolder folder, 
             HashSet<SyncState<Outlook.ContactItem>> untouched)
         {
-            foreach (var oResult in items)
+            foreach (var syncState in items)
             {
                 try
                 {
-                    var state = UpdateFromCrm(folder, oResult);
+                    var state = UpdateFromCrm(folder, syncState);
                     if (state != null)
                     {
                         untouched.Remove(state);
@@ -205,21 +205,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* The date_modified value in CRM does not get updated when the sync_contact value
                  * is changed. But seeing this value can only be updated at the CRM side, if it
-                 * has changed the change must have been at the CRM side, so we need to update.
-                 * But we should only update the SShouldSync and SOModifiedDate properties, because 
-                 * we're not supposed to be syncing! Note also that it must have changed to 'false',
-                 * because if it had changed to 'true' we would have synced normally in the above
-                 * branch. */
-                Log.Warn($"ContactSyncing.UpdateFromCrm, entry id is '{id}', sync_contact has changed to {crmItem.sync_contact.value}, setting property");
+                 * has changed the change must have been at the CRM side. Note also that it must 
+                 * have changed to 'false', because if it had changed to 'true' we would have synced
+                 * normally in the above branch. Items which exist both sides but have sync_contact
+                 * set false should be removed from Outlook. */
+                Log.Warn($"ContactSyncing.UpdateFromCrm, entry id is '{id}', sync_contact has changed to {ShouldSyncContact(crmItem)}, removing item");
 
-                DateTime now = DateTime.UtcNow;
-
-                EnsureSynchronisationPropertiesForOutlookItem(
-                    syncStateForItem.OutlookItem,
-                    now.ToString("yyyy-MM-dd HH:mm:ss"),
-                    "false",
-                    id);
-                syncStateForItem.OModifiedDate = now;
+                syncStateForItem.OutlookItem.Delete();
+                syncStateForItem.OutlookItem = null;
+                ItemsSyncState.Remove(syncStateForItem);
 
                 result = syncStateForItem;
             }
