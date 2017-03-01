@@ -34,8 +34,6 @@ namespace SuiteCRMAddIn
     using System.Linq;
     using System.Reflection;
     using System.Runtime.InteropServices;
-    using System.Threading;
-    using System.Threading.Tasks;
     using System.Windows.Forms;
     using Office = Microsoft.Office.Core;
     using Outlook = Microsoft.Office.Interop.Outlook;
@@ -119,77 +117,123 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                var outlookApp = this.Application;
-                OutlookVersion = (OutlookMajorVersion)Convert.ToInt32(outlookApp.Version.Split('.')[0]);
+                Prepare();
 
-                this.settings = new clsSettings();
-                StartLogging(settings);
-
-                synchronisationContext = new SyncContext(outlookApp, settings);
-                contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
-                taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
-                appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
-                emailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
-
-                var outlookExplorer = outlookApp.ActiveExplorer();
-                this.objExplorer = outlookExplorer;
-                outlookExplorer.FolderSwitch -= objExplorer_FolderSwitch;
-                outlookExplorer.FolderSwitch += objExplorer_FolderSwitch;
-                
-                // TODO: install/remove these event handlers when settings.AutoArchive changes:
-                outlookApp.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
-                outlookApp.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
-
-                if (OutlookVersion < OutlookMajorVersion.Outlook2010)
-                {
-                    outlookApp.ItemContextMenuDisplay += new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
-                    var menuBar = outlookExplorer.CommandBars.ActiveMenuBar;
-                    objSuiteCRMMenuBar2007 = (Office.CommandBarPopup)menuBar.Controls.Add(Office.MsoControlType.msoControlPopup, missing, missing, missing, true);
-                    if (objSuiteCRMMenuBar2007 != null)
-                    {
-                        objSuiteCRMMenuBar2007.Caption = "SuiteCRM";
-                        this.btnArvive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
-                        this.btnArvive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
-                        this.btnArvive.Caption = "Archive";
-                        this.btnArvive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
-                        this.btnArvive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
-                        this.btnArvive.Visible = true;
-                        this.btnArvive.BeginGroup = true;
-                        this.btnArvive.TooltipText = "Archive selected emails to SuiteCRM";
-                        this.btnArvive.Enabled = true;
-                        this.btnSettings = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
-                        this.btnSettings.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
-                        this.btnSettings.Caption = "Settings";
-                        this.btnSettings.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnSettings_Click);
-                        this.btnSettings.Visible = true;
-                        this.btnSettings.BeginGroup = true;
-                        this.btnSettings.TooltipText = "SuiteCRM Settings";
-                        this.btnSettings.Enabled = true;
-                        this.btnSettings.Picture = RibbonImageHelper.Convert(Resources.Settings);
-
-                        objSuiteCRMMenuBar2007.Visible = true;
-                    }
-                }
-                else
-                {
-                    //For Outlook version 2010 and greater
-                    //var app = this.Application;
-                    //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
-                }
-
-                while (!this.VerifyLicenceKey())
-                {
-                    /* if licence key does not validate, show the settings form to allow the user to enter
-                     * a (new) key, and retry. */
-                    this.ShowSettingsForm();
-                }
-
-                SuiteCRMAuthenticate();
-                StartSynchronisationProcesses();
+                Run();
             }
             catch (Exception ex)
             {
                 log.Error("ThisAddIn.ThisAddIn_Startup", ex);
+            }
+        }
+
+        /// <summary>
+        /// Prepare me for running.
+        /// </summary>
+        private void Prepare()
+        {
+            var outlookApp = this.Application;
+            OutlookVersion = (OutlookMajorVersion)Convert.ToInt32(outlookApp.Version.Split('.')[0]);
+
+            this.settings = new clsSettings();
+            StartLogging(settings);
+
+            synchronisationContext = new SyncContext(outlookApp, settings);
+            contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
+            taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
+            appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
+            emailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
+
+            var outlookExplorer = outlookApp.ActiveExplorer();
+            this.objExplorer = outlookExplorer;
+            outlookExplorer.FolderSwitch -= objExplorer_FolderSwitch;
+            outlookExplorer.FolderSwitch += objExplorer_FolderSwitch;
+
+            // TODO: install/remove these event handlers when settings.AutoArchive changes:
+            outlookApp.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
+            outlookApp.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
+
+            if (OutlookVersion < OutlookMajorVersion.Outlook2010)
+            {
+                outlookApp.ItemContextMenuDisplay += new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
+                var menuBar = outlookExplorer.CommandBars.ActiveMenuBar;
+                objSuiteCRMMenuBar2007 = (Office.CommandBarPopup)menuBar.Controls.Add(Office.MsoControlType.msoControlPopup, missing, missing, missing, true);
+                if (objSuiteCRMMenuBar2007 != null)
+                {
+                    objSuiteCRMMenuBar2007.Caption = "SuiteCRM";
+                    this.btnArvive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
+                    this.btnArvive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
+                    this.btnArvive.Caption = "Archive";
+                    this.btnArvive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+                    this.btnArvive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
+                    this.btnArvive.Visible = true;
+                    this.btnArvive.BeginGroup = true;
+                    this.btnArvive.TooltipText = "Archive selected emails to SuiteCRM";
+                    this.btnArvive.Enabled = true;
+                    this.btnSettings = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
+                    this.btnSettings.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
+                    this.btnSettings.Caption = "Settings";
+                    this.btnSettings.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnSettings_Click);
+                    this.btnSettings.Visible = true;
+                    this.btnSettings.BeginGroup = true;
+                    this.btnSettings.TooltipText = "SuiteCRM Settings";
+                    this.btnSettings.Enabled = true;
+                    this.btnSettings.Picture = RibbonImageHelper.Convert(Resources.Settings);
+
+                    objSuiteCRMMenuBar2007.Visible = true;
+                }
+            }
+            else
+            {
+                //For Outlook version 2010 and greater
+                //var app = this.Application;
+                //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
+            }
+        }
+
+        /// <summary>
+        /// Check the licence; if valid, do normal processing; otherwise, give the user the options of 
+        /// reconfiguring or disabling the add-in.
+        /// </summary>
+        private void Run()
+        {
+            bool success = false, disable = false;
+            for (success = false; !(success || disable);)
+            {
+                success = this.VerifyLicenceKey();
+
+                if (!success)
+                {
+                    switch (new ReconfigureOrDisableDialog().ShowDialog())
+                    {
+                        case DialogResult.OK:
+                            /* if licence key does not validate, show the settings form to allow the user to enter
+                             * a (new) key, and retry. */
+                            Log.Info("User chose to reconfigure add-in");
+                            this.ShowSettingsForm();
+                            break;
+                        case DialogResult.Cancel:
+                            Log.Info("User chose to disable add-in");
+                            disable = true;
+                            break;
+                        default:
+                            log.Warn("Unexpected response from ReconfigureOrDisableDialog");
+                            disable = true;
+                            break;
+                    }
+                }
+            }
+
+            if (success)
+            {
+                log.Info("Licence verified, starting normal operation.");
+                SuiteCRMAuthenticate();
+                StartSynchronisationProcesses();
+            }
+            else /* presumably disable is true */
+            {
+                Log.Warn("Disabling add-in");
+                Application.COMAddIns.Item("SuiteCRMAddIn").Connect = false;
             }
         }
 
