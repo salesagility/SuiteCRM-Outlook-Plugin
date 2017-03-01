@@ -26,3 +26,11 @@ C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debu
 C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\obj\Debug\SuiteCRMClient.csprojResolveAssemblyReference.cache
 C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\obj\Debug\SuiteCRMClient.dll
 C:\Users\simon\workspace\oldrepo\SuiteCRM-Outlook-Plugin\SuiteCRMClient\obj\Debug\SuiteCRMClient.pdb
+C:\Users\simon\workspace\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\SuiteCRMClient.dll.config
+C:\Users\simon\workspace\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\SuiteCRMClient.dll
+C:\Users\simon\workspace\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\SuiteCRMClient.pdb
+C:\Users\simon\workspace\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\Newtonsoft.Json.dll
+C:\Users\simon\workspace\SuiteCRM-Outlook-Plugin\SuiteCRMClient\bin\Debug\Newtonsoft.Json.xml
+C:\Users\simon\workspace\SuiteCRM-Outlook-Plugin\SuiteCRMClient\obj\Debug\SuiteCRMClient.csprojResolveAssemblyReference.cache
+C:\Users\simon\workspace\SuiteCRM-Outlook-Plugin\SuiteCRMClient\obj\Debug\SuiteCRMClient.dll
+C:\Users\simon\workspace\SuiteCRM-Outlook-Plugin\SuiteCRMClient\obj\Debug\SuiteCRMClient.pdb
