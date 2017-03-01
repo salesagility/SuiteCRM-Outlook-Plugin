@@ -48,3 +48,5 @@ packages/
 *.user
 
 obj
+bin
+obj
