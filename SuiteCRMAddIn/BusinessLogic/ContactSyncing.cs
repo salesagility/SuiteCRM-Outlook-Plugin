@@ -87,9 +87,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                         foreach (var item in toDeleteFromOutlook)
                         {
-                            LogItemAction(item.OutlookItem, "ContactSyncing.SyncFolder, deleted item");
-                            item.OutlookItem.Delete();
-                            ItemsSyncState.Remove(item);
+                            this.RemoveItemAndSyncState(item);
                         }
 
                         foreach (var oItem in toCreateOnCrmServer)
@@ -122,14 +120,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="syncState">The sync state of the item to remove.</param>
         private void RemoveItemAndSyncState(SyncState<Outlook.ContactItem> syncState)
         {
-            this.LogItemAction(syncState.OutlookItem, "ContactSyncing.SyncFolder, deleting item");
+            this.LogItemAction(syncState.OutlookItem, "ContactSyncing.RemoveItemAndSyncState, deleting item");
             try
             {
                 syncState.OutlookItem.Delete();
             }
             catch (Exception ex)
             {
-                Log.Error("ContactSyncing.SyncFolder: Exception  oItem.oItem.Delete", ex);
+                Log.Error("ContactSyncing.RemoveItemAndSyncState: Exception  oItem.oItem.Delete", ex);
             }
             this.RemoveItemSyncState(syncState);
         }
@@ -205,21 +203,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* The date_modified value in CRM does not get updated when the sync_contact value
                  * is changed. But seeing this value can only be updated at the CRM side, if it
-                 * has changed the change must have been at the CRM side, so we need to update.
-                 * But we should only update the SShouldSync and SOModifiedDate properties, because 
-                 * we're not supposed to be syncing! Note also that it must have changed to 'false',
-                 * because if it had changed to 'true' we would have synced normally in the above
-                 * branch. */
-                Log.Warn($"ContactSyncing.UpdateFromCrm, entry id is '{id}', sync_contact has changed to {crmItem.sync_contact.value}, setting property");
+                 * has changed the change must have been at the CRM side. Note also that it must 
+                 * have changed to 'false', because if it had changed to 'true' we would have 
+                 * synced normally in the above branch. Delete from Outlook. */
+                Log.Warn($"ContactSyncing.UpdateFromCrm, entry id is '{id}', sync_contact has changed to {ShouldSyncContact(crmItem)}, deleting");
 
-                DateTime now = DateTime.UtcNow;
-
-                EnsureSynchronisationPropertiesForOutlookItem(
-                    syncStateForItem.OutlookItem,
-                    now.ToString("yyyy-MM-dd HH:mm:ss"),
-                    "false",
-                    id);
-                syncStateForItem.OModifiedDate = now;
+                this.RemoveItemAndSyncState(syncStateForItem);
 
                 result = syncStateForItem;
             }
