@@ -20,21 +20,10 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-
-namespace SuiteCRMClient.RESTObjects
+ namespace SuiteCRMAddIn.BusinessLogic
 {
-    public class eNameValue
-    {
-        [JsonProperty("name")]
-        public string name { get; set; }
-        [JsonProperty("value")]
-        public object value { get; set; }
-    }
-
+    /// <summary>
+    /// A state which a process (such as a synchronisation process) may be in.
+    /// </summary>
+    public enum RunState { Running, Stopping, Stopped };
 }

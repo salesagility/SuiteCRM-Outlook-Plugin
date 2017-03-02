@@ -257,7 +257,7 @@ namespace SuiteCRMClient
             }
         }
 
-        public static eNameValue SetNameValuePair(string name, string value)
+        public static eNameValue SetNameValuePair(string name, object value)
         {
             return new eNameValue { name = name, value = value };
         }       
@@ -339,7 +339,7 @@ namespace SuiteCRMClient
             {
                 if (_value.name == key)
                 {
-                    str = _value.value;
+                    str = _value.value.ToString();
                 }
             }
             return str;

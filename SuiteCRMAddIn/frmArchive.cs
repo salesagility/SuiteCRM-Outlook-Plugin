@@ -562,7 +562,7 @@ namespace SuiteCRMAddIn
                 List<ArchiveResult> emailArchiveResults;
                 using (WaitCursor.For(this, disableForm: true))
                 {
-                    var archiver = new EmailArchiving();
+                    var archiver = new EmailArchiving($"EB-{Globals.ThisAddIn.SelectedEmailCount}", Globals.ThisAddIn.Log);
                     emailArchiveResults =
                         Globals.ThisAddIn.SelectedEmails
                             .Select(mailItem =>

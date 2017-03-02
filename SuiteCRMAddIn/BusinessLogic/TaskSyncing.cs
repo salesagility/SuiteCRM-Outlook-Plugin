@@ -10,36 +10,24 @@ using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    public class TaskSyncing: Syncing<Outlook.TaskItem>
+    public class TaskSyncing: Synchroniser<Outlook.TaskItem>
     {
-        public TaskSyncing(SyncContext context)
-            : base(context)
+        public TaskSyncing(string name, SyncContext context)
+            : base(name, context)
         {
         }
 
         public override bool SyncingEnabled => settings.SyncCalendar;
 
-        public void StartSync()
+        public override void SynchroniseAll()
         {
-            try
-            {
-                Log.Info("TaskSync thread started");
-                Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
-                Outlook.MAPIFolder folder = GetDefaultFolder();
+            Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
+            Outlook.MAPIFolder folder = GetDefaultFolder();
 
-                GetOutlookItems(folder);
-                SyncFolder(folder);
-
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.StartTaskSync", ex);
-            }
-            finally
-            {
-                Log.Info("TaskSync thread completed");
-            }
+            GetOutlookItems(folder);
+            SyncFolder(folder);
         }
+
         private Outlook.OlImportance GetImportance(string sImportance)
         {
             Outlook.OlImportance oPriority = Outlook.OlImportance.olImportanceLow;
@@ -262,7 +250,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (ItemsSyncState == null)
                 {
-                    ItemsSyncState = new List<SyncState<Outlook.TaskItem>>();
+                    ItemsSyncState = new ThreadSafeList<SyncState<Outlook.TaskItem>>();
                     Outlook.Items items = taskFolder.Items; //.Restrict("[MessageClass] = 'IPM.Task'" + GetStartDateString());
                     foreach (Outlook.TaskItem oItem in items)
                     {

@@ -11,13 +11,18 @@ namespace SuiteCRMAddIn
     {
         public static void DoOrLogError(ILogger log, Action action)
         {
+            DoOrLogError(log, action, "Caught top-level error");
+        }
+
+        public static void DoOrLogError(ILogger log, Action action, string message)
+        {
             try
             {
                 action();
             }
             catch (Exception problem)
             {
-                log.Error("Caught top-level error", problem);
+                log.Error(message, problem);
             }
         }
     }

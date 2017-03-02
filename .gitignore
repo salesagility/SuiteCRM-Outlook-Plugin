@@ -47,6 +47,6 @@ packages/
 *.suo
 *.user
 
-/SuiteCRMClient/obj
+obj
 bin
 obj
