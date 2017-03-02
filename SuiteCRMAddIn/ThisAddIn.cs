@@ -597,7 +597,7 @@ namespace SuiteCRMAddIn
 
             // 'Build' is what we'd call the 'revision number' and
             // 'Revision' is what we'd call the 'build number'.
-            versionString = $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision:000000}";
+            versionString = $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
         }
 
         private void DoOrLogError(Action action)
