@@ -25,7 +25,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Threading;
     using System.Runtime.InteropServices;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
@@ -33,21 +32,25 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Threading;
 
-    public class EmailArchiving
+    public class EmailArchiving : RepeatingProcess
     {
-        private ILogger Log => Globals.ThisAddIn.Log;
-
         private UserSession SuiteCRMUserSession => Globals.ThisAddIn.SuiteCRMUserSession;
 
         private clsSettings settings => Globals.ThisAddIn.Settings;
 
-        public void ArchiveMailInAutoArchiveFolders()
+        public EmailArchiving(string name, ILogger log) : base(name, log)
         {
-            Log.Debug("Auto-Archive thread started");
-            var minReceivedDateTime = DateTime.UtcNow.AddDays(0 - settings.DaysOldEmailToAutoArchive);
-            try
+        }
+
+        internal override void PerformIteration()
+        {
+            if (Globals.ThisAddIn.HasCrmUserSession)
             {
+                Log.Debug("Auto-Archive iteration started");
+
+                var minReceivedDateTime = DateTime.UtcNow.AddDays(0 - settings.DaysOldEmailToAutoArchive);
                 var foldersToBeArchived = GetMailFolders(Globals.ThisAddIn.Application.Session.Folders)
                     .Where(FolderShouldBeAutoArchived);
 
@@ -55,14 +58,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     ArchiveFolderItems(objFolder, minReceivedDateTime);
                 }
+                Log.Debug("Auto-Archive iteration completed");
             }
-            catch (Exception ex)
+            else
             {
-                Log.Error("ArchiveMailInAutoArchiveFolders", ex);
-            }
-            finally
-            {
-                Log.Info("Auto-Archive thread completed");
+                Log.Debug("Auto-Archive iteration skipped because no user session.");
             }
         }
 

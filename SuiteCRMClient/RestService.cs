@@ -132,6 +132,8 @@ namespace SuiteCRMClient
             String requestUrl = bob.ToString();
             // trim off the terminal ampersand
             requestUrl = requestUrl.Substring(0, requestUrl.Length - 1);
+            log.Debug($"RestService.CreateGetResuest: sending '{requestUrl}'");
+
             HttpWebRequest request = WebRequest.CreateHttp(requestUrl);
             return request;
         }

@@ -20,21 +20,30 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMAddIn
 {
-    public class eNameValue
-    {
-        [JsonProperty("name")]
-        public string name { get; set; }
-        [JsonProperty("value")]
-        public object value { get; set; }
-    }
+    using System;
+    using System.Windows.Forms;
 
+    /// <summary>
+    /// A simple dialog asking the user whether they wish to reconfigure or disable
+    /// the add in following a licence check fail.
+    /// </summary>
+    public partial class ReconfigureOrDisableDialog : Form
+    {
+        public ReconfigureOrDisableDialog()
+        {
+            InitializeComponent();
+        }
+
+        private void DisableButton_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.Cancel;
+        }
+
+        private void ReconfigureButton_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.OK;
+        }
+    }
 }
