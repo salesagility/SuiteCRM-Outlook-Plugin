@@ -559,19 +559,9 @@ namespace SuiteCRMAddIn
                     return;
                 }
 
-                List<ArchiveResult> emailArchiveResults;
-                using (WaitCursor.For(this, disableForm: true))
-                {
-                    var archiver = new EmailArchiving($"EB-{Globals.ThisAddIn.SelectedEmailCount}", Globals.ThisAddIn.Log);
-                    emailArchiveResults =
-                        Globals.ThisAddIn.SelectedEmails
-                            .Select(mailItem =>
-                                archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.type))
-                            .ToList();
-                }
+                DaemonWorker.Instance.AddTask(new EmailArchiveAction(Globals.ThisAddIn.SelectedEmails, selectedCrmEntities, this.type));
 
-                if (ReportOnEmailArchiveSuccess(emailArchiveResults))
-                    Close();
+                Close();
             }
             catch (System.Exception exception)
             {

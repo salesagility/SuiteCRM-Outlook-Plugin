@@ -132,7 +132,7 @@ namespace SuiteCRMAddIn
         public void btnArchive_Action(IRibbonControl control)
         {
             DoOrLogError(() =>
-                ManualArchive());
+                Globals.ThisAddIn.ManualArchive());
         }
 
         public void btnSettings_Action(IRibbonControl control)
@@ -143,19 +143,9 @@ namespace SuiteCRMAddIn
 
         public void btnAddressBook_Action(IRibbonControl control)
         {
-            frmAddressBook objAddressBook = new frmAddressBook();
-            objAddressBook.Show();
+            DoOrLogError(() => Globals.ThisAddIn.ShowAddressBook());
         }
       
-        
-        private void ManualArchive()
-        {
-            if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
-            {
-                Globals.ThisAddIn.ShowSettingsForm();
-            }
-            Globals.ThisAddIn.ShowArchiveForm();
-        }
         #endregion
 
         #region Helpers

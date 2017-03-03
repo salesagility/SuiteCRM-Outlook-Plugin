@@ -35,12 +35,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The polling interval; currently hard wired.
         /// </summary>
-        private readonly TimeSpan SyncPeriod = TimeSpan.FromMinutes(5);
+        protected TimeSpan SyncPeriod = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// The thread in which syncing is run.
         /// </summary>
         private Thread process;
+
+        /// <summary>
+        /// A lock on the process
+        /// </summary>
+        private object processLock = new object();
 
         /// <summary>
         /// The logger to which I log.
@@ -61,8 +66,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             this.Log = log;
             this.Name = name;
-            this.process = new Thread(() => this.PerformRepeatedly());
-            this.process.Name = $"{this.Name}";
         }
 
         /// <summary>
@@ -78,17 +81,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         private async void PerformRepeatedly()
         {
-            while (this.Running)
+            do
             {
                 Robustness.DoOrLogError(
-                    this.Log, 
-                    () => this.PerformIteration(), 
-                    $"{this.GetType().Name} PerformIteration");
+                    this.Log,
+                    () => this.PerformIteration(),
+                    $"{this.Name} PerformIteration");
 
                 await Task.Delay(this.SyncPeriod);
             }
+            while (this.Running);
 
-            this.state = RunState.Stopped;
+            lock (processLock)
+            {
+                this.state = RunState.Stopped;
+                this.process = null;
+            }
         }
 
         /// <summary>
@@ -101,8 +109,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public void Stop()
         {
-            Log.Debug($"Stopping thread Sync{this.GetType().Name} at end of current iteration");
-            this.state = RunState.Stopping;
+            Log.Debug($"Stopping thread {this.Name} at end of current iteration");
+            lock (processLock)
+            {
+                this.state = RunState.Stopping;
+            }
         }
 
         /// <summary>
@@ -110,15 +121,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public void Start()
         {
-            if (!this.Running)
+            lock (this.processLock)
             {
-                Log.Debug($"Starting thread Sync{this.GetType().Name}");
-                this.state = RunState.Running;
-                this.process.Start();
-            }
-            else
-            {
-                Log.Warn($"Did not start thread Sync{this.GetType().Name} as it appears to be running");
+                switch (this.state)
+                {
+                    case RunState.Stopped:
+                        this.process = new Thread(() => this.PerformRepeatedly());
+                        this.process.Name = $"{this.Name}";
+                        Log.Debug($"Starting thread {this.Name}");
+                        this.state = RunState.Running;
+                        this.process.Start();
+                        break;
+                    case RunState.Stopping:
+                        this.state = RunState.Running;
+                        break;
+                    default:
+                        Log.Warn($"Did not start thread {this.Name} as it appears to be running");
+                        break;
+                }
             }
         }
     }

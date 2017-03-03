@@ -157,37 +157,43 @@ namespace SuiteCRMAddIn
             {
                 outlookApp.ItemContextMenuDisplay += new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
                 var menuBar = outlookExplorer.CommandBars.ActiveMenuBar;
-                objSuiteCRMMenuBar2007 = (Office.CommandBarPopup)menuBar.Controls.Add(Office.MsoControlType.msoControlPopup, missing, missing, missing, true);
-                if (objSuiteCRMMenuBar2007 != null)
-                {
-                    objSuiteCRMMenuBar2007.Caption = "SuiteCRM";
-                    this.btnArvive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
-                    this.btnArvive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
-                    this.btnArvive.Caption = "Archive";
-                    this.btnArvive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
-                    this.btnArvive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
-                    this.btnArvive.Visible = true;
-                    this.btnArvive.BeginGroup = true;
-                    this.btnArvive.TooltipText = "Archive selected emails to SuiteCRM";
-                    this.btnArvive.Enabled = true;
-                    this.btnSettings = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
-                    this.btnSettings.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
-                    this.btnSettings.Caption = "Settings";
-                    this.btnSettings.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnSettings_Click);
-                    this.btnSettings.Visible = true;
-                    this.btnSettings.BeginGroup = true;
-                    this.btnSettings.TooltipText = "SuiteCRM Settings";
-                    this.btnSettings.Enabled = true;
-                    this.btnSettings.Picture = RibbonImageHelper.Convert(Resources.Settings);
-
-                    objSuiteCRMMenuBar2007.Visible = true;
-                }
+                MaybeConstructOffice2007MenuBar(menuBar);
             }
             else
             {
                 //For Outlook version 2010 and greater
-                //var app = this.Application;
+                var app = this.Application;
+                //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHandler(, );
                 //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
+            }
+        }
+
+        private void MaybeConstructOffice2007MenuBar(Office.CommandBar menuBar)
+        {
+            objSuiteCRMMenuBar2007 = (Office.CommandBarPopup)menuBar.Controls.Add(Office.MsoControlType.msoControlPopup, missing, missing, missing, true);
+            if (objSuiteCRMMenuBar2007 != null)
+            {
+                objSuiteCRMMenuBar2007.Caption = "SuiteCRM";
+                this.btnArvive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
+                this.btnArvive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
+                this.btnArvive.Caption = "Archive";
+                this.btnArvive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+                this.btnArvive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
+                this.btnArvive.Visible = true;
+                this.btnArvive.BeginGroup = true;
+                this.btnArvive.TooltipText = "Archive selected emails to SuiteCRM";
+                this.btnArvive.Enabled = true;
+                this.btnSettings = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
+                this.btnSettings.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
+                this.btnSettings.Caption = "Settings";
+                this.btnSettings.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnSettings_Click);
+                this.btnSettings.Visible = true;
+                this.btnSettings.BeginGroup = true;
+                this.btnSettings.TooltipText = "SuiteCRM Settings";
+                this.btnSettings.Enabled = true;
+                this.btnSettings.Picture = RibbonImageHelper.Convert(Resources.Settings);
+
+                objSuiteCRMMenuBar2007.Visible = true;
             }
         }
 
@@ -257,7 +263,7 @@ namespace SuiteCRMAddIn
 
         private IEnumerable<string> GetLogHeader(clsSettings settings)
         {
-            yield return $"{AddInTitle} v{AddInVersion}";
+            yield return $"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}";
             foreach (var s in GetKeySettings(settings)) yield return s;
         }
 
@@ -297,6 +303,12 @@ namespace SuiteCRMAddIn
                 ShowSettingsForm());
         }
 
+        public void ShowAddressBook()
+        {
+            frmAddressBook objAddressBook = new frmAddressBook();
+            objAddressBook.Show();
+        }
+
         public void ShowSettingsForm()
         {
             var settingsForm = new frmSettings();
@@ -310,7 +322,7 @@ namespace SuiteCRMAddIn
             objForm.ShowDialog();
         }
 
-        private void ManualArchive()
+        internal void ManualArchive()
         {
             if (!HasCrmUserSession)
             {
