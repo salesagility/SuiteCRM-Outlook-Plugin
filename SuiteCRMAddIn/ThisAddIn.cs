@@ -548,7 +548,13 @@ namespace SuiteCRMAddIn
                         }
                         else
                         {
-                            SuiteCRMUserSession.Login();
+                            int? pollingInterval = SuiteCRMUserSession.Login();
+                            if (pollingInterval != null)
+                            {
+                                this.Log.Info($"Setting polling interval to {pollingInterval}");
+                                this.Settings.RestTimeout = (int)pollingInterval;
+                                this.Settings.Save();
+                            }
                         }
 
                         if (SuiteCRMUserSession.IsLoggedIn)

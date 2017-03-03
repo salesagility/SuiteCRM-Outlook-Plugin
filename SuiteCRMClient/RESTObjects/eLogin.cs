@@ -41,5 +41,7 @@ namespace SuiteCRMClient.RESTObjects
         public int ErrorNumber { get; set; }
         [JsonProperty("description")]
         public string ErrorDescription { get; set; }
+        [JsonProperty("polling_interval")]
+        public int? PollingInterval { get; set; }
     }
 }
