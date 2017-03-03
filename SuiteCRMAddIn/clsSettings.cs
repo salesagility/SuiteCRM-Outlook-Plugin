@@ -177,7 +177,7 @@ namespace SuiteCRMAddIn
                 this["PopulateContextLookupList"] = value;
             }
         }
-        [DefaultSettingValue("True"), DebuggerNonUserCode, UserScopedSetting]
+        [DefaultSettingValue("False"), DebuggerNonUserCode, UserScopedSetting]
         public bool AutoArchive
         {
             get
@@ -189,7 +189,7 @@ namespace SuiteCRMAddIn
                 this["AutoArchive"] = value;
             }
         }
-        [DefaultSettingValue("True"), DebuggerNonUserCode, UserScopedSetting]
+        [DefaultSettingValue("False"), DebuggerNonUserCode, UserScopedSetting]
         public bool SyncCalendar
         {
             get
@@ -201,7 +201,7 @@ namespace SuiteCRMAddIn
                 this["SyncCalendar"] = value;
             }
         }
-        [DefaultSettingValue("True"), DebuggerNonUserCode, UserScopedSetting]
+        [DefaultSettingValue("False"), DebuggerNonUserCode, UserScopedSetting]
         public bool SyncContacts
         {
             get
