@@ -327,9 +327,10 @@
     <Content Include="Images\Check.png" />
     <Content Include="Images\Contacts.jpg" />
     <Content Include="Images\Search_Button.png" />
+    <Content Include="Images\SendAndArchive.png" />
     <Content Include="Images\Settings.png" />
     <Content Include="Images\SuiteCRM.ico" />
-    <Content Include="Images\SuiteCRM.jpg" />
+    <None Include="Resources\SendAndArchive.bmp" />
     <EmbeddedResource Include="Menus\MailRead2007.xml" />
   </ItemGroup>
   <ItemGroup>

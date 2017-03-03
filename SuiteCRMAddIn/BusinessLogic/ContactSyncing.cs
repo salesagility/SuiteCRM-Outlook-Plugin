@@ -199,7 +199,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                     result = UpdateExistingOutlookItemFromCrm(crmItem, syncStateForItem);
                 }
             }
-            else if (ShouldSyncFlagChanged(syncStateForItem.OutlookItem, crmItem))
+            else if (syncStateForItem.OutlookItem != null && 
+                ShouldSyncFlagChanged(syncStateForItem.OutlookItem, crmItem))
             {
                 /* The date_modified value in CRM does not get updated when the sync_contact value
                  * is changed. But seeing this value can only be updated at the CRM side, if it

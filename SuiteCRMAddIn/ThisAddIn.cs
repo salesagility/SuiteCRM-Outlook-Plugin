@@ -34,6 +34,7 @@ namespace SuiteCRMAddIn
     using System.Linq;
     using System.Reflection;
     using System.Runtime.InteropServices;
+    using System.Threading;
     using System.Windows.Forms;
     using Office = Microsoft.Office.Core;
     using Outlook = Microsoft.Office.Interop.Outlook;
@@ -119,7 +120,9 @@ namespace SuiteCRMAddIn
             {
                 Prepare();
 
-                Run();
+                Thread background = new Thread(() => Run());
+                background.Name = "Background";
+                background.Start();
             }
             catch (Exception ex)
             {
@@ -192,8 +195,8 @@ namespace SuiteCRMAddIn
         }
 
         /// <summary>
-        /// Check the licence; if valid, do normal processing; otherwise, give the user the options of 
-        /// reconfiguring or disabling the add-in.
+        /// Check the licence; if valid, try to login; if successful, do normal processing. If either 
+        /// check fails, give the user the options of reconfiguring or disabling the add-in.
         /// </summary>
         private void Run()
         {
@@ -202,39 +205,74 @@ namespace SuiteCRMAddIn
             {
                 success = this.VerifyLicenceKey();
 
-                if (!success)
+                if (success)
                 {
-                    switch (new ReconfigureOrDisableDialog().ShowDialog())
+                    log.Info("Licence verified...");
+
+                    success = this.SuiteCRMAuthenticate();
+
+                    if (success)
                     {
-                        case DialogResult.OK:
-                            /* if licence key does not validate, show the settings form to allow the user to enter
-                             * a (new) key, and retry. */
-                            Log.Info("User chose to reconfigure add-in");
-                            this.ShowSettingsForm();
-                            break;
-                        case DialogResult.Cancel:
-                            Log.Info("User chose to disable add-in");
-                            disable = true;
-                            break;
-                        default:
-                            log.Warn("Unexpected response from ReconfigureOrDisableDialog");
-                            disable = true;
-                            break;
+                        log.Info("Authentication succeeded...");
                     }
+                    else
+                    {
+                        disable = this.ShowReconfigureOrDisable("Login to CRM failed");
+                    }
+                }
+                else
+                {
+                    disable = this.ShowReconfigureOrDisable("Licence check failed");
                 }
             }
 
             if (success)
             {
-                log.Info("Licence verified, starting normal operation.");
-                SuiteCRMAuthenticate();
-                StartSynchronisationProcesses();
+                log.Info("Starting normal operations.");
+                    StartSynchronisationProcesses();
             }
-            else /* presumably disable is true */
+            else
             {
-                Log.Warn("Disabling add-in");
-                Application.COMAddIns.Item("SuiteCRMAddIn").Connect = false;
+                /* presumably disable is true */
+                this.Disable();
             }
+        }
+
+        private void Disable()
+        {
+            Log.Warn("Disabling add-in");
+            Application.COMAddIns.Item("SuiteCRMAddIn").Connect = false;
+        }
+
+        /// <summary>
+        /// Show the reconfigure or disable dialogue with this summary of the problem.
+        /// </summary>
+        /// <param name="summary">A summary of the problem that caused the dialogue to be shown.</param>
+        /// <returns>true if the user chose to disable the add-in.</returns>
+        private bool ShowReconfigureOrDisable(string summary)
+        {
+            bool result;
+
+            switch (new ReconfigureOrDisableDialog(summary).ShowDialog())
+            {
+                case DialogResult.OK:
+                    /* if licence key does not validate, show the settings form to allow the user to enter
+                     * a (new) key, and retry. */
+                    Log.Info("User chose to reconfigure add-in");
+                    this.ShowSettingsForm();
+                    result = false;
+                    break;
+                case DialogResult.Cancel:
+                    Log.Info("User chose to disable add-in");
+                    result = true;
+                    break;
+                default:
+                    log.Warn("Unexpected response from ReconfigureOrDisableDialog");
+                    result = true;
+                    break;
+            }
+
+            return result;
         }
 
         public static string LogDirPath =>
@@ -505,16 +543,14 @@ namespace SuiteCRMAddIn
             return new SuiteCRMRibbon();
         }
 
-        public void SuiteCRMAuthenticate()
+        public bool SuiteCRMAuthenticate()
         {
-            if (!HasCrmUserSession)
-            {
-                Authenticate();
-            }
+            return HasCrmUserSession ? true : Authenticate();
         }
 
-        public void Authenticate()
+        public bool Authenticate()
         {
+            bool result = false;
             try
             {
                 if (settings.host != String.Empty)
@@ -540,11 +576,13 @@ namespace SuiteCRMAddIn
                         }
 
                         if (SuiteCRMUserSession.IsLoggedIn)
-                            return;
+                        {
+                            result = true;
+                        }
                     }
-                    catch (Exception)
+                    catch (Exception any)
                     {
-                        // Swallow exception(!)
+                        ShowAndLogError(any, "Failure while trying to authenticate to CRM", "Login failure");
                     }
                 }
                 else
@@ -566,6 +604,8 @@ namespace SuiteCRMAddIn
             {
                 log.Error("ThisAddIn.Authenticate", ex);
             }
+
+            return result;
         }
 
         public int SelectedEmailCount => Application.ActiveExplorer()?.Selection.Count ?? 0;
@@ -608,6 +648,16 @@ namespace SuiteCRMAddIn
         private void DoOrLogError(Action action, string message)
         {
             Robustness.DoOrLogError(log, action, message);
+        }
+
+        public void ShowAndLogError(Exception error, string message, string summary)
+        {
+            MessageBox.Show(
+                message,
+                summary,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            Log.Error(summary, error);
         }
     }
 }
