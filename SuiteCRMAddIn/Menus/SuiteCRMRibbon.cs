@@ -82,21 +82,19 @@ namespace SuiteCRMAddIn
 
         public IPictureDisp GetImage(IRibbonControl control)
         {
-            IPictureDisp result;
-
             switch (control.Id)
             {
+                case "btnArchive":
+                case "btnArchive1":
+                case "btnArchive2":
+                case "btnAddressBook":
+                    return RibbonImageHelper.Convert(Resources.SuiteCRM1);
+
                 case "btnSettings":
-                    result = RibbonImageHelper.Convert(Resources.Settings);
-                    break;
-                case "btnSendAndArchive":
-                    result = RibbonImageHelper.Convert(Resources.SendAndArchive);
-                    break;
-                default:
-                    result = RibbonImageHelper.Convert(Resources.SuiteCRM1);
-                    break;
+                    return RibbonImageHelper.Convert(Resources.Settings);
+                
             }
-            return result;
+            return null;
         }
 
         #region IRibbonExtensibility Members
@@ -141,7 +139,7 @@ namespace SuiteCRMAddIn
         public void btnArchive_Action(IRibbonControl control)
         {
             DoOrLogError(() =>
-                ManualArchive());
+                Globals.ThisAddIn.ManualArchive());
         }
 
         public void btnSettings_Action(IRibbonControl control)
@@ -152,8 +150,7 @@ namespace SuiteCRMAddIn
 
         public void btnAddressBook_Action(IRibbonControl control)
         {
-            frmAddressBook objAddressBook = new frmAddressBook();
-            objAddressBook.Show();
+            DoOrLogError(() => Globals.ThisAddIn.ShowAddressBook());
         }
 
         /// <summary>

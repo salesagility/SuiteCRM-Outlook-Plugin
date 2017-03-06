@@ -204,6 +204,9 @@
     </Compile>
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
+    <Compile Include="BusinessLogic\DaemonAction.cs" />
+    <Compile Include="BusinessLogic\DaemonWorker.cs" />
+    <Compile Include="BusinessLogic\EmailArchiveAction.cs" />
     <Compile Include="BusinessLogic\RunState.cs" />
     <Compile Include="BusinessLogic\LicenceValidation.cs" />
     <Compile Include="BusinessLogic\LicenceValidationHelper.cs" />

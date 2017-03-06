@@ -300,7 +300,7 @@ namespace SuiteCRMAddIn
 
         private IEnumerable<string> GetLogHeader(clsSettings settings)
         {
-            yield return $"{AddInTitle} v{AddInVersion}";
+            yield return $"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}";
             foreach (var s in GetKeySettings(settings)) yield return s;
         }
 
@@ -340,6 +340,12 @@ namespace SuiteCRMAddIn
                 ShowSettingsForm());
         }
 
+        public void ShowAddressBook()
+        {
+            frmAddressBook objAddressBook = new frmAddressBook();
+            objAddressBook.Show();
+        }
+
         public void ShowSettingsForm()
         {
             var settingsForm = new frmSettings();
@@ -353,7 +359,7 @@ namespace SuiteCRMAddIn
             objForm.ShowDialog();
         }
 
-        private void ManualArchive()
+        internal void ManualArchive()
         {
             if (!HasCrmUserSession)
             {
