@@ -158,10 +158,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             foreach (Outlook.Recipient objRecepient in mail.Recipients)
             {
                 if (mailArchive.To == "")
+                {
                     mailArchive.To = objRecepient.Address;
+                }
                 else
+                {
                     mailArchive.To += ";" + objRecepient.Address;
+                }
             }
+
             mailArchive.Subject = mail.Subject;
             mailArchive.Body = mail.Body;
             mailArchive.HTMLBody = mail.HTMLBody;
