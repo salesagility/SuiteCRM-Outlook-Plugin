@@ -20,20 +20,17 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Windows.Forms;
-using SuiteCRMClient;
-using SuiteCRMClient.Logging;
-
 namespace SuiteCRMAddIn
 {
-    using System.Linq;
     using BusinessLogic;
     using Microsoft.Office.Interop.Outlook;
+    using SuiteCRMClient.Logging;
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Windows.Forms;
     using Exception = System.Exception;
-    using System.Threading;
 
     public partial class frmSettings : Form
     {
@@ -122,7 +119,7 @@ namespace SuiteCRMAddIn
             this.txtLDAPAuthenticationKey.Text = Globals.ThisAddIn.Settings.LDAPKey;
 
             this.cbEmailAttachments.Checked = Globals.ThisAddIn.Settings.ArchiveAttachments;
-            this.checkBoxAutomaticSearch.Checked = true;
+            this.checkBoxAutomaticSearch.Checked = Globals.ThisAddIn.Settings.AutomaticSearch;
             this.cbShowCustomModules.Checked = Globals.ThisAddIn.Settings.ShowCustomModules;
             this.txtSyncMaxRecords.Text = Globals.ThisAddIn.Settings.SyncMaxRecords.ToString();
             this.checkBoxShowRightClick.Checked = Globals.ThisAddIn.Settings.PopulateContextLookupList;
@@ -342,7 +339,7 @@ namespace SuiteCRMAddIn
             Globals.ThisAddIn.Settings.LicenceKey = licenceText.Text.Trim();
 
             Globals.ThisAddIn.Settings.ArchiveAttachments = this.cbEmailAttachments.Checked;
-            Globals.ThisAddIn.Settings.AutomaticSearch = true;
+            Globals.ThisAddIn.Settings.AutomaticSearch = this.checkBoxAutomaticSearch.Checked;
             Globals.ThisAddIn.Settings.ShowCustomModules = this.cbShowCustomModules.Checked;
             Globals.ThisAddIn.Settings.PopulateContextLookupList = this.checkBoxShowRightClick.Checked;
 
