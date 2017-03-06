@@ -97,22 +97,25 @@ namespace SuiteCRMAddIn
 
         public string GetCustomUI(string ribbonID)
         {
-            if (ribbonID == null)
+            string result;
+
+            switch (ribbonID)
             {
-                return string.Empty;
+                case "Microsoft.Outlook.Mail.Read":
+                case "Microsoft.Outlook.Explorer":
+                    result = (Globals.ThisAddIn.OutlookVersion <= OutlookMajorVersion.Outlook2007) ?
+                        GetResourceText("SuiteCRMAddIn.Menus.MailRead2007.xml") :
+                        GetResourceText("SuiteCRMAddIn.Menus.MailRead.xml");
+                    break;
+                case "Microsoft.Outlook.Mail.Compose":
+                    result = GetResourceText("SuiteCRMAddIn.Menus.MailCompose.xml");
+                    break;
+                default:
+                    result = String.Empty;
+                    break;
             }
-            if ((ribbonID == "Microsoft.Outlook.Mail.Read") || (ribbonID=="Microsoft.Outlook.Explorer"))
-            {
-                if (Globals.ThisAddIn.OutlookVersion <= OutlookMajorVersion.Outlook2013)
-                    return GetResourceText("SuiteCRMAddIn.Menus.MailRead2007.xml");
-                else
-                    return GetResourceText("SuiteCRMAddIn.Menus.MailRead.xml");
-            }
-            if (ribbonID == "Microsoft.Outlook.Mail.Compose")
-            {
-                return GetResourceText("SuiteCRMAddIn.Menus.MailCompose.xml");
-            }
-            return string.Empty;
+
+            return result;
         }
 
         #endregion
