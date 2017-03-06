@@ -43,7 +43,7 @@ namespace SuiteCRMAddIn
 
         private ILogger Log => Globals.ThisAddIn.Log;
 
-        private Application Application => Globals.ThisAddIn.Application;
+        private Microsoft.Office.Interop.Outlook.Application Application => Globals.ThisAddIn.Application;
 
         private bool ValidateDetails()
         {

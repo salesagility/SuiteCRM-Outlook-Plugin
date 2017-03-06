@@ -82,19 +82,22 @@ namespace SuiteCRMAddIn
 
         public IPictureDisp GetImage(IRibbonControl control)
         {
+            IPictureDisp result;
+
             switch (control.Id)
             {
-                case "btnArchive":
-                case "btnArchive1":
-                case "btnArchive2":
-                case "btnAddressBook":
-                    return RibbonImageHelper.Convert(Resources.SuiteCRM1);
-
+                case "btnSendAndArchive":
+                    result = RibbonImageHelper.Convert(Resources.SendAndArchive);
+                    break;
                 case "btnSettings":
-                    return RibbonImageHelper.Convert(Resources.Settings);
-                
+                    result = RibbonImageHelper.Convert(Resources.Settings);
+                    break;
+                default:
+                    result = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+                    break;                
             }
-            return null;
+
+            return result;
         }
 
         #region IRibbonExtensibility Members
