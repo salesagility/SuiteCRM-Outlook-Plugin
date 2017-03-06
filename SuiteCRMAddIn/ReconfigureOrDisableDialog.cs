@@ -31,9 +31,24 @@ namespace SuiteCRMAddIn
     /// </summary>
     public partial class ReconfigureOrDisableDialog : Form
     {
+        /// <summary>
+        /// Create the default 'Reconfigure or disable?' dialogue, with the heading
+        /// 'Licence check failed'.
+        /// </summary>
         public ReconfigureOrDisableDialog()
         {
             InitializeComponent();
+        }
+
+        /// <summary>
+        /// Create a 'Reconfigure or disable?' dialogue, with the heading and title
+        /// taken from this summary.
+        /// </summary>
+        /// <param name="summary">Summary of the problem.</param>
+        public ReconfigureOrDisableDialog(string summary) :this()
+        {
+            this.heading.Text = $"{summary} for the SuiteCRM add-in";
+            this.Text = summary;
         }
 
         private void DisableButton_Click(object sender, EventArgs e)

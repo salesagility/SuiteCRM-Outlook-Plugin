@@ -6,6 +6,7 @@
     using System;
     using System.Collections.Generic;
     using System.Net;
+    using System.Net.Sockets;
     using System.Text;
 
     /// <summary>
@@ -76,13 +77,18 @@
                 }
                 catch (WebException badConnection)
                 {
-                    switch (badConnection.Status)
+                    logger.Error($"Failed to connect to licence server because {badConnection.Status}", badConnection);
+                    switch(badConnection.Status)
                     {
                         case WebExceptionStatus.ProtocolError:
                             result = InterpretStatusCode((HttpWebResponse)badConnection.Response);
                             break;
                         case WebExceptionStatus.Timeout:
                             /* if the licence validation server fails to respond, treat that as OK */
+                            result = true;
+                            break;
+                        case WebExceptionStatus.ConnectFailure:
+                            /* if we can't connect, treat that as OK */
                             result = true;
                             break;
                         case WebExceptionStatus.NameResolutionFailure:
