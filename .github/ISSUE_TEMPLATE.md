@@ -26,10 +26,14 @@
 <!--- How has this bug affected you? What were you trying to accomplish? -->
 <!--- If you feel this should be a low/medium/high priority then please state so -->
 
+#### Logs
+<!--- Is there any more information that the plugin logs may provide -->
+
 #### Your Environment
 <!--- Include as many relevant details about the environment you experienced the bug in -->
 
-* OutLook Client Version used:
+* Outlook Plugin Version used:
+* Outlook Client Version used:
 * SuiteCRM Version used:
-* Environment name and version (e.g. MySQL, PHP 7):
-* Operating System and version (e.g Ubuntu 16.04):
+* Host (e.g. PC, Server):
+* Operating System and version (e.g Windows 10):
