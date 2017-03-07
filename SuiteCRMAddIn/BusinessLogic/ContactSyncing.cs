@@ -65,19 +65,23 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (HasAccess("Contacts", "export"))
                 {
                     var untouched = new HashSet<SyncState<Outlook.ContactItem>>(ItemsSyncState);
-                    int nextOffset = -1; // offset of the next page of entries, if any.
+                    int thisOffset = 0; // offset of current set of entries
+                    int nextOffset = 0; // offset of the next page of entries, if any.
 
-                    for (int iOffset = 0; iOffset != nextOffset; iOffset = nextOffset)
+                    do
                     {
+                        thisOffset = nextOffset;
                         eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList("Contacts",
                                         "contacts.assigned_user_id = '" + clsSuiteCRMHelper.GetUserId() + "'",
-                                        0, "date_entered DESC", iOffset, false, clsSuiteCRMHelper.GetSugarFields("Contacts"));
+                                        0, "date_entered DESC", thisOffset, false, clsSuiteCRMHelper.GetSugarFields("Contacts"));
                         nextOffset = entriesPage.next_offset;
-                        if (iOffset != nextOffset)
+                        if (thisOffset != nextOffset)
                         {
                             UpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched);
                         }
                     }
+                    while (thisOffset != nextOffset);
+
                     try
                     {
                         // Create the lists first, because deleting items changes the value of 'ExistedInCrm'.
@@ -199,7 +203,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                     result = UpdateExistingOutlookItemFromCrm(crmItem, syncStateForItem);
                 }
             }
-            else if (syncStateForItem.OutlookItem != null && 
+            else if (syncStateForItem != null &&
+                syncStateForItem.OutlookItem != null && 
                 ShouldSyncFlagChanged(syncStateForItem.OutlookItem, crmItem))
             {
                 /* The date_modified value in CRM does not get updated when the sync_contact value
