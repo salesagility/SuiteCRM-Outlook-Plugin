@@ -12,6 +12,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public class TaskSyncing: Synchroniser<Outlook.TaskItem>
     {
+        /// <summary>
+        /// The module I synchronise with.
+        /// </summary>
+        const string CrmModule = "Tasks";
+
         public TaskSyncing(string name, SyncContext context)
             : base(name, context)
         {
@@ -25,7 +30,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             Outlook.MAPIFolder folder = GetDefaultFolder();
 
             GetOutlookItems(folder);
-            SyncFolder(folder);
+            SyncFolder(folder, CrmModule);
         }
 
         private Outlook.OlImportance GetImportance(string sImportance)
@@ -60,39 +65,24 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             return oStatus;
         }
-        private void SyncFolder(Outlook.MAPIFolder tasksFolder)
+
+        /// <summary>
+        /// Synchronise items in the specified folder with the specified SuiteCRM module.
+        /// </summary>
+        /// <remarks>
+        /// TODO: candidate for refactoring upwards, in concert with AppointmentSyncing.SyncFolder.
+        /// </remarks>
+        /// <param name="folder">The folder.</param>
+        /// <param name="crmModule">The module to snychronise with.</param>
+        private void SyncFolder(Outlook.MAPIFolder folder, string crmModule)
         {
-            Log.Warn("SyncTasks");
-            Log.Warn("My UserId= " + clsSuiteCRMHelper.GetUserId());
+            Log.Info($"ContactSyncing.SyncFolder: '{folder}'");
             try
             {
                 var untouched = new HashSet<SyncState<Outlook.TaskItem>>(ItemsSyncState);
-                int iOffset = 0;
-                while (true)
-                {
-                    eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Tasks", String.Empty,
-                                    0, "date_start DESC", iOffset, false, clsSuiteCRMHelper.GetSugarFields("Tasks"));
-                    var nextOffset = _result2.next_offset;
-                    if (iOffset == nextOffset)
-                        break;
 
-                    foreach (var oResult in _result2.entry_list)
-                    {
-                        try
-                        {
-                            var state = UpdateFromCrm(tasksFolder, oResult);
-                            if (state != null) untouched.Remove(state);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error("ThisAddIn.SyncTasks", ex);
-                        }
-                    }
+                FetchRecordsFromCrm(folder, crmModule, untouched);
 
-                    iOffset = nextOffset;
-                    if (iOffset == 0)
-                        break;
-                }
                 try
                 {
                     var lItemToBeDeletedO = untouched.Where(a => a.ExistedInCrm);
@@ -110,14 +100,96 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("ThisAddIn.SyncTasks", ex);
+                    Log.Error("TaskSyncing.SyncFolder", ex);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.SyncTasks", ex);
+                Log.Error("TaskSyncing.SyncFolder", ex);
             }
         }
+
+        /// <summary>
+        /// Fetch records in pages from CRM.
+        /// </summary>
+        /// <remarks>
+        /// TODO: This is an urgent candidate for genericising and refactoring up to Synchroniser.
+        /// </remarks>
+        /// <param name="folder">The folder to be synchronised.</param>
+        /// <param name="crmModule">The name of the CRM module to synchronise with.</param>
+        /// <param name="untouched">A list of all known Outlook items, from which those modified by this method are removed.</param>
+        private void FetchRecordsFromCrm(Outlook.MAPIFolder tasksFolder, string crmModule, HashSet<SyncState<Outlook.TaskItem>> untouched)
+        {
+            int thisOffset = 0;
+            int nextOffset = 0;
+
+            do
+            {
+                thisOffset = nextOffset;
+                eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(crmModule, string.Empty,
+                                0, "date_start DESC", thisOffset, false, clsSuiteCRMHelper.GetSugarFields(crmModule));
+                nextOffset = entriesPage.next_offset;
+
+                if (thisOffset != nextOffset)
+                {
+                    UpdateItemsFromCrmToOutlook(entriesPage, tasksFolder, untouched);
+                }
+            }
+            while (thisOffset != nextOffset);
+        }
+
+        /// <summary>
+        /// Update these items.
+        /// </summary>
+        /// <remarks>
+        /// TODO: This is a candidate for refactoring with AppointmentSyncing.UpdateItemsFromCrmToOutlook
+        /// </remarks>
+        /// <param name="items">The items to be synchronised.</param>
+        /// <param name="folder">The outlook folder to synchronise into.</param>
+        /// <param name="untouched">A list of items which have not yet been synchronised; this list is 
+        /// modified (destructuvely changed) by the action of this method.</param>
+        private void UpdateItemsFromCrmToOutlook(eGetEntryListResult items, Outlook.MAPIFolder tasksFolder, HashSet<SyncState<Outlook.TaskItem>> untouched)
+        {
+            foreach (var oResult in items.entry_list)
+            {
+                try
+                {
+                    var state = UpdateFromCrm(tasksFolder, oResult);
+                    if (state != null)
+                    {
+                        untouched.Remove(state);
+                        LogItemAction(state.OutlookItem, "TaskSyncing.UpdateItemsFromCrmToOutlook, item removed from untouched");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("ThisAddIn.SyncTasks", ex);
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Log a message regarding this Outlook appointment.
+        /// </summary>
+        /// <param name="olItem">The outlook item.</param>
+        /// <param name="message">The message to be logged.</param>
+        private void LogItemAction(Outlook.TaskItem olItem, string message)
+        {
+            try
+            {
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties["SEntryID"];
+                string crmId = olPropertyEntryId == null ?
+                    "[not present]" :
+                    olPropertyEntryId.Value;
+                Log.Info($"{0}:\n\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject    : '{olItem.Subject}'\n\tStatus      : {olItem.Status}");
+            }
+            catch (COMException)
+            {
+                // Ignore: happens if the outlook item is already deleted.
+            }
+        }
+
 
         private SyncState<Outlook.TaskItem> UpdateFromCrm(Outlook.MAPIFolder tasksFolder, eEntryValue oResult)
         {

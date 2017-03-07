@@ -34,6 +34,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
     public class ContactSyncing: Synchroniser<Outlook.ContactItem>
     {
+        /// <summary>
+        /// The module I synchronise with.
+        /// </summary>
+        const string CrmModule = "Contacts";
+
         public ContactSyncing(string name, SyncContext context)
             : base(name, context)
         {
@@ -47,7 +52,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             Outlook.MAPIFolder folder = GetDefaultFolder();
 
             GetOutlookItems(folder);
-            SyncFolder(folder);
+            SyncFolder(folder, CrmModule);
         }
 
         /// <summary>
@@ -57,30 +62,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// TODO: candidate for refactoring upwards, in concert with AppointmentSyncing.SyncFolder.
         /// </remarks>
         /// <param name="folder">The folder.</param>
-        private void SyncFolder(Outlook.MAPIFolder folder)
+        /// <param name="crmModule">The module to snychronise with.</param>
+        private void SyncFolder(Outlook.MAPIFolder folder, string crmModule)
         {
             Log.Info($"ContactSyncing.SyncFolder: '{folder}'");
             try
             {
-                if (HasAccess("Contacts", "export"))
+                if (HasAccess(crmModule, "export"))
                 {
                     var untouched = new HashSet<SyncState<Outlook.ContactItem>>(ItemsSyncState);
-                    int thisOffset = 0; // offset of current set of entries
-                    int nextOffset = 0; // offset of the next page of entries, if any.
 
-                    do
-                    {
-                        thisOffset = nextOffset;
-                        eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList("Contacts",
-                                        "contacts.assigned_user_id = '" + clsSuiteCRMHelper.GetUserId() + "'",
-                                        0, "date_entered DESC", thisOffset, false, clsSuiteCRMHelper.GetSugarFields("Contacts"));
-                        nextOffset = entriesPage.next_offset;
-                        if (thisOffset != nextOffset)
-                        {
-                            UpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched);
-                        }
-                    }
-                    while (thisOffset != nextOffset);
+                    FetchRecordsFromCrm(folder, crmModule, untouched);
 
                     try
                     {
@@ -113,6 +105,35 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Error("ContactSyncing.SyncContacts", ex);
             }
+        }
+
+        /// <summary>
+        /// Fetch records in pages from CRM.
+        /// </summary>
+        /// <remarks>
+        /// TODO: This is an urgent candidate for genericising and refactoring up to Synchroniser.
+        /// </remarks>
+        /// <param name="folder">The folder to be synchronised.</param>
+        /// <param name="crmModule">The name of the CRM module to synchronise with.</param>
+        /// <param name="untouched">A list of all known Outlook items, from which those modified by this method are removed.</param>
+        private void FetchRecordsFromCrm(Outlook.MAPIFolder folder, string crmModule, HashSet<SyncState<Outlook.ContactItem>> untouched)
+        {
+            int thisOffset = 0; // offset of current set of entries
+            int nextOffset = 0; // offset of the next page of entries, if any.
+
+            do
+            {
+                thisOffset = nextOffset;
+                eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(crmModule,
+                                "contacts.assigned_user_id = '" + clsSuiteCRMHelper.GetUserId() + "'",
+                                0, "date_entered DESC", thisOffset, false, clsSuiteCRMHelper.GetSugarFields(crmModule));
+                nextOffset = entriesPage.next_offset;
+                if (thisOffset != nextOffset)
+                {
+                    UpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched);
+                }
+            }
+            while (thisOffset != nextOffset);
         }
 
         /// <summary>
@@ -151,8 +172,10 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         /// <summary>
         /// Update these items.
-        /// TODO: This is a candidate for refactoring with AppointmentSyncing.UpdateItemsFromCrmToOutlook
         /// </summary>
+        /// <remarks>
+        /// TODO: This is a candidate for refactoring with AppointmentSyncing.UpdateItemsFromCrmToOutlook
+        /// </remarks>
         /// <param name="items">The items to be synchronised.</param>
         /// <param name="folder">The outlook folder to synchronise into.</param>
         /// <param name="untouched">A list of items which have not yet been synchronised; this list is 
@@ -170,7 +193,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     if (state != null)
                     {
                         untouched.Remove(state);
-                        LogItemAction(state.OutlookItem, "ContactSyncing.UpdateAppointmentsFromCrmToOutlook, item removed from untouched");
+                        LogItemAction(state.OutlookItem, "ContactSyncing.UpdateItemsFromCrmToOutlook, item removed from untouched");
                     }
                 }
                 catch (Exception ex)
@@ -567,7 +590,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (outlookItem == null) return;
             try
             {
-                string contactIdInCRM = clsSuiteCRMHelper.SetEntryUnsafe(ConstructJsonPacket(outlookItem, sID), "Contacts");
+                string contactIdInCRM = clsSuiteCRMHelper.SetEntryUnsafe(ConstructJsonPacket(outlookItem, sID), CrmModule);
 
                 Outlook.UserProperty syncProperty = outlookItem.UserProperties["SShouldSync"];
                 string shouldSync = syncProperty == null ?
@@ -605,7 +628,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 eSetRelationshipValue info = new eSetRelationshipValue
                 {
-                    module1 = "Contacts",
+                    module1 = CrmModule,
                     module1_id = contactIdInCRM,
                     module2 = "user_sync",
                     module2_id = clsSuiteCRMHelper.GetUserId()

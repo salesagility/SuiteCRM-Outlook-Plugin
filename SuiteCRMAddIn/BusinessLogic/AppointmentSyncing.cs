@@ -779,23 +779,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* this.ItemsSyncState already contains items to be synced. */
                 var untouched = new HashSet<SyncState<Outlook.AppointmentItem>>(this.ItemsSyncState);
-                int nextOffset = -1; // offset of the next page of entries, if any.
-
-                for (int iOffset = 0; iOffset != nextOffset; iOffset = nextOffset)
-                {
-                    /* get candidates for syncrhonisation from SuiteCRM one page at a time */
-                    eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(crmModule,
-                        String.Format("assigned_user_id = '{0}'", clsSuiteCRMHelper.GetUserId()),
-                        0, "date_start DESC", iOffset, false,
-                        clsSuiteCRMHelper.GetSugarFields(crmModule));
-
-                    nextOffset = entriesPage.next_offset; // get the offset of the next page
-
-                    if (iOffset != nextOffset)
-                    {
-                        UpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
-                    }
-                }
+                FetchRecordsFromCrm(folder, crmModule, untouched);
 
                 eEntryValue[] invited = clsSuiteCRMHelper.getRelationships("Users",
                     clsSuiteCRMHelper.GetUserId(), crmModule.ToLower(),
@@ -828,6 +812,44 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Error("AppointmentSyncing.SyncFolder: Exception", ex);
             }
+        }
+
+        /// <summary>
+        /// Fetch records in pages from CRM.
+        /// </summary>
+        /// <remarks>
+        /// TODO: This is an urgent candidate for genericising and refactoring up to Synchroniser.
+        /// </remarks>
+        /// <param name="folder">The folder to be synchronised.</param>
+        /// <param name="crmModule">The name of the CRM module to synchronise with.</param>
+        /// <param name="untouched">A list of all known Outlook items, from which those modified by this method are removed.</param>
+        private void FetchRecordsFromCrm(Outlook.MAPIFolder folder, string crmModule, HashSet<SyncState<Outlook.AppointmentItem>> untouched)
+        {
+            int thisOffset = 0; // offset of current set of entries
+            int nextOffset = 0; // offset of the next page of entries, if any.
+
+            do
+            {
+                /* update the offset to the offset of the next page */
+                thisOffset = nextOffset;
+
+                /* get candidates for syncrhonisation from SuiteCRM one page at a time */
+                eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(crmModule,
+                    String.Format("assigned_user_id = '{0}'", clsSuiteCRMHelper.GetUserId()),
+                    0, "date_start DESC", thisOffset, false,
+                    clsSuiteCRMHelper.GetSugarFields(crmModule));
+
+                /* get the offset of the next page */
+                nextOffset = entriesPage.next_offset;
+
+                /* when there are no more entries, we'll get a zero-length entry list and nextOffset
+                 * will have the same value as thisOffset */
+                if (thisOffset != nextOffset)
+                {
+                    UpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
+                }
+            }
+            while (thisOffset != nextOffset);
         }
 
         /// <summary>
