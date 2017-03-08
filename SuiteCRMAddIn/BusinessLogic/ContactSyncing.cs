@@ -77,7 +77,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     var untouched = new HashSet<SyncState<Outlook.ContactItem>>(ItemsSyncState);
 
-                    FetchRecordsFromCrm(folder, crmModule, untouched);
+                    MergeRecordsFromCrm(folder, crmModule, untouched);
 
                     try
                     {

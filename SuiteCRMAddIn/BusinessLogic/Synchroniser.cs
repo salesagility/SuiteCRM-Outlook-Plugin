@@ -404,12 +404,12 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Fetch records in pages from CRM.
+        /// Fetch records in pages from CRM, and merge them into Outlook.
         /// </summary>
         /// <param name="folder">The folder to be synchronised.</param>
         /// <param name="crmModule">The name of the CRM module to synchronise with.</param>
         /// <param name="untouched">A list of all known Outlook items, from which those modified by this method are removed.</param>
-        protected virtual void FetchRecordsFromCrm(Outlook.MAPIFolder folder, string crmModule, HashSet<SyncState<OutlookItemType>> untouched)
+        protected virtual void MergeRecordsFromCrm(Outlook.MAPIFolder folder, string crmModule, HashSet<SyncState<OutlookItemType>> untouched)
         {
             int thisOffset = 0; // offset of current page of entries
             int nextOffset = 0; // offset of the next page of entries, if any.
@@ -470,7 +470,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-
+        /// <summary>
+        /// Update a single appointment in the specified Outlook folder with changes from CRM.
+        /// </summary>
+        /// <param name="folder">The folder to synchronise into.</param>
+        /// <param name="crmType">The CRM type of the candidate item.</param>
+        /// <param name="candidateItem">The candidate item from CRM.</param>
+        /// <returns>The synchronisation state of the item updated (if it was updated).</returns>
         protected abstract SyncState<OutlookItemType> UpdateFromCrm(Outlook.MAPIFolder folder, string crmType, eEntryValue candidateItem);
 
         /// <summary>

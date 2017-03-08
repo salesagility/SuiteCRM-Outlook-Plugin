@@ -257,11 +257,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             DateTime date_start)
         {
             Outlook.AppointmentItem olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
+            olItem.Subject = crmItem.name.value.ToString();
+            olItem.Body = crmItem.description.value.ToString();
 
             LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
 
-            olItem.Subject = crmItem.name.value.ToString();
-            olItem.Body = crmItem.description.value.ToString();
             if (!string.IsNullOrWhiteSpace(crmItem.date_start.value.ToString()))
             {
                 olItem.Start = date_start;
@@ -688,7 +688,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* this.ItemsSyncState already contains items to be synced. */
                 var untouched = new HashSet<SyncState<Outlook.AppointmentItem>>(this.ItemsSyncState);
-                FetchRecordsFromCrm(folder, crmModule, untouched);
+                MergeRecordsFromCrm(folder, crmModule, untouched);
 
                 eEntryValue[] invited = clsSuiteCRMHelper.getRelationships("Users",
                     clsSuiteCRMHelper.GetUserId(), crmModule.ToLower(),

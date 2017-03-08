@@ -15,7 +15,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override void DeleteItem()
         {
-            this.OutlookItem.Delete();
+            // this.OutlookItem.Delete();
         }
     }
 }
