@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using Newtonsoft.Json;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
@@ -47,6 +48,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string _folderName;
 
         /// <summary>
+        /// It appears that CRM sends us back strings HTML escaped.
+        /// </summary>
+        protected JsonSerializerSettings deserialiseSettings = new JsonSerializerSettings()
+        {
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+        };
+
+        /// <summary>
         /// Construct a new instance of a synchroniser with this thread name and context.
         /// </summary>
         /// <param name="threadName">The name of the thread I shall create.</param>
@@ -56,6 +65,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.context = context;
             InstallEventHandlers();
         }
+
 
         /// <summary>
         /// If I am currently configured to do so, synchronise the items for which I am

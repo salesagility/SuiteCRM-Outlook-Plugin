@@ -121,7 +121,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private SyncState<Outlook.TaskItem> UpdateFromCrm(Outlook.MAPIFolder tasksFolder, eEntryValue oResult)
         {
-            dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
+            dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString(), deserialiseSettings);
             //
             if (clsSuiteCRMHelper.GetUserId() != dResult.assigned_user_id.value.ToString())
                 return null;
@@ -489,6 +489,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Error("ThisAddIn.AddTaskToS", ex);
             }
+        }
+
+        private SyncState<Outlook.TaskItem> GetSyncState(string entryId)
+        {
+            return ItemsSyncState.FirstOrDefault(a => !a.IsDeletedInOutlook && a.OutlookItem.EntryID == entryId);
         }
 
         private TimeSpan[] ParseTimesFromTaskBody(string body)

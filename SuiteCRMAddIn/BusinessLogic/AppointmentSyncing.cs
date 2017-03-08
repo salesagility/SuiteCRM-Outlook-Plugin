@@ -570,7 +570,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             eEntryValue candidateItem)
         {
             SyncState<Outlook.AppointmentItem> result = null;
-            dynamic crmItem = JsonConvert.DeserializeObject(candidateItem.name_value_object.ToString());
+            dynamic crmItem = JsonConvert.DeserializeObject(candidateItem.name_value_object.ToString(), deserialiseSettings);
             DateTime date_start = DateTime.ParseExact(crmItem.date_start.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
             date_start = date_start.Add(new DateTimeOffset(DateTime.Now).Offset); // correct for offset from UTC.
             if (date_start >= GetStartDate())
@@ -699,13 +699,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             string[] invitee_categories = { "users", "contacts", "leads" };
             foreach (string invitee_category in invitee_categories)
             {
-                eEntryValue[] Users = clsSuiteCRMHelper.getRelationships(sModule, sMeetingID, invitee_category, new string[] { "id", "email1", "phone_work" });
-                if (Users != null)
+                eEntryValue[] recipients = clsSuiteCRMHelper.getRelationships(sModule, sMeetingID, invitee_category, new string[] { "id", "email1", "phone_work" });
+                if (recipients != null)
                 {
 
-                    foreach (var oResult1 in Users)
+                    foreach (var recipient in recipients)
                     {
-                        dynamic dResult1 = JsonConvert.DeserializeObject(oResult1.name_value_object.ToString());
+                        dynamic dResult1 = JsonConvert.DeserializeObject(recipient.name_value_object.ToString(), deserialiseSettings);
 
                         Log.Info("-------------------SetRecepients-----Start-----dResult1---2-------");
                         Log.Info((string)Convert.ToString(dResult1));

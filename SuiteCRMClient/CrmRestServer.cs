@@ -35,6 +35,14 @@ namespace SuiteCRMClient
         private ILogger log;
         private int timeout = 0;
 
+        /// <summary>
+        /// It appears that CRM sends us back strings HTML escaped.
+        /// </summary>
+        private JsonSerializerSettings deserialiseSettings = new JsonSerializerSettings()
+        {
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+        };
+
         public CrmRestServer(ILogger log, int timeout)
         {
             this.log = log;
@@ -42,6 +50,7 @@ namespace SuiteCRMClient
             serialiser = new JsonSerializer();
             serialiser.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
             serialiser.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+            serialiser.StringEscapeHandling = StringEscapeHandling.EscapeNonAscii;
         }
 
         public Uri SuiteCRMURL { get; set; }
@@ -66,7 +75,7 @@ namespace SuiteCRMClient
         {
             try
             {
-                return JsonConvert.DeserializeObject<T>(responseJson);
+                return JsonConvert.DeserializeObject<T>(responseJson, deserialiseSettings);
             }
             catch (JsonReaderException parseError)
             {

@@ -179,7 +179,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private SyncState<Outlook.ContactItem> UpdateFromCrm(Outlook.MAPIFolder folder, eEntryValue candidateItem)
         {
             SyncState<Outlook.ContactItem> result;
-            dynamic crmItem = JsonConvert.DeserializeObject(candidateItem.name_value_object.ToString());
+            dynamic crmItem = JsonConvert.DeserializeObject(candidateItem.name_value_object.ToString(), deserialiseSettings);
             String id = crmItem.id.value.ToString();
             var syncStateForItem = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItem.id.value.ToString());
 
