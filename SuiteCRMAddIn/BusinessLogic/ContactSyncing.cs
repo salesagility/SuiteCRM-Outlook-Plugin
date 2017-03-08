@@ -468,29 +468,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (SyncingEnabled && outlookItem != null)
             {
-                LogItemAction(outlookItem, "ContactSyncing.AddItemFromOutlookToCrm, Despatching");
-                try
-                {
-                    result = ConstructAndDespatchCrmItem(outlookItem, DefaultCrmModule, entryId);
+                result = base.AddOrUpdateItemFromOutlookToCrm(outlookItem, crmType, entryId);
 
-                    Outlook.UserProperty syncProperty = outlookItem.UserProperties["SShouldSync"];
-                    string shouldSync = syncProperty == null ?
-                        Boolean.TrueString.ToLower() :
-                        syncProperty.Value;
+                Outlook.UserProperty syncProperty = outlookItem.UserProperties["SShouldSync"];
+                string shouldSync = syncProperty == null ?
+                    Boolean.TrueString.ToLower() :
+                    syncProperty.Value;
 
-                    EnsureSyncWithOutlookSetInCRM(result, syncProperty);
-
-                    var now = DateTime.UtcNow;
-                    EnsureSynchronisationPropertiesForOutlookItem(outlookItem, now, shouldSync, result);
-
-                    outlookItem.Save();
-
-                    AddOrGetSyncState(outlookItem, now, result);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("ContactSyncing.AddOrUpdateItemFromOutlookToCrm", ex);
-                }
+                EnsureSyncWithOutlookSetInCRM(result, syncProperty);
             }
 
             return result;

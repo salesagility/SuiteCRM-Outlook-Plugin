@@ -335,32 +335,15 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else if (ShouldDespatchToCrm(olItem))
                 {
-                    LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, Despatching");
+                    result = base.AddOrUpdateItemFromOutlookToCrm(olItem, crmType, entryId);
 
-                    try
+                    if (String.IsNullOrEmpty(entryId))
                     {
-                        result = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
-
-                        if (String.IsNullOrEmpty(entryId))
-                        {
-                            AddCurrentUserAsOwner(olItem, result);
-                        }
-                        if (olItem.Recipients != null)
-                        {
-                            AddMeetingRecipientsFromOutlookToCrm(olItem, result);
-                        }
-
-                        /* this is where the CRM entry id gets fixed up in Outlook */
-                        var utcNow = DateTime.UtcNow;
-                        EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), crmType, result);
-
-                        olItem.Save();
-
-                        AddOrGetSyncState(olItem, utcNow, result);
+                        AddCurrentUserAsOwner(olItem, result);
                     }
-                    catch (Exception ex)
+                    if (olItem.Recipients != null)
                     {
-                        Log.Error("AppointementSyncing.AddItemFromOutlookToCrm", ex);
+                        AddMeetingRecipientsFromOutlookToCrm(olItem, result);
                     }
                 }
                 else
