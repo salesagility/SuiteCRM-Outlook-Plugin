@@ -20,6 +20,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         public TaskSyncing(string name, SyncContext context)
             : base(name, context)
         {
+            this.fetchQueryPrefix = string.Empty;
+        }
+
+        protected override string DefaultCrmModule
+        {
+            get
+            {
+                return CrmModule;
+            }
         }
 
         public override bool SyncingEnabled => settings.SyncCalendar;
@@ -66,6 +75,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             return oStatus;
         }
 
+        protected override void SaveItem(Outlook.TaskItem olItem)
+        {
+            olItem.Save();
+        }
+
         /// <summary>
         /// Synchronise items in the specified folder with the specified SuiteCRM module.
         /// </summary>
@@ -74,7 +88,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </remarks>
         /// <param name="folder">The folder.</param>
         /// <param name="crmModule">The module to snychronise with.</param>
-        private void SyncFolder(Outlook.MAPIFolder folder, string crmModule)
+        protected override void SyncFolder(Outlook.MAPIFolder folder, string crmModule)
         {
             Log.Info($"ContactSyncing.SyncFolder: '{folder}'");
             try
@@ -85,17 +99,17 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 try
                 {
-                    var lItemToBeDeletedO = untouched.Where(a => a.ExistedInCrm);
-                    foreach (var oItem in lItemToBeDeletedO)
+                    var toDeleteFromOutlook = untouched.Where(a => a.ExistedInCrm);
+                    foreach (var oItem in toDeleteFromOutlook)
                     {
                         oItem.OutlookItem.Delete();
                         ItemsSyncState.Remove(oItem);
                     }
 
-                    var lItemToBeAddedToS = untouched.Where(a => !a.ExistedInCrm);
-                    foreach (var oItem in lItemToBeAddedToS)
+                    var toCreateOnCrmServer = untouched.Where(a => !a.ExistedInCrm);
+                    foreach (var oItem in toCreateOnCrmServer)
                     {
-                        AddToCrm(oItem.OutlookItem);
+                        AddOrUpdateItemFromOutlookToCrm(oItem.OutlookItem, DefaultCrmModule);
                     }
                 }
                 catch (Exception ex)
@@ -109,72 +123,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        /// <summary>
-        /// Fetch records in pages from CRM.
-        /// </summary>
-        /// <remarks>
-        /// TODO: This is an urgent candidate for genericising and refactoring up to Synchroniser.
-        /// </remarks>
-        /// <param name="folder">The folder to be synchronised.</param>
-        /// <param name="crmModule">The name of the CRM module to synchronise with.</param>
-        /// <param name="untouched">A list of all known Outlook items, from which those modified by this method are removed.</param>
-        private void FetchRecordsFromCrm(Outlook.MAPIFolder tasksFolder, string crmModule, HashSet<SyncState<Outlook.TaskItem>> untouched)
-        {
-            int thisOffset = 0;
-            int nextOffset = 0;
-
-            do
-            {
-                thisOffset = nextOffset;
-                eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(crmModule, string.Empty,
-                                0, "date_start DESC", thisOffset, false, clsSuiteCRMHelper.GetSugarFields(crmModule));
-                nextOffset = entriesPage.next_offset;
-
-                if (thisOffset != nextOffset)
-                {
-                    UpdateItemsFromCrmToOutlook(entriesPage, tasksFolder, untouched);
-                }
-            }
-            while (thisOffset != nextOffset);
-        }
-
-        /// <summary>
-        /// Update these items.
-        /// </summary>
-        /// <remarks>
-        /// TODO: This is a candidate for refactoring with AppointmentSyncing.UpdateItemsFromCrmToOutlook
-        /// </remarks>
-        /// <param name="items">The items to be synchronised.</param>
-        /// <param name="folder">The outlook folder to synchronise into.</param>
-        /// <param name="untouched">A list of items which have not yet been synchronised; this list is 
-        /// modified (destructuvely changed) by the action of this method.</param>
-        private void UpdateItemsFromCrmToOutlook(eGetEntryListResult items, Outlook.MAPIFolder tasksFolder, HashSet<SyncState<Outlook.TaskItem>> untouched)
-        {
-            foreach (var oResult in items.entry_list)
-            {
-                try
-                {
-                    var state = UpdateFromCrm(tasksFolder, oResult);
-                    if (state != null)
-                    {
-                        untouched.Remove(state);
-                        LogItemAction(state.OutlookItem, "TaskSyncing.UpdateItemsFromCrmToOutlook, item removed from untouched");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("ThisAddIn.SyncTasks", ex);
-                }
-            }
-        }
-
 
         /// <summary>
         /// Log a message regarding this Outlook appointment.
         /// </summary>
         /// <param name="olItem">The outlook item.</param>
         /// <param name="message">The message to be logged.</param>
-        private void LogItemAction(Outlook.TaskItem olItem, string message)
+        protected override void LogItemAction(Outlook.TaskItem olItem, string message)
         {
             try
             {
@@ -191,7 +146,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        private SyncState<Outlook.TaskItem> UpdateFromCrm(Outlook.MAPIFolder tasksFolder, eEntryValue oResult)
+        protected override SyncState<Outlook.TaskItem> UpdateFromCrm(Outlook.MAPIFolder tasksFolder, string crmType, eEntryValue oResult)
         {
             dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString());
             //
@@ -316,7 +271,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void GetOutlookItems(Outlook.MAPIFolder taskFolder)
+        protected override void GetOutlookItems(Outlook.MAPIFolder taskFolder)
         {
             try
             {
@@ -403,7 +358,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         Log.Warn("\tgo to AddTaskToS");
                         taskitem.IsUpdate++;
-                        AddToCrm(oItem, oProp1.Value.ToString());
+                        AddOrUpdateItemFromOutlookToCrm(oItem, oProp1.Value.ToString());
                     }
                 }
         }
@@ -415,66 +370,164 @@ namespace SuiteCRMAddIn.BusinessLogic
                     Outlook.UserProperty oProp2 = item.UserProperties["SEntryID"];  // to avoid duplicating of the task
                     if (oProp2 != null)
                     {
-                        AddToCrm(item, oProp2.Value);
+                        AddOrUpdateItemFromOutlookToCrm(item, this.DefaultCrmModule, oProp2.Value);
                     }
                     else
                     {
-                        AddToCrm(item);
+                        AddOrUpdateItemFromOutlookToCrm(item, this.DefaultCrmModule);
                     }
                 }
         }
 
-        private void AddToCrm(Outlook.TaskItem oItem, string sID = "")
+        protected override void EnsureSynchronisationPropertyForOutlookItem(Outlook.TaskItem olItem, string name, string value)
         {
-            Log.Warn("AddTaskToS");
-            //if (!settings.SyncCalendar)
-            //    return;
-            if (oItem == null) return;
-            try
+            Outlook.UserProperty olProperty = olItem.UserProperties[name];
+            if (olProperty == null)
             {
-                string _result = String.Empty;
-                eNameValue[] data = new eNameValue[7];
-                string strStatus = String.Empty;
-                string strImportance = String.Empty;
-                switch (oItem.Status)
+                olProperty = olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
+            }
+            olProperty.Value = value;
+        }
+
+        /// <summary>
+        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
+        /// </summary>
+        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="crmType">The type within CRM to which the item should be added.</param>
+        /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
+        /// <returns>The CRM id of the object created or modified.</returns>
+        protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem, string crmType, string entryId)
+        {
+            return clsSuiteCRMHelper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), crmType);
+        }
+
+        public override Outlook.MAPIFolder GetDefaultFolder()
+        {
+            return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderTasks);
+        }
+
+        protected override SyncState<Outlook.TaskItem> ConstructSyncState(Outlook.TaskItem oItem)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override SyncState<Outlook.TaskItem> GetExistingSyncState(Outlook.TaskItem oItem)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olTaskItem;
+
+        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
+        // (but not for Appointments).
+        protected override bool PropagatesLocalDeletions => false;
+
+        /// <summary>
+        /// Broadly, a C# representation of a CRM task.
+        /// </summary>
+        private class ProtoTask
+        {
+            private Outlook.TaskItem oItem;
+            private string dateStart = string.Empty, dateDue = string.Empty;
+            private string body = String.Empty;
+            private string description = String.Empty;
+
+            public string Body
+            {
+                get
                 {
-                    case Outlook.OlTaskStatus.olTaskNotStarted:
-                        strStatus = "Not Started";
-                        break;
-                    case Outlook.OlTaskStatus.olTaskInProgress:
-                        strStatus = "In Progress";
-                        break;
-                    case Outlook.OlTaskStatus.olTaskComplete:
-                        strStatus = "Completed";
-                        break;
-                    case Outlook.OlTaskStatus.olTaskDeferred:
-                        strStatus = "Deferred";
-                        break;
+                    return body;
                 }
-                switch (oItem.Importance)
+            }
+
+            public string DateStart
+            {
+                get
                 {
-                    case Outlook.OlImportance.olImportanceLow:
-                        strImportance = "Low";
-                        break;
-
-                    case Outlook.OlImportance.olImportanceNormal:
-                        strImportance = "Medium";
-                        break;
-
-                    case Outlook.OlImportance.olImportanceHigh:
-                        strImportance = "High";
-                        break;
+                    return dateStart;
                 }
+            }
 
+            public string DateDue
+            {
+                get
+                {
+                    return dateDue;
+                }
+            }
+
+            public string Description
+            {
+                get
+                {
+                    return description;
+                }
+            }
+
+            public string Priority
+            {
+                get
+                {
+                    string result;
+                    switch (oItem.Importance)
+                    {
+                        case Outlook.OlImportance.olImportanceLow:
+                            result = "Low";
+                            break;
+
+                        case Outlook.OlImportance.olImportanceNormal:
+                            result = "Medium";
+                            break;
+
+                        case Outlook.OlImportance.olImportanceHigh:
+                            result = "High";
+                            break;
+                        default:
+                            result = string.Empty;
+                            break;
+                    }
+
+                    return result;
+                }
+            }
+
+            public string Status
+            {
+                get
+                {
+                    string result;
+                    switch (oItem.Status)
+                    {
+                        case Outlook.OlTaskStatus.olTaskNotStarted:
+                            result = "Not Started";
+                            break;
+                        case Outlook.OlTaskStatus.olTaskInProgress:
+                            result = "In Progress";
+                            break;
+                        case Outlook.OlTaskStatus.olTaskComplete:
+                            result = "Completed";
+                            break;
+                        case Outlook.OlTaskStatus.olTaskDeferred:
+                            result = "Deferred";
+                            break;
+                        default:
+                            result = string.Empty;
+                            break;
+                    }
+
+                    return result;
+                }
+            }
+
+            public ProtoTask(Outlook.TaskItem oItem)
+            {
+                this.oItem = oItem;
                 DateTime uTCDateTime = new DateTime();
                 DateTime time2 = new DateTime();
                 uTCDateTime = oItem.StartDate.ToUniversalTime();
                 if (oItem.DueDate != null)
                     time2 = oItem.DueDate.ToUniversalTime();
 
-                string body = String.Empty;
-                string str, str2;
-                str = str2 = String.Empty;
                 if (oItem.Body != null)
                 {
                     body = oItem.Body.ToString();
@@ -486,28 +539,22 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                         //check max date, date must has value !
                         if (uTCDateTime.ToUniversalTime().Year < 4000)
-                            str = string.Format("{0:yyyy-MM-dd HH:mm:ss}", uTCDateTime.ToUniversalTime());
+                            dateStart = string.Format("{0:yyyy-MM-dd HH:mm:ss}", uTCDateTime.ToUniversalTime());
                         if (time2.ToUniversalTime().Year < 4000)
-                            str2 = string.Format("{0:yyyy-MM-dd HH:mm:ss}", time2.ToUniversalTime());
+                            dateDue = string.Format("{0:yyyy-MM-dd HH:mm:ss}", time2.ToUniversalTime());
                     }
                     else
                     {
-                        str = oItem.StartDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
-                        str2 = oItem.DueDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
+                        dateStart = oItem.StartDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
+                        dateDue = oItem.DueDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
                     }
 
                 }
                 else
                 {
-                    str = oItem.StartDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
-                    str2 = oItem.DueDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
+                    dateStart = oItem.StartDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
+                    dateDue = oItem.DueDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
                 }
-
-                //str = "2016-11-10 11:34:01";
-                //str2 = "2016-11-19 11:34:01";
-
-
-                string description = String.Empty;
 
                 if (!string.IsNullOrEmpty(body))
                 {
@@ -519,91 +566,61 @@ namespace SuiteCRMAddIn.BusinessLogic
                         description = body;
                     }
                 }
-                Log.Warn("\tdescription= " + description);
+            }
 
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", oItem.Subject);
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("description", description);
-                data[2] = clsSuiteCRMHelper.SetNameValuePair("status", strStatus);
-                data[3] = clsSuiteCRMHelper.SetNameValuePair("date_due", str2);
-                data[4] = clsSuiteCRMHelper.SetNameValuePair("date_start", str);
-                data[5] = clsSuiteCRMHelper.SetNameValuePair("priority", strImportance);
+            /// <summary>
+            /// Construct a name value list (to be serialised as JSON) representing this task.
+            /// </summary>
+            /// <param name="entryId">The presumed id of this task in CRM, if known.</param>
+            /// <returns>a name value list representing this task</returns>
+            public List<eNameValue> AsNameValues(string entryId)
+            {
+                var dataList = new List<eNameValue>();
+                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("name", this.oItem.Subject));
+                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("description", this.Description));
+                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("status", this.Status));
+                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("date_due", this.DateDue));
+                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("date_start", this.DateStart));
+                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("priority", this.Priority));
 
-                if (sID == String.Empty)
-                    data[6] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
-                else
-                    data[6] = clsSuiteCRMHelper.SetNameValuePair("id", sID);
+                dataList.Add(String.IsNullOrEmpty(entryId) ?
+                    clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId()) :
+                    clsSuiteCRMHelper.SetNameValuePair("id", entryId));
+                return dataList;
+            }
 
-                _result = clsSuiteCRMHelper.SetEntryUnsafe(data, "Tasks");
-                Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
-                if (oProp == null)
-                    oProp = oItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
-                oProp.Value = DateTime.UtcNow;
-                Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
-                if (oProp2 == null)
-                    oProp2 = oItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
-                oProp2.Value = _result;
-                string entryId = oItem.EntryID;
-                oItem.Save();
 
-                var sItem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
-                if (sItem != null)
+            private TimeSpan[] ParseTimesFromTaskBody(string body)
+            {
+                try
                 {
-                    sItem.OutlookItem = oItem;
-                    sItem.OModifiedDate = DateTime.UtcNow;
-                    sItem.CrmEntryId = _result;
+                    if (string.IsNullOrEmpty(body))
+                        return null;
+                    TimeSpan[] timesToAdd = new TimeSpan[2];
+                    List<int> hhmm = new List<int>(4);
+
+                    string times = body.Substring(body.LastIndexOf("#<")).Substring(2);
+                    char[] sep = { '<', '#', ':' };
+                    int parsed = 0;
+                    foreach (var digit in times.Split(sep))
+                    {
+                        int.TryParse(digit, out parsed);
+                        hhmm.Add(parsed);
+                        parsed = 0;
+                    }
+
+                    TimeSpan start_time = TimeSpan.FromHours(hhmm[0]).Add(TimeSpan.FromMinutes(hhmm[1]));
+                    TimeSpan due_time = TimeSpan.FromHours(hhmm[2]).Add(TimeSpan.FromMinutes(hhmm[3]));
+                    timesToAdd[0] = start_time;
+                    timesToAdd[1] = due_time;
+                    return timesToAdd;
                 }
-                else
-                    ItemsSyncState.Add(new TaskSyncState { CrmEntryId = _result, OModifiedDate = DateTime.UtcNow, OutlookItem = oItem });
-
-                Log.Warn("\tdate_start= " + str + ", date_due=" + str2);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("ThisAddIn.AddTaskToS", ex);
-            }
-        }
-
-        private TimeSpan[] ParseTimesFromTaskBody(string body)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(body))
+                catch
+                {
+                    // Log.Warn("Body doesn't have time string");
                     return null;
-                TimeSpan[] timesToAdd = new TimeSpan[2];
-                List<int> hhmm = new List<int>(4);
-
-                string times = body.Substring(body.LastIndexOf("#<")).Substring(2);
-                char[] sep = { '<', '#', ':' };
-                int parsed = 0;
-                foreach (var digit in times.Split(sep))
-                {
-                    int.TryParse(digit, out parsed);
-                    hhmm.Add(parsed);
-                    parsed = 0;
                 }
-
-                TimeSpan start_time = TimeSpan.FromHours(hhmm[0]).Add(TimeSpan.FromMinutes(hhmm[1]));
-                TimeSpan due_time = TimeSpan.FromHours(hhmm[2]).Add(TimeSpan.FromMinutes(hhmm[3]));
-                timesToAdd[0] = start_time;
-                timesToAdd[1] = due_time;
-                return timesToAdd;
-            }
-            catch
-            {
-                Log.Warn("Body doesn't have time string");
-                return null;
             }
         }
-
-        public override Outlook.MAPIFolder GetDefaultFolder()
-        {
-            return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderTasks);
-        }
-
-        protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olTaskItem;
-
-        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
-        // (but not for Appointments).
-        protected override bool PropagatesLocalDeletions => false;
     }
 }
