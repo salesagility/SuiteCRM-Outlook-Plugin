@@ -81,7 +81,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                     try
                     {
-                        // Create the lists first, because deleting items changes the value of 'ExistedInCrm'.
                         var syncableButNotOnCrm = untouched.Where(s => s.ShouldSyncWithCrm);
                         ResolveUnmatchedItems(syncableButNotOnCrm);
                     }

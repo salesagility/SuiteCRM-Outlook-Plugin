@@ -700,17 +700,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 try
                 {
-                    var itemsToBeDeletedFromOutlook = untouched.Where(a => a.ExistedInCrm && a.CrmType == crmModule);
-                    foreach (var item in itemsToBeDeletedFromOutlook)
-                    {
-                        RemoveItemAndSyncState(item);
-                    }
-
-                    var itemsToBeAddedToCrm = untouched.Where(a => a.ShouldSyncWithCrm && !a.ExistedInCrm && a.CrmType == crmModule);
-                    foreach (var item in itemsToBeAddedToCrm)
-                    {
-                        AddOrUpdateItemFromOutlookToCrm(item.OutlookItem, crmModule);
-                    }
+                    this.ResolveUnmatchedItems(untouched, crmModule);
                 }
                 catch (Exception ex)
                 {
@@ -865,12 +855,17 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.AppointmentItem> ConstructSyncState(Outlook.AppointmentItem oItem)
         {
-            throw new NotImplementedException();
+            return new AppointmentSyncState(oItem.UserProperties["SType"]?.Value.ToString())
+            {
+                OutlookItem = oItem,
+                CrmEntryId = oItem.UserProperties["SEntryID"]?.Value.ToString(),
+                OModifiedDate = ParseDateTimeFromUserProperty(oItem.UserProperties["SOModifiedDate"]?.Value.ToString()),
+            };
         }
 
         protected override SyncState<Outlook.AppointmentItem> GetExistingSyncState(Outlook.AppointmentItem oItem)
         {
-            throw new NotImplementedException();
+            return ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == oItem.EntryID);
         }
     }
 }

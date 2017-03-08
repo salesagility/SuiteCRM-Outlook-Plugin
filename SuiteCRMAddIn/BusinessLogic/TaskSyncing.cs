@@ -83,9 +83,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Synchronise items in the specified folder with the specified SuiteCRM module.
         /// </summary>
-        /// <remarks>
-        /// TODO: candidate for refactoring upwards, in concert with AppointmentSyncing.SyncFolder.
-        /// </remarks>
         /// <param name="folder">The folder.</param>
         /// <param name="crmModule">The module to snychronise with.</param>
         protected override void SyncFolder(Outlook.MAPIFolder folder, string crmModule)
@@ -99,18 +96,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 try
                 {
-                    var toDeleteFromOutlook = untouched.Where(a => a.ExistedInCrm);
-                    foreach (var oItem in toDeleteFromOutlook)
-                    {
-                        oItem.OutlookItem.Delete();
-                        ItemsSyncState.Remove(oItem);
-                    }
-
-                    var toCreateOnCrmServer = untouched.Where(a => !a.ExistedInCrm);
-                    foreach (var oItem in toCreateOnCrmServer)
-                    {
-                        AddOrUpdateItemFromOutlookToCrm(oItem.OutlookItem, DefaultCrmModule);
-                    }
+                    ResolveUnmatchedItems(untouched);
                 }
                 catch (Exception ex)
                 {
@@ -408,12 +394,17 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.TaskItem> ConstructSyncState(Outlook.TaskItem oItem)
         {
-            throw new NotImplementedException();
+            return new TaskSyncState
+            {
+                OutlookItem = oItem,
+                CrmEntryId = oItem.UserProperties["SEntryID"]?.Value.ToString(),
+                OModifiedDate = ParseDateTimeFromUserProperty(oItem.UserProperties["SOModifiedDate"]?.Value.ToString()),
+            };
         }
 
         protected override SyncState<Outlook.TaskItem> GetExistingSyncState(Outlook.TaskItem oItem)
         {
-            throw new NotImplementedException();
+            return ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == oItem.EntryID);
         }
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olTaskItem;

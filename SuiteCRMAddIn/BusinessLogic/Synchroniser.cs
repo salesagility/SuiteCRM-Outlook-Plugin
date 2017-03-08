@@ -180,10 +180,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// how to handle them.
         /// </summary>
         /// <param name="itemsToResolve">The list of items to resolve.</param>
-        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve)
+        /// <param name="crmModule">The type of items to resolve.</param>
+        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve, string crmModule)
         {
-            var toDeleteFromOutlook = itemsToResolve.Where(a => a.ExistedInCrm).ToList();
-            var toCreateOnCrmServer = itemsToResolve.Where(a => !a.ExistedInCrm).ToList();
+            var toDeleteFromOutlook = itemsToResolve.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
+            var toCreateOnCrmServer = itemsToResolve.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
 
             foreach (var item in toDeleteFromOutlook)
             {
@@ -194,6 +195,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 AddOrUpdateItemFromOutlookToCrm(oItem.OutlookItem, this.DefaultCrmModule);
             }
+        }
+
+        /// <summary>
+        /// Given a list of items which exist in Outlook but are missing from CRM, resolve
+        /// how to handle them.
+        /// </summary>
+        /// <param name="itemsToResolve">The list of items to resolve.</param>
+        /// <param name="crmModule">The type of items to resolve.</param>
+        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve)
+        {
+            this.ResolveUnmatchedItems(itemsToResolve, DefaultCrmModule);
         }
 
         /// <summary>
