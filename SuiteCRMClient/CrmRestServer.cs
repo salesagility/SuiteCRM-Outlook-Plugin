@@ -28,6 +28,7 @@ namespace SuiteCRMClient
     using System.IO;
     using Newtonsoft.Json;
     using SuiteCRMClient.Logging;
+    using System.Web;
 
     public class CrmRestServer
     {
@@ -61,6 +62,8 @@ namespace SuiteCRMClient
             {
                 var request = CreateCrmRestRequest(strMethod, objInput);
                 var jsonResponse = GetResponseString(request);
+                LogRequest(request, strMethod, objInput);
+                LogResponse(jsonResponse);
                 return DeserializeJson<T>(jsonResponse);
             }
             catch (Exception ex)
@@ -69,6 +72,21 @@ namespace SuiteCRMClient
                 log.Error($"Failed calling '{strMethod}'", ex);
                 throw;
             }
+        }
+
+        private void LogResponse(string jsonResponse)
+        {
+            log.Debug($"Response from CRM: {jsonResponse}");
+        }
+
+        private void LogRequest(HttpWebRequest request, string method, object payload)
+        {
+            StringBuilder bob = new StringBuilder();
+            bob.Append($"Request to CRM: \n\tURL: {request.RequestUri}\n\tMethod: {request.Method}\n");
+            string content = CreatePayload(method, payload);
+            bob.Append($"\tPayload: {content}\n");
+            bob.Append($"\tDecoded: {HttpUtility.UrlDecode(content)}");
+            log.Debug(bob.ToString());
         }
 
         private T DeserializeJson<T>(string responseJson)
@@ -88,9 +106,7 @@ namespace SuiteCRMClient
             try
             {
                 var requestUrl = SuiteCRMURL.AbsoluteUri + "service/v4_1/rest.php";
-                var restData = SerialiseJson(objInput);
-                var jsonData =
-                    $"method={WebUtility.UrlEncode(strMethod)}&input_type=JSON&response_type=JSON&rest_data={WebUtility.UrlEncode(restData)}";
+                string jsonData = CreatePayload(strMethod, objInput);
 
                 var contentTypeAndEncoding = "application/x-www-form-urlencoded; charset=utf-8";
                 var bytes = Encoding.UTF8.GetBytes(jsonData);
@@ -100,6 +116,14 @@ namespace SuiteCRMClient
             {
                 throw new Exception($"Could not construct '{strMethod}' request", problem);
             }
+        }
+
+        private string CreatePayload(string strMethod, object objInput)
+        {
+            var restData = SerialiseJson(objInput);
+            var jsonData =
+                $"method={WebUtility.UrlEncode(strMethod)}&input_type=JSON&response_type=JSON&rest_data={WebUtility.UrlEncode(restData)}";
+            return jsonData;
         }
 
         private string SerialiseJson(object parameters)

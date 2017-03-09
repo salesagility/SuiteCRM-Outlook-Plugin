@@ -32,6 +32,14 @@ namespace SuiteCRMClient.RESTObjects
 {
     public class eEntryValue
     {
+        /// <summary>
+        /// It appears that CRM sends us back strings HTML escaped.
+        /// </summary>
+        private JsonSerializerSettings deserialiseSettings = new JsonSerializerSettings()
+        {
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+        };
+
         [JsonProperty("id")]
         public string id { get; set; }
         [JsonProperty("module_name")]
@@ -52,7 +60,7 @@ namespace SuiteCRMClient.RESTObjects
                 {
                     string strFieldString = objField.ToString();
                     strFieldString = strFieldString.Remove(0, strFieldString.IndexOf('{'));
-                    eNameValue objActualField = JsonConvert.DeserializeObject<eNameValue>(strFieldString);
+                    eNameValue objActualField = JsonConvert.DeserializeObject<eNameValue>(strFieldString, deserialiseSettings);
                     this.name_value_list1.Add(objActualField);
                 }
             }

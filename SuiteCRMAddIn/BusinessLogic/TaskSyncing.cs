@@ -70,17 +70,17 @@ namespace SuiteCRMAddIn.BusinessLogic
                 int iOffset = 0;
                 while (true)
                 {
-                    eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Tasks", String.Empty,
+                    eGetEntryListResult crmItems = clsSuiteCRMHelper.GetEntryList("Tasks", String.Empty,
                                     0, "date_start DESC", iOffset, false, clsSuiteCRMHelper.GetSugarFields("Tasks"));
-                    var nextOffset = _result2.next_offset;
+                    var nextOffset = crmItems.next_offset;
                     if (iOffset == nextOffset)
                         break;
 
-                    foreach (var oResult in _result2.entry_list)
+                    foreach (eEntryValue crmItem in crmItems.entry_list)
                     {
                         try
                         {
-                            var state = UpdateFromCrm(tasksFolder, oResult);
+                            var state = UpdateFromCrm(tasksFolder, crmItem);
                             if (state != null) untouched.Remove(state);
                         }
                         catch (Exception ex)
@@ -122,7 +122,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private SyncState<Outlook.TaskItem> UpdateFromCrm(Outlook.MAPIFolder tasksFolder, eEntryValue oResult)
         {
             dynamic dResult = JsonConvert.DeserializeObject(oResult.name_value_object.ToString(), deserialiseSettings);
-            //
+            
             if (clsSuiteCRMHelper.GetUserId() != dResult.assigned_user_id.value.ToString())
                 return null;
 
