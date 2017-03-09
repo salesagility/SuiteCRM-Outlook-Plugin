@@ -31,6 +31,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Runtime.InteropServices;
+    using System.Windows.Forms;
 
     public class ContactSyncing: Synchroniser<Outlook.ContactItem>
     {
@@ -63,9 +64,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Synchronise items in the specified folder with the specified SuiteCRM module.
         /// </summary>
-        /// <remarks>
-        /// TODO: candidate for refactoring upwards, in concert with AppointmentSyncing.SyncFolder.
-        /// </remarks>
         /// <param name="folder">The folder.</param>
         /// <param name="crmModule">The module to snychronise with.</param>
         protected override void SyncFolder(Outlook.MAPIFolder folder, string crmModule)
@@ -275,7 +273,19 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (CrmItemChanged(crmItem, outlookItem))
             {
-                this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem);
+                DateTime crmDate = DateTime.Parse(crmItem.GetValueAsString("date_modified"));
+                DateTime outlookDate = dateModifiedProp == null ? DateTime.MinValue : DateTime.Parse(dateModifiedProp.Value.ToString());
+
+                if (crmDate > this.LastRunCompleted && outlookDate > this.LastRunCompleted)
+                {
+                    MessageBox.Show(
+                        $"Contact {outlookItem.FirstName} {outlookItem.LastName} has changed both in Outlook and CRM; please check which is correct",
+                        "Update problem", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else if (crmDate > outlookDate)
+                {
+                    this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem);
+                }
 
                 this.LogItemAction(outlookItem, $"ContactSyncing.UpdateExistingOutlookItemFromCrm, saving with {outlookItem.Sensitivity}");
 
@@ -317,9 +327,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Ensure that this Outlook item has a property of this name with this value.
         /// </summary>
-        /// <remarks>
-        /// TODO: Candidate for refactoring to superclass.
-        /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
