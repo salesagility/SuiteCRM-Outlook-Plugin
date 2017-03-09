@@ -32,6 +32,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Text;
 
     /// <summary>
     /// Handles the synchronisation of appointments between Outlook and CMS.
@@ -253,30 +254,30 @@ namespace SuiteCRMAddIn.BusinessLogic
         private SyncState<Outlook.AppointmentItem> AddNewItemFromCrmToOutlook(
             Outlook.MAPIFolder appointmentsFolder,
             string crmType,
-            dynamic crmItem,
+            eEntryValue crmItem,
             DateTime date_start)
         {
             Outlook.AppointmentItem olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
-            olItem.Subject = crmItem.name.value.ToString();
-            olItem.Body = crmItem.description.value.ToString();
+            olItem.Subject = crmItem.GetValueAsString("name");
+            olItem.Body = crmItem.GetValueAsString("description");
 
             LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
 
-            if (!string.IsNullOrWhiteSpace(crmItem.date_start.value.ToString()))
+            if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
             {
                 olItem.Start = date_start;
                 int iMin = 0, iHour = 0;
-                if (!string.IsNullOrWhiteSpace(crmItem.duration_minutes.value.ToString()))
+                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_minutes")))
                 {
-                    iMin = int.Parse(crmItem.duration_minutes.value.ToString());
+                    iMin = int.Parse(crmItem.GetValueAsString("duration_minutes"));
                 }
-                if (!string.IsNullOrWhiteSpace(crmItem.duration_hours.value.ToString()))
+                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_hours")))
                 {
-                    iHour = int.Parse(crmItem.duration_hours.value.ToString());
+                    iHour = int.Parse(crmItem.GetValueAsString("duration_hours"));
                 }
                 if (crmType == "Meetings")
                 {
-                    olItem.Location = crmItem.location.value.ToString();
+                    olItem.Location = crmItem.GetValueAsString("location");
                     olItem.End = olItem.Start;
                     if (iHour > 0)
                         olItem.End.AddHours(iHour);
@@ -284,7 +285,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         olItem.End.AddMinutes(iMin);
                 }
                 Log.Info("\tdefault SetRecepients");
-                SetRecipients(olItem, crmItem.id.value.ToString(), crmType);
+                SetRecipients(olItem, crmItem.GetValueAsString("id"), crmType);
 
                 try
                 {
@@ -295,13 +296,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
 
-            string crmId = crmItem.id.value.ToString();
-            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.date_modified.value.ToString(), crmType, crmId);
+            string crmId = crmItem.GetValueAsString("id");
+            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.GetValueAsString("date_modified"), crmType, crmId);
 
             var newState = new AppointmentSyncState(crmType)
             {
                 OutlookItem = olItem,
-                OModifiedDate = DateTime.ParseExact(crmItem.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null),
+                OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
                 CrmEntryId = crmId,
             };
             ItemsSyncState.Add(newState);
@@ -502,9 +503,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                 string crmId = olPropertyEntryId == null ?
                     "[not present]" :
                     olPropertyEntryId.Value;
-                Log.Info(
-                    String.Format("{0}:\n\tOutlook Id  : {1}\n\tCRM Id      : {2}\n\tSubject     : '{3}'\n\tSensitivity : {4}",
-                    message, olItem.EntryID, crmId, olItem.Subject, olItem.Sensitivity));
+                StringBuilder bob = new StringBuilder();
+                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tRecipients");
+                foreach (var recipient in olItem.Recipients)
+                {
+                    bob.Append($"\t\t{recipient}\n");
+                }
+                Log.Info(bob.ToString());
             }
             catch (COMException)
             {
@@ -523,16 +528,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected override SyncState<Outlook.AppointmentItem> UpdateFromCrm(
             Outlook.MAPIFolder folder,
             string crmType,
-            eEntryValue candidateItem)
+            eEntryValue crmItem)
         {
             SyncState<Outlook.AppointmentItem> result = null;
-            dynamic crmItem = JsonConvert.DeserializeObject(candidateItem.name_value_object.ToString());
-            DateTime date_start = DateTime.ParseExact(crmItem.date_start.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
+            DateTime date_start = DateTime.ParseExact(crmItem.GetValueAsString("date_start"), "yyyy-MM-dd HH:mm:ss", null);
             date_start = date_start.Add(new DateTimeOffset(DateTime.Now).Offset); // correct for offset from UTC.
             if (date_start >= GetStartDate())
             {
                 /* search for the item among the items I already know about */
-                var oItem = this.ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItem.id.value.ToString() && a.CrmType == crmType);
+                var oItem = this.ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItem.GetValueAsString("id") && a.CrmType == crmType);
                 if (oItem == null)
                 {
                     /* didn't find it, so add it to Outlook */
@@ -621,23 +625,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             string[] invitee_categories = { "users", "contacts", "leads" };
             foreach (string invitee_category in invitee_categories)
             {
-                eEntryValue[] Users = clsSuiteCRMHelper.getRelationships(sModule, sMeetingID, invitee_category, new string[] { "id", "email1", "phone_work" });
-                if (Users != null)
+                eEntryValue[] relationships = clsSuiteCRMHelper.getRelationships(sModule, sMeetingID, invitee_category, new string[] { "id", "email1", "phone_work" });
+                if (relationships != null)
                 {
 
-                    foreach (var oResult1 in Users)
+                    foreach (var relationship in relationships)
                     {
-                        dynamic dResult1 = JsonConvert.DeserializeObject(oResult1.name_value_object.ToString());
-
-                        Log.Info("-------------------SetRecepients-----Start-----dResult1---2-------");
-                        Log.Info((string)Convert.ToString(dResult1));
-                        Log.Info("-------------------SetRecepients-----End---------------");
-
-                        string phone_work = dResult1.phone_work.value.ToString();
+                        string phone_work = relationship.GetValueAsString("phone_work");
                         string sTemp =
                             (sModule == "Meetings") || String.IsNullOrWhiteSpace(phone_work) ?
-                                dResult1.email1.value.ToString() :
-                                dResult1.email1.value.ToString() + ":" + phone_work;
+                                relationship.GetValueAsString("email1") :
+                                relationship.GetValueAsString("email1") + ":" + phone_work;
 
                         if (!String.IsNullOrWhiteSpace(sTemp))
                         {
@@ -713,78 +711,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        ///// <summary>
-        ///// Fetch records in pages from CRM.
-        ///// </summary>
-        ///// <remarks>
-        ///// TODO: This is an urgent candidate for genericising and refactoring up to Synchroniser.
-        ///// </remarks>
-        ///// <param name="folder">The folder to be synchronised.</param>
-        ///// <param name="crmModule">The name of the CRM module to synchronise with.</param>
-        ///// <param name="untouched">A list of all known Outlook items, from which those modified by this method are removed.</param>
-        //private void FetchRecordsFromCrm(Outlook.MAPIFolder folder, string crmModule, HashSet<SyncState<Outlook.AppointmentItem>> untouched)
-        //{
-        //    int thisOffset = 0; // offset of current set of entries
-        //    int nextOffset = 0; // offset of the next page of entries, if any.
-
-        //    do
-        //    {
-        //        /* update the offset to the offset of the next page */
-        //        thisOffset = nextOffset;
-
-        //        /* get candidates for syncrhonisation from SuiteCRM one page at a time */
-        //        eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(crmModule,
-        //            String.Format("assigned_user_id = '{0}'", clsSuiteCRMHelper.GetUserId()),
-        //            0, "date_start DESC", thisOffset, false,
-        //            clsSuiteCRMHelper.GetSugarFields(crmModule));
-
-        //        /* get the offset of the next page */
-        //        nextOffset = entriesPage.next_offset;
-
-        //        /* when there are no more entries, we'll get a zero-length entry list and nextOffset
-        //         * will have the same value as thisOffset */
-        //        if (thisOffset != nextOffset)
-        //        {
-        //            UpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
-        //        }
-        //    }
-        //    while (thisOffset != nextOffset);
-        //}
-
-        ///// <summary>
-        ///// Update these appointments 
-        ///// TODO: This is a candidate for refactoring with ContactSyncing.UpdateItemsFromCrmToOutlook
-        ///// </summary>
-        ///// <param name="items">The items to be synchronised.</param>
-        ///// <param name="folder">The outlook folder to synchronise into.</param>
-        ///// <param name="untouched">A list of items which have not yet been synchronised; this list is 
-        ///// modified (destructuvely changed) by the action of this method.</param>
-        ///// <param name="crmType">The type of CRM objects represented by the appointments.</param>
-        //private void UpdateItemsFromCrmToOutlook(
-        //    eEntryValue[] items,
-        //    Outlook.MAPIFolder folder, 
-        //    HashSet<SyncState<Outlook.AppointmentItem>> untouched,
-        //    string crmType)
-        //{
-        //    foreach (var appointment in items)
-        //    {
-        //        try
-        //        {
-        //            var state = UpdateFromCrm(folder, crmType, appointment);
-        //            if (state != null)
-        //            {
-        //                // i.e., the entry was updated...
-        //                untouched.Remove(state);
-        //                LogItemAction(state.OutlookItem, "AppointmentSyncing.UpdateAppointmentsFromCrmToOutlook, item removed from untouched");
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Log.Error("AppointmentSyncing.UpdateAppointmentsFromCrmToOutlook", ex);
-        //        }
-        //    }
-        //}
-
         /// <summary>
         /// Update an existing Outlook item with values taken from a corresponding CRM item. Note that 
         /// this just overwrites all values in the Outlook item.
@@ -796,7 +722,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state.</returns>
         private SyncState<Outlook.AppointmentItem> UpdateExistingOutlookItemFromCrm(
             string crmType, 
-            dynamic crmItem, 
+            eEntryValue crmItem, 
             DateTime date_start, 
             SyncState<Outlook.AppointmentItem> oItem)
         {
@@ -804,21 +730,21 @@ namespace SuiteCRMAddIn.BusinessLogic
             Outlook.AppointmentItem olAppointment = oItem.OutlookItem;
             Outlook.UserProperty olPropertyModifiedDate = olAppointment.UserProperties["SOModifiedDate"];
 
-            if (olPropertyModifiedDate.Value != crmItem.date_modified.value.ToString())
+            if (olPropertyModifiedDate.Value != crmItem.GetValueAsString("date_modified"))
             {
-                olAppointment.Subject = crmItem.name.value.ToString();
-                olAppointment.Body = crmItem.description.value.ToString();
-                if (!string.IsNullOrWhiteSpace(crmItem.date_start.value.ToString()))
+                olAppointment.Subject = crmItem.GetValueAsString("name");
+                olAppointment.Body = crmItem.GetValueAsString("description");
+                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
                 {
                     UpdateOutlookStartAndDuration(crmType, crmItem, date_start, olAppointment);
                 }
 
-                EnsureSynchronisationPropertiesForOutlookItem(olAppointment, crmItem.date_modified.value.ToString(), crmType, crmItem.id.value.ToString());
+                EnsureSynchronisationPropertiesForOutlookItem(olAppointment, crmItem.GetValueAsString("date_modified"), crmType, crmItem.id);
                 olAppointment.Save();
                 LogItemAction(oItem.OutlookItem, "AppointmentSyncing.UpdateExistingOutlookItemFromCrm, item saved");
             }
-            Log.Warn((string)("Not default dResult.date_modified= " + crmItem.date_modified.value.ToString()));
-            oItem.OModifiedDate = DateTime.ParseExact(crmItem.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
+            Log.Warn((string)("Not default dResult.date_modified= " + crmItem.GetValueAsString("date_modified")));
+            oItem.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
 
             return oItem;
         }
@@ -830,25 +756,25 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
         /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
         /// <param name="olAppointment">The outlook item assumed to correspond with the CRM item.</param>
-        private void UpdateOutlookStartAndDuration(string crmType, dynamic crmItem, DateTime date_start, Outlook.AppointmentItem olAppointment)
+        private void UpdateOutlookStartAndDuration(string crmType, eEntryValue crmItem, DateTime date_start, Outlook.AppointmentItem olAppointment)
         {
             olAppointment.Start = date_start;
-            var minutesString = crmItem.duration_minutes.value.ToString();
-            var hoursString = crmItem.duration_hours.value.ToString();
+            var minutesString = crmItem.GetValueAsString("duration_minutes");
+            var hoursString = crmItem.GetValueAsString("duration_hours");
 
             int minutes = string.IsNullOrWhiteSpace(minutesString) ? 0 : int.Parse(minutesString);
             int hours = string.IsNullOrWhiteSpace(hoursString) ? 0 : int.Parse(hoursString);
 
             if (crmType == "Meetings")
             {
-                olAppointment.Location = crmItem.location.value.ToString();
+                olAppointment.Location = crmItem.GetValueAsString("location");
                 olAppointment.End = olAppointment.Start;
                 if (hours > 0)
                     olAppointment.End.AddHours(hours);
                 if (minutes > 0)
                     olAppointment.End.AddMinutes(minutes);
                 Log.Info("\tSetRecepients");
-                SetRecipients(olAppointment, crmItem.id.value.ToString(), crmType);
+                SetRecipients(olAppointment, crmItem.GetValueAsString("id"), crmType);
             }
             olAppointment.Duration = minutes + hours * 60;
         }
