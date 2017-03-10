@@ -313,7 +313,6 @@ namespace SuiteCRMAddIn
             this.checkBoxAutomaticSearch.TabIndex = 16;
             this.checkBoxAutomaticSearch.Text = "Automatically Search when the Archive Window is Opened";
             this.checkBoxAutomaticSearch.UseVisualStyleBackColor = true;
-            this.checkBoxAutomaticSearch.Visible = false;
             // 
             // cbEmailAttachments
             // 
