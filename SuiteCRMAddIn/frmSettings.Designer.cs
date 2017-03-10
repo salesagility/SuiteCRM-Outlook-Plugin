@@ -93,12 +93,14 @@ namespace SuiteCRMAddIn
             this.InformationTabPage = new System.Windows.Forms.TabPage();
             this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.DetailedLoggingCheckBox = new System.Windows.Forms.CheckBox();
             this.LinkToLogFileDir = new System.Windows.Forms.LinkLabel();
             this.label11 = new System.Windows.Forms.Label();
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
+            this.logLevelSelector = new System.Windows.Forms.ComboBox();
+            this.logLevelLabel = new System.Windows.Forms.Label();
+            this.logLevelHelp = new System.Windows.Forms.Label();
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -538,25 +540,17 @@ namespace SuiteCRMAddIn
             // 
             // groupBox4
             // 
-            this.groupBox4.Controls.Add(this.DetailedLoggingCheckBox);
+            this.groupBox4.Controls.Add(this.logLevelHelp);
+            this.groupBox4.Controls.Add(this.logLevelLabel);
+            this.groupBox4.Controls.Add(this.logLevelSelector);
             this.groupBox4.Controls.Add(this.LinkToLogFileDir);
             this.groupBox4.Controls.Add(this.label11);
             this.groupBox4.Location = new System.Drawing.Point(13, 144);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(332, 116);
+            this.groupBox4.Size = new System.Drawing.Size(332, 138);
             this.groupBox4.TabIndex = 5;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Logging";
-            // 
-            // DetailedLoggingCheckBox
-            // 
-            this.DetailedLoggingCheckBox.AutoSize = true;
-            this.DetailedLoggingCheckBox.Location = new System.Drawing.Point(9, 82);
-            this.DetailedLoggingCheckBox.Name = "DetailedLoggingCheckBox";
-            this.DetailedLoggingCheckBox.Size = new System.Drawing.Size(106, 17);
-            this.DetailedLoggingCheckBox.TabIndex = 31;
-            this.DetailedLoggingCheckBox.Text = "Detailed Logging";
-            this.DetailedLoggingCheckBox.UseVisualStyleBackColor = true;
             // 
             // LinkToLogFileDir
             // 
@@ -610,6 +604,33 @@ namespace SuiteCRMAddIn
             this.btnSave.Text = "&Save";
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            // 
+            // logLevelSelector
+            // 
+            this.logLevelSelector.FormattingEnabled = true;
+            this.logLevelSelector.Location = new System.Drawing.Point(186, 81);
+            this.logLevelSelector.Name = "logLevelSelector";
+            this.logLevelSelector.Size = new System.Drawing.Size(140, 21);
+            this.logLevelSelector.TabIndex = 32;
+            // 
+            // logLevelLabel
+            // 
+            this.logLevelLabel.AutoSize = true;
+            this.logLevelLabel.Location = new System.Drawing.Point(6, 84);
+            this.logLevelLabel.Name = "logLevelLabel";
+            this.logLevelLabel.Size = new System.Drawing.Size(53, 13);
+            this.logLevelLabel.TabIndex = 33;
+            this.logLevelLabel.Text = "Log level:";
+            // 
+            // logLevelHelp
+            // 
+            this.logLevelHelp.AutoSize = true;
+            this.logLevelHelp.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.logLevelHelp.Location = new System.Drawing.Point(6, 109);
+            this.logLevelHelp.Name = "logLevelHelp";
+            this.logLevelHelp.Size = new System.Drawing.Size(307, 13);
+            this.logLevelHelp.TabIndex = 34;
+            this.logLevelHelp.Text = "Changes to log level do not take effect until you restart Outlook.";
             // 
             // frmSettings
             // 
@@ -698,7 +719,6 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.LinkLabel LinkToLogFileDir;
         private System.Windows.Forms.Label AddInTitleLabel;
-        private System.Windows.Forms.CheckBox DetailedLoggingCheckBox;
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.Label AddInVersionLabel;
         private System.Windows.Forms.TabControl EmailArchiveAccountTabs;
@@ -707,5 +727,8 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.Label licenceLabel;
         private System.Windows.Forms.TextBox licenceText;
         private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.Label logLevelLabel;
+        private System.Windows.Forms.ComboBox logLevelSelector;
+        private System.Windows.Forms.Label logLevelHelp;
     }
 }

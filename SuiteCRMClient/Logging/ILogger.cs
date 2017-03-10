@@ -14,5 +14,13 @@ namespace SuiteCRMClient.Logging
         /// </summary>
         /// <param name="logMessage">The log message.</param><param name="type">The type.</param>
         void AddEntry(string logMessage, LogEntryType type);
+
+        /// <summary>
+        /// Expose the logging level.
+        /// </summary>
+        LogEntryType Level
+        {
+            get; set;
+        }
     }
 }

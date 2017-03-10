@@ -143,7 +143,14 @@ namespace SuiteCRMAddIn
                 txtLDAPAuthenticationKey.Enabled = false;
             }
 
-            DetailedLoggingCheckBox.Checked = Globals.ThisAddIn.Settings.LogLevel <= LogEntryType.Debug;
+            logLevelSelector.DataSource = Enum.GetValues(typeof(LogEntryType))
+                .Cast<LogEntryType>()
+                .Select(p => new { Key = (int)p, Value = p.ToString() })
+                .OrderBy(o => o.Key)
+                .ToList();
+            logLevelSelector.DisplayMember = "Value";
+            logLevelSelector.ValueMember = "Key";
+            logLevelSelector.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.LogLevel);
         }
 
         private void GetAccountAutoArchivingSettings()
@@ -361,7 +368,9 @@ namespace SuiteCRMAddIn
                 Globals.ThisAddIn.Settings.SyncMaxRecords = 0;
             }
 
-            Globals.ThisAddIn.Settings.LogLevel = DetailedLoggingCheckBox.Checked ? LogEntryType.Debug : LogEntryType.Information;
+            Globals.ThisAddIn.Settings.LogLevel = (LogEntryType)logLevelSelector.SelectedValue;
+            Globals.ThisAddIn.Log.Level = Globals.ThisAddIn.Settings.LogLevel;
+
             Globals.ThisAddIn.Settings.DaysOldEmailToAutoArchive =
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 

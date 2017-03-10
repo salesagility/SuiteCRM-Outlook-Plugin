@@ -19,6 +19,80 @@
             log = LogManager.GetLogger(area);
         }
 
+        /// <summary>
+        /// Expose the logging level.
+        /// </summary>
+        public LogEntryType Level
+        {
+            get
+            {
+                Logger lumberjack = (Logger)this.log.Logger;
+                return ToLogEntryType(lumberjack.Level);
+            }
+            set
+            {
+                Logger lumberjack = (Logger)this.log.Logger;
+                lumberjack.Level = FromLogEntryType(value);
+            }
+        }
+
+        /// <summary>
+        /// Translate a log4net level to a LogEntryType.
+        /// </summary>
+        /// <param name="level">The level.</param>
+        /// <returns>The corresponding entry type.</returns>
+        private static LogEntryType ToLogEntryType(Level level)
+        {
+            LogEntryType result;
+
+            if (level.CompareTo(log4net.Core.Level.Debug) == 0)
+            {
+                result = LogEntryType.Debug;
+            }
+            else if (level.CompareTo(log4net.Core.Level.Info) < 0)
+            {
+                result = LogEntryType.Information;
+            }
+            else if (level.CompareTo(log4net.Core.Level.Warn) < 0)
+            {
+                result = LogEntryType.Warning;
+            }
+            else 
+            {
+                result = LogEntryType.Error;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Convert a LogEntryType to the corresponding log4net level.
+        /// </summary>
+        /// <param name="entryType">An entry type.</param>
+        /// <returns>the corresponding log4net level</returns>
+        private static Level FromLogEntryType(LogEntryType entryType)
+        {
+            Level result;
+
+            switch (entryType)
+            {
+                case LogEntryType.Debug:
+                    result = log4net.Core.Level.Debug;
+                    break;
+                case LogEntryType.Information:
+                    result = log4net.Core.Level.Info;
+                    break;
+                case LogEntryType.Warning:
+                    result = log4net.Core.Level.Warn;
+                    break;
+                default:
+                    result = log4net.Core.Level.Error;
+                    break;
+            }
+
+            return result;
+        }
+
         public static Log4NetLogger FromFilePath(string area, string filePath, Func<IEnumerable<string>> headerFunction)
         {
             var hierarchy = (Hierarchy)LogManager.GetRepository();
@@ -26,6 +100,7 @@
             var patternLayout = new PatternLayoutWithHeader("%date | %-2thread | %-5level | %message%newline", headerFunction);
             patternLayout.ActivateOptions();
 
+            var level = FromLogEntryType(Globals.ThisAddIn.Settings.LogLevel);
             var appender = new RollingFileAppender
             {
                 AppendToFile = true,
@@ -35,13 +110,13 @@
                 MaxFileSize = 1000000, // 1MB
                 StaticLogFileName = true,
                 MaxSizeRollBackups = 10,
-                Threshold = Level.Debug,
+                Threshold = level,
                 Encoding = Encoding.UTF8,
             };
             appender.ActivateOptions();
 
             hierarchy.Root.AddAppender(appender);
-            hierarchy.Root.Level = Level.Debug;
+            hierarchy.Root.Level = level;
             hierarchy.Configured = true;
 
             return new Log4NetLogger(area);
