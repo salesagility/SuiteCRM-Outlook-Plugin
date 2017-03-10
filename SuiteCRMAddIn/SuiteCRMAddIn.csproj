@@ -230,6 +230,11 @@
     <Compile Include="EmailAccountArchiveSettingsControl.Designer.cs">
       <DependentUpon>EmailAccountArchiveSettingsControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="ReconfigureOrDisableDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -282,14 +287,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <EmbeddedResource Include="ReconfigureOrDisableDialog.resx">
       <DependentUpon>ReconfigureOrDisableDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -326,6 +326,8 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Images\AddressBook.png" />
+    <None Include="Images\Archive.png" />
     <Content Include="Images\Cancel.png" />
     <Content Include="Images\Check.png" />
     <Content Include="Images\Contacts.jpg" />

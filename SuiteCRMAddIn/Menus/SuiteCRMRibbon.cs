@@ -92,8 +92,11 @@ namespace SuiteCRMAddIn
                 case "btnSettings":
                     result = RibbonImageHelper.Convert(Resources.Settings);
                     break;
+                case "btnAddressBook":
+                    result = RibbonImageHelper.Convert(Resources.AddressBook);
+                    break;
                 default:
-                    result = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+                    result = RibbonImageHelper.Convert(Resources.Archive);
                     break;                
             }
 
