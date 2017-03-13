@@ -62,8 +62,10 @@ namespace SuiteCRMClient
             {
                 var request = CreateCrmRestRequest(strMethod, objInput);
                 var jsonResponse = GetResponseString(request);
+#if DEBUG
                 LogRequest(request, strMethod, objInput);
                 LogResponse(jsonResponse);
+#endif
                 return DeserializeJson<T>(jsonResponse);
             }
             catch (Exception ex)
@@ -168,11 +170,13 @@ namespace SuiteCRMClient
             /* This block is really useful because it allows us to see exactly what gets sent over 
              * the wire, but it's also extremely dodgy because sensitive data will end up in the log.
              * It also puts a lot of clutter in the log! TODO: remove before stable release! */
-            //log.Debug(
-            //    String.Format(
-            //        "CrmRestServer.CreatePostRequest:\n\tContent type: {0}\n\tPayload     {1}",
-            //        contentTypeAndEncoding,
-            //        System.Web.HttpUtility.UrlDecode(Encoding.ASCII.GetString(bytes).Trim())));
+#if DEBUG
+            log.Debug(
+                String.Format(
+                    "CrmRestServer.CreatePostRequest:\n\tContent type: {0}\n\tPayload     {1}",
+                    contentTypeAndEncoding,
+                    System.Web.HttpUtility.UrlDecode(Encoding.ASCII.GetString(bytes).Trim())));
+#endif
 
             using (var requestStream = request.GetRequestStream())
             {

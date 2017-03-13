@@ -1,15 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using SuiteCRMClient.Logging;
-using SuiteCRMClient;
-using SuiteCRMClient.RESTObjects;
-using Newtonsoft.Json;
-using Outlook = Microsoft.Office.Interop.Outlook;
-
+﻿/**
+ * Outlook integration for SuiteCRM.
+ * @package Outlook integration for SuiteCRM
+ * @copyright SalesAgility Ltd http://www.salesagility.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU LESSER GENERAL PUBLIC LICENCE as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENCE
+ * along with this program; if not, see http://www.gnu.org/licenses
+ * or write to the Free Software Foundation,Inc., 51 Franklin Street,
+ * Fifth Floor, Boston, MA 02110-1301  USA
+ *
+ * @author SalesAgility <info@salesagility.com>
+ */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using SuiteCRMClient.Logging;
+    using SuiteCRMClient;
+    using SuiteCRMClient.RESTObjects;
+    using Newtonsoft.Json;
+    using Outlook = Microsoft.Office.Interop.Outlook;
+
     public class TaskSyncing: Synchroniser<Outlook.TaskItem>
     {
         /// <summary>
@@ -91,21 +113,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 var untouched = new HashSet<SyncState<Outlook.TaskItem>>(ItemsSyncState);
-                int iOffset = 0;
-                while (true)
-                {
-                    eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList("Tasks", String.Empty,
-                                    0, "date_start DESC", iOffset, false, clsSuiteCRMHelper.GetSugarFields("Tasks"));
-                    var nextOffset = _result2.next_offset;
-                    if (iOffset == nextOffset)
-                        break;
 
                 MergeRecordsFromCrm(folder, crmModule, untouched);
 
-                    iOffset = nextOffset;
-                    if (iOffset == 0)
-                        break;
-                }
                 try
                 {
                     ResolveUnmatchedItems(untouched);
@@ -143,24 +153,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-            if (!string.IsNullOrWhiteSpace(dResult.date_due.value.ToString()))
-            {
-                date_due = DateTime.ParseExact(dResult.date_due.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
-                date_due = date_due.Value.Add(new DateTimeOffset(DateTime.Now).Offset);
-                time_due =
-                    TimeSpan.FromHours(date_due.Value.Hour).Add(TimeSpan.FromMinutes(date_due.Value.Minute)).ToString(@"hh\:mm");
-                ;
-            }
-
         protected override SyncState<Outlook.TaskItem> UpdateFromCrm(Outlook.MAPIFolder tasksFolder, string crmType, eEntryValue crmItem)
         {
             SyncState<Outlook.TaskItem> result = null;
 
             if (clsSuiteCRMHelper.GetUserId() == crmItem.GetValueAsString("assigned_user_id"))
             {
-                Log.Warn("\tTask= " + lt.CrmEntryId);
-            }
-
                 DateTime? date_start = null;
                 DateTime? date_due = null;
 
@@ -180,9 +178,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 if (date_start != null && date_start >= GetStartDate())
                 {
-                    tItem.DueDate = date_due.Value; // DateTime.Parse(dResult.date_due.value.ToString());
-                }
-
                     if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_due")))
                     {
                         date_due = DateTime.ParseExact(crmItem.GetValueAsString("date_due"), "yyyy-MM-dd HH:mm:ss", null);
@@ -202,23 +197,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         result = UpdateExistingOutlookItemFromCrm(crmItem, date_start, date_due, time_start, time_due, oItem);
                     }
-
-                    string body = dResult.description.value.ToString();
-                    tItem.Body = string.Concat(body, "#<", time_start, "#", time_due);
-                    tItem.Status = GetStatus(dResult.status.value.ToString());
-                    tItem.Importance = GetImportance(dResult.priority.value.ToString());
-                    if (oProp == null)
-                        oProp = tItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
-                    oProp.Value = dResult.date_modified.value.ToString();
-                    Outlook.UserProperty oProp2 = tItem.UserProperties["SEntryID"];
-                    if (oProp2 == null)
-                        oProp2 = tItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
-                    oProp2.Value = dResult.id.value.ToString();
-                    Log.Warn("\tsave 1");
-                    tItem.Save();
                 }
-                oItem.OModifiedDate = DateTime.ParseExact(dResult.date_modified.value.ToString(), "yyyy-MM-dd HH:mm:ss", null);
-                return oItem;
             }
 
             return result;
@@ -540,9 +519,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (oItem.DueDate != null)
                     time2 = oItem.DueDate.ToUniversalTime();
 
-                string body = String.Empty;
-                string str, str2;
-                str = str2 = String.Empty;
                 if (oItem.Body != null)
                 {
                     body = oItem.Body.ToString();
@@ -570,12 +546,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                     dateStart = oItem.StartDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
                     dateDue = oItem.DueDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
                 }
-
-                //str = "2016-11-10 11:34:01";
-                //str2 = "2016-11-19 11:34:01";
-
-
-                string description = String.Empty;
 
                 if (!string.IsNullOrEmpty(body))
                 {
@@ -610,18 +580,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 return dataList;
             }
 
-                _result = clsSuiteCRMHelper.SetEntryUnsafe(data, "Tasks");
-                Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
-                if (oProp == null)
-                    oProp = oItem.UserProperties.Add("SOModifiedDate", Outlook.OlUserPropertyType.olText);
-                oProp.Value = DateTime.UtcNow;
-                Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
-                if (oProp2 == null)
-                    oProp2 = oItem.UserProperties.Add("SEntryID", Outlook.OlUserPropertyType.olText);
-                oProp2.Value = _result;
-                string entryId = oItem.EntryID;
-                oItem.Save();
-
             private TimeSpan[] ParseTimesFromTaskBody(string body)
             {
                 try
@@ -651,41 +609,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     // Log.Warn("Body doesn't have time string");
                     return null;
-                TimeSpan[] timesToAdd = new TimeSpan[2];
-                List<int> hhmm = new List<int>(4);
-
-                string times = body.Substring(body.LastIndexOf("#<")).Substring(2);
-                char[] sep = { '<', '#', ':' };
-                int parsed = 0;
-                foreach (var digit in times.Split(sep))
-                {
-                    int.TryParse(digit, out parsed);
-                    hhmm.Add(parsed);
-                    parsed = 0;
                 }
-
-                TimeSpan start_time = TimeSpan.FromHours(hhmm[0]).Add(TimeSpan.FromMinutes(hhmm[1]));
-                TimeSpan due_time = TimeSpan.FromHours(hhmm[2]).Add(TimeSpan.FromMinutes(hhmm[3]));
-                timesToAdd[0] = start_time;
-                timesToAdd[1] = due_time;
-                return timesToAdd;
-            }
-            catch
-            {
-                Log.Warn("Body doesn't have time string");
-                return null;
             }
         }
-
-        public override Outlook.MAPIFolder GetDefaultFolder()
-        {
-            return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderTasks);
-        }
-
-        protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olTaskItem;
-
-        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
-        // (but not for Appointments).
-        protected override bool PropagatesLocalDeletions => false;
     }
 }

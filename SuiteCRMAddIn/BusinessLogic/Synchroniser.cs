@@ -145,9 +145,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         /// <summary>
         /// List of the synchronisation state of all items which may require synchronisation.
-        /// Note that this list is NOT thread safe. TODO: Reimplement using Thread-Safe
-        /// Collections, probably ConcurrentBag. See
-        /// https://msdn.microsoft.com/en-us/library/dd997305(v=vs.110).aspx
         /// </summary>
         protected ThreadSafeList<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = null;
 
