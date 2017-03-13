@@ -122,7 +122,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The name of the default CRM module (record type) that this synchroniser synchronises.
         /// </summary>
-        protected abstract string DefaultCrmModule
+        public abstract string DefaultCrmModule
         {
             get;
         }

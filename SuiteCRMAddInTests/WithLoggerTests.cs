@@ -40,7 +40,7 @@ namespace SuiteCRMAddIn.Tests
         /// </summary>
         public WithLoggerTests()
         {
-            this.Log = Log4NetLogger.FromFilePath("add-in-tests", "c:\\temp\\suitecrmoutlook-test.log", () => GetLogHeader());
+            this.Log = Log4NetLogger.FromFilePath("add-in-tests", "c:\\temp\\suitecrmoutlook-test.log", () => GetLogHeader(), LogEntryType.Debug);
         }
 
         private IEnumerable<string> GetLogHeader()

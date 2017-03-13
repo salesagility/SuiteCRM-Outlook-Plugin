@@ -15,7 +15,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The module I synchronise with.
         /// </summary>
-        const string CrmModule = "Tasks";
+        public const string CrmModule = "Tasks";
 
         public TaskSyncing(string name, SyncContext context)
             : base(name, context)
@@ -23,11 +23,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.fetchQueryPrefix = string.Empty;
         }
 
-        protected override string DefaultCrmModule
+        public override string DefaultCrmModule
         {
             get
             {
-                return CrmModule;
+                return TaskSyncing.CrmModule;
             }
         }
 

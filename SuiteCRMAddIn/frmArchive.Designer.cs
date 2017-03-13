@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn
 {
+    using SuiteCRMAddIn.BusinessLogic;
     partial class frmArchive
     {
         /// <summary>
@@ -52,7 +53,7 @@ namespace SuiteCRMAddIn
         {
             System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("All");
             System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("Accounts");
-            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("Contacts");
+            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem(ContactSyncing.CrmModule);
             System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Leads");
             System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("Opportunities");
             System.Windows.Forms.ListViewItem listViewItem6 = new System.Windows.Forms.ListViewItem("Cases");
@@ -110,7 +111,7 @@ namespace SuiteCRMAddIn
             listViewItem2.StateImageIndex = 0;
             listViewItem2.Tag = "Accounts";
             listViewItem3.StateImageIndex = 0;
-            listViewItem3.Tag = "Contacts";
+            listViewItem3.Tag = ContactSyncing.CrmModule;
             listViewItem4.StateImageIndex = 0;
             listViewItem4.Tag = "Leads";
             listViewItem5.StateImageIndex = 0;

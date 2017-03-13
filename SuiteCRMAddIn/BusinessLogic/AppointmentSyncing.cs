@@ -39,6 +39,20 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class AppointmentSyncing: Synchroniser<Outlook.AppointmentItem>
     {
+        /// <summary>
+        /// The (primary) module I synchronise with.
+        /// </summary>
+        public const string CrmModule = "Meetings";
+
+        /// <summary>
+        /// The (other) module I synchronise with.
+        /// </summary>
+        /// <remarks>
+        /// This rather makes me thing that there should be two classes here,
+        /// CallsSynchroniser and MeetingsSynchroniser
+        /// </remarks>
+        public const string AltCrmModule = "Calls";
+
         public AppointmentSyncing(string name, SyncContext context)
             : base(name, context)
         {
@@ -84,7 +98,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (IsCurrentView && !this.ItemsSyncState.Exists(a => a.OutlookItem.EntryID == appointment.EntryID))
             {
-                AddOrUpdateItemFromOutlookToCrm(appointment, "Meetings");
+                AddOrUpdateItemFromOutlookToCrm(appointment, AppointmentSyncing.CrmModule);
             }
             else
             {
@@ -159,14 +173,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void SynchroniseAll()
         {
             base.SynchroniseAll();
-            SyncFolder(GetDefaultFolder(), "Calls");
+            SyncFolder(GetDefaultFolder(), AppointmentSyncing.AltCrmModule);
         }
 
-        protected override string DefaultCrmModule
+        public override string DefaultCrmModule
         {
             get
             {
-                return "Meetings";
+                return AppointmentSyncing.CrmModule;
             }
         }
 
@@ -196,7 +210,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             eSetRelationshipValue info = new eSetRelationshipValue
             {
-                module2 = "meetings",
+                module2 = AppointmentSyncing.CrmModule,
                 module2_id = meetingId,
                 module1 = "Users",
                 module1_id = clsSuiteCRMHelper.GetUserId()
@@ -220,16 +234,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                     continue;
                 }
 
-                string sCID = SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Contacts");
+                string sCID = SetCrmRelationshipFromOutlook(meetingId, objRecepient, ContactSyncing.CrmModule);
                 if (sCID != String.Empty)
                 {
-                    string AccountID = clsSuiteCRMHelper.getRelationship("Contacts", sCID, "accounts");
+                    string AccountID = clsSuiteCRMHelper.getRelationship(ContactSyncing.CrmModule, sCID, "accounts");
 
                     if (AccountID != String.Empty)
                     {
                         eSetRelationshipValue info = new eSetRelationshipValue
                         {
-                            module2 = "meetings",
+                            module2 = AppointmentSyncing.CrmModule,
                             module2_id = meetingId,
                             module1 = "Accounts",
                             module1_id = AccountID
@@ -275,7 +289,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     iHour = int.Parse(crmItem.GetValueAsString("duration_hours"));
                 }
-                if (crmType == "Meetings")
+                if (crmType == AppointmentSyncing.CrmModule)
                 {
                     olItem.Location = crmItem.GetValueAsString("location");
                     olItem.End = olItem.Start;
@@ -447,7 +461,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             }
                             else
                             {
-                                ItemsSyncState.Add(new AppointmentSyncState("Meetings")
+                                ItemsSyncState.Add(new AppointmentSyncState(AppointmentSyncing.CrmModule)
                                 {
                                     OutlookItem = aItem,
                                 });
@@ -602,7 +616,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 eSetRelationshipValue info = new eSetRelationshipValue
                 {
-                    module2 = "meetings",
+                    module2 = AppointmentSyncing.CrmModule,
                     module2_id = _result,
                     module1 = relnName,
                     module1_id = sCID
@@ -622,7 +636,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olAppointment.Recipients.Remove(1);
             }
 
-            string[] invitee_categories = { "users", "contacts", "leads" };
+            string[] invitee_categories = { "users", ContactSyncing.CrmModule, "leads" };
             foreach (string invitee_category in invitee_categories)
             {
                 eEntryValue[] relationships = clsSuiteCRMHelper.getRelationships(sModule, sMeetingID, invitee_category, new string[] { "id", "email1", "phone_work" });
@@ -633,7 +647,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         string phone_work = relationship.GetValueAsString("phone_work");
                         string sTemp =
-                            (sModule == "Meetings") || String.IsNullOrWhiteSpace(phone_work) ?
+                            (sModule == AppointmentSyncing.CrmModule) || String.IsNullOrWhiteSpace(phone_work) ?
                                 relationship.GetValueAsString("email1") :
                                 relationship.GetValueAsString("email1") + ":" + phone_work;
 
@@ -765,7 +779,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             int minutes = string.IsNullOrWhiteSpace(minutesString) ? 0 : int.Parse(minutesString);
             int hours = string.IsNullOrWhiteSpace(hoursString) ? 0 : int.Parse(hoursString);
 
-            if (crmType == "Meetings")
+            if (crmType == AppointmentSyncing.CrmModule)
             {
                 olAppointment.Location = crmItem.GetValueAsString("location");
                 olAppointment.End = olAppointment.Start;
