@@ -22,8 +22,11 @@
  */
 using Microsoft.Office.Core;
 using stdole;
+using SuiteCRMAddIn.BusinessLogic;
 using SuiteCRMAddIn.Properties;
 using SuiteCRMClient;
+using SuiteCRMClient.Email;
+using SuiteCRMClient.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,6 +34,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 using Office = Microsoft.Office.Core;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -78,41 +82,50 @@ namespace SuiteCRMAddIn
 
         public IPictureDisp GetImage(IRibbonControl control)
         {
+            IPictureDisp result;
+
             switch (control.Id)
             {
-                case "btnArchive":
-                case "btnArchive1":
-                case "btnArchive2":
-                case "btnAddressBook":
-                    return RibbonImageHelper.Convert(Resources.SuiteCRM1);
-
+                case "btnSendAndArchive":
+                    result = RibbonImageHelper.Convert(Resources.SendAndArchive);
+                    break;
                 case "btnSettings":
-                    return RibbonImageHelper.Convert(Resources.Settings);
-                
+                    result = RibbonImageHelper.Convert(Resources.Settings);
+                    break;
+                case "btnAddressBook":
+                    result = RibbonImageHelper.Convert(Resources.AddressBook);
+                    break;
+                default:
+                    result = RibbonImageHelper.Convert(Resources.Archive);
+                    break;                
             }
-            return null;
+
+            return result;
         }
 
         #region IRibbonExtensibility Members
 
         public string GetCustomUI(string ribbonID)
         {
-            if (ribbonID == null)
+            string result;
+
+            switch (ribbonID)
             {
-                return string.Empty;
+                case "Microsoft.Outlook.Mail.Read":
+                case "Microsoft.Outlook.Explorer":
+                    result = (Globals.ThisAddIn.OutlookVersion <= OutlookMajorVersion.Outlook2007) ?
+                        GetResourceText("SuiteCRMAddIn.Menus.MailRead2007.xml") :
+                        GetResourceText("SuiteCRMAddIn.Menus.MailRead.xml");
+                    break;
+                case "Microsoft.Outlook.Mail.Compose":
+                    result = GetResourceText("SuiteCRMAddIn.Menus.MailCompose.xml");
+                    break;
+                default:
+                    result = String.Empty;
+                    break;
             }
-            if ((ribbonID == "Microsoft.Outlook.Mail.Read") || (ribbonID=="Microsoft.Outlook.Explorer"))
-            {
-                if (Globals.ThisAddIn.OutlookVersion <= OutlookMajorVersion.Outlook2013)
-                    return GetResourceText("SuiteCRMAddIn.Menus.MailRead2007.xml");
-                else
-                    return GetResourceText("SuiteCRMAddIn.Menus.MailRead.xml");
-            }
-            if (ribbonID == "Microsoft.Outlook.Mail.Compose")
-            {
-                return GetResourceText("SuiteCRMAddIn.Menus.MailCompose.xml");
-            }
-            return string.Empty;
+
+            return result;
         }
 
         #endregion
@@ -132,7 +145,7 @@ namespace SuiteCRMAddIn
         public void btnArchive_Action(IRibbonControl control)
         {
             DoOrLogError(() =>
-                ManualArchive());
+                Globals.ThisAddIn.ManualArchive());
         }
 
         public void btnSettings_Action(IRibbonControl control)
@@ -143,11 +156,70 @@ namespace SuiteCRMAddIn
 
         public void btnAddressBook_Action(IRibbonControl control)
         {
-            frmAddressBook objAddressBook = new frmAddressBook();
-            objAddressBook.Show();
+            DoOrLogError(() => Globals.ThisAddIn.ShowAddressBook());
         }
-      
-        
+
+        /// <summary>
+        /// Send, and also archive to CRM, the current message in the composer window.
+        /// </summary>
+        /// <param name="control">The ribbon which caused this action to be raised.</param>
+        public void btnSendAndArchive_Action(IRibbonControl control)
+        {
+            Outlook.MailItem currentItem = 
+                (Globals.ThisAddIn.Application.ActiveInspector().CurrentItem as Outlook.MailItem);
+
+            if (currentItem != null)
+            {
+                if (Globals.ThisAddIn.HasCrmUserSession)
+                {
+                    try
+                    {
+                        try
+                        {
+                            new EmailArchiving(
+                                "ES-SendAndArchive",
+                                Globals.ThisAddIn.Log).ArchiveNewMailItem(currentItem, EmailArchiveType.Sent);
+                        }
+                        catch (Exception failedToArchve)
+                        {
+                            Globals.ThisAddIn.ShowAndLogError(
+                                failedToArchve,
+                                $"Failed to archive message because {failedToArchve.Message}",
+                                "Failed to archive");
+                        }
+
+                        currentItem.Send();
+                    }
+                    catch (Exception failedToSend)
+                    {
+                        Globals.ThisAddIn.ShowAndLogError(
+                            failedToSend, 
+                            $"Failed to send message because {failedToSend.Message}", 
+                            "Failed to send");
+                    }
+                }
+                else
+                {
+                    ShowNoSessionWarning();
+                }
+            }
+            else
+            {
+                Globals.ThisAddIn.Log.AddEntry(
+                    "No message while attempting to send and archive?", 
+                    LogEntryType.Warning);
+            }
+        }
+
+        private static void ShowNoSessionWarning()
+        {
+            MessageBox.Show(
+                "Please check your CRM login credentials in Settings and retry.",
+                "No CRM Session",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+
         private void ManualArchive()
         {
             if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)

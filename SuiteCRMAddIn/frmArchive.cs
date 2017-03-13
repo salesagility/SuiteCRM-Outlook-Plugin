@@ -20,28 +20,20 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using SuiteCRMClient.RESTObjects;
-using SuiteCRMClient;
-using System.Collections.Specialized;
-using Microsoft.Office.Interop.Outlook;
-using System.Runtime.InteropServices;
-using System.Web;
-
 namespace SuiteCRMAddIn
 {
     using BusinessLogic;
+    using Microsoft.Office.Interop.Outlook;
+    using SuiteCRMClient;
     using SuiteCRMClient.Email;
-    using SuiteCRMClient.Exceptions;
     using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.Specialized;
+    using System.Data;
+    using System.Linq;
+    using System.Windows.Forms;
     using Exception = System.Exception;
 
     public partial class frmArchive : Form
@@ -79,35 +71,38 @@ namespace SuiteCRMAddIn
 
         private void frmArchive_Load(object sender, EventArgs e)
         {
-            if (Globals.ThisAddIn.Settings.ShowCustomModules)
+            using (new WaitCursor(this))
             {
-                this.GetCustomModules();
-            }
-            try
-            {
-                foreach (string str in this.settings.SelectedSearchModules.Split(new char[] { ',' }))
+                this.tsResults.AfterCheck += new TreeViewEventHandler(this.tsResults_AfterCheck);
+                this.tsResults.AfterExpand += new TreeViewEventHandler(this.tsResults_AfterExpand);
+                this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
+                this.txtSearch.KeyDown += new KeyEventHandler(this.txtSearch_KeyDown);
+                this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
+                base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
+
+                this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
+
+                if (Globals.ThisAddIn.Settings.ShowCustomModules)
                 {
-                    int num = Convert.ToInt32(str);
-                    this.lstViewSearchModules.Items[num].Checked = true;
+                    this.GetCustomModules();
                 }
-            }
-            catch (System.Exception)
-            {
-                // Swallow exception(!)
-            }
+                try
+                {
+                    foreach (string str in this.settings.SelectedSearchModules.Split(new char[] { ',' }))
+                    {
+                        int num = Convert.ToInt32(str);
+                        this.lstViewSearchModules.Items[num].Checked = true;
+                    }
+                }
+                catch (System.Exception)
+                {
+                    // Swallow exception(!)
+                }
 
-            this.tsResults.AfterCheck += new TreeViewEventHandler(this.tsResults_AfterCheck);
-            this.tsResults.AfterExpand += new TreeViewEventHandler(this.tsResults_AfterExpand);
-            this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
-            this.txtSearch.KeyDown += new KeyEventHandler(this.txtSearch_KeyDown);
-            this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
-            base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
-
-            this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
-
-            if (this.settings.AutomaticSearch)
-            {
-                this.btnSearch_Click(null, null);
+                if (this.settings.AutomaticSearch)
+                {
+                    this.btnSearch_Click(null, null);
+                }
             }
         }
 
@@ -150,18 +145,11 @@ namespace SuiteCRMAddIn
         {
             this.tsResults.Nodes.Clear();
 
-            if (this.txtSearch.Text.Contains<char>(','))
+            if (this.txtSearch.Text.Replace(';', ',').Contains<char>(','))
             {
                 foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }).OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
                 {
                     this.Search(str);
-                }
-            }
-            if (this.txtSearch.Text.Contains(";"))
-            {
-                foreach (string str2 in this.txtSearch.Text.Split(new char[] { ';' }))
-                {
-                    this.Search(str2);
                 }
             }
             else
@@ -189,7 +177,7 @@ namespace SuiteCRMAddIn
             using (WaitCursor.For(this))
                 try
                 {
-                    List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
+                    List<string> list = new List<string> { "Accounts", ContactSyncing.CrmModule, "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
                     this.tsResults.CheckBoxes = true;
                     if (searchText == string.Empty)
                     {
@@ -338,7 +326,7 @@ namespace SuiteCRMAddIn
             string queryText;
             switch (moduleName)
             {
-                case "Contacts":
+                case ContactSyncing.CrmModule:
                     queryText = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
                     fields[4] = "account_name";
                     break;
@@ -382,7 +370,7 @@ namespace SuiteCRMAddIn
                 string str4 = module;
                 if (str4 != null)
                 {
-                    if (!(str4 == "Contacts") && !(str4 == "Leads"))
+                    if (!(str4 == ContactSyncing.CrmModule) && !(str4 == "Leads"))
                     {
                         if (str4 == "Cases")
                         {
@@ -559,19 +547,9 @@ namespace SuiteCRMAddIn
                     return;
                 }
 
-                List<ArchiveResult> emailArchiveResults;
-                using (WaitCursor.For(this, disableForm: true))
-                {
-                    var archiver = new EmailArchiving($"EB-{Globals.ThisAddIn.SelectedEmailCount}", Globals.ThisAddIn.Log);
-                    emailArchiveResults =
-                        Globals.ThisAddIn.SelectedEmails
-                            .Select(mailItem =>
-                                archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.type))
-                            .ToList();
-                }
+                DaemonWorker.Instance.AddTask(new EmailArchiveAction(Globals.ThisAddIn.SelectedEmails, selectedCrmEntities, this.type));
 
-                if (ReportOnEmailArchiveSuccess(emailArchiveResults))
-                    Close();
+                Close();
             }
             catch (System.Exception exception)
             {

@@ -30,5 +30,10 @@ namespace SuiteCRMAddIn.BusinessLogic
     public abstract class SyncState<ItemType>: SyncState
     {
         public ItemType OutlookItem { get; set; }
+
+        /// <summary>
+        /// Delete the Outlook item associated with this SyncState.
+        /// </summary>
+        public abstract void DeleteItem();
     }
 }

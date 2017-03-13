@@ -32,6 +32,19 @@ namespace SuiteCRMClient.RESTObjects
 {
     public class eEntryValue
     {
+        /// <summary>
+        /// A map of my names/values.
+        /// </summary>
+        private Dictionary<string, object> map = new Dictionary<string, object>();
+
+        /// <summary> 
+        /// It appears that CRM sends us back strings HTML escaped. 
+        /// </summary> 
+        private JsonSerializerSettings deserialiseSettings = new JsonSerializerSettings()
+        {
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+        };
+
         [JsonProperty("id")]
         public string id { get; set; }
         [JsonProperty("module_name")]
@@ -52,11 +65,33 @@ namespace SuiteCRMClient.RESTObjects
                 {
                     string strFieldString = objField.ToString();
                     strFieldString = strFieldString.Remove(0, strFieldString.IndexOf('{'));
-                    eNameValue objActualField = JsonConvert.DeserializeObject<eNameValue>(strFieldString);
+                    eNameValue objActualField = JsonConvert.DeserializeObject<eNameValue>(strFieldString, deserialiseSettings);
                     this.name_value_list1.Add(objActualField);
+                    this.map[objActualField.name] = objActualField.value;
                 }
             }
         }
         public List<eNameValue> name_value_list1 { get; set; }
+
+        public object GetValue(string key)
+        {
+            object result = null;
+
+            try
+            {
+                result = this.map[key];
+            }
+            catch (Exception)
+            {
+            }
+
+            return result;
+        }
+
+        public string GetValueAsString(string key)
+        {
+            object value = this.GetValue(key);
+            return value == null ? string.Empty : value.ToString();
+        }
     }
 }

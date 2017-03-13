@@ -83,8 +83,14 @@ namespace SuiteCRMClient
             id = String.Empty;
         }
 
-        public void Login()
+        /// <summary>
+        /// Logs in to the CRM server.
+        /// </summary>
+        /// <returns>if the server returned at 'polling_interval' value in the response packet, then that value, else null.</returns>
+        public int? Login()
         {
+            int? result = null;
+
             try
             {
                 if (! String.IsNullOrWhiteSpace(LDAPKey))
@@ -124,12 +130,14 @@ namespace SuiteCRMClient
                         {
                             id = loginReturn.SessionID;
                             SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                            result = loginReturn.PollingInterval;
                         }
                     }
                     else
                     {
                         id = loginReturn.SessionID;
                         SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                        result = loginReturn.PollingInterval;
                     }
                     AwaitingAuthentication = false;
                 }
@@ -142,6 +150,7 @@ namespace SuiteCRMClient
                 throw;
             }
 
+            return result;
         }
 
         /// <summary>

@@ -29,6 +29,7 @@ using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
 using ListViewEx;
 using System.Collections.Specialized;
+using SuiteCRMAddIn.BusinessLogic;
 
 namespace SuiteCRMAddIn
 {
@@ -49,7 +50,7 @@ namespace SuiteCRMAddIn
             this.txtDisplay.Visible = false;
             base.Controls.Add(this.txtDisplay);
             this.IgnoreModules.Add("iFrames");
-            this.IgnoreModules.Add("Contacts");
+            this.IgnoreModules.Add(ContactSyncing.CrmModule);
             this.IgnoreModules.Add("Accounts");
             this.IgnoreModules.Add("Projects");
             this.IgnoreModules.Add("Bugs");
@@ -61,8 +62,8 @@ namespace SuiteCRMAddIn
             this.IgnoreModules.Add("KBDocuments");
             this.IgnoreModules.Add("Trackers");
             this.IgnoreModules.Add("Emails");
-            this.IgnoreModules.Add("Calls");
-            this.IgnoreModules.Add("Tasks");
+            this.IgnoreModules.Add(AppointmentSyncing.AltCrmModule);
+            this.IgnoreModules.Add(TaskSyncing.CrmModule);
             this.IgnoreModules.Add("UserPrefs");
             this.IgnoreModules.Add("Contracts");
             this.IgnoreModules.Add("Campaigns");
@@ -130,7 +131,7 @@ namespace SuiteCRMAddIn
             this.IgnoreModules.Add("SavedSearch");
             this.IgnoreModules.Add("SugarFeed");
             this.IgnoreModules.Add("SugarFavorites");
-            this.IgnoreModules.Add("Meetings");
+            this.IgnoreModules.Add(AppointmentSyncing.CrmModule);
             this.IgnoreModules.Add("Notes");
             this.IgnoreModules.Add("TrackerPerfs");
             this.IgnoreModules.Add("TrackerQueries");

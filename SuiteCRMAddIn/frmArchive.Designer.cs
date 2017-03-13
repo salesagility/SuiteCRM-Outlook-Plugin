@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn
 {
+    using SuiteCRMAddIn.BusinessLogic;
     partial class frmArchive
     {
         /// <summary>
@@ -52,7 +53,7 @@ namespace SuiteCRMAddIn
         {
             System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("All");
             System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("Accounts");
-            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("Contacts");
+            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem(ContactSyncing.CrmModule);
             System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Leads");
             System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("Opportunities");
             System.Windows.Forms.ListViewItem listViewItem6 = new System.Windows.Forms.ListViewItem("Cases");
@@ -110,7 +111,7 @@ namespace SuiteCRMAddIn
             listViewItem2.StateImageIndex = 0;
             listViewItem2.Tag = "Accounts";
             listViewItem3.StateImageIndex = 0;
-            listViewItem3.Tag = "Contacts";
+            listViewItem3.Tag = ContactSyncing.CrmModule;
             listViewItem4.StateImageIndex = 0;
             listViewItem4.Tag = "Leads";
             listViewItem5.StateImageIndex = 0;
@@ -184,8 +185,10 @@ namespace SuiteCRMAddIn
             this.AcceptButton = this.btnArchive;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScroll = true;
+            this.AutoSize = true;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(465, 365);
+            this.ClientSize = new System.Drawing.Size(465, 366);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnArchive);
             this.Controls.Add(this.tsResults);
@@ -195,10 +198,11 @@ namespace SuiteCRMAddIn
             this.Controls.Add(this.txtSearch);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(481, 404);
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(481, 404);
             this.Name = "frmArchive";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Archive to SuiteCRM";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.frmArchive_FormClosed);

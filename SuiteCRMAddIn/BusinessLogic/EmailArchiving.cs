@@ -158,10 +158,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             foreach (Outlook.Recipient objRecepient in mail.Recipients)
             {
                 if (mailArchive.To == "")
+                {
                     mailArchive.To = objRecepient.Address;
+                }
                 else
+                {
                     mailArchive.To += ";" + objRecepient.Address;
+                }
             }
+
             mailArchive.Subject = mail.Subject;
             mailArchive.Body = mail.Body;
             mailArchive.HTMLBody = mail.HTMLBody;
@@ -287,7 +292,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public ArchiveResult ArchiveEmailWithEntityRelationships(Outlook.MailItem mailItem, List<CrmEntity> selectedCrmEntities, string type)
+        public ArchiveResult ArchiveEmailWithEntityRelationships(Outlook.MailItem mailItem, IEnumerable<CrmEntity> selectedCrmEntities, string type)
         {
             var result = this.SaveEmailToCrm(mailItem, type);
             if (result.IsFailure) return result;
@@ -297,7 +302,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 result.Problems.Concat(warnings));
         }
 
-        private IList<System.Exception> CreateEmailRelationshipsWithEntities(string crmMailId, List<CrmEntity> selectedCrmEntities)
+        private IList<System.Exception> CreateEmailRelationshipsWithEntities(string crmMailId, IEnumerable<CrmEntity> selectedCrmEntities)
         {
             var failures = new List<System.Exception>();
             foreach (var entity in selectedCrmEntities)

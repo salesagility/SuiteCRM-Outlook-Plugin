@@ -20,20 +20,17 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Windows.Forms;
-using SuiteCRMClient;
-using SuiteCRMClient.Logging;
-
 namespace SuiteCRMAddIn
 {
-    using System.Linq;
     using BusinessLogic;
     using Microsoft.Office.Interop.Outlook;
+    using SuiteCRMClient.Logging;
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Windows.Forms;
     using Exception = System.Exception;
-    using System.Threading;
 
     public partial class frmSettings : Form
     {
@@ -46,7 +43,7 @@ namespace SuiteCRMAddIn
 
         private ILogger Log => Globals.ThisAddIn.Log;
 
-        private Application Application => Globals.ThisAddIn.Application;
+        private Microsoft.Office.Interop.Outlook.Application Application => Globals.ThisAddIn.Application;
 
         private bool ValidateDetails()
         {
@@ -122,7 +119,7 @@ namespace SuiteCRMAddIn
             this.txtLDAPAuthenticationKey.Text = Globals.ThisAddIn.Settings.LDAPKey;
 
             this.cbEmailAttachments.Checked = Globals.ThisAddIn.Settings.ArchiveAttachments;
-            this.checkBoxAutomaticSearch.Checked = true;
+            this.checkBoxAutomaticSearch.Checked = Globals.ThisAddIn.Settings.AutomaticSearch;
             this.cbShowCustomModules.Checked = Globals.ThisAddIn.Settings.ShowCustomModules;
             this.txtSyncMaxRecords.Text = Globals.ThisAddIn.Settings.SyncMaxRecords.ToString();
             this.checkBoxShowRightClick.Checked = Globals.ThisAddIn.Settings.PopulateContextLookupList;
@@ -146,7 +143,14 @@ namespace SuiteCRMAddIn
                 txtLDAPAuthenticationKey.Enabled = false;
             }
 
-            DetailedLoggingCheckBox.Checked = Globals.ThisAddIn.Settings.LogLevel <= LogEntryType.Debug;
+            logLevelSelector.DataSource = Enum.GetValues(typeof(LogEntryType))
+                .Cast<LogEntryType>()
+                .Select(p => new { Key = (int)p, Value = p.ToString() })
+                .OrderBy(o => o.Key)
+                .ToList();
+            logLevelSelector.DisplayMember = "Value";
+            logLevelSelector.ValueMember = "Key";
+            logLevelSelector.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.LogLevel);
         }
 
         private void GetAccountAutoArchivingSettings()
@@ -342,7 +346,7 @@ namespace SuiteCRMAddIn
             Globals.ThisAddIn.Settings.LicenceKey = licenceText.Text.Trim();
 
             Globals.ThisAddIn.Settings.ArchiveAttachments = this.cbEmailAttachments.Checked;
-            Globals.ThisAddIn.Settings.AutomaticSearch = true;
+            Globals.ThisAddIn.Settings.AutomaticSearch = this.checkBoxAutomaticSearch.Checked;
             Globals.ThisAddIn.Settings.ShowCustomModules = this.cbShowCustomModules.Checked;
             Globals.ThisAddIn.Settings.PopulateContextLookupList = this.checkBoxShowRightClick.Checked;
 
@@ -364,7 +368,9 @@ namespace SuiteCRMAddIn
                 Globals.ThisAddIn.Settings.SyncMaxRecords = 0;
             }
 
-            Globals.ThisAddIn.Settings.LogLevel = DetailedLoggingCheckBox.Checked ? LogEntryType.Debug : LogEntryType.Information;
+            Globals.ThisAddIn.Settings.LogLevel = (LogEntryType)logLevelSelector.SelectedValue;
+            Globals.ThisAddIn.Log.Level = Globals.ThisAddIn.Settings.LogLevel;
+
             Globals.ThisAddIn.Settings.DaysOldEmailToAutoArchive =
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 
