@@ -1,4 +1,26 @@
-﻿namespace SuiteCRMAddIn.BusinessLogic
+﻿/**
+ * Outlook integration for SuiteCRM.
+ * @package Outlook integration for SuiteCRM
+ * @copyright SalesAgility Ltd http://www.salesagility.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU LESSER GENERAL PUBLIC LICENCE as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENCE
+ * along with this program; if not, see http://www.gnu.org/licenses
+ * or write to the Free Software Foundation,Inc., 51 Franklin Street,
+ * Fifth Floor, Boston, MA 02110-1301  USA
+ *
+ * @author SalesAgility <info@salesagility.com>
+ */
+namespace SuiteCRMAddIn.BusinessLogic
 {
     using Newtonsoft.Json;
     using SuiteCRMClient;
@@ -6,6 +28,7 @@
     using System;
     using System.Collections.Generic;
     using System.Net;
+    using System.Net.Sockets;
     using System.Text;
 
     /// <summary>
@@ -76,13 +99,18 @@
                 }
                 catch (WebException badConnection)
                 {
-                    switch (badConnection.Status)
+                    logger.Error($"Failed to connect to licence server because {badConnection.Status}", badConnection);
+                    switch(badConnection.Status)
                     {
                         case WebExceptionStatus.ProtocolError:
                             result = InterpretStatusCode((HttpWebResponse)badConnection.Response);
                             break;
                         case WebExceptionStatus.Timeout:
                             /* if the licence validation server fails to respond, treat that as OK */
+                            result = true;
+                            break;
+                        case WebExceptionStatus.ConnectFailure:
+                            /* if we can't connect, treat that as OK */
                             result = true;
                             break;
                         case WebExceptionStatus.NameResolutionFailure:

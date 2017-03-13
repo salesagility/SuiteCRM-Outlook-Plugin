@@ -20,21 +20,44 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-
 namespace SuiteCRMClient.RESTObjects
 {
+    using Newtonsoft.Json;
+    using System;
+    using System.Web;
+
     public class eNameValue
     {
+        private object v;
+
         [JsonProperty("name")]
         public string name { get; set; }
+
         [JsonProperty("value")]
-        public object value { get; set; }
+        public object value
+        {
+            get
+            {
+                object result = v;
+                /// There's a problem with HTML decoding things which come back over the JSON link.
+                /// This is a hack; it's almost certainly not the best solution. It also doesn't work.
+                if (v is string || v is String)
+                {
+                    string sv = v.ToString();
+                    string decode = HttpUtility.HtmlDecode(sv);
+                    if (!decode.Equals(sv))
+                    {
+                         result = decode;
+                    }
+                }
+
+                return result;
+            }
+            set
+            {
+                v = value;
+            }
+        }
     }
 
 }

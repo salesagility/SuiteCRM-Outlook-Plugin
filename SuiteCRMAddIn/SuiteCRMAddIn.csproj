@@ -106,6 +106,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
     <DefineConstants>$(DefineConstants);DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <!--
     This section defines properties that are set when the "Release" configuration is selected.
@@ -204,6 +205,9 @@
     </Compile>
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
+    <Compile Include="BusinessLogic\DaemonAction.cs" />
+    <Compile Include="BusinessLogic\DaemonWorker.cs" />
+    <Compile Include="BusinessLogic\EmailArchiveAction.cs" />
     <Compile Include="BusinessLogic\RunState.cs" />
     <Compile Include="BusinessLogic\LicenceValidation.cs" />
     <Compile Include="BusinessLogic\LicenceValidationHelper.cs" />
@@ -226,6 +230,11 @@
     </Compile>
     <Compile Include="EmailAccountArchiveSettingsControl.Designer.cs">
       <DependentUpon>EmailAccountArchiveSettingsControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="ReconfigureOrDisableDialog.cs">
       <SubType>Form</SubType>
@@ -279,14 +288,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <EmbeddedResource Include="ReconfigureOrDisableDialog.resx">
       <DependentUpon>ReconfigureOrDisableDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -323,13 +327,16 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Images\AddressBook.png" />
+    <None Include="Images\Archive.png" />
     <Content Include="Images\Cancel.png" />
     <Content Include="Images\Check.png" />
     <Content Include="Images\Contacts.jpg" />
     <Content Include="Images\Search_Button.png" />
+    <Content Include="Images\SendAndArchive.png" />
     <Content Include="Images\Settings.png" />
     <Content Include="Images\SuiteCRM.ico" />
-    <Content Include="Images\SuiteCRM.jpg" />
+    <None Include="Resources\SendAndArchive.bmp" />
     <EmbeddedResource Include="Menus\MailRead2007.xml" />
   </ItemGroup>
   <ItemGroup>

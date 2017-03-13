@@ -233,6 +233,7 @@ namespace SuiteCRMClient
             {
                 requestStream.Write(bytes, 0, bytes.Length);
             }
+
             return request;
         }
 

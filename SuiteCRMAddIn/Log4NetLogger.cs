@@ -1,4 +1,26 @@
-﻿namespace SuiteCRMAddIn
+﻿/**
+ * Outlook integration for SuiteCRM.
+ * @package Outlook integration for SuiteCRM
+ * @copyright SalesAgility Ltd http://www.salesagility.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU LESSER GENERAL PUBLIC LICENCE as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENCE
+ * along with this program; if not, see http://www.gnu.org/licenses
+ * or write to the Free Software Foundation,Inc., 51 Franklin Street,
+ * Fifth Floor, Boston, MA 02110-1301  USA
+ *
+ * @author SalesAgility <info@salesagility.com>
+ */
+namespace SuiteCRMAddIn
 {
     using System;
     using log4net;
@@ -19,13 +41,88 @@
             log = LogManager.GetLogger(area);
         }
 
-        public static Log4NetLogger FromFilePath(string area, string filePath, Func<IEnumerable<string>> headerFunction)
+        /// <summary>
+        /// Expose the logging level.
+        /// </summary>
+        public LogEntryType Level
+        {
+            get
+            {
+                Logger lumberjack = (Logger)this.log.Logger;
+                return ToLogEntryType(lumberjack.Level);
+            }
+            set
+            {
+                Logger lumberjack = (Logger)this.log.Logger;
+                lumberjack.Level = FromLogEntryType(value);
+            }
+        }
+
+        /// <summary>
+        /// Translate a log4net level to a LogEntryType.
+        /// </summary>
+        /// <param name="level">The level.</param>
+        /// <returns>The corresponding entry type.</returns>
+        private static LogEntryType ToLogEntryType(Level level)
+        {
+            LogEntryType result;
+
+            if (level.CompareTo(log4net.Core.Level.Debug) == 0)
+            {
+                result = LogEntryType.Debug;
+            }
+            else if (level.CompareTo(log4net.Core.Level.Info) < 0)
+            {
+                result = LogEntryType.Information;
+            }
+            else if (level.CompareTo(log4net.Core.Level.Warn) < 0)
+            {
+                result = LogEntryType.Warning;
+            }
+            else 
+            {
+                result = LogEntryType.Error;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Convert a LogEntryType to the corresponding log4net level.
+        /// </summary>
+        /// <param name="entryType">An entry type.</param>
+        /// <returns>the corresponding log4net level</returns>
+        private static Level FromLogEntryType(LogEntryType entryType)
+        {
+            Level result;
+
+            switch (entryType)
+            {
+                case LogEntryType.Debug:
+                    result = log4net.Core.Level.Debug;
+                    break;
+                case LogEntryType.Information:
+                    result = log4net.Core.Level.Info;
+                    break;
+                case LogEntryType.Warning:
+                    result = log4net.Core.Level.Warn;
+                    break;
+                default:
+                    result = log4net.Core.Level.Error;
+                    break;
+            }
+
+            return result;
+        }
+
+        public static Log4NetLogger FromFilePath(string area, string filePath, Func<IEnumerable<string>> headerFunction, LogEntryType entryType)
         {
             var hierarchy = (Hierarchy)LogManager.GetRepository();
 
             var patternLayout = new PatternLayoutWithHeader("%date | %-2thread | %-5level | %message%newline", headerFunction);
             patternLayout.ActivateOptions();
 
+            var level = FromLogEntryType(entryType);
             var appender = new RollingFileAppender
             {
                 AppendToFile = true,
@@ -35,13 +132,13 @@
                 MaxFileSize = 1000000, // 1MB
                 StaticLogFileName = true,
                 MaxSizeRollBackups = 10,
-                Threshold = Level.Debug,
+                Threshold = level,
                 Encoding = Encoding.UTF8,
             };
             appender.ActivateOptions();
 
             hierarchy.Root.AddAppender(appender);
-            hierarchy.Root.Level = Level.Debug;
+            hierarchy.Root.Level = level;
             hierarchy.Configured = true;
 
             return new Log4NetLogger(area);
