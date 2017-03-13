@@ -54,9 +54,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (tasks.TryDequeue(out task))
             {
-                Log.Info($"About to perform {task.Description}");
+                Log.Info($"About to perform {task.Description}.");
 
-                Robustness.DoOrLogError(this.Log, () => task.Perform());
+                Robustness.DoOrLogError(this.Log, () =>
+                {
+                    task.Perform();
+                    Log.Info($"{task.Description} completed.");
+                });
+
             }
         }
     }

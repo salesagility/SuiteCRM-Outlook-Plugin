@@ -62,10 +62,27 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         private readonly string Name;
 
+        /// <summary>
+        /// When my last run ccompleted.
+        /// </summary>
+        /// <remarks>
+        /// Initialised to 'max value', so that at startup we won't mistakenly 
+        /// believe that things have happened after it.
+        /// </remarks>
+        private DateTime lastIterationCompleted = DateTime.MaxValue;
+
         public RepeatingProcess(string name, ILogger log)
         {
             this.Log = log;
             this.Name = name;
+        }
+
+        /// <summary>
+        /// When my last run completed.
+        /// </summary>
+        protected DateTime LastRunCompleted
+        {
+            get { return this.lastIterationCompleted; }
         }
 
         /// <summary>
@@ -88,6 +105,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     () => this.PerformIteration(),
                     $"{this.Name} PerformIteration");
 
+                this.lastIterationCompleted = DateTime.UtcNow;
                 await Task.Delay(this.SyncPeriod);
             }
             while (this.Running);

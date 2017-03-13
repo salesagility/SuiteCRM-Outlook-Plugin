@@ -294,7 +294,7 @@ namespace SuiteCRMAddIn
         {
             foreach (var s in GetKeySettings(settings))
             {
-                log.Info(s);
+                log.Error(s);
             }
         }
 
@@ -307,6 +307,7 @@ namespace SuiteCRMAddIn
         private IEnumerable<string> GetKeySettings(clsSettings settings)
         {
             yield return "Auto-archiving: " + (settings.AutoArchive ? "ON" : "off");
+            yield return $"Logging level: {settings.LogLevel}";
         }
 
         void objExplorer_FolderSwitch()
