@@ -352,6 +352,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                     LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, Not despatching");
                 }
             }
+            else
+            {
+                LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, Not enabled");
+            }
 
             return result;
         }

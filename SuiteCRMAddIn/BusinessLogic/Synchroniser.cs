@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using Newtonsoft.Json;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
@@ -50,6 +51,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         private Outlook.Items _itemsCollection = null;
 
         private string _folderName;
+
+        /// <summary>
+        /// It appears that CRM sends us back strings HTML escaped.
+        /// </summary>
+        protected JsonSerializerSettings deserialiseSettings = new JsonSerializerSettings()
+        {
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+        };
 
         /// <summary>
         /// Construct a new instance of a synchroniser with this thread name and context.
@@ -136,9 +145,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         /// <summary>
         /// List of the synchronisation state of all items which may require synchronisation.
-        /// Note that this list is NOT thread safe. TODO: Reimplement using Thread-Safe
-        /// Collections, probably ConcurrentBag. See
-        /// https://msdn.microsoft.com/en-us/library/dd997305(v=vs.110).aspx
         /// </summary>
         protected ThreadSafeList<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = null;
 
@@ -223,7 +229,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (SyncingEnabled && olItem != null)
             {
-                LogItemAction(olItem, "TaskSyncing.AddItemFromOutlookToCrm, Despatching");
+                LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
                 try
                 {
                     result = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
@@ -235,7 +241,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("TaskSyncing.AddOrUpdateItemFromOutlookToCrm", ex);
+                    Log.Error("Synchroniser.AddOrUpdateItemFromOutlookToCrm", ex);
                 }
             }
 

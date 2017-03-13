@@ -28,12 +28,21 @@ namespace SuiteCRMClient
     using System.IO;
     using Newtonsoft.Json;
     using SuiteCRMClient.Logging;
+    using System.Web;
 
     public class CrmRestServer
     {
         private readonly JsonSerializer serialiser;
         private ILogger log;
         private int timeout = 0;
+
+        /// <summary>
+        /// It appears that CRM sends us back strings HTML escaped.
+        /// </summary>
+        private JsonSerializerSettings deserialiseSettings = new JsonSerializerSettings()
+        {
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+        };
 
         public CrmRestServer(ILogger log, int timeout)
         {
@@ -42,6 +51,7 @@ namespace SuiteCRMClient
             serialiser = new JsonSerializer();
             serialiser.Converters.Add(new Newtonsoft.Json.Converters.JavaScriptDateTimeConverter());
             serialiser.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+            serialiser.StringEscapeHandling = StringEscapeHandling.EscapeNonAscii;
         }
 
         public Uri SuiteCRMURL { get; set; }
@@ -52,6 +62,10 @@ namespace SuiteCRMClient
             {
                 var request = CreateCrmRestRequest(strMethod, objInput);
                 var jsonResponse = GetResponseString(request);
+#if DEBUG
+                LogRequest(request, strMethod, objInput);
+                LogResponse(jsonResponse);
+#endif
                 return DeserializeJson<T>(jsonResponse);
             }
             catch (Exception ex)
@@ -62,11 +76,26 @@ namespace SuiteCRMClient
             }
         }
 
+        private void LogResponse(string jsonResponse)
+        {
+            log.Debug($"Response from CRM: {jsonResponse}");
+        }
+
+        private void LogRequest(HttpWebRequest request, string method, object payload)
+        {
+            StringBuilder bob = new StringBuilder();
+            bob.Append($"Request to CRM: \n\tURL: {request.RequestUri}\n\tMethod: {request.Method}\n");
+            string content = CreatePayload(method, payload);
+            bob.Append($"\tPayload: {content}\n");
+            bob.Append($"\tDecoded: {HttpUtility.UrlDecode(content)}");
+            log.Debug(bob.ToString());
+        }
+
         private T DeserializeJson<T>(string responseJson)
         {
             try
             {
-                return JsonConvert.DeserializeObject<T>(responseJson);
+                return JsonConvert.DeserializeObject<T>(responseJson, deserialiseSettings);
             }
             catch (JsonReaderException parseError)
             {
@@ -79,18 +108,28 @@ namespace SuiteCRMClient
             try
             {
                 var requestUrl = SuiteCRMURL.AbsoluteUri + "service/v4_1/rest.php";
-                var restData = SerialiseJson(objInput);
-                var jsonData =
-                    $"method={WebUtility.UrlEncode(strMethod)}&input_type=JSON&response_type=JSON&rest_data={WebUtility.UrlEncode(restData)}";
+                string jsonData = CreatePayload(strMethod, objInput);
 
                 var contentTypeAndEncoding = "application/x-www-form-urlencoded; charset=utf-8";
                 var bytes = Encoding.UTF8.GetBytes(jsonData);
+#if DEBUG
+                log.Debug($"CrmRestServer.CreateCrmRestRequest: data is {jsonData}");
+                log.Debug($"CrmRestServer.CreateCrmRestRequest: bytes are {System.Text.Encoding.ASCII.GetString(bytes)}");
+#endif
                 return CreatePostRequest(requestUrl, bytes, contentTypeAndEncoding);
             }
             catch (Exception problem)
             {
                 throw new Exception($"Could not construct '{strMethod}' request", problem);
             }
+        }
+
+        private string CreatePayload(string strMethod, object objInput)
+        {
+            var restData = SerialiseJson(objInput);
+            var jsonData =
+                $"method={WebUtility.UrlEncode(strMethod)}&input_type=JSON&response_type=JSON&rest_data={WebUtility.UrlEncode(restData)}";
+            return jsonData;
         }
 
         private string SerialiseJson(object parameters)
@@ -135,11 +174,13 @@ namespace SuiteCRMClient
             /* This block is really useful because it allows us to see exactly what gets sent over 
              * the wire, but it's also extremely dodgy because sensitive data will end up in the log.
              * It also puts a lot of clutter in the log! TODO: remove before stable release! */
-            //log.Debug(
-            //    String.Format(
-            //        "CrmRestServer.CreatePostRequest:\n\tContent type: {0}\n\tPayload     {1}",
-            //        contentTypeAndEncoding,
-            //        System.Web.HttpUtility.UrlDecode(Encoding.ASCII.GetString(bytes).Trim())));
+#if DEBUG
+            log.Debug(
+                String.Format(
+                    "CrmRestServer.CreatePostRequest:\n\tContent type: {0}\n\tPayload     {1}",
+                    contentTypeAndEncoding,
+                    System.Web.HttpUtility.UrlDecode(Encoding.ASCII.GetString(bytes).Trim())));
+#endif
 
             using (var requestStream = request.GetRequestStream())
             {
