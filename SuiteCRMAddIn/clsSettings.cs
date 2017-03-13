@@ -324,7 +324,7 @@ namespace SuiteCRMAddIn
             }
         }
 
-        [DefaultSettingValue("0"), UserScopedSetting, DebuggerNonUserCode]
+        [DefaultSettingValue("3"), UserScopedSetting, DebuggerNonUserCode]
         public LogEntryType LogLevel
         {
             get { return (LogEntryType) this["LogLevel"]; }
