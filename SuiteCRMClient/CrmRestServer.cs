@@ -112,6 +112,10 @@ namespace SuiteCRMClient
 
                 var contentTypeAndEncoding = "application/x-www-form-urlencoded; charset=utf-8";
                 var bytes = Encoding.UTF8.GetBytes(jsonData);
+#if DEBUG
+                log.Debug($"CrmRestServer.CreateCrmRestRequest: data is {jsonData}");
+                log.Debug($"CrmRestServer.CreateCrmRestRequest: bytes are {System.Text.Encoding.ASCII.GetString(bytes)}");
+#endif
                 return CreatePostRequest(requestUrl, bytes, contentTypeAndEncoding);
             }
             catch (Exception problem)

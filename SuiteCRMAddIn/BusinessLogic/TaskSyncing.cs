@@ -301,52 +301,52 @@ namespace SuiteCRMAddIn.BusinessLogic
         override protected void OutlookItemChanged(Outlook.TaskItem oItem)
         {
             Log.Debug("Outlook Tasks ItemChange");
-                string entryId = oItem.EntryID;
-                Log.Warn("\toItem.EntryID= " + entryId);
+            string entryId = oItem.EntryID;
+            Log.Warn("\toItem.EntryID= " + entryId);
 
-                var taskitem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
-                if (taskitem != null)
+            var taskitem = ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == entryId);
+            if (taskitem != null)
+            {
+                if ((DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 5)
                 {
-                    if ((DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 5)
-                    {
-                        Log.Warn("2 callitem.IsUpdate = " + taskitem.IsUpdate);
-                        taskitem.IsUpdate = 0;
-                    }
-
-                    Log.Warn("Before UtcNow - callitem.OModifiedDate= " + (DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds.ToString());
-
-                    if ((int)(DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 2 && taskitem.IsUpdate == 0)
-                    {
-                        taskitem.OModifiedDate = DateTime.UtcNow;
-                        Log.Warn("1 callitem.IsUpdate = " + taskitem.IsUpdate);
-                        taskitem.IsUpdate++;
-                    }
-
-                    Log.Warn("callitem = " + taskitem.OutlookItem.Subject);
-                    Log.Warn("callitem.SEntryID = " + taskitem.CrmEntryId);
-                    Log.Warn("callitem mod_date= " + taskitem.OModifiedDate.ToString());
-                    Log.Warn("UtcNow - callitem.OModifiedDate= " + (DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds.ToString());
-                }
-                else
-                {
-                    Log.Warn("not found callitem ");
+                    Log.Warn("2 callitem.IsUpdate = " + taskitem.IsUpdate);
+                    taskitem.IsUpdate = 0;
                 }
 
+                Log.Warn("Before UtcNow - callitem.OModifiedDate= " + (DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds.ToString());
 
-                if (IsCurrentView && ItemsSyncState.Exists(a => a.OutlookItem.EntryID == entryId //// if (IsTaskView && lTaskItems.Exists(a => a.oItem.EntryID == entryId && a.OModifiedDate != "Fresh"))
-                                 && taskitem.IsUpdate == 1
-                                 )
-                )
+                if ((int)(DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 2 && taskitem.IsUpdate == 0)
                 {
-
-                    Outlook.UserProperty oProp1 = oItem.UserProperties["SEntryID"];
-                    if (oProp1 != null)
-                    {
-                        Log.Warn("\tgo to AddTaskToS");
-                        taskitem.IsUpdate++;
-                        AddOrUpdateItemFromOutlookToCrm(oItem, oProp1.Value.ToString());
-                    }
+                    taskitem.OModifiedDate = DateTime.UtcNow;
+                    Log.Warn("1 callitem.IsUpdate = " + taskitem.IsUpdate);
+                    taskitem.IsUpdate++;
                 }
+
+                Log.Warn("callitem = " + taskitem.OutlookItem.Subject);
+                Log.Warn("callitem.SEntryID = " + taskitem.CrmEntryId);
+                Log.Warn("callitem mod_date= " + taskitem.OModifiedDate.ToString());
+                Log.Warn("UtcNow - callitem.OModifiedDate= " + (DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds.ToString());
+            }
+            else
+            {
+                Log.Warn("not found callitem ");
+            }
+
+
+            if (IsCurrentView && ItemsSyncState.Exists(a => a.OutlookItem.EntryID == entryId //// if (IsTaskView && lTaskItems.Exists(a => a.oItem.EntryID == entryId && a.OModifiedDate != "Fresh"))
+                                && taskitem.IsUpdate == 1
+                                )
+            )
+            {
+
+                Outlook.UserProperty oProp1 = oItem.UserProperties["SEntryID"];
+                if (oProp1 != null)
+                {
+                    Log.Warn("\tgo to AddTaskToS");
+                    taskitem.IsUpdate++;
+                    AddOrUpdateItemFromOutlookToCrm(oItem, this.DefaultCrmModule, oProp1.Value.ToString());
+                }
+            }
         }
 
         override protected void OutlookItemAdded(Outlook.TaskItem item)

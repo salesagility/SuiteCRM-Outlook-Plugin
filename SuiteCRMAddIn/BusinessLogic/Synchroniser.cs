@@ -229,7 +229,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (SyncingEnabled && olItem != null)
             {
-                LogItemAction(olItem, "TaskSyncing.AddItemFromOutlookToCrm, Despatching");
+                LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
                 try
                 {
                     result = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
@@ -241,7 +241,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("TaskSyncing.AddOrUpdateItemFromOutlookToCrm", ex);
+                    Log.Error("Synchroniser.AddOrUpdateItemFromOutlookToCrm", ex);
                 }
             }
 
