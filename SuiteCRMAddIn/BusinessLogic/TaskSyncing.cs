@@ -411,7 +411,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
         // (but not for Appointments).
-        protected override bool PropagatesLocalDeletions => false;
+        protected override bool PropagatesLocalDeletions => true;
 
         /// <summary>
         /// Broadly, a C# representation of a CRM task.
