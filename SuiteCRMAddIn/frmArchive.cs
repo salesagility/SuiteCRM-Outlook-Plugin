@@ -1,7 +1,4 @@
-﻿using Microsoft.Office.Interop.Outlook;
-using SuiteCRMClient;
-using SuiteCRMClient.RESTObjects;
-/**
+﻿/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -26,8 +23,11 @@ using SuiteCRMClient.RESTObjects;
 namespace SuiteCRMAddIn
 {
     using BusinessLogic;
+    using Microsoft.Office.Interop.Outlook;
+    using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
     using System.Collections.Specialized;
@@ -177,7 +177,7 @@ namespace SuiteCRMAddIn
             using (WaitCursor.For(this))
                 try
                 {
-                    List<string> list = new List<string> { "Accounts", "Contacts", "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
+                    List<string> list = new List<string> { "Accounts", ContactSyncing.CrmModule, "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
                     this.tsResults.CheckBoxes = true;
                     if (searchText == string.Empty)
                     {
@@ -326,7 +326,7 @@ namespace SuiteCRMAddIn
             string queryText;
             switch (moduleName)
             {
-                case "Contacts":
+                case ContactSyncing.CrmModule:
                     queryText = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
                     fields[4] = "account_name";
                     break;
@@ -370,7 +370,7 @@ namespace SuiteCRMAddIn
                 string str4 = module;
                 if (str4 != null)
                 {
-                    if (!(str4 == "Contacts") && !(str4 == "Leads"))
+                    if (!(str4 == ContactSyncing.CrmModule) && !(str4 == "Leads"))
                     {
                         if (str4 == "Cases")
                         {

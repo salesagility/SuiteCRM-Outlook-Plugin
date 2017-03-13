@@ -38,7 +38,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The module I synchronise with.
         /// </summary>
-        const string CrmModule = "Contacts";
+        public const string CrmModule = "Contacts";
 
         public ContactSyncing(string name, SyncContext context)
             : base(name, context)
@@ -48,11 +48,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override bool SyncingEnabled => settings.SyncContacts;
 
-        protected override string DefaultCrmModule
+        public override string DefaultCrmModule
         {
             get
             {
-                return CrmModule;
+                return ContactSyncing.CrmModule;
             }
         }
 
