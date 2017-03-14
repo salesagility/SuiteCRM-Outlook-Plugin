@@ -39,6 +39,16 @@ namespace SuiteCRMAddIn.BusinessLogic
     public abstract class Synchroniser<OutlookItemType> : RepeatingProcess, IDisposable
         where OutlookItemType : class
     {
+        /// <summary>
+        /// The token used by CRM to indicate import permissions.
+        /// </summary>
+        private const string ImportPermissionToken = "import";
+
+        /// <summary>
+        /// The token used by CRM to indicate export permissions.
+        /// </summary>
+        private const string ExportPermissionToken = "export";
+
         private readonly SyncContext context;
 
         /// <summary>
@@ -165,6 +175,74 @@ namespace SuiteCRMAddIn.BusinessLogic
             return " AND [Start] >='" + GetStartDate().ToString("MM/dd/yyyy HH:mm") + "'";
         }
 
+        /// <summary>
+        /// Check whether this synchroniser is allowed import access for its default CRM module.
+        /// </summary>
+        /// <returns>true if this synchroniser is allowed import access for its default CRM module.</returns>
+        protected bool HasImportAccess()
+        {
+            return this.HasImportAccess(this.DefaultCrmModule);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed import access for the specified CRM module.
+        /// </summary>
+        /// <param name="crmModule">The name of the CRM module to check.</param>
+        /// <returns>true if this synchroniser is allowed import access for the specified CRM module.</returns>
+        protected bool HasImportAccess(string crmModule)
+        {
+            return this.HasAccess(crmModule, Synchroniser<OutlookItemType>.ImportPermissionToken);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed export access for its default CRM module.
+        /// </summary>
+        /// <returns>true if this synchroniser is allowed export access for its default CRM module.</returns>
+        protected bool HasExportAccess()
+        {
+            return this.HasExportAccess(this.DefaultCrmModule);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed export access for the specified CRM module.
+        /// </summary>
+        /// <param name="crmModule">The name of the CRM module to check.</param>
+        /// <returns>true if this synchroniser is allowed export access for the specified CRM module.</returns>
+        protected bool HasExportAccess(string crmModule)
+        {
+            return this.HasAccess(crmModule, Synchroniser<OutlookItemType>.ExportPermissionToken);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed both import and export access for its default CRM module.
+        /// </summary>
+        /// <returns>true if this synchroniser is allowed both import and export access for its default CRM module.</returns>
+        protected bool HasImportExportAccess()
+        {
+            return this.HasImportExportAccess(this.DefaultCrmModule);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed both import and export access for the specified CRM module.
+        /// </summary>
+        /// <param name="crmModule">The name of the CRM module to check.</param>
+        /// <returns>true if this synchroniser is allowed both import and export access for the specified CRM module.</returns>
+        private bool HasImportExportAccess(string crmModule)
+        {
+            return this.HasImportAccess(crmModule) &&
+                this.HasExportAccess(crmModule);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed access to the specified CRM module, with the specified permission.
+        /// </summary>
+        /// <remarks>
+        /// Note that, surprisingly, although CRM will report what permissions we have, it will not 
+        /// enforce them, so we have to do the honourable thing and not cheat.
+        /// </remarks>
+        /// <param name="moduleName"></param>
+        /// <param name="permission"></param>
+        /// <returns>true if this synchroniser is allowed access to the specified CRM module, with the specified permission.</returns>
         protected bool HasAccess(string moduleName, string permission)
         {
             try
@@ -201,6 +279,64 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 AddOrUpdateItemFromOutlookToCrm(oItem.OutlookItem, this.DefaultCrmModule);
             }
+        }
+
+        /// <summary>
+        /// Perform all the necessary checking before adding or updating an item on CRM.
+        /// </summary>
+        /// <param name="item">The item we may seek to add or update, presumed to be of
+        /// my default item type.</param>
+        /// <returns>true if we may attempt to add or update that item.</returns>
+        protected bool ShouldAddOrUpdateItemFromOutlookToCrm(OutlookItemType item)
+        {
+            return this.ShouldAddOrUpdateItemFromOutlookToCrm(item, this.DefaultCrmModule);
+        }
+
+        /// <summary>
+        /// Perform all the necessary checking before adding or updating an item on CRM.
+        /// </summary>
+        /// <param name="item">The item we may seek to add or update.</param>
+        /// <param name="crmType">The CRM type of that item.</param>
+        /// <returns>true if we may attempt to add or update that item.</returns>
+        protected bool ShouldAddOrUpdateItemFromOutlookToCrm(OutlookItemType item, string crmType)
+        {
+            bool result;
+
+            try
+            {
+                if (item == null)
+                {
+                    Log.Warn($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: attempt to send null {crmType}?");
+                    result = false;
+                }
+                else
+                {
+                    if (SyncingEnabled)
+                    {
+                        if (this.HasExportAccess(crmType))
+                        {
+                            result = true;
+                        }
+                        else
+                        {
+                            Log.Info($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: {crmType} not added to CRM because export access is not granted.");
+                            result = false;
+                        }
+                    }
+                    else
+                    {
+                        Log.Info($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: {crmType} not added to CRM because synchronisation is not enabled.");
+                        result = false;
+                    }
+                }
+            }
+            catch (Exception any)
+            {
+                Log.Error($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: unexpected failure while checking {crmType}.", any);
+                result = false;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -386,7 +522,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (!SyncingEnabled) return;
             var crmEntryId = state.CrmEntryId;
-            if (!string.IsNullOrEmpty(crmEntryId))
+            if (!string.IsNullOrEmpty(crmEntryId) && this.HasExportAccess(state.CrmType))
             {
                 eNameValue[] data = new eNameValue[2];
                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);
