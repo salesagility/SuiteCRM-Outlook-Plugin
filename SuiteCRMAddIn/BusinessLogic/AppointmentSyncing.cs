@@ -173,7 +173,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void SynchroniseAll()
         {
             base.SynchroniseAll();
-            SyncFolder(GetDefaultFolder(), AppointmentSyncing.AltCrmModule);
+            if (this.HasExportAccess(AppointmentSyncing.AltCrmModule))
+            {
+                SyncFolder(GetDefaultFolder(), AppointmentSyncing.AltCrmModule);
+            }
+            else
+            {
+                Log.Debug($"AppointmentSyncing.SynchroniseAll: not synchronising {AppointmentSyncing.AltCrmModule} because export access is denied");
+            }
         }
 
         public override string DefaultCrmModule
@@ -338,7 +345,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             string result = entryId;
 
-            if (SyncingEnabled && olItem != null)
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem, crmType))
             {
                 if (ShouldDeleteFromCrm(olItem))
                 {

@@ -128,10 +128,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public virtual void SynchroniseAll()
         {
-            Outlook.MAPIFolder folder = GetDefaultFolder();
+            if (this.HasExportAccess())
+            {
+                Outlook.MAPIFolder folder = GetDefaultFolder();
 
-            GetOutlookItems(folder);
-            SyncFolder(folder, this.DefaultCrmModule);
+                GetOutlookItems(folder);
+                SyncFolder(folder, this.DefaultCrmModule);
+            }
+            else
+            {
+                Log.Debug($"{this.GetType().Name}.SynchroniseAll not synchronising {this.DefaultCrmModule} because export access is denied");
+            }
         }
 
         protected abstract void GetOutlookItems(Outlook.MAPIFolder folder);
@@ -313,13 +320,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     if (SyncingEnabled)
                     {
-                        if (this.HasExportAccess(crmType))
+                        if (this.HasImportAccess(crmType))
                         {
                             result = true;
                         }
                         else
                         {
-                            Log.Info($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: {crmType} not added to CRM because export access is not granted.");
+                            Log.Info($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: {crmType} not added to CRM because import access is not granted.");
                             result = false;
                         }
                     }
@@ -363,7 +370,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             string result = entryId;
 
-            if (SyncingEnabled && olItem != null)
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem, crmType))
             {
                 LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
                 try
@@ -522,7 +529,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (!SyncingEnabled) return;
             var crmEntryId = state.CrmEntryId;
-            if (!string.IsNullOrEmpty(crmEntryId) && this.HasExportAccess(state.CrmType))
+            if (!string.IsNullOrEmpty(crmEntryId) && this.HasImportAccess(state.CrmType))
             {
                 eNameValue[] data = new eNameValue[2];
                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);
