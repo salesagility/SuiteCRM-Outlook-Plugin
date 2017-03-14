@@ -22,16 +22,15 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using SuiteCRMClient;
+    using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Newtonsoft.Json;
-    using SuiteCRMClient;
-    using SuiteCRMClient.RESTObjects;
-    using SuiteCRMClient.Logging;
-    using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Runtime.InteropServices;
     using System.Windows.Forms;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
     public class ContactSyncing: Synchroniser<Outlook.ContactItem>
     {
@@ -435,7 +434,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             string result = entryId;
 
-            if (SyncingEnabled && outlookItem != null)
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(outlookItem))
             {
                 result = base.AddOrUpdateItemFromOutlookToCrm(outlookItem, crmType, entryId);
 
@@ -446,7 +445,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 EnsureSyncWithOutlookSetInCRM(result, syncProperty);
             }
-
+ 
             return result;
         }
 
