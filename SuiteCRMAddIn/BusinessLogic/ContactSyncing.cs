@@ -267,39 +267,36 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (!itemSyncState.IsDeletedInOutlook)
             {
-            Outlook.ContactItem outlookItem = itemSyncState.OutlookItem;
-            Outlook.UserProperty dateModifiedProp = outlookItem.UserProperties["SOModifiedDate"];
-            Outlook.UserProperty shouldSyncProp = outlookItem.UserProperties["SShouldSync"];
-            this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
+                Outlook.ContactItem outlookItem = itemSyncState.OutlookItem;
+                Outlook.UserProperty dateModifiedProp = outlookItem.UserProperties["SOModifiedDate"];
+                Outlook.UserProperty shouldSyncProp = outlookItem.UserProperties["SShouldSync"];
+                this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
 
-            if (CrmItemChanged(crmItem, outlookItem))
-            {
-                DateTime crmDate = DateTime.Parse(crmItem.GetValueAsString("date_modified"));
-                DateTime outlookDate = dateModifiedProp == null ? DateTime.MinValue : DateTime.Parse(dateModifiedProp.Value.ToString());
+                if (CrmItemChanged(crmItem, outlookItem))
+                {
+                    DateTime crmDate = DateTime.Parse(crmItem.GetValueAsString("date_modified"));
+                    DateTime outlookDate = dateModifiedProp == null ? DateTime.MinValue : DateTime.Parse(dateModifiedProp.Value.ToString());
 
-                if (crmDate > this.LastRunCompleted && outlookDate > this.LastRunCompleted)
-                {
-                    MessageBox.Show(
-                        $"Contact {outlookItem.FirstName} {outlookItem.LastName} has changed both in Outlook and CRM; please check which is correct",
-                        "Update problem", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-                else if (crmDate > outlookDate)
-                {
-                    if (!this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem))
+                    if (crmDate > this.LastRunCompleted && outlookDate > this.LastRunCompleted)
                     {
-                        Log.Info($"ContactSyncing.UpdateExistingOutlookItemFromCrm {outlookItem.FirstName} {outlookItem.LastName}: no properties had changed.");
+                        MessageBox.Show(
+                            $"Contact {outlookItem.FirstName} {outlookItem.LastName} has changed both in Outlook and CRM; please check which is correct",
+                            "Update problem", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
+                    else if (crmDate > outlookDate)
+                    {
+                        this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem);
+                    }
+
+                    this.LogItemAction(outlookItem, $"ContactSyncing.UpdateExistingOutlookItemFromCrm, saving with {outlookItem.Sensitivity}");
+
+                    outlookItem.Save();
                 }
 
-                this.LogItemAction(outlookItem, $"ContactSyncing.UpdateExistingOutlookItemFromCrm, saving with {outlookItem.Sensitivity}");
-
-                outlookItem.Save();
+                this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
+                itemSyncState.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
             }
-
-            this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
-            itemSyncState.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
-            }
-	    return itemSyncState;
+	        return itemSyncState;
         }
 
         /// <summary>
@@ -339,8 +336,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 crmItem.GetValueAsString("date_modified"), 
                 crmItem.GetValueAsString("sync_contact"), 
                 crmItem.GetValueAsString("id"));
-            
-            return result;
         }
 
         /// <summary>
