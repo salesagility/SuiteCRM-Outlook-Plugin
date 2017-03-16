@@ -283,10 +283,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else if (crmDate > outlookDate)
                 {
-                    if (!this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem))
-                    {
-                        Log.Info($"ContactSyncing.UpdateExistingOutlookItemFromCrm {outlookItem.FirstName} {outlookItem.LastName}: no properties had changed.");
-                    }
+                    this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem);
                 }
 
                 this.LogItemAction(outlookItem, $"ContactSyncing.UpdateExistingOutlookItemFromCrm, saving with {outlookItem.Sensitivity}");
@@ -307,37 +304,35 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmItem">The CRM item from which to take values.</param>
         /// <param name="outlookItem">The Outlook item into which to insert values.</param>
         /// <returns>true if anything was changed.</returns>
-        private bool SetOutlookItemPropertiesFromCrmItem(eEntryValue crmItem, Outlook.ContactItem outlookItem)
+        private void SetOutlookItemPropertiesFromCrmItem(eEntryValue crmItem, Outlook.ContactItem outlookItem)
         {
-            bool result = this.SetPropertyIfDifferent(outlookItem, "FirstName", crmItem.GetValueAsString("first_name"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "LastName", crmItem.GetValueAsString("last_name"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "Email1Address", crmItem.GetValueAsString("email1"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessTelephoneNumber", crmItem.GetValueAsString("phone_work"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "HomeTelephoneNumber", crmItem.GetValueAsString("phone_home"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "MobileTelephoneNumber", crmItem.GetValueAsString("phone_mobile"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "JobTitle", crmItem.GetValueAsString("title"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "Department", crmItem.GetValueAsString("department"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressCity", crmItem.GetValueAsString("primary_address_city"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressCountry", crmItem.GetValueAsString("primary_address_country"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressPostalCode", crmItem.GetValueAsString("primary_address_postalcode"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressState", crmItem.GetValueAsString("primary_address_state"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressStreet", crmItem.GetValueAsString("primary_address_street"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "Body", crmItem.GetValueAsString("description"));
+            outlookItem.FirstName = crmItem.GetValueAsString("first_name");
+            outlookItem.LastName = crmItem.GetValueAsString("last_name");
+            outlookItem.Email1Address = crmItem.GetValueAsString("email1");
+            outlookItem.BusinessTelephoneNumber = crmItem.GetValueAsString("phone_work");
+            outlookItem.HomeTelephoneNumber = crmItem.GetValueAsString("phone_home");
+            outlookItem.MobileTelephoneNumber = crmItem.GetValueAsString("phone_mobile");
+            outlookItem.JobTitle = crmItem.GetValueAsString("title");
+            outlookItem.Department = crmItem.GetValueAsString("department");
+            outlookItem.BusinessAddressCity = crmItem.GetValueAsString("primary_address_city");
+            outlookItem.BusinessAddressCountry = crmItem.GetValueAsString("primary_address_country");
+            outlookItem.BusinessAddressPostalCode = crmItem.GetValueAsString("primary_address_postalcode");
+            outlookItem.BusinessAddressState = crmItem.GetValueAsString("primary_address_state");
+            outlookItem.BusinessAddressStreet = crmItem.GetValueAsString("primary_address_street");
+            outlookItem.Body = crmItem.GetValueAsString("description");
             if (crmItem.GetValue("account_name") != null)
             {
-                result |= this.SetPropertyIfDifferent(outlookItem, "Account", crmItem.GetValueAsString("account_name"));
-                result |= this.SetPropertyIfDifferent(outlookItem, "CompanyName", crmItem.GetValueAsString("account_name"));
+                outlookItem.Account = crmItem.GetValueAsString("account_name");
+                outlookItem.CompanyName = crmItem.GetValueAsString("account_name");
             }
-            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessFaxNumber", crmItem.GetValueAsString("phone_fax"));
-            result |= this.SetPropertyIfDifferent(outlookItem, "Title", crmItem.GetValueAsString("salutation"));
+            outlookItem.BusinessFaxNumber = crmItem.GetValueAsString("phone_fax");
+            outlookItem.Title = crmItem.GetValueAsString("salutation");
 
             EnsureSynchronisationPropertiesForOutlookItem(
                 outlookItem, 
                 crmItem.GetValueAsString("date_modified"), 
                 crmItem.GetValueAsString("sync_contact"), 
                 crmItem.GetValueAsString("id"));
-            
-            return result;
         }
 
         /// <summary>
