@@ -173,7 +173,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void SynchroniseAll()
         {
             base.SynchroniseAll();
-            SyncFolder(GetDefaultFolder(), AppointmentSyncing.AltCrmModule);
+            if (this.HasExportAccess(AppointmentSyncing.AltCrmModule))
+            {
+                SyncFolder(GetDefaultFolder(), AppointmentSyncing.AltCrmModule);
+            }
+            else
+            {
+                Log.Debug($"AppointmentSyncing.SynchroniseAll: not synchronising {AppointmentSyncing.AltCrmModule} because export access is denied");
+            }
         }
 
         public override string DefaultCrmModule
@@ -338,7 +345,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             string result = entryId;
 
-            if (SyncingEnabled && olItem != null)
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem, crmType))
             {
                 if (ShouldDeleteFromCrm(olItem))
                 {
@@ -522,10 +529,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                     "[not present]" :
                     olPropertyEntryId.Value;
                 StringBuilder bob = new StringBuilder();
-                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tRecipients");
-                foreach (var recipient in olItem.Recipients)
+                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tRecipients:\n");
+                foreach (Outlook.Recipient recipient in olItem.Recipients)
                 {
-                    bob.Append($"\t\t{recipient}\n");
+                    bob.Append($"\t\t{recipient.Name}: {recipient.Address}\n");
                 }
                 Log.Info(bob.ToString());
             }
@@ -809,7 +816,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.AppointmentItem> GetExistingSyncState(Outlook.AppointmentItem oItem)
         {
-            return ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == oItem.EntryID);
+            return ItemsSyncState.FirstOrDefault(a => !a.IsDeletedInOutlook && a.OutlookItem.EntryID == oItem.EntryID);
         }
     }
 }

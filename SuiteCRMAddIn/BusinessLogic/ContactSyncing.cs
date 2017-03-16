@@ -22,16 +22,15 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using SuiteCRMClient;
+    using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Newtonsoft.Json;
-    using SuiteCRMClient;
-    using SuiteCRMClient.RESTObjects;
-    using SuiteCRMClient.Logging;
-    using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Runtime.InteropServices;
     using System.Windows.Forms;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
     public class ContactSyncing: Synchroniser<Outlook.ContactItem>
     {
@@ -297,6 +296,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             return itemSyncState;
         }
 
+        /// <summary>
+        /// Set all those properties of this outlook item whose values are different from the 
+        /// equivalent values on this CRM item. Update the synchronisation properties only if some
+        /// other property has actually changed.
+        /// </summary>
+        /// <param name="crmItem">The CRM item from which to take values.</param>
+        /// <param name="outlookItem">The Outlook item into which to insert values.</param>
+        /// <returns>true if anything was changed.</returns>
         private void SetOutlookItemPropertiesFromCrmItem(eEntryValue crmItem, Outlook.ContactItem outlookItem)
         {
             outlookItem.FirstName = crmItem.GetValueAsString("first_name");
@@ -321,7 +328,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             outlookItem.BusinessFaxNumber = crmItem.GetValueAsString("phone_fax");
             outlookItem.Title = crmItem.GetValueAsString("salutation");
 
-            EnsureSynchronisationPropertiesForOutlookItem(outlookItem, crmItem.GetValueAsString("date_modified"), crmItem.GetValueAsString("sync_contact"), crmItem.GetValueAsString("id"));
+            EnsureSynchronisationPropertiesForOutlookItem(
+                outlookItem, 
+                crmItem.GetValueAsString("date_modified"), 
+                crmItem.GetValueAsString("sync_contact"), 
+                crmItem.GetValueAsString("id"));
         }
 
         /// <summary>
@@ -363,7 +374,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         override protected void OutlookItemChanged(Outlook.ContactItem item)
         {
-            if (item != null) SaveChangedItem(item);
+            if (item != null)
+            {
+                this.LogItemAction(item, "Allegedly changed?");
+                SaveChangedItem(item);
+            }
         }
 
         private void SaveChangedItem(Outlook.ContactItem oItem)
@@ -435,7 +450,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             string result = entryId;
 
-            if (SyncingEnabled && outlookItem != null)
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(outlookItem))
             {
                 result = base.AddOrUpdateItemFromOutlookToCrm(outlookItem, crmType, entryId);
 
@@ -446,13 +461,13 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 EnsureSyncWithOutlookSetInCRM(result, syncProperty);
             }
-
+ 
             return result;
         }
 
         protected override SyncState<Outlook.ContactItem> GetExistingSyncState(Outlook.ContactItem oItem)
         {
-            return ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == oItem.EntryID);
+            return ItemsSyncState.FirstOrDefault(a => !a.IsDeletedInOutlook && a.OutlookItem.EntryID == oItem.EntryID);
         }
 
         protected override SyncState<Outlook.ContactItem> ConstructSyncState(Outlook.ContactItem oItem)
@@ -522,8 +537,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olContactItem;
 
-        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
-        // (but not for Appointments).
-        protected override bool PropagatesLocalDeletions => true;
+        /* We hava a rare intermittent bug (#95) which leads to all contacts being suddenly deleted from both Outlook and CRM.
+         * Until we have that fixed it would be a really good idea NOT to propagate deletions! */ 
+        protected override bool PropagatesLocalDeletions => false;
     }
 }
