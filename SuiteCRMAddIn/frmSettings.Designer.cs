@@ -93,14 +93,20 @@ namespace SuiteCRMAddIn
             this.InformationTabPage = new System.Windows.Forms.TabPage();
             this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.logLevelHelp = new System.Windows.Forms.Label();
+            this.logLevelLabel = new System.Windows.Forms.Label();
+            this.logLevelSelector = new System.Windows.Forms.ComboBox();
             this.LinkToLogFileDir = new System.Windows.Forms.LinkLabel();
             this.label11 = new System.Windows.Forms.Label();
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.logLevelSelector = new System.Windows.Forms.ComboBox();
-            this.logLevelLabel = new System.Windows.Forms.Label();
-            this.logLevelHelp = new System.Windows.Forms.Label();
+            this.synchronisationTab = new System.Windows.Forms.TabPage();
+            this.syncLabel = new System.Windows.Forms.Label();
+            this.syncContactsLabel = new System.Windows.Forms.Label();
+            this.syncContactsMenu = new System.Windows.Forms.ComboBox();
+            this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.syncCalendarLabel = new System.Windows.Forms.Label();
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -113,6 +119,7 @@ namespace SuiteCRMAddIn
             this.tabControl1.SuspendLayout();
             this.InformationTabPage.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            this.synchronisationTab.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabPage3
@@ -507,6 +514,7 @@ namespace SuiteCRMAddIn
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Controls.Add(this.tabPage3);
+            this.tabControl1.Controls.Add(this.synchronisationTab);
             this.tabControl1.Controls.Add(this.InformationTabPage);
             this.tabControl1.Dock = System.Windows.Forms.DockStyle.Top;
             this.tabControl1.Location = new System.Drawing.Point(3, 3);
@@ -551,6 +559,33 @@ namespace SuiteCRMAddIn
             this.groupBox4.TabIndex = 5;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Logging";
+            // 
+            // logLevelHelp
+            // 
+            this.logLevelHelp.AutoSize = true;
+            this.logLevelHelp.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.logLevelHelp.Location = new System.Drawing.Point(6, 109);
+            this.logLevelHelp.Name = "logLevelHelp";
+            this.logLevelHelp.Size = new System.Drawing.Size(307, 13);
+            this.logLevelHelp.TabIndex = 34;
+            this.logLevelHelp.Text = "Changes to log level do not take effect until you restart Outlook.";
+            // 
+            // logLevelLabel
+            // 
+            this.logLevelLabel.AutoSize = true;
+            this.logLevelLabel.Location = new System.Drawing.Point(6, 84);
+            this.logLevelLabel.Name = "logLevelLabel";
+            this.logLevelLabel.Size = new System.Drawing.Size(53, 13);
+            this.logLevelLabel.TabIndex = 33;
+            this.logLevelLabel.Text = "Log level:";
+            // 
+            // logLevelSelector
+            // 
+            this.logLevelSelector.FormattingEnabled = true;
+            this.logLevelSelector.Location = new System.Drawing.Point(186, 81);
+            this.logLevelSelector.Name = "logLevelSelector";
+            this.logLevelSelector.Size = new System.Drawing.Size(140, 21);
+            this.logLevelSelector.TabIndex = 32;
             // 
             // LinkToLogFileDir
             // 
@@ -605,32 +640,63 @@ namespace SuiteCRMAddIn
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // logLevelSelector
+            // synchronisationTab
             // 
-            this.logLevelSelector.FormattingEnabled = true;
-            this.logLevelSelector.Location = new System.Drawing.Point(186, 81);
-            this.logLevelSelector.Name = "logLevelSelector";
-            this.logLevelSelector.Size = new System.Drawing.Size(140, 21);
-            this.logLevelSelector.TabIndex = 32;
+            this.synchronisationTab.Controls.Add(this.comboBox1);
+            this.synchronisationTab.Controls.Add(this.syncCalendarLabel);
+            this.synchronisationTab.Controls.Add(this.syncContactsMenu);
+            this.synchronisationTab.Controls.Add(this.syncContactsLabel);
+            this.synchronisationTab.Controls.Add(this.syncLabel);
+            this.synchronisationTab.Location = new System.Drawing.Point(23, 4);
+            this.synchronisationTab.Name = "synchronisationTab";
+            this.synchronisationTab.Padding = new System.Windows.Forms.Padding(3);
+            this.synchronisationTab.Size = new System.Drawing.Size(360, 374);
+            this.synchronisationTab.TabIndex = 4;
+            this.synchronisationTab.Text = "Synchronisation";
+            this.synchronisationTab.UseVisualStyleBackColor = true;
             // 
-            // logLevelLabel
+            // syncLabel
             // 
-            this.logLevelLabel.AutoSize = true;
-            this.logLevelLabel.Location = new System.Drawing.Point(6, 84);
-            this.logLevelLabel.Name = "logLevelLabel";
-            this.logLevelLabel.Size = new System.Drawing.Size(53, 13);
-            this.logLevelLabel.TabIndex = 33;
-            this.logLevelLabel.Text = "Log level:";
+            this.syncLabel.AutoSize = true;
+            this.syncLabel.Location = new System.Drawing.Point(22, 24);
+            this.syncLabel.Name = "syncLabel";
+            this.syncLabel.Size = new System.Drawing.Size(68, 13);
+            this.syncLabel.TabIndex = 0;
+            this.syncLabel.Text = "Synchronise:";
             // 
-            // logLevelHelp
+            // syncContactsLabel
             // 
-            this.logLevelHelp.AutoSize = true;
-            this.logLevelHelp.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.logLevelHelp.Location = new System.Drawing.Point(6, 109);
-            this.logLevelHelp.Name = "logLevelHelp";
-            this.logLevelHelp.Size = new System.Drawing.Size(307, 13);
-            this.logLevelHelp.TabIndex = 34;
-            this.logLevelHelp.Text = "Changes to log level do not take effect until you restart Outlook.";
+            this.syncContactsLabel.AutoSize = true;
+            this.syncContactsLabel.Location = new System.Drawing.Point(38, 52);
+            this.syncContactsLabel.Name = "syncContactsLabel";
+            this.syncContactsLabel.Size = new System.Drawing.Size(52, 13);
+            this.syncContactsLabel.TabIndex = 1;
+            this.syncContactsLabel.Text = "Contacts:";
+            // 
+            // syncContactsMenu
+            // 
+            this.syncContactsMenu.FormattingEnabled = true;
+            this.syncContactsMenu.Location = new System.Drawing.Point(126, 49);
+            this.syncContactsMenu.Name = "syncContactsMenu";
+            this.syncContactsMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncContactsMenu.TabIndex = 2;
+            // 
+            // comboBox1
+            // 
+            this.comboBox1.FormattingEnabled = true;
+            this.comboBox1.Location = new System.Drawing.Point(126, 76);
+            this.comboBox1.Name = "comboBox1";
+            this.comboBox1.Size = new System.Drawing.Size(228, 21);
+            this.comboBox1.TabIndex = 4;
+            // 
+            // syncCalendarLabel
+            // 
+            this.syncCalendarLabel.AutoSize = true;
+            this.syncCalendarLabel.Location = new System.Drawing.Point(38, 79);
+            this.syncCalendarLabel.Name = "syncCalendarLabel";
+            this.syncCalendarLabel.Size = new System.Drawing.Size(52, 13);
+            this.syncCalendarLabel.TabIndex = 3;
+            this.syncCalendarLabel.Text = "Calendar:";
             // 
             // frmSettings
             // 
@@ -674,6 +740,8 @@ namespace SuiteCRMAddIn
             this.InformationTabPage.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            this.synchronisationTab.ResumeLayout(false);
+            this.synchronisationTab.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -730,5 +798,11 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.Label logLevelLabel;
         private System.Windows.Forms.ComboBox logLevelSelector;
         private System.Windows.Forms.Label logLevelHelp;
+        private System.Windows.Forms.TabPage synchronisationTab;
+        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.Label syncCalendarLabel;
+        private System.Windows.Forms.ComboBox syncContactsMenu;
+        private System.Windows.Forms.Label syncContactsLabel;
+        private System.Windows.Forms.Label syncLabel;
     }
 }
