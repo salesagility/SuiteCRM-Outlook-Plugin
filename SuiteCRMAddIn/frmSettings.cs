@@ -124,8 +124,6 @@ namespace SuiteCRMAddIn
             this.txtSyncMaxRecords.Text = Globals.ThisAddIn.Settings.SyncMaxRecords.ToString();
             this.checkBoxShowRightClick.Checked = Globals.ThisAddIn.Settings.PopulateContextLookupList;
             GetAccountAutoArchivingSettings();
-            this.chkSyncCalendar.Checked = Globals.ThisAddIn.Settings.SyncCalendar;
-            this.chkSyncContacts.Checked = Globals.ThisAddIn.Settings.SyncContacts;
 
             txtAutoSync.Text = Globals.ThisAddIn.Settings.ExcludedEmails;
 
@@ -151,6 +149,21 @@ namespace SuiteCRMAddIn
             logLevelSelector.DisplayMember = "Value";
             logLevelSelector.ValueMember = "Key";
             logLevelSelector.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.LogLevel);
+
+            var syncDirectionItems = Enum.GetValues(typeof(SyncDirection.Direction))
+                    .Cast<SyncDirection.Direction>()
+                    .Select(p => new { Key = (int)p, Value = SyncDirection.ToString(p) })
+                    .OrderBy(o => o.Key)
+                    .ToList();
+
+            this.syncContactsMenu.ValueMember = "Key";
+            this.syncContactsMenu.DisplayMember = "Value";
+            this.syncCalendarMenu.ValueMember = "Key";
+            this.syncCalendarMenu.DisplayMember = "Value";
+            this.syncContactsMenu.DataSource = syncDirectionItems;
+            this.syncCalendarMenu.DataSource = syncDirectionItems;
+            this.syncCalendarMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncCalendar);
+            this.syncContactsMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncContacts);
         }
 
         private void GetAccountAutoArchivingSettings()
@@ -356,8 +369,9 @@ namespace SuiteCRMAddIn
 
             SaveAccountAutoArchivingSettings();
 
-            Globals.ThisAddIn.Settings.SyncCalendar = this.chkSyncCalendar.Checked;
-            Globals.ThisAddIn.Settings.SyncContacts = this.chkSyncContacts.Checked;
+            Globals.ThisAddIn.Settings.SyncCalendar = (SyncDirection.Direction)this.syncCalendarMenu.SelectedValue;
+            Globals.ThisAddIn.Settings.SyncContacts = (SyncDirection.Direction)this.syncContactsMenu.SelectedValue;
+
             Globals.ThisAddIn.Settings.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked;
             if (this.txtSyncMaxRecords.Text != string.Empty)
             {

@@ -56,8 +56,6 @@ namespace SuiteCRMAddIn
             this.label8 = new System.Windows.Forms.Label();
             this.EmailArchiveAccountTabs = new System.Windows.Forms.TabControl();
             this.tabPage4 = new System.Windows.Forms.TabPage();
-            this.chkSyncContacts = new System.Windows.Forms.CheckBox();
-            this.chkSyncCalendar = new System.Windows.Forms.CheckBox();
             this.label7 = new System.Windows.Forms.Label();
             this.txtAutoSync = new System.Windows.Forms.TextBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
@@ -90,6 +88,12 @@ namespace SuiteCRMAddIn
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.synchronisationTab = new System.Windows.Forms.TabPage();
+            this.syncCalendarMenu = new System.Windows.Forms.ComboBox();
+            this.syncCalendarLabel = new System.Windows.Forms.Label();
+            this.syncContactsMenu = new System.Windows.Forms.ComboBox();
+            this.syncContactsLabel = new System.Windows.Forms.Label();
+            this.syncLabel = new System.Windows.Forms.Label();
             this.InformationTabPage = new System.Windows.Forms.TabPage();
             this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
@@ -101,12 +105,6 @@ namespace SuiteCRMAddIn
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.synchronisationTab = new System.Windows.Forms.TabPage();
-            this.syncLabel = new System.Windows.Forms.Label();
-            this.syncContactsLabel = new System.Windows.Forms.Label();
-            this.syncContactsMenu = new System.Windows.Forms.ComboBox();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
-            this.syncCalendarLabel = new System.Windows.Forms.Label();
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -117,9 +115,9 @@ namespace SuiteCRMAddIn
             this.gbLDAPAuthentication.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.tabControl1.SuspendLayout();
+            this.synchronisationTab.SuspendLayout();
             this.InformationTabPage.SuspendLayout();
             this.groupBox4.SuspendLayout();
-            this.synchronisationTab.SuspendLayout();
             this.SuspendLayout();
             // 
             // tabPage3
@@ -127,8 +125,6 @@ namespace SuiteCRMAddIn
             this.tabPage3.Controls.Add(this.dtpAutoArchiveFrom);
             this.tabPage3.Controls.Add(this.label8);
             this.tabPage3.Controls.Add(this.EmailArchiveAccountTabs);
-            this.tabPage3.Controls.Add(this.chkSyncContacts);
-            this.tabPage3.Controls.Add(this.chkSyncCalendar);
             this.tabPage3.Controls.Add(this.label7);
             this.tabPage3.Controls.Add(this.txtAutoSync);
             this.tabPage3.Location = new System.Drawing.Point(23, 4);
@@ -141,7 +137,7 @@ namespace SuiteCRMAddIn
             // dtpAutoArchiveFrom
             // 
             this.dtpAutoArchiveFrom.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpAutoArchiveFrom.Location = new System.Drawing.Point(146, 339);
+            this.dtpAutoArchiveFrom.Location = new System.Drawing.Point(199, 340);
             this.dtpAutoArchiveFrom.Name = "dtpAutoArchiveFrom";
             this.dtpAutoArchiveFrom.Size = new System.Drawing.Size(94, 20);
             this.dtpAutoArchiveFrom.TabIndex = 24;
@@ -149,7 +145,7 @@ namespace SuiteCRMAddIn
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(143, 320);
+            this.label8.Location = new System.Drawing.Point(12, 346);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(131, 13);
             this.label8.TabIndex = 0;
@@ -174,26 +170,6 @@ namespace SuiteCRMAddIn
             this.tabPage4.Text = "Account#1";
             this.tabPage4.UseVisualStyleBackColor = true;
             // 
-            // chkSyncContacts
-            // 
-            this.chkSyncContacts.AutoSize = true;
-            this.chkSyncContacts.Location = new System.Drawing.Point(15, 342);
-            this.chkSyncContacts.Name = "chkSyncContacts";
-            this.chkSyncContacts.Size = new System.Drawing.Size(95, 17);
-            this.chkSyncContacts.TabIndex = 23;
-            this.chkSyncContacts.Text = "Sync Contacts";
-            this.chkSyncContacts.UseVisualStyleBackColor = true;
-            // 
-            // chkSyncCalendar
-            // 
-            this.chkSyncCalendar.AutoSize = true;
-            this.chkSyncCalendar.Location = new System.Drawing.Point(15, 319);
-            this.chkSyncCalendar.Name = "chkSyncCalendar";
-            this.chkSyncCalendar.Size = new System.Drawing.Size(95, 17);
-            this.chkSyncCalendar.TabIndex = 22;
-            this.chkSyncCalendar.Text = "Sync Calendar";
-            this.chkSyncCalendar.UseVisualStyleBackColor = true;
-            // 
             // label7
             // 
             this.label7.AutoSize = true;
@@ -209,7 +185,7 @@ namespace SuiteCRMAddIn
             this.txtAutoSync.Location = new System.Drawing.Point(15, 269);
             this.txtAutoSync.Multiline = true;
             this.txtAutoSync.Name = "txtAutoSync";
-            this.txtAutoSync.Size = new System.Drawing.Size(336, 44);
+            this.txtAutoSync.Size = new System.Drawing.Size(336, 65);
             this.txtAutoSync.TabIndex = 21;
             // 
             // tabPage2
@@ -524,6 +500,64 @@ namespace SuiteCRMAddIn
             this.tabControl1.Size = new System.Drawing.Size(387, 382);
             this.tabControl1.TabIndex = 43;
             // 
+            // synchronisationTab
+            // 
+            this.synchronisationTab.Controls.Add(this.syncCalendarMenu);
+            this.synchronisationTab.Controls.Add(this.syncCalendarLabel);
+            this.synchronisationTab.Controls.Add(this.syncContactsMenu);
+            this.synchronisationTab.Controls.Add(this.syncContactsLabel);
+            this.synchronisationTab.Controls.Add(this.syncLabel);
+            this.synchronisationTab.Location = new System.Drawing.Point(23, 4);
+            this.synchronisationTab.Name = "synchronisationTab";
+            this.synchronisationTab.Padding = new System.Windows.Forms.Padding(3);
+            this.synchronisationTab.Size = new System.Drawing.Size(360, 374);
+            this.synchronisationTab.TabIndex = 4;
+            this.synchronisationTab.Text = "Synchronisation";
+            this.synchronisationTab.UseVisualStyleBackColor = true;
+            // 
+            // syncCalendarMenu
+            // 
+            this.syncCalendarMenu.FormattingEnabled = true;
+            this.syncCalendarMenu.Location = new System.Drawing.Point(126, 76);
+            this.syncCalendarMenu.Name = "syncCalendarMenu";
+            this.syncCalendarMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncCalendarMenu.TabIndex = 4;
+            // 
+            // syncCalendarLabel
+            // 
+            this.syncCalendarLabel.AutoSize = true;
+            this.syncCalendarLabel.Location = new System.Drawing.Point(38, 79);
+            this.syncCalendarLabel.Name = "syncCalendarLabel";
+            this.syncCalendarLabel.Size = new System.Drawing.Size(52, 13);
+            this.syncCalendarLabel.TabIndex = 3;
+            this.syncCalendarLabel.Text = "Calendar:";
+            // 
+            // syncContactsMenu
+            // 
+            this.syncContactsMenu.FormattingEnabled = true;
+            this.syncContactsMenu.Location = new System.Drawing.Point(126, 49);
+            this.syncContactsMenu.Name = "syncContactsMenu";
+            this.syncContactsMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncContactsMenu.TabIndex = 2;
+            // 
+            // syncContactsLabel
+            // 
+            this.syncContactsLabel.AutoSize = true;
+            this.syncContactsLabel.Location = new System.Drawing.Point(38, 52);
+            this.syncContactsLabel.Name = "syncContactsLabel";
+            this.syncContactsLabel.Size = new System.Drawing.Size(52, 13);
+            this.syncContactsLabel.TabIndex = 1;
+            this.syncContactsLabel.Text = "Contacts:";
+            // 
+            // syncLabel
+            // 
+            this.syncLabel.AutoSize = true;
+            this.syncLabel.Location = new System.Drawing.Point(22, 24);
+            this.syncLabel.Name = "syncLabel";
+            this.syncLabel.Size = new System.Drawing.Size(68, 13);
+            this.syncLabel.TabIndex = 0;
+            this.syncLabel.Text = "Synchronise:";
+            // 
             // InformationTabPage
             // 
             this.InformationTabPage.Controls.Add(this.AddInVersionLabel);
@@ -640,64 +674,6 @@ namespace SuiteCRMAddIn
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // synchronisationTab
-            // 
-            this.synchronisationTab.Controls.Add(this.comboBox1);
-            this.synchronisationTab.Controls.Add(this.syncCalendarLabel);
-            this.synchronisationTab.Controls.Add(this.syncContactsMenu);
-            this.synchronisationTab.Controls.Add(this.syncContactsLabel);
-            this.synchronisationTab.Controls.Add(this.syncLabel);
-            this.synchronisationTab.Location = new System.Drawing.Point(23, 4);
-            this.synchronisationTab.Name = "synchronisationTab";
-            this.synchronisationTab.Padding = new System.Windows.Forms.Padding(3);
-            this.synchronisationTab.Size = new System.Drawing.Size(360, 374);
-            this.synchronisationTab.TabIndex = 4;
-            this.synchronisationTab.Text = "Synchronisation";
-            this.synchronisationTab.UseVisualStyleBackColor = true;
-            // 
-            // syncLabel
-            // 
-            this.syncLabel.AutoSize = true;
-            this.syncLabel.Location = new System.Drawing.Point(22, 24);
-            this.syncLabel.Name = "syncLabel";
-            this.syncLabel.Size = new System.Drawing.Size(68, 13);
-            this.syncLabel.TabIndex = 0;
-            this.syncLabel.Text = "Synchronise:";
-            // 
-            // syncContactsLabel
-            // 
-            this.syncContactsLabel.AutoSize = true;
-            this.syncContactsLabel.Location = new System.Drawing.Point(38, 52);
-            this.syncContactsLabel.Name = "syncContactsLabel";
-            this.syncContactsLabel.Size = new System.Drawing.Size(52, 13);
-            this.syncContactsLabel.TabIndex = 1;
-            this.syncContactsLabel.Text = "Contacts:";
-            // 
-            // syncContactsMenu
-            // 
-            this.syncContactsMenu.FormattingEnabled = true;
-            this.syncContactsMenu.Location = new System.Drawing.Point(126, 49);
-            this.syncContactsMenu.Name = "syncContactsMenu";
-            this.syncContactsMenu.Size = new System.Drawing.Size(228, 21);
-            this.syncContactsMenu.TabIndex = 2;
-            // 
-            // comboBox1
-            // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(126, 76);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(228, 21);
-            this.comboBox1.TabIndex = 4;
-            // 
-            // syncCalendarLabel
-            // 
-            this.syncCalendarLabel.AutoSize = true;
-            this.syncCalendarLabel.Location = new System.Drawing.Point(38, 79);
-            this.syncCalendarLabel.Name = "syncCalendarLabel";
-            this.syncCalendarLabel.Size = new System.Drawing.Size(52, 13);
-            this.syncCalendarLabel.TabIndex = 3;
-            this.syncCalendarLabel.Text = "Calendar:";
-            // 
             // frmSettings
             // 
             this.AcceptButton = this.btnSave;
@@ -737,11 +713,11 @@ namespace SuiteCRMAddIn
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.tabControl1.ResumeLayout(false);
+            this.synchronisationTab.ResumeLayout(false);
+            this.synchronisationTab.PerformLayout();
             this.InformationTabPage.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
-            this.synchronisationTab.ResumeLayout(false);
-            this.synchronisationTab.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -781,8 +757,6 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.CheckBox chkShowConfirmationMessageArchive;
-        private System.Windows.Forms.CheckBox chkSyncContacts;
-        private System.Windows.Forms.CheckBox chkSyncCalendar;
         private System.Windows.Forms.TabPage InformationTabPage;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.LinkLabel LinkToLogFileDir;
@@ -799,7 +773,7 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.ComboBox logLevelSelector;
         private System.Windows.Forms.Label logLevelHelp;
         private System.Windows.Forms.TabPage synchronisationTab;
-        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.ComboBox syncCalendarMenu;
         private System.Windows.Forms.Label syncCalendarLabel;
         private System.Windows.Forms.ComboBox syncContactsMenu;
         private System.Windows.Forms.Label syncContactsLabel;

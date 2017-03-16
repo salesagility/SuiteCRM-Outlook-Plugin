@@ -29,6 +29,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using SuiteCRMClient.Logging;
+using SuiteCRMAddIn.BusinessLogic;
 
 namespace SuiteCRMAddIn
 {
@@ -189,24 +190,24 @@ namespace SuiteCRMAddIn
                 this["AutoArchive"] = value;
             }
         }
-        [DefaultSettingValue("False"), DebuggerNonUserCode, UserScopedSetting]
-        public bool SyncCalendar
+        [DefaultSettingValue("0"), DebuggerNonUserCode, UserScopedSetting]
+        public SyncDirection.Direction SyncCalendar
         {
             get
             {
-                return (bool)this["SyncCalendar"];
+                return (SyncDirection.Direction)this["SyncCalendar"];
             }
             set
             {
                 this["SyncCalendar"] = value;
             }
         }
-        [DefaultSettingValue("False"), DebuggerNonUserCode, UserScopedSetting]
-        public bool SyncContacts
+        [DefaultSettingValue("0"), DebuggerNonUserCode, UserScopedSetting]
+        public SyncDirection.Direction SyncContacts
         {
             get
             {
-                return (bool)this["SyncContacts"];
+                return (SyncDirection.Direction)this["SyncContacts"];
             }
             set
             {

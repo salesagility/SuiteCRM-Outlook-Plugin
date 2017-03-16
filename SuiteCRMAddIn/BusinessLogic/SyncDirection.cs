@@ -22,8 +22,14 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    /// <summary>
+    /// A direction in which things may be synchronised
+    /// </summary>
     public class SyncDirection
     {
+        /// <summary>
+        /// The actual directions
+        /// </summary>
         public enum Direction
         {
             Neither = 0,
