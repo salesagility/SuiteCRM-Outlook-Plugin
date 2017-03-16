@@ -756,34 +756,5 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.LogItemAction(item.OutlookItem, "AppointmentSyncing.RemoveItemSyncState, removed item from queue");
             this.ItemsSyncState.Remove(item);
         }
-
-
-        /// <summary>
-        /// Preventing howlaround: don't set a property on an Outlook item unless it has actually changed.
-        /// </summary>
-        /// <param name="item">The item on which to maybe set the property.</param>
-        /// <param name="propertyName">The name of the property to set.</param>
-        /// <param name="newValue">The new value to set.</param>
-        /// <typeparam name="T">The type of the property being set.</typeparam>
-        /// <returns>True if the value actually changed.</returns>
-        protected bool SetPropertyIfDifferent<T>(OutlookItemType item, string propertyName, T newValue)
-        {
-            bool result = false;
-
-            var property = typeof(OutlookItemType).GetProperty(propertyName);
-
-            if (property != null && property.GetValue(item) != null)
-            {
-                var current = (T)property.GetValue(item);
-                if (!current.Equals(newValue))
-                {
-                    property.SetValue(item, newValue);
-                    result = true;
-                }
-            }
-
-            return result;
-        }
-
     }
 }
