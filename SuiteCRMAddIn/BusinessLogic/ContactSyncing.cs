@@ -22,16 +22,15 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using SuiteCRMClient;
+    using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Newtonsoft.Json;
-    using SuiteCRMClient;
-    using SuiteCRMClient.RESTObjects;
-    using SuiteCRMClient.Logging;
-    using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Runtime.InteropServices;
     using System.Windows.Forms;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
     public class ContactSyncing: Synchroniser<Outlook.ContactItem>
     {
@@ -284,7 +283,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else if (crmDate > outlookDate)
                 {
-                    this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem);
+                    if (!this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem))
+                    {
+                        Log.Info($"ContactSyncing.UpdateExistingOutlookItemFromCrm {outlookItem.FirstName} {outlookItem.LastName}: no properties had changed.");
+                    }
                 }
 
                 this.LogItemAction(outlookItem, $"ContactSyncing.UpdateExistingOutlookItemFromCrm, saving with {outlookItem.Sensitivity}");
@@ -297,31 +299,45 @@ namespace SuiteCRMAddIn.BusinessLogic
             return itemSyncState;
         }
 
-        private void SetOutlookItemPropertiesFromCrmItem(eEntryValue crmItem, Outlook.ContactItem outlookItem)
+        /// <summary>
+        /// Set all those properties of this outlook item whose values are different from the 
+        /// equivalent values on this CRM item. Update the synchronisation properties only if some
+        /// other property has actually changed.
+        /// </summary>
+        /// <param name="crmItem">The CRM item from which to take values.</param>
+        /// <param name="outlookItem">The Outlook item into which to insert values.</param>
+        /// <returns>true if anything was changed.</returns>
+        private bool SetOutlookItemPropertiesFromCrmItem(eEntryValue crmItem, Outlook.ContactItem outlookItem)
         {
-            outlookItem.FirstName = crmItem.GetValueAsString("first_name");
-            outlookItem.LastName = crmItem.GetValueAsString("last_name");
-            outlookItem.Email1Address = crmItem.GetValueAsString("email1");
-            outlookItem.BusinessTelephoneNumber = crmItem.GetValueAsString("phone_work");
-            outlookItem.HomeTelephoneNumber = crmItem.GetValueAsString("phone_home");
-            outlookItem.MobileTelephoneNumber = crmItem.GetValueAsString("phone_mobile");
-            outlookItem.JobTitle = crmItem.GetValueAsString("title");
-            outlookItem.Department = crmItem.GetValueAsString("department");
-            outlookItem.BusinessAddressCity = crmItem.GetValueAsString("primary_address_city");
-            outlookItem.BusinessAddressCountry = crmItem.GetValueAsString("primary_address_country");
-            outlookItem.BusinessAddressPostalCode = crmItem.GetValueAsString("primary_address_postalcode");
-            outlookItem.BusinessAddressState = crmItem.GetValueAsString("primary_address_state");
-            outlookItem.BusinessAddressStreet = crmItem.GetValueAsString("primary_address_street");
-            outlookItem.Body = crmItem.GetValueAsString("description");
+            bool result = this.SetPropertyIfDifferent(outlookItem, "FirstName", crmItem.GetValueAsString("first_name"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "LastName", crmItem.GetValueAsString("last_name"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "Email1Address", crmItem.GetValueAsString("email1"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessTelephoneNumber", crmItem.GetValueAsString("phone_work"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "HomeTelephoneNumber", crmItem.GetValueAsString("phone_home"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "MobileTelephoneNumber", crmItem.GetValueAsString("phone_mobile"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "JobTitle", crmItem.GetValueAsString("title"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "Department", crmItem.GetValueAsString("department"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressCity", crmItem.GetValueAsString("primary_address_city"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressCountry", crmItem.GetValueAsString("primary_address_country"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressPostalCode", crmItem.GetValueAsString("primary_address_postalcode"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressState", crmItem.GetValueAsString("primary_address_state"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessAddressStreet", crmItem.GetValueAsString("primary_address_street"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "Body", crmItem.GetValueAsString("description"));
             if (crmItem.GetValue("account_name") != null)
             {
-                outlookItem.Account = crmItem.GetValueAsString("account_name");
-                outlookItem.CompanyName = crmItem.GetValueAsString("account_name");
+                result |= this.SetPropertyIfDifferent(outlookItem, "Account", crmItem.GetValueAsString("account_name"));
+                result |= this.SetPropertyIfDifferent(outlookItem, "CompanyName", crmItem.GetValueAsString("account_name"));
             }
-            outlookItem.BusinessFaxNumber = crmItem.GetValueAsString("phone_fax");
-            outlookItem.Title = crmItem.GetValueAsString("salutation");
+            result |= this.SetPropertyIfDifferent(outlookItem, "BusinessFaxNumber", crmItem.GetValueAsString("phone_fax"));
+            result |= this.SetPropertyIfDifferent(outlookItem, "Title", crmItem.GetValueAsString("salutation"));
 
-            EnsureSynchronisationPropertiesForOutlookItem(outlookItem, crmItem.GetValueAsString("date_modified"), crmItem.GetValueAsString("sync_contact"), crmItem.GetValueAsString("id"));
+            EnsureSynchronisationPropertiesForOutlookItem(
+                outlookItem, 
+                crmItem.GetValueAsString("date_modified"), 
+                crmItem.GetValueAsString("sync_contact"), 
+                crmItem.GetValueAsString("id"));
+            
+            return result;
         }
 
         /// <summary>
@@ -363,7 +379,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         override protected void OutlookItemChanged(Outlook.ContactItem item)
         {
-            if (item != null) SaveChangedItem(item);
+            if (item != null)
+            {
+                this.LogItemAction(item, "Allegedly changed?");
+                SaveChangedItem(item);
+            }
         }
 
         private void SaveChangedItem(Outlook.ContactItem oItem)
@@ -435,7 +455,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             string result = entryId;
 
-            if (SyncingEnabled && outlookItem != null)
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(outlookItem))
             {
                 result = base.AddOrUpdateItemFromOutlookToCrm(outlookItem, crmType, entryId);
 
@@ -446,13 +466,13 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 EnsureSyncWithOutlookSetInCRM(result, syncProperty);
             }
-
+ 
             return result;
         }
 
         protected override SyncState<Outlook.ContactItem> GetExistingSyncState(Outlook.ContactItem oItem)
         {
-            return ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == oItem.EntryID);
+            return ItemsSyncState.FirstOrDefault(a => !a.IsDeletedInOutlook && a.OutlookItem.EntryID == oItem.EntryID);
         }
 
         protected override SyncState<Outlook.ContactItem> ConstructSyncState(Outlook.ContactItem oItem)
@@ -522,8 +542,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olContactItem;
 
-        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
-        // (but not for Appointments).
-        protected override bool PropagatesLocalDeletions => true;
+        /* We hava a rare intermittent bug (#95) which leads to all contacts being suddenly deleted from both Outlook and CRM.
+         * Until we have that fixed it would be a really good idea NOT to propagate deletions! */ 
+        protected override bool PropagatesLocalDeletions => false;
     }
 }

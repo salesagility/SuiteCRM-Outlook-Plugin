@@ -404,7 +404,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.TaskItem> GetExistingSyncState(Outlook.TaskItem oItem)
         {
-            return ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == oItem.EntryID);
+            return ItemsSyncState.FirstOrDefault(a => !a.IsDeletedInOutlook && a.OutlookItem.EntryID == oItem.EntryID);
         }
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olTaskItem;

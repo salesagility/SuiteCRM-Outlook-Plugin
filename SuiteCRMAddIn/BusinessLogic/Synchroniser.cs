@@ -39,6 +39,16 @@ namespace SuiteCRMAddIn.BusinessLogic
     public abstract class Synchroniser<OutlookItemType> : RepeatingProcess, IDisposable
         where OutlookItemType : class
     {
+        /// <summary>
+        /// The token used by CRM to indicate import permissions.
+        /// </summary>
+        private const string ImportPermissionToken = "import";
+
+        /// <summary>
+        /// The token used by CRM to indicate export permissions.
+        /// </summary>
+        private const string ExportPermissionToken = "export";
+
         private readonly SyncContext context;
 
         /// <summary>
@@ -118,10 +128,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public virtual void SynchroniseAll()
         {
-            Outlook.MAPIFolder folder = GetDefaultFolder();
+            if (this.HasExportAccess())
+            {
+                Outlook.MAPIFolder folder = GetDefaultFolder();
 
-            GetOutlookItems(folder);
-            SyncFolder(folder, this.DefaultCrmModule);
+                GetOutlookItems(folder);
+                SyncFolder(folder, this.DefaultCrmModule);
+            }
+            else
+            {
+                Log.Debug($"{this.GetType().Name}.SynchroniseAll not synchronising {this.DefaultCrmModule} because export access is denied");
+            }
         }
 
         protected abstract void GetOutlookItems(Outlook.MAPIFolder folder);
@@ -165,6 +182,74 @@ namespace SuiteCRMAddIn.BusinessLogic
             return " AND [Start] >='" + GetStartDate().ToString("MM/dd/yyyy HH:mm") + "'";
         }
 
+        /// <summary>
+        /// Check whether this synchroniser is allowed import access for its default CRM module.
+        /// </summary>
+        /// <returns>true if this synchroniser is allowed import access for its default CRM module.</returns>
+        protected bool HasImportAccess()
+        {
+            return this.HasImportAccess(this.DefaultCrmModule);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed import access for the specified CRM module.
+        /// </summary>
+        /// <param name="crmModule">The name of the CRM module to check.</param>
+        /// <returns>true if this synchroniser is allowed import access for the specified CRM module.</returns>
+        protected bool HasImportAccess(string crmModule)
+        {
+            return this.HasAccess(crmModule, Synchroniser<OutlookItemType>.ImportPermissionToken);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed export access for its default CRM module.
+        /// </summary>
+        /// <returns>true if this synchroniser is allowed export access for its default CRM module.</returns>
+        protected bool HasExportAccess()
+        {
+            return this.HasExportAccess(this.DefaultCrmModule);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed export access for the specified CRM module.
+        /// </summary>
+        /// <param name="crmModule">The name of the CRM module to check.</param>
+        /// <returns>true if this synchroniser is allowed export access for the specified CRM module.</returns>
+        protected bool HasExportAccess(string crmModule)
+        {
+            return this.HasAccess(crmModule, Synchroniser<OutlookItemType>.ExportPermissionToken);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed both import and export access for its default CRM module.
+        /// </summary>
+        /// <returns>true if this synchroniser is allowed both import and export access for its default CRM module.</returns>
+        protected bool HasImportExportAccess()
+        {
+            return this.HasImportExportAccess(this.DefaultCrmModule);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed both import and export access for the specified CRM module.
+        /// </summary>
+        /// <param name="crmModule">The name of the CRM module to check.</param>
+        /// <returns>true if this synchroniser is allowed both import and export access for the specified CRM module.</returns>
+        private bool HasImportExportAccess(string crmModule)
+        {
+            return this.HasImportAccess(crmModule) &&
+                this.HasExportAccess(crmModule);
+        }
+
+        /// <summary>
+        /// Check whether this synchroniser is allowed access to the specified CRM module, with the specified permission.
+        /// </summary>
+        /// <remarks>
+        /// Note that, surprisingly, although CRM will report what permissions we have, it will not 
+        /// enforce them, so we have to do the honourable thing and not cheat.
+        /// </remarks>
+        /// <param name="moduleName"></param>
+        /// <param name="permission"></param>
+        /// <returns>true if this synchroniser is allowed access to the specified CRM module, with the specified permission.</returns>
         protected bool HasAccess(string moduleName, string permission)
         {
             try
@@ -204,6 +289,64 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
+        /// Perform all the necessary checking before adding or updating an item on CRM.
+        /// </summary>
+        /// <param name="item">The item we may seek to add or update, presumed to be of
+        /// my default item type.</param>
+        /// <returns>true if we may attempt to add or update that item.</returns>
+        protected bool ShouldAddOrUpdateItemFromOutlookToCrm(OutlookItemType item)
+        {
+            return this.ShouldAddOrUpdateItemFromOutlookToCrm(item, this.DefaultCrmModule);
+        }
+
+        /// <summary>
+        /// Perform all the necessary checking before adding or updating an item on CRM.
+        /// </summary>
+        /// <param name="item">The item we may seek to add or update.</param>
+        /// <param name="crmType">The CRM type of that item.</param>
+        /// <returns>true if we may attempt to add or update that item.</returns>
+        protected bool ShouldAddOrUpdateItemFromOutlookToCrm(OutlookItemType item, string crmType)
+        {
+            bool result;
+
+            try
+            {
+                if (item == null)
+                {
+                    Log.Warn($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: attempt to send null {crmType}?");
+                    result = false;
+                }
+                else
+                {
+                    if (SyncingEnabled)
+                    {
+                        if (this.HasImportAccess(crmType))
+                        {
+                            result = true;
+                        }
+                        else
+                        {
+                            Log.Info($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: {crmType} not added to CRM because import access is not granted.");
+                            result = false;
+                        }
+                    }
+                    else
+                    {
+                        Log.Info($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: {crmType} not added to CRM because synchronisation is not enabled.");
+                        result = false;
+                    }
+                }
+            }
+            catch (Exception any)
+            {
+                Log.Error($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: unexpected failure while checking {crmType}.", any);
+                result = false;
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Given a list of items which exist in Outlook but are missing from CRM, resolve
         /// how to handle them.
         /// </summary>
@@ -227,7 +370,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             string result = entryId;
 
-            if (SyncingEnabled && olItem != null)
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem, crmType))
             {
                 LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
                 try
@@ -380,13 +523,21 @@ namespace SuiteCRMAddIn.BusinessLogic
                     if (oItem.IsDeletedInOutlook) ItemsSyncState.Remove(oItem);
                 }
             }
+            else
+            {
+                var items = ItemsSyncState.Where(x => x.IsDeletedInOutlook).Count();
+                if (items > 0)
+                {
+                    Log.Error($"Possibly bug #95: was attempting to delete {items} items from CRM");
+                }
+            }
         }
 
         protected void RemoveFromCrm(SyncState state)
         {
             if (!SyncingEnabled) return;
             var crmEntryId = state.CrmEntryId;
-            if (!string.IsNullOrEmpty(crmEntryId))
+            if (!string.IsNullOrEmpty(crmEntryId) && this.HasImportAccess(state.CrmType))
             {
                 eNameValue[] data = new eNameValue[2];
                 data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);
@@ -597,5 +748,34 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.LogItemAction(item.OutlookItem, "AppointmentSyncing.RemoveItemSyncState, removed item from queue");
             this.ItemsSyncState.Remove(item);
         }
+
+
+        /// <summary>
+        /// Preventing howlaround: don't set a property on an Outlook item unless it has actually changed.
+        /// </summary>
+        /// <param name="item">The item on which to maybe set the property.</param>
+        /// <param name="propertyName">The name of the property to set.</param>
+        /// <param name="newValue">The new value to set.</param>
+        /// <typeparam name="T">The type of the property being set.</typeparam>
+        /// <returns>True if the value actually changed.</returns>
+        protected bool SetPropertyIfDifferent<T>(OutlookItemType item, string propertyName, T newValue)
+        {
+            bool result = false;
+
+            var property = typeof(OutlookItemType).GetProperty(propertyName);
+
+            if (property != null && property.GetValue(item) != null)
+            {
+                var current = (T)property.GetValue(item);
+                if (!current.Equals(newValue))
+                {
+                    property.SetValue(item, newValue);
+                    result = true;
+                }
+            }
+
+            return result;
+        }
+
     }
 }
