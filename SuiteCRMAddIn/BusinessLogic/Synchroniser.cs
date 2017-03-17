@@ -106,8 +106,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (Globals.ThisAddIn.HasCrmUserSession)
             {
-                if (this.Direction == SyncDirection.Direction.FromCrmToOutlook ||
-                    this.Direction == SyncDirection.Direction.BiDirectional)
+                if (SyncDirection.AllowInbound(this.Direction))
                 {
                     Log.Debug($"{this.GetType().Name} SynchroniseAll starting");
                     this.SynchroniseAll();
@@ -164,7 +163,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// List of the synchronisation state of all items which may require synchronisation.
         /// </summary>
-        protected ThreadSafeList<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = null;
+        protected ThreadSafeList<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = new ThreadSafeList<SyncState<OutlookItemType>>();
 
         /// <summary>
         /// The direction(s) in which I sync
@@ -322,8 +321,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else
                 {
-                    if (Direction == SyncDirection.Direction.FromOutlookToCrm || 
-                        Direction == SyncDirection.Direction.BiDirectional)
+                    if (SyncDirection.AllowOutbound(Direction))
                     {
                         if (this.HasImportAccess(crmType))
                         {
@@ -540,8 +538,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected void RemoveFromCrm(SyncState state)
         {
-            if (Direction == SyncDirection.Direction.FromOutlookToCrm ||
-                Direction == SyncDirection.Direction.BiDirectional)
+            if (SyncDirection.AllowOutbound(Direction))
             {
                 var crmEntryId = state.CrmEntryId;
                 if (!string.IsNullOrEmpty(crmEntryId) && this.HasImportAccess(state.CrmType))
