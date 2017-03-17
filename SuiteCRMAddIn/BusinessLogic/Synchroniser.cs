@@ -732,14 +732,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="syncState">The sync state of the item to remove.</param>
         protected void RemoveItemAndSyncState(SyncState<OutlookItemType> syncState)
         {
-            this.LogItemAction(syncState.OutlookItem, "ContactSyncing.RemoveItemAndSyncState, deleting item");
+            this.LogItemAction(syncState.OutlookItem, "Synchroniser.RemoveItemAndSyncState, deleting item");
             try
             {
                 syncState.DeleteItem();
             }
             catch (Exception ex)
             {
-                Log.Error("ContactSyncing.RemoveItemAndSyncState: Exception  oItem.oItem.Delete", ex);
+                Log.Error("ContactSyncing.Synchroniser: Exception  oItem.oItem.Delete", ex);
             }
             this.RemoveItemSyncState(syncState);
         }
