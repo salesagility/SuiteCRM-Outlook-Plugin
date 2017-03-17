@@ -150,20 +150,28 @@ namespace SuiteCRMAddIn
             logLevelSelector.ValueMember = "Key";
             logLevelSelector.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.LogLevel);
 
+            this.PopulateDirectionsMenu(syncCalendarMenu);
+            this.PopulateDirectionsMenu(syncContactsMenu);
+
+            this.syncCalendarMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncCalendar);
+            this.syncContactsMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncContacts);
+        }
+
+        /// <summary>
+        /// Populate one of the two synchronisation direction menus.
+        /// </summary>
+        /// <param name="directionMenu">The menu to populate.</param>
+        private void PopulateDirectionsMenu(ComboBox directionMenu)
+        {
             var syncDirectionItems = Enum.GetValues(typeof(SyncDirection.Direction))
                     .Cast<SyncDirection.Direction>()
                     .Select(p => new { Key = (int)p, Value = SyncDirection.ToString(p) })
                     .OrderBy(o => o.Key)
                     .ToList();
 
-            this.syncContactsMenu.ValueMember = "Key";
-            this.syncContactsMenu.DisplayMember = "Value";
-            this.syncCalendarMenu.ValueMember = "Key";
-            this.syncCalendarMenu.DisplayMember = "Value";
-            this.syncContactsMenu.DataSource = syncDirectionItems;
-            this.syncCalendarMenu.DataSource = syncDirectionItems;
-            this.syncCalendarMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncCalendar);
-            this.syncContactsMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncContacts);
+            directionMenu.ValueMember = "Key";
+            directionMenu.DisplayMember = "Value";
+            directionMenu.DataSource = syncDirectionItems;
         }
 
         private void GetAccountAutoArchivingSettings()
