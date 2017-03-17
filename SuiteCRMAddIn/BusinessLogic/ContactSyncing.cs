@@ -126,12 +126,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* The date_modified value in CRM does not get updated when the sync_contact value
                  * is changed. But seeing this value can only be updated at the CRM side, if it
-                 * has changed the change must have been at the CRM side. Note also that it must 
-                 * have changed to 'false', because if it had changed to 'true' we would have 
-                 * synced normally in the above branch. Delete from Outlook. */
-                Log.Warn($"ContactSyncing.UpdateFromCrm, entry id is '{id}', sync_contact has changed to {ShouldSyncContact(crmItem)}, deleting");
+                 * has changed the change must have been at the CRM side. If it has changed to
+                 * 'false', delete it from Outlook. */
+                object val = crmItem.GetValue("sync_contact");
+                Log.Warn($"ContactSyncing.UpdateFromCrm, entry id is '{id}', sync_contact has changed to {val}");
 
-                this.RemoveItemAndSyncState(syncStateForItem);
+                if (Boolean.FalseString.ToLower().Equals(val.ToString().ToLower()))
+                {
+                    this.RemoveItemAndSyncState(syncStateForItem);
+                }
 
                 result = syncStateForItem;
             }
