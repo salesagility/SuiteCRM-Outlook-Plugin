@@ -50,7 +50,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             switch (direction)
             {
                 case Direction.Neither:
-                    result = "Neither";
+                    result = "None";
                     break;
                 case Direction.FromCrmToOutlook:
                     result = "From CRM to Outlook";
@@ -59,7 +59,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     result = "From Outlook to CRM";
                     break;
                 case Direction.BiDirectional:
-                    result = "Both directions";
+                    result = "Both";
                     break;
                 default:
                     result = "Shouldn't happen";
@@ -68,5 +68,26 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             return result;
         }
+
+        /// <summary>
+        /// Does this direction allow inbound transfers to Outlook?
+        /// </summary>
+        /// <param name="direction">The direction.</param>
+        /// <returns>True if this direction allows inbound transfers.</returns>
+        public static bool AllowInbound(Direction direction)
+        {
+            return (direction == Direction.FromCrmToOutlook || direction == Direction.BiDirectional);
+        }
+
+        /// <summary>
+        /// Does this direction allow outbound transfers from Outlook?
+        /// </summary>
+        /// <param name="direction">The direction.</param>
+        /// <returns>True if this direction allows outbound transfers.</returns>
+        public static bool AllowOutbound(Direction direction)
+        {
+            return (direction == Direction.FromOutlookToCrm || direction == Direction.BiDirectional);
+        }
+
     }
 }

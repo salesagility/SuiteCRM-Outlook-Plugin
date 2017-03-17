@@ -51,6 +51,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="BusinessLogic\LicenceValidationHelperTests.cs" />
+    <Compile Include="BusinessLogic\SyncDirectionTests.cs" />
     <Compile Include="WithLoggerTests.cs" />
     <Compile Include="LDAPAuthenticationHelperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

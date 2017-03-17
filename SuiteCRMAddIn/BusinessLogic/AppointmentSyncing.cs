@@ -693,8 +693,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true iff settings.SyncCalendar is true, the item is not null, and it is not private (normal sensitivity)</returns>
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
-            return olItem != null && 
-                (settings.SyncCalendar == BusinessLogic.SyncDirection.Direction.FromOutlookToCrm || settings.SyncCalendar == BusinessLogic.SyncDirection.Direction.FromOutlookToCrm) && 
+            var syncConfigured = SyncDirection.AllowOutbound(settings.SyncCalendar);
+            return olItem != null &&
+                syncConfigured && 
                 olItem.Sensitivity == Outlook.OlSensitivity.olNormal;
         }
 

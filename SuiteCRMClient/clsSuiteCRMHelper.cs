@@ -199,19 +199,49 @@ namespace SuiteCRMClient
         /// </summary>
         public static bool SetRelationshipUnsafe(eSetRelationshipValue info)
         {
+            bool result;
+
             try
             {
-                return SetRelationship(info);
+                result = SetRelationship(info);
+
+                if (!result)
+                {
+                    Log.Warn("SuiteCrmHelper.SetRelationshipUnsafe: failed to set relationship");
+                }
             }
             catch (System.Exception exception)
             {
-                Log.Warn("SetRelationship exception" + exception.ToString());
+                Log.Error("SuiteCrmHelper.SetRelationshipUnsafe:", exception);
                 // Swallow exception(!)
-                return false;
+                result = false;
             }
+
+            return result;
         }
 
-        public static bool SetRelationship(eSetRelationshipValue info)
+        /// <summary>
+        /// The protocols for how link fields are named vary. Try the most likely two possibilities,
+        /// and log failures.
+        /// </summary>
+        /// <param name="relationship">The relationship to set.</param>
+        /// <returns>True if the relationship was created, else false.</returns>
+        public static bool SetRelationship(eSetRelationshipValue relationship)
+        {
+            var linkFieldPossibility1 = $"{relationship.module2}".ToLower();
+            var linkFieldPossibility2 = $"{relationship.module2}_{relationship.module1}".ToLower();
+            return SetRelationship(relationship, linkFieldPossibility1) ||
+                SetRelationship(relationship, linkFieldPossibility2);
+        }
+
+        /// <summary>
+        /// The protocols for how link fields are named vary. Try this possibility,
+        /// and log failures.
+        /// </summary>
+        /// <param name="relationship">The relationship to set.</param>
+        /// <param name="linkFieldName">The link field name to try.</param>
+        /// <returns>True if the relationship was created, else false.</returns>
+        public static bool SetRelationship(eSetRelationshipValue info, string linkFieldName)
         {
             EnsureLoggedIn();
             object data = new
@@ -219,12 +249,19 @@ namespace SuiteCRMClient
                 @session = SuiteCRMUserSession.id,
                 @module_name = info.module1,
                 @module_id = info.module1_id,
-                @link_field_name = info.module2,
-                @related_ids = new string[] {info.module2_id}
+                @link_field_name = linkFieldName,
+                @related_ids = new string[] { info.module2_id }
             };
             var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+
+            if (_value.Failed > 0)
+            {
+                Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
+            }
+
             return (_value.Created != 0);
         }
+
 
         public static void UploadAttachment(clsEmailAttachments objAttachment, string email_id)
         {
