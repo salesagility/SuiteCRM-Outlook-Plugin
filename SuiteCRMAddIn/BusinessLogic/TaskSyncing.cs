@@ -263,34 +263,30 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (ItemsSyncState == null)
+                Outlook.Items items = taskFolder.Items; //.Restrict("[MessageClass] = 'IPM.Task'" + GetStartDateString());
+                foreach (Outlook.TaskItem oItem in items)
                 {
-                    ItemsSyncState = new ThreadSafeList<SyncState<Outlook.TaskItem>>();
-                    Outlook.Items items = taskFolder.Items; //.Restrict("[MessageClass] = 'IPM.Task'" + GetStartDateString());
-                    foreach (Outlook.TaskItem oItem in items)
+                    if (oItem.DueDate < DateTime.Now.AddDays(-5))
+                        continue;
+                    Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
+                    if (oProp != null)
                     {
-                        if (oItem.DueDate < DateTime.Now.AddDays(-5))
-                            continue;
-                        Outlook.UserProperty oProp = oItem.UserProperties["SOModifiedDate"];
-                        if (oProp != null)
+                        Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
+                        ItemsSyncState.Add(new TaskSyncState
                         {
-                            Outlook.UserProperty oProp2 = oItem.UserProperties["SEntryID"];
-                            ItemsSyncState.Add(new TaskSyncState
-                            {
-                                OutlookItem = oItem,
-                                //OModifiedDate = "Fresh",
-                                OModifiedDate = DateTime.UtcNow,
+                            OutlookItem = oItem,
+                            //OModifiedDate = "Fresh",
+                            OModifiedDate = DateTime.UtcNow,
 
-                                CrmEntryId = oProp2.Value.ToString()
-                            });
-                        }
-                        else
+                            CrmEntryId = oProp2.Value.ToString()
+                        });
+                    }
+                    else
+                    {
+                        ItemsSyncState.Add(new TaskSyncState
                         {
-                            ItemsSyncState.Add(new TaskSyncState
-                            {
-                                OutlookItem = oItem
-                            });
-                        }
+                            OutlookItem = oItem
+                        });
                     }
                 }
             }

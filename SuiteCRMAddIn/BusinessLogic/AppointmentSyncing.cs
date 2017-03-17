@@ -445,42 +445,37 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (ItemsSyncState == null)
+                foreach (Outlook.AppointmentItem aItem in appointmentsFolder.Items)
                 {
-                    ItemsSyncState = new ThreadSafeList<SyncState<Outlook.AppointmentItem>>();
-
-                    foreach (Outlook.AppointmentItem aItem in appointmentsFolder.Items)
+                    if (aItem.Start >= this.GetStartDate())
                     {
-                        if (aItem.Start >= this.GetStartDate())
+                        Outlook.UserProperty olPropertyModified = aItem.UserProperties["SOModifiedDate"];
+                        if (olPropertyModified != null)
                         {
-                            Outlook.UserProperty olPropertyModified = aItem.UserProperties["SOModifiedDate"];
-                            if (olPropertyModified != null)
+                            /* The appointment probably already has the three magic properties 
+                             * required for synchronisation; is that a proxy for believing that it
+                             * already exists in CRM? If so, is it reliable? */
+                            Outlook.UserProperty olPropertyType = aItem.UserProperties["SType"];
+                            Outlook.UserProperty olPropertyEntryId = aItem.UserProperties["SEntryID"];
+                            var crmType = olPropertyType.Value.ToString();
+                            ItemsSyncState.Add(new AppointmentSyncState(crmType)
                             {
-                                /* The appointment probably already has the three magic properties 
-                                 * required for synchronisation; is that a proxy for believing that it
-                                 * already exists in CRM? If so, is it reliable? */
-                                Outlook.UserProperty olPropertyType = aItem.UserProperties["SType"];
-                                Outlook.UserProperty olPropertyEntryId = aItem.UserProperties["SEntryID"];
-                                var crmType = olPropertyType.Value.ToString();
-                                ItemsSyncState.Add(new AppointmentSyncState(crmType)
-                                {
-                                    OutlookItem = aItem,
-                                    OModifiedDate = DateTime.UtcNow,
-                                    CrmEntryId = olPropertyEntryId.Value.ToString()
-                                });
-                                LogItemAction(aItem, "AppointmentSyncing.GetOutlookItems: Adding known item to queue");
-                            }
-                            else
+                                OutlookItem = aItem,
+                                OModifiedDate = DateTime.UtcNow,
+                                CrmEntryId = olPropertyEntryId.Value.ToString()
+                            });
+                            LogItemAction(aItem, "AppointmentSyncing.GetOutlookItems: Adding known item to queue");
+                        }
+                        else
+                        {
+                            ItemsSyncState.Add(new AppointmentSyncState(AppointmentSyncing.CrmModule)
                             {
-                                ItemsSyncState.Add(new AppointmentSyncState(AppointmentSyncing.CrmModule)
-                                {
-                                    OutlookItem = aItem,
-                                });
-                                LogItemAction(aItem, "AppointmentSyncing.GetOutlookItems: Adding unknown item to queue");
-                            }
+                                OutlookItem = aItem,
+                            });
+                            LogItemAction(aItem, "AppointmentSyncing.GetOutlookItems: Adding unknown item to queue");
                         }
                     }
-                }
+                }                
             }
             catch (Exception ex)
             {
