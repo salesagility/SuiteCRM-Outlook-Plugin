@@ -45,7 +45,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.fetchQueryPrefix = "contacts.assigned_user_id = '{0}'";
         }
 
-        public override bool SyncingEnabled => settings.SyncContacts;
+        public override SyncDirection.Direction Direction => settings.SyncContacts;
 
         public override string DefaultCrmModule
         {
@@ -265,35 +265,38 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state.</returns>
         private SyncState<Outlook.ContactItem> UpdateExistingOutlookItemFromCrm(eEntryValue crmItem, SyncState<Outlook.ContactItem> itemSyncState)
         {
-            Outlook.ContactItem outlookItem = itemSyncState.OutlookItem;
-            Outlook.UserProperty dateModifiedProp = outlookItem.UserProperties["SOModifiedDate"];
-            Outlook.UserProperty shouldSyncProp = outlookItem.UserProperties["SShouldSync"];
-            this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
-
-            if (CrmItemChanged(crmItem, outlookItem))
+            if (!itemSyncState.IsDeletedInOutlook)
             {
-                DateTime crmDate = DateTime.Parse(crmItem.GetValueAsString("date_modified"));
-                DateTime outlookDate = dateModifiedProp == null ? DateTime.MinValue : DateTime.Parse(dateModifiedProp.Value.ToString());
+                Outlook.ContactItem outlookItem = itemSyncState.OutlookItem;
+                Outlook.UserProperty dateModifiedProp = outlookItem.UserProperties["SOModifiedDate"];
+                Outlook.UserProperty shouldSyncProp = outlookItem.UserProperties["SShouldSync"];
+                this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
 
-                if (crmDate > this.LastRunCompleted && outlookDate > this.LastRunCompleted)
+                if (CrmItemChanged(crmItem, outlookItem))
                 {
-                    MessageBox.Show(
-                        $"Contact {outlookItem.FirstName} {outlookItem.LastName} has changed both in Outlook and CRM; please check which is correct",
-                        "Update problem", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-                else if (crmDate > outlookDate)
-                {
-                    this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem);
+                    DateTime crmDate = DateTime.Parse(crmItem.GetValueAsString("date_modified"));
+                    DateTime outlookDate = dateModifiedProp == null ? DateTime.MinValue : DateTime.Parse(dateModifiedProp.Value.ToString());
+
+                    if (crmDate > this.LastRunCompleted && outlookDate > this.LastRunCompleted)
+                    {
+                        MessageBox.Show(
+                            $"Contact {outlookItem.FirstName} {outlookItem.LastName} has changed both in Outlook and CRM; please check which is correct",
+                            "Update problem", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else if (crmDate > outlookDate)
+                    {
+                        this.SetOutlookItemPropertiesFromCrmItem(crmItem, outlookItem);
+                    }
+
+                    this.LogItemAction(outlookItem, $"ContactSyncing.UpdateExistingOutlookItemFromCrm, saving with {outlookItem.Sensitivity}");
+
+                    outlookItem.Save();
                 }
 
-                this.LogItemAction(outlookItem, $"ContactSyncing.UpdateExistingOutlookItemFromCrm, saving with {outlookItem.Sensitivity}");
-
-                outlookItem.Save();
+                this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
+                itemSyncState.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
             }
-
-            this.LogItemAction(outlookItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
-            itemSyncState.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
-            return itemSyncState;
+	        return itemSyncState;
         }
 
         /// <summary>

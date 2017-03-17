@@ -53,7 +53,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public override bool SyncingEnabled => settings.SyncCalendar;
+        public override SyncDirection.Direction Direction => settings.SyncCalendar;
 
         public override void SynchroniseAll()
         {
@@ -205,16 +205,18 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private SyncState<Outlook.TaskItem> UpdateExistingOutlookItemFromCrm(eEntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due, SyncState<Outlook.TaskItem> syncStateForItem)
         {
-            Outlook.TaskItem outlookItem = syncStateForItem.OutlookItem;
-            Outlook.UserProperty oProp = outlookItem.UserProperties["SOModifiedDate"];
-
-            if (oProp.Value != crmItem.GetValueAsString("date_modified"))
+            if (!syncStateForItem.IsDeletedInOutlook)
             {
-                SetOutlookItemPropertiesFromCrmItem(crmItem, date_start, date_due, time_start, time_due, outlookItem);
-                outlookItem.Save();
-            }
-            syncStateForItem.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
+                Outlook.TaskItem outlookItem = syncStateForItem.OutlookItem;
+                Outlook.UserProperty oProp = outlookItem.UserProperties["SOModifiedDate"];
 
+                if (oProp.Value != crmItem.GetValueAsString("date_modified"))
+                {
+                    SetOutlookItemPropertiesFromCrmItem(crmItem, date_start, date_due, time_start, time_due, outlookItem);
+                    outlookItem.Save();
+                }
+                syncStateForItem.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
+            }
             return syncStateForItem;
         }
 

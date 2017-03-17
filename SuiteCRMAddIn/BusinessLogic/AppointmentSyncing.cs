@@ -84,7 +84,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
         }
 
-        public override bool SyncingEnabled => settings.SyncCalendar;
+        public override SyncDirection.Direction Direction => settings.SyncCalendar;
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olAppointmentItem;
 
@@ -693,7 +693,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true iff settings.SyncCalendar is true, the item is not null, and it is not private (normal sensitivity)</returns>
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
-            return olItem != null && settings.SyncCalendar && olItem.Sensitivity == Outlook.OlSensitivity.olNormal;
+            return olItem != null && 
+                (settings.SyncCalendar == BusinessLogic.SyncDirection.Direction.FromOutlookToCrm || settings.SyncCalendar == BusinessLogic.SyncDirection.Direction.FromOutlookToCrm) && 
+                olItem.Sensitivity == Outlook.OlSensitivity.olNormal;
         }
 
         /// <summary>
@@ -752,24 +754,28 @@ namespace SuiteCRMAddIn.BusinessLogic
             SyncState<Outlook.AppointmentItem> oItem)
         {
             LogItemAction(oItem.OutlookItem, "AppointmentSyncing.UpdateExistingOutlookItemFromCrm");
-            Outlook.AppointmentItem olAppointment = oItem.OutlookItem;
-            Outlook.UserProperty olPropertyModifiedDate = olAppointment.UserProperties["SOModifiedDate"];
 
-            if (olPropertyModifiedDate.Value != crmItem.GetValueAsString("date_modified"))
+            if (!oItem.IsDeletedInOutlook)
             {
-                olAppointment.Subject = crmItem.GetValueAsString("name");
-                olAppointment.Body = crmItem.GetValueAsString("description");
-                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
-                {
-                    UpdateOutlookStartAndDuration(crmType, crmItem, date_start, olAppointment);
-                }
+                Outlook.AppointmentItem olAppointment = oItem.OutlookItem;
+                Outlook.UserProperty olPropertyModifiedDate = olAppointment.UserProperties["SOModifiedDate"];
 
-                EnsureSynchronisationPropertiesForOutlookItem(olAppointment, crmItem.GetValueAsString("date_modified"), crmType, crmItem.id);
-                olAppointment.Save();
-                LogItemAction(oItem.OutlookItem, "AppointmentSyncing.UpdateExistingOutlookItemFromCrm, item saved");
+                if (olPropertyModifiedDate.Value != crmItem.GetValueAsString("date_modified"))
+                {
+                    olAppointment.Subject = crmItem.GetValueAsString("name");
+                    olAppointment.Body = crmItem.GetValueAsString("description");
+                    if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
+                    {
+                        UpdateOutlookStartAndDuration(crmType, crmItem, date_start, olAppointment);
+                    }
+
+                    EnsureSynchronisationPropertiesForOutlookItem(olAppointment, crmItem.GetValueAsString("date_modified"), crmType, crmItem.id);
+                    olAppointment.Save();
+                    LogItemAction(oItem.OutlookItem, "AppointmentSyncing.UpdateExistingOutlookItemFromCrm, item saved");
+                }
+                Log.Warn((string)("Not default dResult.date_modified= " + crmItem.GetValueAsString("date_modified")));
+                oItem.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
             }
-            Log.Warn((string)("Not default dResult.date_modified= " + crmItem.GetValueAsString("date_modified")));
-            oItem.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
 
             return oItem;
         }

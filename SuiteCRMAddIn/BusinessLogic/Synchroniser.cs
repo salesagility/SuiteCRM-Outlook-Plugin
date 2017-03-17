@@ -106,7 +106,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (Globals.ThisAddIn.HasCrmUserSession)
             {
-                if (this.SyncingEnabled)
+                if (this.Direction == SyncDirection.Direction.FromCrmToOutlook ||
+                    this.Direction == SyncDirection.Direction.BiDirectional)
                 {
                     Log.Debug($"{this.GetType().Name} SynchroniseAll starting");
                     this.SynchroniseAll();
@@ -165,7 +166,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         protected ThreadSafeList<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = null;
 
-        public abstract bool SyncingEnabled { get; }
+        /// <summary>
+        /// The direction(s) in which I sync
+        /// </summary>
+        public abstract SyncDirection.Direction Direction { get; }
 
         /// <summary>
         /// Get a date stamp for midnight five days ago (why?).
@@ -318,7 +322,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else
                 {
-                    if (SyncingEnabled)
+                    if (Direction == SyncDirection.Direction.FromOutlookToCrm || 
+                        Direction == SyncDirection.Direction.BiDirectional)
                     {
                         if (this.HasImportAccess(crmType))
                         {
@@ -535,17 +540,20 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected void RemoveFromCrm(SyncState state)
         {
-            if (!SyncingEnabled) return;
-            var crmEntryId = state.CrmEntryId;
-            if (!string.IsNullOrEmpty(crmEntryId) && this.HasImportAccess(state.CrmType))
+            if (Direction == SyncDirection.Direction.FromOutlookToCrm ||
+                Direction == SyncDirection.Direction.BiDirectional)
             {
-                eNameValue[] data = new eNameValue[2];
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                clsSuiteCRMHelper.SetEntryUnsafe(data, state.CrmType);
-            }
+                var crmEntryId = state.CrmEntryId;
+                if (!string.IsNullOrEmpty(crmEntryId) && this.HasImportAccess(state.CrmType))
+                {
+                    eNameValue[] data = new eNameValue[2];
+                    data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);
+                    data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
+                    clsSuiteCRMHelper.SetEntryUnsafe(data, state.CrmType);
+                }
 
-            state.RemoveCrmLink();
+                state.RemoveCrmLink();
+            }
         }
 
         protected DateTime ParseDateTimeFromUserProperty(string propertyValue)
