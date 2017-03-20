@@ -96,7 +96,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             LogItemAction(appointment, "AppointmentSyncing.OutlookItemAdded");
 
-            if (IsCurrentView && !this.ItemsSyncState.Exists(a => a.OutlookItem.EntryID == appointment.EntryID))
+            if (IsCurrentView && !this.ItemsSyncState
+                .Where(a => !a.IsDeletedInOutlook)
+                .Where(a => a.OutlookItem != null)
+                .ToList().Exists(a => a.OutlookItem.EntryID == appointment.EntryID))
             {
                 AddOrUpdateItemFromOutlookToCrm(appointment, AppointmentSyncing.CrmModule);
             }
@@ -121,7 +124,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             LogItemAction(olItem, "AppointmentSyncing.OutlookItemChanged");
             string entryId = olItem.EntryID;
-            var syncStateForItem = GetSyncStateForItem(olItem);
+            var syncStateForItem = GetExistingSyncState(olItem);
             if (syncStateForItem != null)
             {
                 var utcNow = DateTime.UtcNow;
@@ -351,8 +354,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     /* Issue #14: if it is non-public, it should be removed from or not copied to CRM */
                     LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Deleting");
-                    var syncStateForItem = this.GetSyncStateForItem(olItem);
-
+ 
                     DeleteFromCrm(olItem);
                 }
                 else if (ShouldDespatchToCrm(olItem))
@@ -426,7 +428,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* Remove the magic properties */
                 RemoveSynchronisationPropertiesFromOutlookItem(olItem);
-                SyncState<Outlook.AppointmentItem> syncStateForItem = GetSyncStateForItem(olItem);
+                SyncState<Outlook.AppointmentItem> syncStateForItem = GetExistingSyncState(olItem);
                 if (syncStateForItem != null)
                 {
                     this.RemoveFromCrm(syncStateForItem);
@@ -484,33 +486,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Get the unique sync state related to this Outlook item from among my sync states, if present.
-        /// </summary>
-        /// <param name="olItem">The Outlook item to seek</param>
-        /// <returns>The sync state related to that item.</returns>
-        private SyncState<Outlook.AppointmentItem> GetSyncStateForItem(Outlook.AppointmentItem olItem)
-        {
-            SyncState<Outlook.AppointmentItem> result;
-            try
-            {
-                /* if there are duplicate entries I want them logged */
-                result = this.ItemsSyncState.SingleOrDefault(a => a.OutlookItem.EntryID == olItem.EntryID);
-            }
-            catch (InvalidOperationException notUnique)
-            {
-                Log.Error(
-                    String.Format(
-                        "AppointmentSyncing.AddItemFromOutlookToCrm: Id {0} was not unique in this.ItemsSyncState?",
-                        olItem.EntryID),
-                    notUnique);
-
-                result = this.ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == olItem.EntryID);
-            }
-
-            return result;
-        }
-
-        /// <summary>
         /// Log a message regarding this Outlook appointment.
         /// </summary>
         /// <param name="olItem">The outlook item.</param>
@@ -555,9 +530,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             date_start = date_start.Add(new DateTimeOffset(DateTime.Now).Offset); // correct for offset from UTC.
             if (date_start >= GetStartDate())
             {
-                /* search for the item among the items I already know about */
-                var oItem = this.ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItem.GetValueAsString("id") && a.CrmType == crmType);
-                if (oItem == null)
+                /* search for the item among the sync states I already know about */
+                var syncState = this.GetExistingSyncState(crmItem);
+                if (syncState == null)
                 {
                     /* didn't find it, so add it to Outlook */
                     result = AddNewItemFromCrmToOutlook(folder, crmType, crmItem, date_start);
@@ -565,7 +540,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 else
                 {
                     /* found it, so update it from the CRM item */
-                    result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, date_start, oItem);
+                    result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, date_start, syncState);
                 }
             }
 
@@ -816,9 +791,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             };
         }
 
-        protected override SyncState<Outlook.AppointmentItem> GetExistingSyncState(Outlook.AppointmentItem oItem)
+        internal override string GetOutlookEntryId(Outlook.AppointmentItem olItem)
         {
-            return ItemsSyncState.FirstOrDefault(a => !a.IsDeletedInOutlook && a.OutlookItem.EntryID == oItem.EntryID);
+            return olItem.EntryID;
         }
     }
 }
