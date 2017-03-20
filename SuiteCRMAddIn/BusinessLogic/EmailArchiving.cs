@@ -139,7 +139,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void ArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = string.Empty)
+        private void ArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
             Log.Info($"Archiving {archiveType} email “{objMail.Subject}”");
             var objEmail = SerialiseEmailObject(objMail, archiveType);
@@ -186,7 +186,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return mailArchive;
         }
 
-        private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = string.Empty)
+        private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
             try
             {
@@ -328,68 +328,156 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        /// <summary>
+        /// Save this email item, of this type, to CRM.
+        /// </summary>
+        /// <param name="mailItem">The email item to send.</param>
+        /// <param name="type">?unknown</param>
+        /// <returns>An archive result comprising the CRM id of the email, if stored, 
+        /// and a list of exceptions encountered in the process.</returns>
         public ArchiveResult SaveEmailToCrm(Outlook.MailItem mailItem, string type)
         {
+            ArchiveResult result;
             try
             {
                 SaveMailItemIfNecessary(mailItem, type);
 
-                eNameValue[] data = new eNameValue[12];
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? string.Empty);
-                data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem, type).ToString("yyyy-MM-dd HH:mm:ss"));
-                data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
-                data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
-                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", mailItem.Body ?? string.Empty);
-                data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", mailItem.HTMLBody ?? string.Empty);
-                data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(mailItem, type));
-                data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", mailItem.To);
-                data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", mailItem.CC);
-                data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", mailItem.BCC);
-                data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", mailItem.ReplyRecipientNames);
-                data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
+                result = ConstructAndDespatchCrmItem(mailItem, type);
 
-                string crmEmailId;
-                try
+                if (!String.IsNullOrEmpty(result.EmailId))
                 {
-                    crmEmailId = clsSuiteCRMHelper.SetEntry(data, "Emails");
-                }
-                catch (System.Exception firstFailure)
-                {
-                    Log.Warn("EmailArchiving.SaveEmailToCrm: attempt to upload email failed", firstFailure);
-                    data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", string.Empty);
-                }
+                    /* we successfully saved the email item itself */
+                    mailItem.Categories = "SuiteCRM";
+                    mailItem.Save();
 
-                mailItem.Categories = "SuiteCRM";
-                mailItem.Save();
-                var warnings = new List<System.Exception>();
-                if (settings.ArchiveAttachments)
-                {
-                    foreach (Outlook.Attachment attachment in mailItem.Attachments)
+                    if (mailItem.Attachments.Count > 0)
                     {
-                        try
-                        {
-                            clsSuiteCRMHelper.UploadAttachment(
-                                new clsEmailAttachments
-                                {
-                                    DisplayName = attachment.DisplayName,
-                                    FileContentInBase64String = GetAttachmentBytes(attachment, mailItem)
-                                },
-                                crmEmailId);
-                        }
-                        catch (System.Exception problem)
-                        {
-                            Log.Warn("Failed to upload email attachment", problem);
-                            warnings.Add(problem);
-                        }
+                        result = ConstructAndDespatchAttachments(mailItem, result);
                     }
                 }
-                return ArchiveResult.Success(crmEmailId, warnings);
             }
             catch (System.Exception failure)
             {
                 Log.Warn("Could not upload email to CRM", failure);
-                return ArchiveResult.Failure(failure);
+                result = ArchiveResult.Failure(failure);
             }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Construct and despatch CRM representations of the attachments of this email item to CRM.
+        /// </summary>
+        /// <param name="mailItem">The mail item whose attachments should be sent.</param>
+        /// <param name="result">The result of transmitting the item itself to CRM.</param>
+        /// <returns>A (possibly modified) archive result.</returns>
+        private ArchiveResult ConstructAndDespatchAttachments(Outlook.MailItem mailItem, ArchiveResult result)
+        {
+            var warnings = new List<System.Exception>(result.Problems);
+            if (settings.ArchiveAttachments)
+            {
+                foreach (Outlook.Attachment attachment in mailItem.Attachments)
+                {
+                    warnings.Add(ConstructAndDespatchCrmAttachment(mailItem, result.EmailId, attachment));
+                }
+            }
+
+            if (warnings.Where(w => w != null).Count() > result.Problems.Count())
+            {
+                result = ArchiveResult.Success(result.EmailId, warnings.Where(w => w != null));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Construct and despatch a CRM representation of this attachment to CRM.
+        /// </summary>
+        /// <param name="mailItem">The mail item to which this attachment is attached.</param>
+        /// <param name="crmId">The id of that mail item in CRM.</param>
+        /// <param name="attachment">The attachment to despatch.</param>
+        /// <returns>Any exception which was thrown while attempting to despatch the attachment.</returns>
+        private Exception ConstructAndDespatchCrmAttachment(Outlook.MailItem mailItem, string crmId, Outlook.Attachment attachment)
+        {
+            Exception result = null;
+            try
+            {
+                clsSuiteCRMHelper.UploadAttachment(
+                    new clsEmailAttachments
+                    {
+                        DisplayName = attachment.DisplayName,
+                        FileContentInBase64String = GetAttachmentBytes(attachment, mailItem)
+                    },
+                    crmId);
+            }
+            catch (System.Exception problem)
+            {
+                Log.Warn("Failed to upload email attachment", problem);
+                result = problem;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Construct and despatch a CRM representation of this mail item, without its attachments, to CRM
+        /// </summary>
+        /// <param name="mailItem">The mail item to despatch.</param>
+        /// <param name="type">?unknown.</param>
+        /// <returns>An archive result comprising the CRM id of the email, if stored, 
+        /// and a list of exceptions encountered in the process.</returns>
+        private ArchiveResult ConstructAndDespatchCrmItem(Outlook.MailItem mailItem, string type)
+        {
+            ArchiveResult result;
+            eNameValue[] crmItem = ConstructCrmItem(mailItem, type);
+
+            try
+            {
+                result = ArchiveResult.Success(clsSuiteCRMHelper.SetEntry(crmItem, "Emails"), null);
+            }
+            catch (System.Exception firstFailure)
+            {
+                Log.Warn("EmailArchiving.SaveEmailToCrm: first attempt to upload email failed", firstFailure);
+
+                try
+                {
+                    /* try again without the HTML body. I have no idea why this might make a difference. */
+                    crmItem[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", string.Empty);
+
+                    result = ArchiveResult.Success(clsSuiteCRMHelper.SetEntry(crmItem, "Emails"), new[] { firstFailure });
+                }
+                catch (System.Exception secondFailure)
+                {
+                    Log.Warn("EmailArchiving.SaveEmailToCrm: second attempt to upload email (without HTML body) failed", firstFailure);
+                    result = ArchiveResult.Failure(new[] { firstFailure, secondFailure });
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Construct a CRM representation of this mail item, without its attachments if any.
+        /// </summary>
+        /// <param name="mailItem">The mail item.</param>
+        /// <param name="type">?unknown.</param>
+        /// <returns>A CRM representation of the item, as a set of name/value pairs.</returns>
+        private eNameValue[] ConstructCrmItem(Outlook.MailItem mailItem, string type)
+        {
+            eNameValue[] data = new eNameValue[12];
+            data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? string.Empty);
+            data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem, type).ToString("yyyy-MM-dd HH:mm:ss"));
+            data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
+            data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
+            data[4] = clsSuiteCRMHelper.SetNameValuePair("description", mailItem.Body ?? string.Empty);
+            data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", mailItem.HTMLBody ?? string.Empty);
+            data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(mailItem, type));
+            data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", mailItem.To);
+            data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", mailItem.CC);
+            data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", mailItem.BCC);
+            data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", mailItem.ReplyRecipientNames);
+            data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
+            return data;
         }
 
         private DateTime DateTimeOfMailItem(Outlook.MailItem mailItem, string type)
