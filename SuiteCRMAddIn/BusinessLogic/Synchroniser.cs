@@ -369,7 +369,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// an update, not an add).</param>
         /// <returns>The id of the entry added o</returns>
         //protected abstract string AddOrUpdateItemFromOutlookToCrm(OutlookItemType item, string crmType, string entryId = string.Empty);
-        protected virtual string AddOrUpdateItemFromOutlookToCrm(OutlookItemType olItem, string crmType, string entryId = string.Empty)
+        protected virtual string AddOrUpdateItemFromOutlookToCrm(OutlookItemType olItem, string crmType, string entryId = "")
         {
             string result = entryId;
 

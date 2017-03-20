@@ -344,7 +344,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmType">The CRM type to which it should be added</param>
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
-        protected override string AddOrUpdateItemFromOutlookToCrm(Outlook.AppointmentItem olItem, string crmType, string entryId = string.Empty)
+        protected override string AddOrUpdateItemFromOutlookToCrm(Outlook.AppointmentItem olItem, string crmType, string entryId = "")
         {
             string result = entryId;
 
