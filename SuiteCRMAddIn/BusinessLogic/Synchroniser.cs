@@ -80,6 +80,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.context = context;
             InstallEventHandlers();
             this.AddSuiteCrmOutlookCategory();
+            GetOutlookItems(this.GetDefaultFolder());
         }
 
 
@@ -132,7 +133,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Outlook.MAPIFolder folder = GetDefaultFolder();
 
-                GetOutlookItems(folder);
                 SyncFolder(folder, this.DefaultCrmModule);
             }
             else

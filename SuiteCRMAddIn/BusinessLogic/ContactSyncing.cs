@@ -121,19 +121,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
             else if (syncStateForItem != null &&
-                syncStateForItem.OutlookItem != null && 
-                ShouldSyncFlagChanged(syncStateForItem.OutlookItem, crmItem))
+                syncStateForItem.OutlookItem != null)
             {
                 /* The date_modified value in CRM does not get updated when the sync_contact value
                  * is changed. But seeing this value can only be updated at the CRM side, if it
-                 * has changed the change must have been at the CRM side. If it has changed to
-                 * 'false', delete it from Outlook. */
-                object val = crmItem.GetValue("sync_contact");
-                Log.Warn($"ContactSyncing.UpdateFromCrm, entry id is '{id}', sync_contact has changed to {val}");
-
-                if (Boolean.FalseString.ToLower().Equals(val.ToString().ToLower()))
+                 * has changed the change must have been at the CRM side. It doesn't change to false, 
+                 * it simply ceases to be sent. Set the item to Private in Outlook. */
+                if (syncStateForItem.OutlookItem.Sensitivity != Outlook.OlSensitivity.olPrivate)
                 {
-                    this.RemoveItemAndSyncState(syncStateForItem);
+                    Log.Info($"ContactSyncing.UpdateFromCrm: setting sensitivity of contact {crmItem.GetValueAsString("first_name")} {crmItem.GetValueAsString("last_name")} ({crmItem.GetValueAsString("email1")}) to private");
+                    syncStateForItem.OutlookItem.Sensitivity = Outlook.OlSensitivity.olPrivate;
                 }
 
                 result = syncStateForItem;
@@ -253,7 +250,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         private bool CrmItemChanged(eEntryValue crmItem, Outlook.ContactItem outlookItem)
         {
             Outlook.UserProperty dateModifiedProp = outlookItem.UserProperties["SOModifiedDate"];
-            Outlook.UserProperty shouldSyncProp = outlookItem.UserProperties["SShouldSync"];
 
             return (dateModifiedProp.Value != crmItem.GetValueAsString("date_modified") ||
                 ShouldSyncFlagChanged(outlookItem, crmItem));
@@ -334,6 +330,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             outlookItem.BusinessFaxNumber = crmItem.GetValueAsString("phone_fax");
             outlookItem.Title = crmItem.GetValueAsString("salutation");
 
+            if (outlookItem.Sensitivity != Outlook.OlSensitivity.olNormal)
+            {
+                Log.Info($"ContactSyncing.UpdateFromCrm: setting sensitivity of contact {crmItem.GetValueAsString("first_name")} {crmItem.GetValueAsString("last_name")} ({crmItem.GetValueAsString("email1")}) to normal");
+                outlookItem.Sensitivity = Outlook.OlSensitivity.olNormal;
+            }
+
             EnsureSynchronisationPropertiesForOutlookItem(
                 outlookItem, 
                 crmItem.GetValueAsString("date_modified"), 
@@ -362,14 +364,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (ItemsSyncState == null)
+                Outlook.Items items = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
+                foreach (Outlook.ContactItem oItem in items)
                 {
-                    ItemsSyncState = new ThreadSafeList<SyncState<Outlook.ContactItem>>();
-                    Outlook.Items items = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
-                    foreach (Outlook.ContactItem oItem in items)
-                    {
-                        AddOrGetSyncState(oItem);
-                    }
+                    AddOrGetSyncState(oItem);
                 }
             }
             catch (Exception ex)
