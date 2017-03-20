@@ -92,7 +92,7 @@ namespace SuiteCRMAddIn
                 {
                     Globals.ThisAddIn.SuiteCRMUserSession =
                         new SuiteCRMClient.UserSession(
-                            "", "", "", "", Log, Globals.ThisAddIn.Settings.RestTimeout);
+                            string.Empty, string.Empty, string.Empty, string.Empty, Log, Globals.ThisAddIn.Settings.RestTimeout);
                 }
 
                 Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
@@ -108,7 +108,7 @@ namespace SuiteCRMAddIn
 
         private void LoadSettings()
         {
-            if (Globals.ThisAddIn.Settings.host != "")
+            if (Globals.ThisAddIn.Settings.host != string.Empty)
             {
                 txtURL.Text = Globals.ThisAddIn.Settings.host;
                 txtUsername.Text = Globals.ThisAddIn.Settings.username;
@@ -236,7 +236,7 @@ namespace SuiteCRMAddIn
                     {
                         txtURL.Text = txtURL.Text + "/";
                     }
-                    if (txtLDAPAuthenticationKey.Text.Trim() == "")
+                    if (txtLDAPAuthenticationKey.Text.Trim() == string.Empty)
                     {
                         txtLDAPAuthenticationKey.Text = null;
                     }
@@ -298,7 +298,7 @@ namespace SuiteCRMAddIn
             {
                 labelKey.Enabled = false;
                 txtLDAPAuthenticationKey.Enabled = false;
-                txtLDAPAuthenticationKey.Text = "";
+                txtLDAPAuthenticationKey.Text = string.Empty;
             }
         }
 
@@ -328,7 +328,7 @@ namespace SuiteCRMAddIn
                 {
                     txtURL.Text = txtURL.Text + "/";
                 }
-                if (txtLDAPAuthenticationKey.Text.Trim() == "")
+                if (txtLDAPAuthenticationKey.Text.Trim() == string.Empty)
                 {
                     txtLDAPAuthenticationKey.Text = null;
                 }

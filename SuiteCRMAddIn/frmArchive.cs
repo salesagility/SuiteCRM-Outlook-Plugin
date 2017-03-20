@@ -243,11 +243,11 @@ namespace SuiteCRMAddIn
                                         Globals.ThisAddIn.Log.Error($"Failure when custom module included (1)\n\tQuery was '{queryText}'", any);
                                         // Swallow exception(!)
                                         try {
-                                            queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText.Replace("%", ""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                                            queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText.Replace("%", string.Empty), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
                                         }
                                         catch (Exception secondFail)
                                         {
-                                            queryText = queryText.Replace("%", "");
+                                            queryText = queryText.Replace("%", string.Empty);
                                             Globals.ThisAddIn.Log.Error($"Failure when custom module included (2)\n\tQuery was '{queryText}'", secondFail);
                                             MessageBox.Show(
                                                 $"An error was encountered while querying module '{moduleName}'. The error has been logged",
@@ -586,7 +586,7 @@ namespace SuiteCRMAddIn
                         message +
                         "\n\nThere were some failures:\n" +
                         string.Join("\n", first11Problems.Take(10)) +
-                        (first11Problems.Count > 10 ? "\n[and more]" : "");
+                        (first11Problems.Count > 10 ? "\n[and more]" : string.Empty);
                 }
 
                 MessageBox.Show(message, "Failure");

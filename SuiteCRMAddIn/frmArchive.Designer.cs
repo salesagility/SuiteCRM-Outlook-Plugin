@@ -146,7 +146,7 @@ namespace SuiteCRMAddIn
             // 
             // tsResults
             // 
-            this.tsResults.AccessibleName = "";
+            this.tsResults.AccessibleName = string.Empty;
             this.tsResults.CheckBoxes = true;
             this.tsResults.Location = new System.Drawing.Point(9, 68);
             this.tsResults.Name = "tsResults";

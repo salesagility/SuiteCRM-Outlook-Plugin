@@ -81,7 +81,7 @@ namespace SuiteCRMAddIn
                 Recipient recipient = item.Recipients.Add(emailName);
                 recipient.Resolve();
                 ExchangeUser exchangeUser = recipient.AddressEntry.GetExchangeUser();
-                if (exchangeUser.PrimarySmtpAddress != "")
+                if (exchangeUser.PrimarySmtpAddress != string.Empty)
                 {
                     return exchangeUser.PrimarySmtpAddress;
                 }
@@ -90,7 +90,7 @@ namespace SuiteCRMAddIn
             catch (System.Exception)
             {
                 // Swallow exception(!)
-                return "";
+                return string.Empty;
             }
         }
         public static string GetSenderAddress(MailItem mail, string type)

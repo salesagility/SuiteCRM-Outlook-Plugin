@@ -368,7 +368,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
         /// <returns>The id of the entry added o</returns>
-        //protected abstract string AddOrUpdateItemFromOutlookToCrm(OutlookItemType item, string crmType, string entryId = "");
+        //protected abstract string AddOrUpdateItemFromOutlookToCrm(OutlookItemType item, string crmType, string entryId = string.Empty);
         protected virtual string AddOrUpdateItemFromOutlookToCrm(OutlookItemType olItem, string crmType, string entryId = "")
         {
             string result = entryId;
@@ -434,7 +434,88 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="oItem">The item</param>
         /// <returns>the existing sync state representing this item, if it exists, else null.</returns>
-        protected abstract SyncState<OutlookItemType> GetExistingSyncState(OutlookItemType oItem);
+        protected SyncState<OutlookItemType> GetExistingSyncState(OutlookItemType olItem)
+        {
+            SyncState<OutlookItemType> result;
+
+            if (olItem == null)
+            {
+                result = null;
+            }
+            else
+            {
+                var olItemEntryId = GetOutlookEntryId(olItem);
+                try
+                {
+                    /* if there are duplicate entries I want them logged */
+                    result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
+                        .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
+                        .Where(a => !a.IsDeletedInOutlook)
+                        .SingleOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
+                }
+                catch (InvalidOperationException notUnique)
+                {
+                    Log.Error(
+                        String.Format(
+                            "AppointmentSyncing.AddItemFromOutlookToCrm: Outlook Id {0} was not unique in this.ItemsSyncState?",
+                            olItemEntryId),
+                        notUnique);
+
+                    /* but if it isn't unique, the first will actually do for now */
+                    result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
+                        .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
+                        .Where(a => !a.IsDeletedInOutlook)
+                        .FirstOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get the existing sync state representing this item, if it exists, else null.
+        /// </summary>
+        /// <param name="crmItem">The item</param>
+        /// <returns>the existing sync state representing this item, if it exists, else null.</returns>
+        protected SyncState<OutlookItemType> GetExistingSyncState(eEntryValue crmItem)
+        {
+            SyncState<OutlookItemType> result;
+
+            if (crmItem == null)
+            {
+                result = null;
+            }
+            else
+            {
+                var crmItemId = crmItem.GetValueAsString("id");
+                try
+                {
+                    /* if there are duplicate entries I want them logged */
+                    result = ItemsSyncState.SingleOrDefault(a => a.CrmEntryId == crmItemId);
+                }
+                catch (InvalidOperationException notUnique)
+                {
+                    Log.Error(
+                        String.Format(
+                            "AppointmentSyncing.AddItemFromOutlookToCrm: CRM Id {0} was not unique in this.ItemsSyncState?",
+                            crmItemId),
+                        notUnique);
+
+                    /* but if it isn't unique, the first will actually do for now */
+                    result = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItemId);
+                }
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Get the entry id of this Outlook item.
+        /// </summary>
+        /// <param name="olItem">The Outlook item from which the entry id should be taken.</param>
+        /// <returns>the entry id of this Outlook item.</returns>
+        internal abstract string GetOutlookEntryId(OutlookItemType olItem);
 
         /// <summary>
         /// Find the SyncState whose item is this item; if it does not already exist, construct and return it.

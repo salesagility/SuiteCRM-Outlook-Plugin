@@ -102,7 +102,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             SyncState<Outlook.ContactItem> result;
 
             String id = crmItem.GetValueAsString("id");
-            var syncStateForItem = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItem.GetValueAsString("id"));
+            SyncState<Outlook.ContactItem> syncStateForItem = GetExistingSyncState(crmItem);
 
             if (ShouldSyncContact(crmItem))
             {
@@ -141,7 +141,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     string.Format(
                         "ContactSyncing.UpdateFromCrm, entry id is '{0}', sync_contact is false, not syncing",
                         id));
-                
+
                 result = syncStateForItem;
             }
 
@@ -469,11 +469,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        protected override SyncState<Outlook.ContactItem> GetExistingSyncState(Outlook.ContactItem oItem)
-        {
-            return ItemsSyncState.FirstOrDefault(a => !a.IsDeletedInOutlook && a.OutlookItem.EntryID == oItem.EntryID);
-        }
-
         protected override SyncState<Outlook.ContactItem> ConstructSyncState(Outlook.ContactItem oItem)
         {
             return new ContactSyncState
@@ -537,6 +532,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override Outlook.MAPIFolder GetDefaultFolder()
         {
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
+        }
+
+        internal override string GetOutlookEntryId(Outlook.ContactItem olItem)
+        {
+            return olItem.EntryID;
         }
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olContactItem;
