@@ -70,7 +70,7 @@
                         message +
                         "\n\nThere were some failures:\n" +
                         string.Join("\n", first11Problems.Take(10)) +
-                        (first11Problems.Count > 10 ? "\n[and more]" : "");
+                        (first11Problems.Count > 10 ? "\n[and more]" : string.Empty);
                 }
 
                 MessageBox.Show(message, "Archive failure", MessageBoxButtons.OK, MessageBoxIcon.Warning);

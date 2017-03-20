@@ -46,7 +46,7 @@ namespace SuiteCRMAddIn
             }
         }
 
-        [UserScopedSetting, DefaultSettingValue(""), DebuggerNonUserCode]
+        [UserScopedSetting, DefaultSettingValue(string.Empty), DebuggerNonUserCode]
         public string username
         {
             get
@@ -58,7 +58,7 @@ namespace SuiteCRMAddIn
                 this["username"] = value;
             }
         }
-        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        [DefaultSettingValue(string.Empty), DebuggerNonUserCode, UserScopedSetting]
         public string password
         {
             get
@@ -70,7 +70,7 @@ namespace SuiteCRMAddIn
                 this["password"] = value;
             }
         }
-        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        [DefaultSettingValue(string.Empty), DebuggerNonUserCode, UserScopedSetting]
         public string host
         {
             get
@@ -214,7 +214,7 @@ namespace SuiteCRMAddIn
                 this["SyncContacts"] = value;
             }
         }
-        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        [DefaultSettingValue(string.Empty), DebuggerNonUserCode, UserScopedSetting]
         public System.Collections.Generic.List<string> AutoArchiveFolders
         {
             get
@@ -226,7 +226,7 @@ namespace SuiteCRMAddIn
                 this["AutoArchiveFolders"] = value;
             }
         }
-        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        [DefaultSettingValue(string.Empty), DebuggerNonUserCode, UserScopedSetting]
         public System.Collections.Generic.List<string> AccountsToArchiveInbound
         {
             get
@@ -238,7 +238,7 @@ namespace SuiteCRMAddIn
                 this["AccountsToArchiveInbound"] = value;
             }
         }
-        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        [DefaultSettingValue(string.Empty), DebuggerNonUserCode, UserScopedSetting]
         public System.Collections.Generic.List<string> AccountsToArchiveOutbound
         {
             get
@@ -250,7 +250,7 @@ namespace SuiteCRMAddIn
                 this["AccountsToArchiveOutbound"] = value;
             }
         }
-        [UserScopedSetting, DefaultSettingValue(""), DebuggerNonUserCode]
+        [UserScopedSetting, DefaultSettingValue(string.Empty), DebuggerNonUserCode]
         public string ExcludedEmails
         {
             get
@@ -275,7 +275,7 @@ namespace SuiteCRMAddIn
                 this["IsLDAPAuthentication"] = value;
             }
         }
-        [DefaultSettingValue(""), DebuggerNonUserCode, UserScopedSetting]
+        [DefaultSettingValue(string.Empty), DebuggerNonUserCode, UserScopedSetting]
         public string LDAPKey
         {
             get
@@ -344,7 +344,7 @@ namespace SuiteCRMAddIn
         /// https://store.suitecrm.com/selling/license-api
         /// Set through the Settings dialogue frmSettings.
         /// </summary>
-        [DefaultSettingValue(""), UserScopedSetting, DebuggerNonUserCode]
+        [DefaultSettingValue(string.Empty), UserScopedSetting, DebuggerNonUserCode]
         public String LicenceKey
         {
             get { return (String)this["LicenceKey"]; }

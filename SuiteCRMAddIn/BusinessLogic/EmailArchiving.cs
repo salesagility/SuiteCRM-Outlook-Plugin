@@ -139,7 +139,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void ArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = "")
+        private void ArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = string.Empty)
         {
             Log.Info($"Archiving {archiveType} email “{objMail.Subject}”");
             var objEmail = SerialiseEmailObject(objMail, archiveType);
@@ -151,13 +151,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             clsEmailArchive mailArchive = new clsEmailArchive();
             mailArchive.From = mail.SenderEmailAddress;
-            mailArchive.To = "";
+            mailArchive.To = string.Empty;
 
             Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {mail.Subject} dated {mail.SentOn}.");
 
             foreach (Outlook.Recipient objRecepient in mail.Recipients)
             {
-                if (mailArchive.To == "")
+                if (mailArchive.To == string.Empty)
                 {
                     mailArchive.To = objRecepient.Address;
                 }
@@ -186,7 +186,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return mailArchive;
         }
 
-        private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = "")
+        private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = string.Empty)
         {
             try
             {
@@ -335,12 +335,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 SaveMailItemIfNecessary(mailItem, type);
 
                 eNameValue[] data = new eNameValue[12];
-                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? "");
+                data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? string.Empty);
                 data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem, type).ToString("yyyy-MM-dd HH:mm:ss"));
                 data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
                 data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
-                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", mailItem.Body ?? "");
-                data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", mailItem.HTMLBody);
+                data[4] = clsSuiteCRMHelper.SetNameValuePair("description", mailItem.Body ?? string.Empty);
+                data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", mailItem.HTMLBody ?? string.Empty);
                 data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(mailItem, type));
                 data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", mailItem.To);
                 data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", mailItem.CC);
@@ -355,17 +355,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (System.Exception firstFailure)
                 {
-                    Log.Warn("1st attempt to upload email failed", firstFailure);
-                    data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", "");
-                    try
-                    {
-                        crmEmailId = clsSuiteCRMHelper.SetEntry(data, "Emails");
-                    }
-                    catch (System.Exception secondFailure)
-                    {
-                        Log.Warn("2nd attempt to upload email failed", secondFailure);
-                        return ArchiveResult.Failure(new[] { firstFailure, secondFailure });
-                    }
+                    Log.Warn("EmailArchiving.SaveEmailToCrm: attempt to upload email failed", firstFailure);
+                    data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", string.Empty);
                 }
 
                 mailItem.Categories = "SuiteCRM";
