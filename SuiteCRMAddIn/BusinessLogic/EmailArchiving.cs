@@ -295,11 +295,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         public ArchiveResult ArchiveEmailWithEntityRelationships(Outlook.MailItem mailItem, IEnumerable<CrmEntity> selectedCrmEntities, string type)
         {
             var result = this.SaveEmailToCrm(mailItem, type);
-            if (result.IsFailure) return result;
-            var warnings = CreateEmailRelationshipsWithEntities(result.EmailId, selectedCrmEntities);
-            return ArchiveResult.Success(
-                result.EmailId,
-                result.Problems.Concat(warnings));
+            if (result.IsSuccess)
+            {
+                var warnings = CreateEmailRelationshipsWithEntities(result.EmailId, selectedCrmEntities);
+                result = ArchiveResult.Success(
+                    result.EmailId,
+                    result.Problems == null ? 
+                    warnings :
+                    result.Problems.Concat(warnings));
+            }
+
+            return result;
         }
 
         private IList<System.Exception> CreateEmailRelationshipsWithEntities(string crmMailId, IEnumerable<CrmEntity> selectedCrmEntities)
@@ -373,7 +379,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>A (possibly modified) archive result.</returns>
         private ArchiveResult ConstructAndDespatchAttachments(Outlook.MailItem mailItem, ArchiveResult result)
         {
-            var warnings = new List<System.Exception>(result.Problems);
+            var warnings = new List<System.Exception>();
+
             if (settings.ArchiveAttachments)
             {
                 foreach (Outlook.Attachment attachment in mailItem.Attachments)
@@ -382,8 +389,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
 
-            if (warnings.Where(w => w != null).Count() > result.Problems.Count())
+            if (warnings.Where(w => w != null).Count() > 0)
             {
+                if (result.Problems != null)
+                {
+                    warnings.AddRange(result.Problems);
+                }
                 result = ArchiveResult.Success(result.EmailId, warnings.Where(w => w != null));
             }
 
