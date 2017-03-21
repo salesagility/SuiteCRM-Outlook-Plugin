@@ -133,7 +133,9 @@ namespace SuiteCRMClient
                 @name_value_list = values
             };
             eSetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
-            return _result.id.ToString();
+            return _result.id == null ?
+                string.Empty :
+                _result.id.ToString();
         }
 
         public static string getRelationship(string MainModule, string ID, string ModuleToFind)
@@ -436,7 +438,7 @@ namespace SuiteCRMClient
             }
             if (module == "Meetings")
             {
-                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees" };
+                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees", "assigned_user_id" };
             }
             if (module == "Calls")
             {
