@@ -581,6 +581,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                     /* found it, so update it from the CRM item */
                     result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, date_start, syncState);
                 }
+
+                result.OutlookItem.Save();
             }
 
             return result;
