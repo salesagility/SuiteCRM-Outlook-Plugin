@@ -358,7 +358,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 olProperty = olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
             }
-            olProperty.Value = value;
+            olProperty.Value = value ?? string.Empty;
         }
 
         /// <summary>

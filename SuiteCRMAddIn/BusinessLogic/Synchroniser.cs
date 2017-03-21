@@ -49,6 +49,21 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         private const string ExportPermissionToken = "export";
 
+        /// <summary>
+        /// The name of the modified date synchronisation property.
+        /// </summary>
+        protected const string ModifiedDatePropertyName = "SOModifiedDate";
+
+        /// <summary>
+        /// The name of the type synchronisation property.
+        /// </summary>
+        protected const string TypePropertyName = "SType";
+
+        /// <summary>
+        /// The name of the CRM ID synchronisation property.
+        /// </summary>
+        protected const string CrmIdPropertyName = "SEntryID";
+
         private readonly SyncContext context;
 
         /// <summary>
@@ -479,36 +494,38 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>the existing sync state representing this item, if it exists, else null.</returns>
         protected SyncState<OutlookItemType> GetExistingSyncState(eEntryValue crmItem)
         {
+            return crmItem == null ?
+                null :
+                this.GetExistingSyncState(crmItem.GetValueAsString("id"));
+        }
+
+        /// <summary>
+        /// Get the existing sync state representing the item with this CRM id, if it exists, else null.
+        /// </summary>
+        /// <param name="crmItemId">The id of a CRM item</param>
+        /// <returns>the existing sync state representing the item with this CRM id, if it exists, else null.</returns>
+        protected SyncState<OutlookItemType> GetExistingSyncState(string crmItemId)
+        {
             SyncState<OutlookItemType> result;
-
-            if (crmItem == null)
+            try
             {
-                result = null;
+                /* if there are duplicate entries I want them logged */
+                result = ItemsSyncState.SingleOrDefault(a => a.CrmEntryId == crmItemId);
             }
-            else
+            catch (InvalidOperationException notUnique)
             {
-                var crmItemId = crmItem.GetValueAsString("id");
-                try
-                {
-                    /* if there are duplicate entries I want them logged */
-                    result = ItemsSyncState.SingleOrDefault(a => a.CrmEntryId == crmItemId);
-                }
-                catch (InvalidOperationException notUnique)
-                {
-                    Log.Error(
-                        String.Format(
-                            "AppointmentSyncing.AddItemFromOutlookToCrm: CRM Id {0} was not unique in this.ItemsSyncState?",
-                            crmItemId),
-                        notUnique);
+                Log.Error(
+                    String.Format(
+                        "AppointmentSyncing.AddItemFromOutlookToCrm: CRM Id {0} was not unique in this.ItemsSyncState?",
+                        crmItemId),
+                    notUnique);
 
-                    /* but if it isn't unique, the first will actually do for now */
-                    result = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItemId);
-                }
+                /* but if it isn't unique, the first will actually do for now */
+                result = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItemId);
             }
 
             return result;
         }
-
 
         /// <summary>
         /// Get the entry id of this Outlook item.
@@ -550,13 +567,41 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="modifiedDate">The value for the SOModifiedDate property.</param>
-        /// <param name="type">The value for the SType property.</param>
-        /// <param name="entryId">The value for the SEntryId property.</param>
+        /// <param name="type">The value for the SType property (CRM module name).</param>
+        /// <param name="entryId">The value for the SEntryId property (CRM item id).</param>
         protected void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, string modifiedDate, string type, string entryId)
         {
-            EnsureSynchronisationPropertyForOutlookItem(olItem, "SOModifiedDate", modifiedDate);
-            EnsureSynchronisationPropertyForOutlookItem(olItem, "SType", type);
-            EnsureSynchronisationPropertyForOutlookItem(olItem, "SEntryID", entryId);
+            EnsureSynchronisationPropertyForOutlookItem(olItem, ModifiedDatePropertyName, modifiedDate);
+            EnsureSynchronisationPropertyForOutlookItem(olItem, TypePropertyName, type);
+            EnsureSynchronisationPropertyForOutlookItem(olItem, CrmIdPropertyName, entryId);
+        }
+
+        /// <summary>
+        /// Set up synchronisation properties for this outlook item from this CRM item, assuming my default CRM module.
+        /// </summary>
+        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="crmItem">The CRM item.</param>
+        protected virtual void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, eEntryValue crmItem)
+        {
+            this.EnsureSynchronisationPropertiesForOutlookItem(
+                olItem, 
+                crmItem, 
+                this.DefaultCrmModule);
+        }
+
+        /// <summary>
+        /// Set up synchronisation properties for this outlook item from this CRM item, assuming my default CRM module.
+        /// </summary>
+        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="crmItem">The CRM item.</param>
+        /// <param name="type">The value for the SType property (CRM module name).</param>
+        protected virtual void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, eEntryValue crmItem, string type)
+        {
+            this.EnsureSynchronisationPropertiesForOutlookItem(
+                olItem,
+                crmItem.GetValueAsString("date_modified"),
+                type,
+                crmItem.GetValueAsString("id"));
         }
 
         /// <summary>
