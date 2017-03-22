@@ -46,7 +46,7 @@ namespace SuiteCRMAddIn
 
         #region Windows Form Designer generated code
 
-        private ListViewEx.ListViewEx lstViewAvailableModules;
+        private ListView lstViewAvailableModules;
         private ColumnHeader columnHeader2;
         private ColumnHeader columnHeader3;
 
@@ -57,7 +57,7 @@ namespace SuiteCRMAddIn
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmCustomModules));
-            this.lstViewAvailableModules = new ListViewEx.ListViewEx();
+            this.lstViewAvailableModules = new ListView();
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.btnSave = new System.Windows.Forms.Button();
@@ -73,7 +73,7 @@ namespace SuiteCRMAddIn
             this.columnHeader2,
             this.columnHeader3});
             this.lstViewAvailableModules.Dock = System.Windows.Forms.DockStyle.Top;
-            this.lstViewAvailableModules.DoubleClickActivation = false;
+            // this.lstViewAvailableModules.DoubleClickActivation = false;
             this.lstViewAvailableModules.FullRowSelect = true;
             this.lstViewAvailableModules.Location = new System.Drawing.Point(0, 0);
             this.lstViewAvailableModules.Name = "lstViewAvailableModules";

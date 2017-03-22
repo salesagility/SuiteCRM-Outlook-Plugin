@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn
 {
     using BusinessLogic;
+    using Exceptions;
     using Microsoft.Office.Interop.Outlook;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
@@ -33,6 +34,7 @@ namespace SuiteCRMAddIn
     using System.Collections.Specialized;
     using System.Data;
     using System.Linq;
+    using System.Text;
     using System.Windows.Forms;
     using Exception = System.Exception;
 
@@ -53,10 +55,10 @@ namespace SuiteCRMAddIn
         {
             if (this.settings.CustomModules != null)
             {
-                StringEnumerator enumerator = this.settings.CustomModules.GetEnumerator();
-                while (enumerator.MoveNext())
+               //  StringEnumerator enumerator = .GetEnumerator();
+                foreach (string key in this.settings.CustomModules)
                 {
-                    string[] strArray = enumerator.Current.Split(new char[] { '|' });
+                    string[] strArray = key.Split(new char[] { '|' });
                     ListViewItem item = new ListViewItem
                     {
                         Tag = strArray[0],
@@ -186,18 +188,19 @@ namespace SuiteCRMAddIn
                     else
                     {
                         searchText = searchText.TrimStart(new char[0]);
-                        string[] strArray = searchText.Split(new char[] { ' ' });
-                        string usString = strArray[0];
-                        string str2 = string.Empty;
-                        string str3 = "OR";
-                        if (strArray.Length > 1)
+                        string[] searchArgs = searchText.Split(new char[] { ' ' });
+                        string firstArg = searchArgs[0];
+                        string secondArg = string.Empty;
+                        string logicalOp = "OR";
+
+                        if (searchArgs.Length > 1)
                         {
-                            str2 = strArray[1];
-                            str3 = "AND";
+                            secondArg = searchArgs[1];
+                            logicalOp = "AND";
                         }
                         else
                         {
-                            str2 = strArray[0];
+                            secondArg = searchArgs[0];
                         }
                         foreach (ListViewItem item in this.lstViewSearchModules.Items)
                         {
@@ -232,7 +235,7 @@ namespace SuiteCRMAddIn
                                     fields[2] = "last_name";
                                     fields[3] = "name";
 
-                                    string queryText = ConstructQueryTextForModuleName(searchText, usString, str2, str3, moduleName, fields);
+                                    string queryText = ConstructQueryTextForModuleName(searchText, firstArg, secondArg, logicalOp, moduleName, fields);
 
                                     try
                                     {
@@ -262,7 +265,7 @@ namespace SuiteCRMAddIn
                                     }
                                     else if (!list.Contains(moduleName) && clsSuiteCRMHelper.GetFields(moduleName).Contains("first_name"))
                                     {
-                                        queryText = "(" + moduleName.ToLower() + ".first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " " + moduleName.ToLower() + ".last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (" + moduleName.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + moduleName + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                                        queryText = "(" + moduleName.ToLower() + ".first_name LIKE '%" + clsGlobals.MySqlEscape(firstArg) + "%' " + logicalOp + " " + moduleName.ToLower() + ".last_name LIKE '%" + clsGlobals.MySqlEscape(secondArg) + "%')  OR (" + moduleName.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + moduleName + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
                                         eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
                                         if (_result2.result_count > 0)
                                         {
@@ -315,43 +318,88 @@ namespace SuiteCRMAddIn
         /// Refactored from a horrible nest of spaghetti code. I don't yet understand this.
         /// </summary>
         /// <param name="searchText"></param>
-        /// <param name="usString"></param>
-        /// <param name="str2"></param>
-        /// <param name="str3"></param>
+        /// <param name="firstSearchTerm"></param>
+        /// <param name="secondSearchTerm"></param>
+        /// <param name="logicalOperator"></param>
         /// <param name="moduleName"></param>
         /// <param name="fields"></param>
         /// <returns></returns>
-        private static string ConstructQueryTextForModuleName(string searchText, string usString, string str2, string str3, string moduleName, string[] fields)
+        private static string ConstructQueryTextForModuleName(string searchText, string firstSearchTerm, string secondSearchTerm, string logicalOperator, string moduleName, string[] fields)
         {
-            string queryText;
+            string queryText = string.Empty;
+            var escapedSearchText = clsGlobals.MySqlEscape(searchText);
+            var escapedFirstTerm = clsGlobals.MySqlEscape(firstSearchTerm);
+            var escapedSecondTerm = clsGlobals.MySqlEscape(secondSearchTerm);
+
             switch (moduleName)
             {
                 case ContactSyncing.CrmModule:
-                    queryText = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
-                    fields[4] = "account_name";
+                    queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, logicalOperator, fields, escapedSearchText, escapedFirstTerm, escapedSecondTerm);
                     break;
                 case "Leads":
-                    queryText = "(leads.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " leads.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (leads.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Leads' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                    queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, logicalOperator, fields, escapedSearchText, escapedFirstTerm, escapedSecondTerm);
                     fields[4] = "account_name";
                     break;
                 case "Cases":
-                    queryText = "(cases.name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%' OR cases.case_number LIKE '" + clsGlobals.MySqlEscape(searchText) + "')";
+                    queryText = $"(cases.name LIKE '%{escapedSearchText}%' OR cases.case_number LIKE '{escapedSearchText}')";
                     fields[4] = "case_number";
                     break;
                 case "Bugs":
-                    queryText = "(bugs.name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%' " + str3 + " bugs.bug_number LIKE '" + clsGlobals.MySqlEscape(searchText) + "')";
+                    queryText = $"(bugs.name LIKE '%{escapedSearchText}%' {logicalOperator} bugs.bug_number LIKE '{escapedSearchText}')";
                     fields[4] = "bug_number";
                     break;
                 case "Accounts":
-                    queryText = "(accounts.name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
+                    queryText = "(accounts.name LIKE '%" + escapedFirstTerm + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + escapedSearchText + "%'))";
                     fields[4] = "account_name";
                     break;
                 default:
-                    queryText = moduleName.ToLower() + ".name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'";
+                    // queryText = ConstructQueryTextForUnknownModule(moduleName, escapedSearchText);
+                    queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, logicalOperator, fields, escapedSearchText, escapedFirstTerm, escapedSecondTerm);
                     break;
             }
 
+            if (string.IsNullOrEmpty(queryText))
+            {
+                throw new CouldNotConstructQueryException(moduleName, searchText);
+            }
+
             return queryText;
+        }
+
+        /// <summary>
+        /// If we really don't know anything about the module (which is likely with custom modules)
+        /// the best we can do is see whether any of its text fields matches the search text.
+        /// </summary>
+        /// <param name="moduleName">The name of the module to search.</param>
+        /// <param name="escapedSearchText">The text to search for, escaped for MySQL.</param>
+        /// <returns>A query string.</returns>
+        private static string ConstructQueryTextForUnknownModule(string moduleName, string escapedSearchText)
+        {
+            string queryText;
+            List<string> fieldNames = clsSuiteCRMHelper.GetCharacterFields(moduleName);
+            StringBuilder queryBuilder = new StringBuilder();
+
+            foreach (string fieldName in fieldNames)
+            {
+                if (queryBuilder.ToString().Length > 0)
+                {
+                    queryBuilder.Append(" OR ");
+                }
+                if (fieldNames.Contains(fieldName))
+                {
+                    queryBuilder.Append($"{moduleName}.{fieldName} LIKE '%{escapedSearchText}%'");
+                }
+            }
+
+            queryText = queryBuilder.ToString();
+            return queryText;
+        }
+
+        private static string ConstructQueryTextWithFirstAndLastNames(string moduleName, string logicalOperator, string[] fields, string escapedSearchText, string escapedFirstTerm, string escapedSecondTerm)
+        {
+            string lowerName = moduleName.ToLower();
+            fields[4] = "account_name";
+            return $"%({lowerName}.first_name LIKE '%{escapedFirstTerm}%' {logicalOperator} {lowerName}.last_name LIKE '%{escapedSecondTerm}%') OR ({lowerName}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{escapedSearchText}%'))";;
         }
 
         private void populateTree(eGetEntryListResult search_result, string module, TreeNode root_node)

@@ -52,6 +52,35 @@ namespace SuiteCRMClient
             return SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);            
         }
 
+        /// <summary>
+        /// Return only those modules which have relationships to the email module.
+        /// </summary>
+        /// <returns>A list of only those modules which have relationships to the email module.</returns>
+        public static List<module_data> GetModulesHavingEmailRelationships()
+        {
+            List<module_data> modules = new List<module_data>();
+            foreach(module_data module in GetModules().items)
+            {
+                try
+                {
+                    foreach (string field in GetFields(module.module_key))
+                    {
+                        if (field.StartsWith("email_") || field.EndsWith("_email"))
+                        {
+                            modules.Add(module);
+                            break;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    Log.Debug($"SuiteCMHelper.GetModulesHavingEmailRelationships: failed to fetch fields list for {module.module_key}");
+                }
+            }
+
+            return modules;
+        }
+
         public static void EnsureLoggedIn()
         {
             EnsureLoggedIn(SuiteCRMUserSession);
@@ -417,6 +446,58 @@ namespace SuiteCRMClient
             }
             return list;
         }
+
+        /// <summary>
+        /// Get the names of all the fields of the module with this name whose data type is char or varchar or name.
+        /// </summary>
+        /// <param name="module">The module whose field names we're interested in.</param>
+        /// <returns>The names of the character fields.</returns>
+        public static List<string> GetCharacterFields(string module)
+        {
+            List<string> list = new List<string>();
+            if (module == null)
+                return list;
+
+            EnsureLoggedIn();
+            object data = new
+            {
+                @session = SuiteCRMUserSession.id,
+                @module_name = module
+            };
+            foreach (eField field in SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data).module_fields1)
+            {
+                switch (field.type)
+                {
+                    case "assigned_user_name":
+                    case "char":
+                    case "fullname":
+                    case "name":
+                    case "readonly":
+                    case "text":
+                    case "varchar":
+                        /* these are fields we can search for string data */
+                        list.Add(field.name);
+                        break;
+                    case "bool":
+                    case "currency":
+                    case "date":
+                    case "datetime":
+                    case "enum":
+                    case "float":
+                    case "id":
+                    case "int":
+                    case "longtext": /* probably safer not to search this */
+                    case "relate":
+                        /* these are not */
+                        break;
+                    default:
+                        Log.Debug($"Unknown field type {field.type}");
+                        break;
+                }
+            }
+            return list;
+        }
+
 
         public static string[] GetSugarFields(string module)
         {
