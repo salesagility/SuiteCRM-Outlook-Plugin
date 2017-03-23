@@ -53,7 +53,7 @@ namespace SuiteCRMAddIn
         {
             System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("All");
             System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("Accounts");
-            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem(ContactSyncing.CrmModule);
+            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("Contacts");
             System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Leads");
             System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("Opportunities");
             System.Windows.Forms.ListViewItem listViewItem6 = new System.Windows.Forms.ListViewItem("Cases");
@@ -111,7 +111,7 @@ namespace SuiteCRMAddIn
             listViewItem2.StateImageIndex = 0;
             listViewItem2.Tag = "Accounts";
             listViewItem3.StateImageIndex = 0;
-            listViewItem3.Tag = ContactSyncing.CrmModule;
+            listViewItem3.Tag = "Contacts";
             listViewItem4.StateImageIndex = 0;
             listViewItem4.Tag = "Leads";
             listViewItem5.StateImageIndex = 0;
@@ -146,7 +146,7 @@ namespace SuiteCRMAddIn
             // 
             // tsResults
             // 
-            this.tsResults.AccessibleName = string.Empty;
+            this.tsResults.AccessibleName = "";
             this.tsResults.CheckBoxes = true;
             this.tsResults.Location = new System.Drawing.Point(9, 68);
             this.tsResults.Name = "tsResults";
@@ -159,6 +159,7 @@ namespace SuiteCRMAddIn
             // 
             // btnArchive
             // 
+            this.btnArchive.Enabled = false;
             this.btnArchive.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnArchive.Location = new System.Drawing.Point(304, 336);
             this.btnArchive.Name = "btnArchive";

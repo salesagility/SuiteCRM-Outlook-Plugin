@@ -27,6 +27,7 @@ namespace SuiteCRMClient
 {
     using RESTObjects;
     using System.Collections;
+    using System.Linq;
     using Exceptions;
     using Logging;
     using Email;
@@ -386,33 +387,37 @@ namespace SuiteCRMClient
                 throw new Exception(_result.error.description);                    
             }
 
-            try
+            if (_result.entry_list != null)
             {
-                Hashtable hashtable = new Hashtable();
-                int index = 0;
-                foreach (eEntryValue _value in _result.entry_list)
+                try
                 {
-                    if (!hashtable.Contains(_value.id))
+                    Hashtable hashtable = new Hashtable();
+                    int index = 0;
+                    foreach (eEntryValue _value in _result.entry_list)
                     {
-                        hashtable.Add(_value.id, _value);
+                        if (!hashtable.Contains(_value.id))
+                        {
+                            hashtable.Add(_value.id, _value);
+                        }
+                        _result.entry_list[index] = null;
+                        index++;
                     }
-                    _result.entry_list[index] = null;
-                    index++;
+                    int num2 = 0;
+                    _result.entry_list = null;
+                    _result.entry_list = new eEntryValue[hashtable.Count];
+                    _result.result_count = hashtable.Count;
+                    foreach (DictionaryEntry entry in hashtable)
+                    {
+                        _result.entry_list[num2] = (eEntryValue)entry.Value;
+                        num2++;
+                    }
                 }
-                int num2 = 0;
-                _result.entry_list = null;
-                _result.entry_list = new eEntryValue[hashtable.Count];
-                _result.result_count = hashtable.Count;
-                foreach (DictionaryEntry entry in hashtable)
+                catch (System.Exception)
                 {
-                    _result.entry_list[num2] = (eEntryValue)entry.Value;
-                    num2++;
+                    _result.result_count = 0;
                 }
             }
-            catch (System.Exception)
-            {
-                _result.result_count = 0;
-            }
+
             return _result;
         }
         public static string GetValueByKey(eEntryValue entry, string key)
@@ -428,19 +433,39 @@ namespace SuiteCRMClient
             return str;
         }
 
+        /// <summary>
+        /// Get the module fields data for the module with this name, if any.
+        /// </summary>
+        /// <param name="module">the name of the module to query.</param>
+        /// <returns>A structure of module fields data.</returns>
+        public static eModuleFields GetModuleFields(string module)
+        {
+            eModuleFields result;
+
+            if (!string.IsNullOrEmpty(module))
+            {
+                EnsureLoggedIn();
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = module
+                };
+
+                result = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data);
+            }
+            else
+            {
+                result = new eModuleFields();
+            }
+
+            return result;
+        }
+
         public static List<string> GetFields(string module)
         {
             List<string> list = new List<string>();
-            if (module == null)
-                return list;
 
-            EnsureLoggedIn();
-            object data = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = module
-            };
-            foreach (eField field in SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data).module_fields1)
+            foreach (eField field in GetModuleFields(module).moduleFields)
             {
                 list.Add(field.name);
             }
@@ -455,16 +480,8 @@ namespace SuiteCRMClient
         public static List<string> GetCharacterFields(string module)
         {
             List<string> list = new List<string>();
-            if (module == null)
-                return list;
 
-            EnsureLoggedIn();
-            object data = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = module
-            };
-            foreach (eField field in SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data).module_fields1)
+            foreach (eField field in GetModuleFields(module).moduleFields)
             {
                 switch (field.type)
                 {
@@ -498,6 +515,19 @@ namespace SuiteCRMClient
             return list;
         }
 
+        /// <summary>
+        /// Find the fields, among the fields of this module, which are links and where
+        /// the name of the relationship linked contains the token '_activities_'.
+        /// </summary>
+        /// <param name="module">The name of the module to examine.</param>
+        /// <returns>Its activities link fields.</returns>
+        public static IEnumerable<eField> GetActivitiesLinks(string module)
+        {
+            IEnumerable<eField> result = GetModuleFields(module).moduleFields
+                .Where(f => f.type == "link" && f.relationship != null && f.relationship.Contains("_activities_"));
+
+            return result;
+        }
 
         public static string[] GetSugarFields(string module)
         {

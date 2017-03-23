@@ -47,21 +47,20 @@ namespace SuiteCRMClient.RESTObjects
             set
             {
                 this.module_fieldsField = value;
-                this.module_fields1 = new List<eField>();               
+                this.moduleFields = new List<eField>();               
                 foreach (object objField in value.ToArray<object>())
                 {
                     string strFieldString = objField.ToString();
                     strFieldString = strFieldString.Remove(0, strFieldString.IndexOf('{'));
                     eField objActualField = JsonConvert.DeserializeObject<eField>(strFieldString);
-                    this.module_fields1.Add(objActualField);
+                    this.moduleFields.Add(objActualField);
                 }
             }
         }
 
-        public List<eField> module_fields1 { get; set; }
+        public List<eField> moduleFields { get; set; }
 
         [JsonProperty("module_name")]
         public string module_name { get; set; }
-        
     }
 }
