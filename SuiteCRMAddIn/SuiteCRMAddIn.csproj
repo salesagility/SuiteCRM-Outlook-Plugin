@@ -226,6 +226,7 @@
     <Compile Include="BusinessLogic\ThreadSafeList.cs" />
     <Compile Include="clsGlobals.cs" />
     <Compile Include="clsSettings.cs" />
+    <Compile Include="Exceptions\CouldNotConstructQueryException.cs" />
     <Compile Include="EmailAccountArchiveSettingsControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -272,6 +273,9 @@
     </Compile>
     <Compile Include="Robustness.cs" />
     <Compile Include="WaitCursor.cs" />
+    <Compile Include="WithCustomModulesSelectorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <EmbeddedResource Include="AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
     </EmbeddedResource>

@@ -27,6 +27,7 @@ namespace SuiteCRMClient
 {
     using RESTObjects;
     using System.Collections;
+    using System.Linq;
     using Exceptions;
     using Logging;
     using Email;
@@ -50,6 +51,35 @@ namespace SuiteCRMClient
                 @session = SuiteCRMUserSession.id
             };
             return SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);            
+        }
+
+        /// <summary>
+        /// Return only those modules which have relationships to the email module.
+        /// </summary>
+        /// <returns>A list of only those modules which have relationships to the email module.</returns>
+        public static List<module_data> GetModulesHavingEmailRelationships()
+        {
+            List<module_data> modules = new List<module_data>();
+            foreach(module_data module in GetModules().items)
+            {
+                try
+                {
+                    foreach (string field in GetFields(module.module_key))
+                    {
+                        if (field.StartsWith("email_") || field.EndsWith("_email"))
+                        {
+                            modules.Add(module);
+                            break;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    Log.Debug($"SuiteCMHelper.GetModulesHavingEmailRelationships: failed to fetch fields list for {module.module_key}");
+                }
+            }
+
+            return modules;
         }
 
         public static void EnsureLoggedIn()
@@ -205,7 +235,7 @@ namespace SuiteCRMClient
 
             try
             {
-                result = SetRelationship(info);
+                result = TrySetRelationship(info);
 
                 if (!result)
                 {
@@ -228,12 +258,35 @@ namespace SuiteCRMClient
         /// </summary>
         /// <param name="relationship">The relationship to set.</param>
         /// <returns>True if the relationship was created, else false.</returns>
-        public static bool SetRelationship(eSetRelationshipValue relationship)
+        public static bool TrySetRelationship(eSetRelationshipValue relationship)
         {
-            var linkFieldPossibility1 = $"{relationship.module2}".ToLower();
-            var linkFieldPossibility2 = $"{relationship.module2}_{relationship.module1}".ToLower();
-            return SetRelationship(relationship, linkFieldPossibility1) ||
-                SetRelationship(relationship, linkFieldPossibility2);
+            return TrySetRelationship(relationship, $"{relationship.module2}") ||
+                TrySetRelationship(relationship, $"{relationship.module2}_{relationship.module1}") ||
+                TrySetRelationship(relationship, GetActivitiesLinks(relationship.module1));
+        }
+
+        /// <summary>
+        /// Try, in turn, each field in this list of candidate fields seeking one which allows a relationship 
+        /// to be successfully created.
+        /// </summary>
+        /// <remarks>
+        /// If the common relationship field names don't work, brute force it by getting all the possibles.
+        /// </remarks>
+        /// <param name="relationship">The relationship we're trying to make.</param>
+        /// <param name="candidateFields">Fields through which the relationship might be made.</param>
+        /// <returns>True if the relationship was made.</returns>
+        private static bool TrySetRelationship(eSetRelationshipValue relationship, IEnumerable<eField> candidateFields)
+        {
+            bool result = false;
+
+            foreach (eField field in candidateFields)
+            {
+                result |= TrySetRelationship(relationship, field.name.ToLower());
+
+                if (result) break;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -243,7 +296,7 @@ namespace SuiteCRMClient
         /// <param name="relationship">The relationship to set.</param>
         /// <param name="linkFieldName">The link field name to try.</param>
         /// <returns>True if the relationship was created, else false.</returns>
-        public static bool SetRelationship(eSetRelationshipValue info, string linkFieldName)
+        public static bool TrySetRelationship(eSetRelationshipValue info, string linkFieldName)
         {
             EnsureLoggedIn();
             object data = new
@@ -357,33 +410,37 @@ namespace SuiteCRMClient
                 throw new Exception(_result.error.description);                    
             }
 
-            try
+            if (_result.entry_list != null)
             {
-                Hashtable hashtable = new Hashtable();
-                int index = 0;
-                foreach (eEntryValue _value in _result.entry_list)
+                try
                 {
-                    if (!hashtable.Contains(_value.id))
+                    Hashtable hashtable = new Hashtable();
+                    int index = 0;
+                    foreach (eEntryValue _value in _result.entry_list)
                     {
-                        hashtable.Add(_value.id, _value);
+                        if (!hashtable.Contains(_value.id))
+                        {
+                            hashtable.Add(_value.id, _value);
+                        }
+                        _result.entry_list[index] = null;
+                        index++;
                     }
-                    _result.entry_list[index] = null;
-                    index++;
+                    int num2 = 0;
+                    _result.entry_list = null;
+                    _result.entry_list = new eEntryValue[hashtable.Count];
+                    _result.result_count = hashtable.Count;
+                    foreach (DictionaryEntry entry in hashtable)
+                    {
+                        _result.entry_list[num2] = (eEntryValue)entry.Value;
+                        num2++;
+                    }
                 }
-                int num2 = 0;
-                _result.entry_list = null;
-                _result.entry_list = new eEntryValue[hashtable.Count];
-                _result.result_count = hashtable.Count;
-                foreach (DictionaryEntry entry in hashtable)
+                catch (System.Exception)
                 {
-                    _result.entry_list[num2] = (eEntryValue)entry.Value;
-                    num2++;
+                    _result.result_count = 0;
                 }
             }
-            catch (System.Exception)
-            {
-                _result.result_count = 0;
-            }
+
             return _result;
         }
         public static string GetValueByKey(eEntryValue entry, string key)
@@ -399,23 +456,115 @@ namespace SuiteCRMClient
             return str;
         }
 
+        /// <summary>
+        /// Get the module fields data for the module with this name, if any.
+        /// </summary>
+        /// <param name="module">the name of the module to query.</param>
+        /// <returns>A structure of module's fields data.</returns>
+        public static eModuleFields GetFieldsForModule(string module)
+        {
+            eModuleFields result;
+
+            if (!string.IsNullOrEmpty(module))
+            {
+                EnsureLoggedIn();
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = module
+                };
+
+                result = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data);
+            }
+            else
+            {
+                result = new eModuleFields();
+            }
+
+            return result;
+        }
+
         public static List<string> GetFields(string module)
         {
             List<string> list = new List<string>();
-            if (module == null)
-                return list;
 
-            EnsureLoggedIn();
-            object data = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = module
-            };
-            foreach (eField field in SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data).module_fields1)
+            foreach (eField field in GetFieldsForModule(module).moduleFields)
             {
                 list.Add(field.name);
             }
             return list;
+        }
+
+        /// <summary>
+        /// Get the names of all the fields of the module with this name whose data type is char or varchar or name.
+        /// </summary>
+        /// <param name="module">The module whose field names we're interested in.</param>
+        /// <returns>The names of the character fields.</returns>
+        public static List<string> GetCharacterFields(string module)
+        {
+            List<string> list = new List<string>();
+
+            foreach (eField field in GetFieldsForModule(module).moduleFields)
+            {
+                switch (field.type)
+                {
+                    case "assigned_user_name":
+                    case "char":
+                    case "fullname":
+                    case "name":
+                    case "readonly":
+                    case "text":
+                    case "varchar":
+                        /* these are fields we can search for string data */
+                        list.Add(field.name);
+                        break;
+                    case "bool":
+                    case "currency":
+                    case "date":
+                    case "datetime":
+                    case "enum":
+                    case "float":
+                    case "id":
+                    case "int":
+                    case "longtext": /* probably safer not to search this */
+                    case "relate":
+                        /* these are not */
+                        break;
+                    default:
+                        Log.Debug($"Unknown field type {field.type}");
+                        break;
+                }
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Find the fields, among the fields of this module, which are links and where
+        /// the name of the relationship linked contains the token '_activities_'.
+        /// </summary>
+        /// <param name="module">The name of the module to examine.</param>
+        /// <returns>Its activities link fields.</returns>
+        public static IEnumerable<eField> GetActivitiesLinks(string module)
+        {
+            var linkFields = GetFieldsForModule(module).linkFields;
+            //IEnumerable<eField> result = moduleFields
+            //    .Where(f => f.type == "link" && f.relationship != null && f.relationship.Contains("_activities_"));
+            List<eField> result = new List<eField>();
+
+            foreach (eField field in linkFields)
+            {
+                if (field.type.Equals("link"))
+                {
+                    if (field.relationship != null)
+                    {
+                        if (field.relationship.Contains("_activities_")) {
+                            result.Add(field);
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         public static string[] GetSugarFields(string module)

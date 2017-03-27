@@ -20,27 +20,20 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMAddIn.Exceptions
 {
-    public class eErrorValue
-    {
-        [JsonProperty("name")]
-        public string name { get; set; }
-        [JsonProperty("number")]
-        public string number { get; set; }
-        [JsonProperty("description")]
-        public string description { get; set; }
+    using System;
+    using System.Runtime.Serialization;
 
-        public bool IsPopulated()
-        {
-            return !String.IsNullOrEmpty(name) && !String.IsNullOrEmpty(number) && !String.IsNullOrEmpty(description);
+    /// <summary>
+    /// An exception thrown if a search query could not be constructed.
+    /// </summary>
+    [Serializable]
+    internal class CouldNotConstructQueryException : Exception
+    {
+        public CouldNotConstructQueryException(string moduleName, string searchText) : 
+            base($"Could not construct a suitable query to find '{searchText}' in module '{moduleName}")
+        { 
         }
     }
 }

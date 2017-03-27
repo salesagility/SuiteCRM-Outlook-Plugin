@@ -83,26 +83,29 @@ namespace SuiteCRMAddIn
 
         private void frmSettings_Load(object sender, EventArgs e)
         {
-            try
+            using (new WaitCursor(this))
             {
-                AddInTitleLabel.Text = ThisAddIn.AddInTitle;
-                AddInVersionLabel.Text = "Version " + ThisAddIn.AddInVersion;
-
-                if (Globals.ThisAddIn.SuiteCRMUserSession == null)
+                try
                 {
-                    Globals.ThisAddIn.SuiteCRMUserSession =
-                        new SuiteCRMClient.UserSession(
-                            string.Empty, string.Empty, string.Empty, string.Empty, Log, Globals.ThisAddIn.Settings.RestTimeout);
-                }
+                    AddInTitleLabel.Text = ThisAddIn.AddInTitle;
+                    AddInVersionLabel.Text = "Version " + ThisAddIn.AddInVersion;
 
-                Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
-                LoadSettings();
-                LinkToLogFileDir.Text = ThisAddIn.LogDirPath;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("frmSettings_Load error", ex);
-                // Swallow exception!
+                    if (Globals.ThisAddIn.SuiteCRMUserSession == null)
+                    {
+                        Globals.ThisAddIn.SuiteCRMUserSession =
+                            new SuiteCRMClient.UserSession(
+                                string.Empty, string.Empty, string.Empty, string.Empty, Log, Globals.ThisAddIn.Settings.RestTimeout);
+                    }
+
+                    Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
+                    LoadSettings();
+                    LinkToLogFileDir.Text = ThisAddIn.LogDirPath;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("frmSettings_Load error", ex);
+                    // Swallow exception!
+                }
             }
         }
 

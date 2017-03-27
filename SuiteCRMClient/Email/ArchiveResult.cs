@@ -29,7 +29,7 @@ namespace SuiteCRMClient.Email
 
         public IEnumerable<System.Exception> Problems { get; set; }
 
-        public bool IsSuccess => !string.IsNullOrEmpty(EmailId);
+        public bool IsSuccess => !string.IsNullOrEmpty(EmailId) && (Problems == null || Problems.Count() == 0);
 
         public bool IsFailure => !IsSuccess;
     }
