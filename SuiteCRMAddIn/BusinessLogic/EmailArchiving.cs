@@ -511,7 +511,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public void CreateEmailRelationshipOrFail(string emailId, CrmEntity entity)
         {
-            var success = clsSuiteCRMHelper.SetRelationship(
+            var success = clsSuiteCRMHelper.TrySetRelationship(
                 new eSetRelationshipValue
                 {
                     module2 = "emails",

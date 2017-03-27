@@ -235,7 +235,7 @@ namespace SuiteCRMClient
 
             try
             {
-                result = SetRelationship(info);
+                result = TrySetRelationship(info);
 
                 if (!result)
                 {
@@ -258,12 +258,35 @@ namespace SuiteCRMClient
         /// </summary>
         /// <param name="relationship">The relationship to set.</param>
         /// <returns>True if the relationship was created, else false.</returns>
-        public static bool SetRelationship(eSetRelationshipValue relationship)
+        public static bool TrySetRelationship(eSetRelationshipValue relationship)
         {
-            var linkFieldPossibility1 = $"{relationship.module2}".ToLower();
-            var linkFieldPossibility2 = $"{relationship.module2}_{relationship.module1}".ToLower();
-            return SetRelationship(relationship, linkFieldPossibility1) ||
-                SetRelationship(relationship, linkFieldPossibility2);
+            return TrySetRelationship(relationship, $"{relationship.module2}") ||
+                TrySetRelationship(relationship, $"{relationship.module2}_{relationship.module1}") ||
+                TrySetRelationship(relationship, GetActivitiesLinks(relationship.module1));
+        }
+
+        /// <summary>
+        /// Try, in turn, each field in this list of candidate fields seeking one which allows a relationship 
+        /// to be successfully created.
+        /// </summary>
+        /// <remarks>
+        /// If the common relationship field names don't work, brute force it by getting all the possibles.
+        /// </remarks>
+        /// <param name="relationship">The relationship we're trying to make.</param>
+        /// <param name="candidateFields">Fields through which the relationship might be made.</param>
+        /// <returns>True if the relationship was made.</returns>
+        private static bool TrySetRelationship(eSetRelationshipValue relationship, IEnumerable<eField> candidateFields)
+        {
+            bool result = false;
+
+            foreach (eField field in candidateFields)
+            {
+                result |= TrySetRelationship(relationship, field.name.ToLower());
+
+                if (result) break;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -273,7 +296,7 @@ namespace SuiteCRMClient
         /// <param name="relationship">The relationship to set.</param>
         /// <param name="linkFieldName">The link field name to try.</param>
         /// <returns>True if the relationship was created, else false.</returns>
-        public static bool SetRelationship(eSetRelationshipValue info, string linkFieldName)
+        public static bool TrySetRelationship(eSetRelationshipValue info, string linkFieldName)
         {
             EnsureLoggedIn();
             object data = new
@@ -437,8 +460,8 @@ namespace SuiteCRMClient
         /// Get the module fields data for the module with this name, if any.
         /// </summary>
         /// <param name="module">the name of the module to query.</param>
-        /// <returns>A structure of module fields data.</returns>
-        public static eModuleFields GetModuleFields(string module)
+        /// <returns>A structure of module's fields data.</returns>
+        public static eModuleFields GetFieldsForModule(string module)
         {
             eModuleFields result;
 
@@ -465,7 +488,7 @@ namespace SuiteCRMClient
         {
             List<string> list = new List<string>();
 
-            foreach (eField field in GetModuleFields(module).moduleFields)
+            foreach (eField field in GetFieldsForModule(module).moduleFields)
             {
                 list.Add(field.name);
             }
@@ -481,7 +504,7 @@ namespace SuiteCRMClient
         {
             List<string> list = new List<string>();
 
-            foreach (eField field in GetModuleFields(module).moduleFields)
+            foreach (eField field in GetFieldsForModule(module).moduleFields)
             {
                 switch (field.type)
                 {
@@ -523,8 +546,23 @@ namespace SuiteCRMClient
         /// <returns>Its activities link fields.</returns>
         public static IEnumerable<eField> GetActivitiesLinks(string module)
         {
-            IEnumerable<eField> result = GetModuleFields(module).moduleFields
-                .Where(f => f.type == "link" && f.relationship != null && f.relationship.Contains("_activities_"));
+            var linkFields = GetFieldsForModule(module).linkFields;
+            //IEnumerable<eField> result = moduleFields
+            //    .Where(f => f.type == "link" && f.relationship != null && f.relationship.Contains("_activities_"));
+            List<eField> result = new List<eField>();
+
+            foreach (eField field in linkFields)
+            {
+                if (field.type.Equals("link"))
+                {
+                    if (field.relationship != null)
+                    {
+                        if (field.relationship.Contains("_activities_")) {
+                            result.Add(field);
+                        }
+                    }
+                }
+            }
 
             return result;
         }

@@ -50,15 +50,51 @@ namespace SuiteCRMClient.RESTObjects
                 this.moduleFields = new List<eField>();               
                 foreach (object objField in value.ToArray<object>())
                 {
-                    string strFieldString = objField.ToString();
-                    strFieldString = strFieldString.Remove(0, strFieldString.IndexOf('{'));
-                    eField objActualField = JsonConvert.DeserializeObject<eField>(strFieldString);
-                    this.moduleFields.Add(objActualField);
+                    string fieldSpecification = objField.ToString();
+                    fieldSpecification = fieldSpecification.Remove(0, fieldSpecification.IndexOf('{'));
+                    eField field = JsonConvert.DeserializeObject<eField>(fieldSpecification);
+                    this.moduleFields.Add(field);
                 }
             }
         }
 
         public List<eField> moduleFields { get; set; }
+
+        private JObject link_fieldsField;
+        [JsonProperty("link_fields")]
+
+        public JObject link_fields_object
+        {
+            get
+            {
+                return this.link_fieldsField;
+            }
+            set
+            {
+                this.link_fieldsField = value;
+                this.linkFields = new List<eField>();
+                foreach (object objField in value.ToArray<object>())
+                {
+                    string fieldSpecification = objField.ToString();
+                    fieldSpecification = fieldSpecification.Remove(0, fieldSpecification.IndexOf('{'));
+                    eField field = JsonConvert.DeserializeObject<eField>(fieldSpecification);
+                    this.linkFields.Add(field);
+                }
+            }
+        }
+
+        public List<eField> linkFields { get; set; }
+
+        public List<eField> fields
+        {
+            get
+            {
+                List<eField> result = new List<eField>();
+                result.AddRange(this.moduleFields);
+                result.AddRange(this.linkFields);
+                return result;
+            }
+        }
 
         [JsonProperty("module_name")]
         public string module_name { get; set; }
