@@ -498,9 +498,9 @@ namespace SuiteCRMAddIn
         /// <summary>
         /// Add a node beneath this parent representing this search result in this module.
         /// </summary>
-        /// <param name="searchResult"></param>
-        /// <param name="module"></param>
-        /// <param name="parent"></param>
+        /// <param name="searchResult">A search result</param>
+        /// <param name="module">The module in which the search was performed</param>
+        /// <param name="parent">The parent node beneath which the new node should be added.</param>
         private void PopulateTree(eGetEntryListResult searchResult, string module, TreeNode parent)
         {
             foreach (eEntryValue entry in searchResult.entry_list)
