@@ -213,7 +213,7 @@ namespace SuiteCRMAddIn
                                         {
                                             if (queryResult.result_count > 0)
                                             {
-                                                this.populateTree(queryResult, moduleName, node);
+                                                this.PopulateTree(queryResult, moduleName, node);
                                             }
                                         }
                                         else
@@ -315,6 +315,12 @@ namespace SuiteCRMAddIn
             return queryResult;
         }
 
+        /// <summary>
+        /// Find the existing node in my tsResults tree view which represents the module with
+        /// this name; if none is found, create one and add it to the tree.
+        /// </summary>
+        /// <param name="moduleName">The name of the module to be found.</param>
+        /// <returns>A suitable tree node.</returns>
         private TreeNode FindOrCreateNodeForModule(string moduleName)
         {
             TreeNode node;
@@ -336,10 +342,13 @@ namespace SuiteCRMAddIn
         }
 
         /// <summary>
-        /// Refactored from a horrible nest of spaghetti code. I don't yet understand this.
+        /// Construct suitable query text to query the module with this name for potential connection with this search text.
         /// </summary>
+        /// <remarks>
+        /// Refactored from a horrible nest of spaghetti code. I don't yet fully understand this.
+        /// </remarks>
         /// <param name="searchText">The text entered to search for.</param>
-        /// <param name="moduleName"></param>
+        /// <param name="moduleName">The name of the module to search.</param>
         /// <param name="fields">The list of fields to pull back, which may be modified by this method.</param>
         /// <returns>A suitable search query</returns>
         /// <exception cref="CouldNotConstructQueryException">if no search string could be constructed.</exception>
@@ -356,17 +365,11 @@ namespace SuiteCRMAddIn
             {
                 case ContactSyncing.CrmModule:
                     queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
-                    foreach (string fieldName in new string[] { "first_name", "last_name", "name", "account_name" })
-                    {
-                        fields.Add(fieldName);
-                    }
+                    AddFirstLastAndAccountNames(fields);
                     break;
                 case "Leads":
                     queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
-                    foreach (string fieldName in new string[] { "first_name", "last_name", "name", "account_name" })
-                    {
-                        fields.Add(fieldName);
-                    }
+                    AddFirstLastAndAccountNames(fields);
                     break;
                 case "Cases":
                     queryText = $"(cases.name LIKE '%{escapedSearchText}%' OR cases.case_number LIKE '{escapedSearchText}')";
@@ -377,14 +380,14 @@ namespace SuiteCRMAddIn
                     break;
                 case "Bugs":
                     queryText = $"(bugs.name LIKE '%{escapedSearchText}%' {logicalOperator} bugs.bug_number LIKE '{escapedSearchText}')";
-                    fields.Add("bug_number");
-                    break;
-                case "Accounts":
-                    queryText = "(accounts.name LIKE '%" + firstTerm + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + escapedSearchText + "%'))";
-                    foreach (string fieldName in new string[] { "first_name", "last_name", "name", "account_name" })
+                    foreach (string fieldName in new string[] { "name", "bug_number" })
                     {
                         fields.Add(fieldName);
                     }
+                    break;
+                case "Accounts":
+                    queryText = "(accounts.name LIKE '%" + firstTerm + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + escapedSearchText + "%'))";
+                    AddFirstLastAndAccountNames(fields);
                     break;
                 default:
                     List<string> fieldNames = clsSuiteCRMHelper.GetCharacterFields(moduleName);
@@ -411,6 +414,22 @@ namespace SuiteCRMAddIn
             }
 
             return queryText;
+        }
+
+        /// <summary>
+        /// Add 'first_name', 'last_name', 'name' and 'account_name' to this list of field names.
+        /// </summary>
+        /// <remarks>
+        /// It feels completely wrong to do this in code. There should be a configuration file of
+        /// appropriate fieldnames for module names somewhere, but there isn't. TODO: probably fix.
+        /// </remarks>
+        /// <param name="fields">The list of field names.</param>
+        private static void AddFirstLastAndAccountNames(List<string> fields)
+        {
+            foreach (string fieldName in new string[] { "first_name", "last_name", "name", "account_name" })
+            {
+                fields.Add(fieldName);
+            }
         }
 
         /// <summary>
@@ -451,11 +470,12 @@ namespace SuiteCRMAddIn
         /// if only one token, it's likely an email address, but might be a first or last name. 
         /// This query explores those possibilities.
         /// </summary>
-        /// <param name="moduleName"></param>
-        /// <param name="emailAddress"></param>
-        /// <param name="firstName"></param>
-        /// <param name="lastName"></param>
-        /// <returns></returns>
+        /// <param name="moduleName">The name of the module to search.</param>
+        /// <param name="emailAddress">The portion of the search text which may be an email address.</param>
+        /// <param name="firstName">The portion of the search text which may be a first name</param>
+        /// <param name="lastName">The portion of the search text which may be a last name</param>
+        /// <returns>If the module has fields 'first_name' and 'last_name', then a potential query string;
+        /// else an empty string.</returns>
         private static string ConstructQueryTextWithFirstAndLastNames(
             string moduleName, 
             string emailAddress, 
@@ -475,63 +495,71 @@ namespace SuiteCRMAddIn
             return result;
         }
 
-        private void populateTree(eGetEntryListResult search_result, string module, TreeNode root_node)
+        /// <summary>
+        /// Add a node beneath this parent representing this search result in this module.
+        /// </summary>
+        /// <param name="searchResult"></param>
+        /// <param name="module"></param>
+        /// <param name="parent"></param>
+        private void PopulateTree(eGetEntryListResult searchResult, string module, TreeNode parent)
         {
-            foreach (eEntryValue _value in search_result.entry_list)
+            foreach (eEntryValue entry in searchResult.entry_list)
             {
-                string s = string.Empty;
-                string key = string.Empty;
-                string valueByKey = string.Empty;
-                key = clsSuiteCRMHelper.GetValueByKey(_value, "id");
-                s = clsSuiteCRMHelper.GetValueByKey(_value, "first_name") + " " + clsSuiteCRMHelper.GetValueByKey(_value, "last_name");
-                if (s == " ")
+                string key = clsSuiteCRMHelper.GetValueByKey(entry, "id");
+                if (!parent.Nodes.ContainsKey(key))
                 {
-                    s = clsSuiteCRMHelper.GetValueByKey(_value, "name");
-                }
-                string str4 = module;
-                if (str4 != null)
-                {
-                    if (!(str4 == ContactSyncing.CrmModule) && !(str4 == "Leads"))
-                    {
-                        if (str4 == "Cases")
-                        {
-                            goto Label_00DC;
-                        }
-                        if (str4 == "Bugs")
-                        {
-                            goto Label_00F0;
-                        }
-                    }
-                    else
-                    {
-                        valueByKey = clsSuiteCRMHelper.GetValueByKey(_value, "account_name");
-                    }
-                }
-                goto Label_0102;
-            Label_00DC:
-                valueByKey = clsSuiteCRMHelper.GetValueByKey(_value, "case_number");
-                goto Label_0102;
-            Label_00F0:
-                valueByKey = clsSuiteCRMHelper.GetValueByKey(_value, "bug_number");
-            Label_0102:
-                if (valueByKey != string.Empty)
-                {
-                    s = s + " (" + valueByKey + ")";
-                }
-                if (!root_node.Nodes.ContainsKey(key))
-                {
-                    TreeNode node = new TreeNode(s)
+                    TreeNode node = new TreeNode(ConstructNodeName(module, entry))
                     {
                         Name = key,
                         Tag = key
                     };
-                    root_node.Nodes.Add(node);
+                    parent.Nodes.Add(node);
                 }
             }
-            if (search_result.result_count <= 3)
+            if (searchResult.result_count <= 3)
             {
-                root_node.Expand();
+                parent.Expand();
             }
+        }
+
+        /// <summary>
+        /// Construct suitable label text for a tree node representing this value in this module.
+        /// </summary>
+        /// <param name="module">The name of the module.</param>
+        /// <param name="entry">The value in the module.</param>
+        /// <returns>A canonical tree node label.</returns>
+        private static string ConstructNodeName(string module, eEntryValue entry)
+        {
+            StringBuilder nodeNameBuilder = new StringBuilder();
+            string keyValue = string.Empty;
+            nodeNameBuilder.Append(clsSuiteCRMHelper.GetValueByKey(entry, "first_name"))
+                .Append(" ")
+                .Append(clsSuiteCRMHelper.GetValueByKey(entry, "last_name"));
+
+            if (String.IsNullOrWhiteSpace(nodeNameBuilder.ToString()))
+            {
+                nodeNameBuilder.Append(clsSuiteCRMHelper.GetValueByKey(entry, "name"));
+            }
+
+            switch (module)
+            {
+                case "Cases":
+                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "case_number");
+                    break;
+                case "Bugs":
+                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "bug_number");
+                    break;
+                default:
+                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "account_name");
+                    break;
+            }
+
+            if (keyValue != string.Empty)
+            {
+                nodeNameBuilder.Append($" ({keyValue})");
+            }
+
+            return nodeNameBuilder.ToString();
         }
 
         private List<CrmEntity> GetSelectedCrmEntities(TreeView tree)
