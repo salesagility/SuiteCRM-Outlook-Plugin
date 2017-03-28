@@ -518,7 +518,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     module2_id = emailId,
                     module1 = entity.ModuleName,
                     module1_id = entity.EntityId,
-                });
+                }, Objective.Email);
 
             if (!success) throw new CrmSaveDataException($"Cannot create email relationship with {entity.ModuleName} ('set_relationship' failed)");
         }

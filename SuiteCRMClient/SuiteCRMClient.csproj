@@ -75,6 +75,7 @@
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\LogEntryType.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />
+    <Compile Include="Objective.cs" />
     <Compile Include="RESTObjects\eContactDetail.cs" />
     <Compile Include="RESTObjects\eDocumentRevision.cs" />
     <Compile Include="RESTObjects\eEntryValue.cs" />

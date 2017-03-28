@@ -225,14 +225,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, adding current user");
 
-            eSetRelationshipValue info = new eSetRelationshipValue
-            {
-                module2 = AppointmentSyncing.CrmModule,
-                module2_id = meetingId,
-                module1 = "Users",
-                module1_id = clsSuiteCRMHelper.GetUserId()
-            };
-            clsSuiteCRMHelper.SetRelationshipUnsafe(info);
+			SetCrmRelationshipFromOutlook(meetingId, "Users", clsSuiteCRMHelper.GetUserId());
         }
 
         private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem aItem, string meetingId)
@@ -243,25 +236,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Log.Info($"objRecepientName= {objRecepient.Name}, objRecepient= {objRecepient.Address}");
 
                 string sCID = SetCrmRelationshipFromOutlook(meetingId, objRecepient, ContactSyncing.CrmModule);
+
                 if (sCID != String.Empty)
                 {
                     string AccountID = clsSuiteCRMHelper.getRelationship(ContactSyncing.CrmModule, sCID, "accounts");
 
-                    if (AccountID != String.Empty)
-                    {
-                        eSetRelationshipValue info = new eSetRelationshipValue
-                        {
-                            module2 = AppointmentSyncing.CrmModule,
-                            module2_id = meetingId,
-                            module1 = "Accounts",
-                            module1_id = AccountID
-                        };
-                        clsSuiteCRMHelper.SetRelationshipUnsafe(info);
-                    }
-                    continue;
+                    SetCrmRelationshipFromOutlook(meetingId, "Accounts", AccountID);
                 }
-                if (!String.IsNullOrEmpty(SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Users"))) continue;
-                if (!String.IsNullOrEmpty(SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Leads"))) continue;
+                else if (String.IsNullOrEmpty(SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Contacts"))) {
+                    SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Leads");
+                }
             }
         }
 
@@ -627,27 +611,44 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Sets up a CRM relationship to mimic an Outlook relationship
         /// </summary>
-        /// <param name="_result"></param>
-        /// <param name="objRecepient"></param>
-        /// <param name="relnName"></param>
+        /// <param name="meetingId">The ID of the meeting</param>
+        /// <param name="recipient">The outlook recipient representing the person to link with.</param>
+        /// <param name="foreignModule">the name of the module we're seeking to link with.</param>
         /// <returns></returns>
-        private string SetCrmRelationshipFromOutlook(string _result, Outlook.Recipient objRecepient, string relnName)
+        private string SetCrmRelationshipFromOutlook(string meetingId, Outlook.Recipient recipient, string foreignModule)
         {
-            string sCID = GetID(objRecepient.Address, relnName);
-            if (sCID != String.Empty)
+            string foreignId = GetID(recipient.Address, foreignModule);
+
+            return SetCrmRelationshipFromOutlook(meetingId, foreignModule, foreignId) ?
+                foreignId :
+                string.Empty;
+        }
+
+        /// <summary>
+        /// Sets up a CRM relationship to mimic an Outlook relationship
+        /// </summary>
+        /// <param name="meetingId">The ID of the meeting</param>
+        /// <param name="foreignModule">the name of the module we're seeking to link with.</param>
+        /// <returns>True if a relationship </returns>
+        private bool SetCrmRelationshipFromOutlook(string meetingId, string foreignModule, string foreignId)
+        {
+            bool result = false;
+
+            if (foreignId != String.Empty)
             {
                 eSetRelationshipValue info = new eSetRelationshipValue
                 {
                     module2 = AppointmentSyncing.CrmModule,
-                    module2_id = _result,
-                    module1 = relnName,
-                    module1_id = sCID
+                    module2_id = meetingId,
+                    module1 = foreignModule,
+                    module1_id = foreignId
                 };
-                clsSuiteCRMHelper.SetRelationshipUnsafe(info);
+                result = clsSuiteCRMHelper.SetRelationshipUnsafe(info);
             }
 
-            return sCID;
+            return result;
         }
+
 
         private void SetRecipients(Outlook.AppointmentItem olAppointment, string sMeetingID, string sModule)
         {

@@ -443,7 +443,7 @@ namespace SuiteCRMAddIn
         {
             StringBuilder queryBuilder = new StringBuilder();
 
-            if (clsSuiteCRMHelper.GetActivitiesLinks(moduleName).Count() > 0)
+            if (clsSuiteCRMHelper.GetActivitiesLinks(moduleName, Objective.Email).Count() > 0)
             {
                 string tableName = moduleName.ToLower();
 
