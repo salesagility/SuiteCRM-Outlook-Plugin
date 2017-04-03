@@ -100,12 +100,15 @@ namespace SuiteCRMClient
                 else
                 {
                     AwaitingAuthentication = true;
+                    var username = SuiteCRMUsername != null ? SuiteCRMUsername : string.Empty;
+                    var password = this.SuiteCRMPassword != null ? this.SuiteCRMPassword : string.Empty;
+
                     object loginData = new
                     {
-                        @user_auth = new
+                        user_auth = new
                         {
-                            @user_name = SuiteCRMUsername,
-                            @password = GetMD5Hash(SuiteCRMPassword)
+                            user_name = username,
+                            password = global::SuiteCRMClient.UserSession.GetMD5Hash(password)
                         }
                     };
                     var loginReturn = this.restServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
@@ -115,8 +118,8 @@ namespace SuiteCRMClient
                         {
                             @user_auth = new
                             {
-                                @user_name = SuiteCRMUsername,
-                                @password = SuiteCRMPassword
+                                @user_name = username,
+                                @password = password
                             }
                         };
                         loginReturn = this.restServer.GetCrmResponse<RESTObjects.Login>("login", loginData);

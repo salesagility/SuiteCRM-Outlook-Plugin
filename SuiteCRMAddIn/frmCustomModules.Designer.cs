@@ -57,7 +57,7 @@ namespace SuiteCRMAddIn
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmCustomModules));
-            this.lstViewAvailableModules = new ListView();
+            this.lstViewAvailableModules = new System.Windows.Forms.ListView();
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.btnSave = new System.Windows.Forms.Button();
@@ -73,7 +73,6 @@ namespace SuiteCRMAddIn
             this.columnHeader2,
             this.columnHeader3});
             this.lstViewAvailableModules.Dock = System.Windows.Forms.DockStyle.Top;
-            // this.lstViewAvailableModules.DoubleClickActivation = false;
             this.lstViewAvailableModules.FullRowSelect = true;
             this.lstViewAvailableModules.Location = new System.Drawing.Point(0, 0);
             this.lstViewAvailableModules.Name = "lstViewAvailableModules";
@@ -120,15 +119,16 @@ namespace SuiteCRMAddIn
             this.AcceptButton = this.btnSave;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScroll = true;
+            this.AutoSize = true;
             this.BackColor = System.Drawing.Color.White;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(315, 282);
+            this.ClientSize = new System.Drawing.Size(315, 283);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.lstViewAvailableModules);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(331, 321);
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(331, 321);
             this.Name = "frmCustomModules";
