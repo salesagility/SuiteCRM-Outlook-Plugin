@@ -235,7 +235,7 @@ namespace SuiteCRMClient
 
             try
             {
-                result = TrySetRelationship(info);
+                result = TrySetRelationship(info, Objective.Meeting);
 
                 if (!result)
                 {
@@ -258,11 +258,11 @@ namespace SuiteCRMClient
         /// </summary>
         /// <param name="relationship">The relationship to set.</param>
         /// <returns>True if the relationship was created, else false.</returns>
-        public static bool TrySetRelationship(eSetRelationshipValue relationship)
+        public static bool TrySetRelationship(eSetRelationshipValue relationship, Objective objective)
         {
             return TrySetRelationship(relationship, $"{relationship.module2}") ||
                 TrySetRelationship(relationship, $"{relationship.module2}_{relationship.module1}") ||
-                TrySetRelationship(relationship, GetActivitiesLinks(relationship.module1));
+                TrySetRelationship(relationship, GetActivitiesLinks(relationship.module1, objective));
         }
 
         /// <summary>
@@ -540,33 +540,54 @@ namespace SuiteCRMClient
 
         /// <summary>
         /// Find the fields, among the fields of this module, which are links and where
-        /// the name of the relationship linked contains the token '_activities_'.
+        /// the name of the relationship linked contains the token '_activities_', prioritising
+        /// those which also contain this objective.
         /// </summary>
         /// <param name="module">The name of the module to examine.</param>
+        /// <param name="objective">The objective we're seeking in the relationship.</param>
         /// <returns>Its activities link fields.</returns>
-        public static IEnumerable<eField> GetActivitiesLinks(string module)
+        public static IEnumerable<eField> GetActivitiesLinks(string module, Objective objective)
         {
             var linkFields = GetFieldsForModule(module).linkFields;
-            //IEnumerable<eField> result = moduleFields
-            //    .Where(f => f.type == "link" && f.relationship != null && f.relationship.Contains("_activities_"));
-            List<eField> result = new List<eField>();
+            var objectiveName = objective.ToString().ToLower();
+            IEnumerable<eField> result = GetSubstringsLinks(linkFields, new List<string>() { "_activities_", objectiveName });
 
-            foreach (eField field in linkFields)
+            if (result.Count() == 0)
             {
-                if (field.type.Equals("link"))
-                {
-                    if (field.relationship != null)
-                    {
-                        if (field.relationship.Contains("_activities_")) {
-                            result.Add(field);
-                        }
-                    }
-                }
+                /* failed to find a relationship with both _activities_ and the objective */
+                result = GetSubstringsLinks(linkFields, new List<string>() { objectiveName });
             }
 
             return result;
         }
 
+        /// <summary>
+        /// Filter from these link fields those whose relationship names contain all of these substrings
+        /// </summary>
+        /// <param name="linkFields">The link fields to filter.</param>
+        /// <param name="substrings">The strings to filter them by.</param>
+        /// <returns>The fields whose relationship names contain all of these substrings.</returns>
+        private static IEnumerable<eField> GetSubstringsLinks(IEnumerable<eField> linkFields, IEnumerable<string> substrings)
+        {
+            return linkFields.Where(l => l.type.Equals("link") && StringContainsAll(l.relationship, substrings));
+        }
+
+        /// <summary>
+        /// Return true if this target contains all these substrings.
+        /// </summary>
+        /// <param name="target">The target string.</param>
+        /// <param name="substrings">The substrings.</param>
+        /// <returns>true if this target contains all these substrings.</returns>
+        private static bool StringContainsAll(string target, IEnumerable<string> substrings)
+        {
+            return string.IsNullOrEmpty(target) ?
+                false :
+                substrings.Where(s => target.Contains(s)).Count() == substrings.Count();
+        }
+
+        /// <remarks>
+        /// TODO: This really should be a data table, not code.
+        /// </remarks>
         public static string[] GetSugarFields(string module)
         {
             string[] strArray = new string[14];
