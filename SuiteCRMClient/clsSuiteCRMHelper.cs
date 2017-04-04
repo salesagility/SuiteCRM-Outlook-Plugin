@@ -305,7 +305,9 @@ namespace SuiteCRMClient
                 @module_name = info.module1,
                 @module_id = info.module1_id,
                 @link_field_name = linkFieldName,
-                @related_ids = new string[] { info.module2_id }
+                @related_ids = new string[] { info.module2_id },
+                @name_value_list = new eNameValue[] { },
+                @delete = info.delete
             };
             var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
 

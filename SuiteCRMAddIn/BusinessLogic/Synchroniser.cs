@@ -642,16 +642,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Deal, in CRM, with items deleted in Outlook.
         /// </summary>
-        /// <remarks>
-        /// After considerable discussion we've decided that contacts should never be actually deleted,
-        /// or even marked deleted, in CRM because of a deletion in Outlook. Policy is as follows:
-        /// <list type="ordered">
-        /// <item>If the Contact (OL) was public and already synced to CRM then CRM sync_contact is updated to TRUE IF the Contact is not deleted</item>
-        /// <item>If the Contact(OL) was public then made Private and already synced to the CRM then CRM sync_contact is updated to FALSE(no deletion)</item>
-        /// <item>If the Contact(OL) was private then made public and was already synced to the CRM then CRM sync_contact is updated to TRUE</item>
-        /// <item>If the Contact(CRM) was deleted i.e.deleted = 1 and the same Contact exists in OL then set OL Contact to Private</item>
-        /// </list>
-        /// </remarks>
         protected void RemoveDeletedItems()
         {
             if (IsCurrentView && PropagatesLocalDeletions)
@@ -675,12 +665,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        protected void RemoveFromCrm(SyncState state)
+
+        /// <summary>
+        /// Remove the item implied by this sync state from CRM.
+        /// </summary>
+        /// <param name="state">A sync state wrapping an item which has been deleted or marked private in Outlook.</param>
+        protected virtual void RemoveFromCrm(SyncState state)
         {
             if (SyncDirection.AllowOutbound(Direction))
             {
                 var crmEntryId = state.CrmEntryId;
-                if (!string.IsNullOrEmpty(crmEntryId) && this.HasImportAccess(state.CrmType))
+                if (state.ExistedInCrm && this.HasImportAccess(state.CrmType))
                 {
                     eNameValue[] data = new eNameValue[2];
                     data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);

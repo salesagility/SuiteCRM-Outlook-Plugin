@@ -408,6 +408,31 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
+        /// (Don't actually) remove the item implied by this sync state from CRM.
+        /// </summary>
+        /// <remarks>
+        /// After considerable thought we've decided that contacts should never actually be deleted from CRM
+        /// by the action of the plugin.
+        /// </remarks>
+        /// <param name="state">A sync state wrapping an item which has been deleted or marked private in Outlook.</param>
+        protected override void RemoveFromCrm(SyncState state)
+        {
+            if (state is ContactSyncState)
+            {
+                /* which it most definitely should be */
+                if (state.ExistedInCrm && (state.IsDeletedInOutlook || ! state.IsPublic))
+                {
+                    /* remove sync_contact relationship in CRM */
+                    EnsureSyncWithOutlookSetInCRM(state.CrmEntryId, null, false);
+                }
+            }
+            else
+            {
+                base.RemoveFromCrm(state);
+            }
+        }
+
+        /// <summary>
         /// TODO: I (AF) do not understand the purpose of this logic. (Pre-existing code, slightly cleaned-up.)
         /// </summary>
         /// <param name="contact"></param>
@@ -513,8 +538,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// by setting the Sync to Outlook checkbox in CRM.
         /// </summary>
         /// <param name="contactIdInCRM">The identifier of the contact in the CRM system</param>
-        /// <param name="syncProperty">If non null, set the checkbox.</param>
-        private static void EnsureSyncWithOutlookSetInCRM(string contactIdInCRM, Outlook.UserProperty syncProperty)
+        /// <param name="syncProperty">If null, set the checkbox.</param>
+        /// <param name="create">If provided and false, then remove rather than creating the relationship.</param>
+        private static void EnsureSyncWithOutlookSetInCRM(string contactIdInCRM, Outlook.UserProperty syncProperty, bool create = true)
         {
             if (syncProperty == null)
             {
@@ -523,7 +549,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                     module1 = CrmModule,
                     module1_id = contactIdInCRM,
                     module2 = "user_sync",
-                    module2_id = clsSuiteCRMHelper.GetUserId()
+                    module2_id = clsSuiteCRMHelper.GetUserId(),
+                    delete = create ? 0 : 1
                 };
                 clsSuiteCRMHelper.SetRelationshipUnsafe(info);
             }
@@ -543,6 +570,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         /* We hava a rare intermittent bug (#95) which leads to all contacts being suddenly deleted from both Outlook and CRM.
          * Until we have that fixed it would be a really good idea NOT to propagate deletions! */ 
-        protected override bool PropagatesLocalDeletions => false;
+        protected override bool PropagatesLocalDeletions => true;
     }
 }
