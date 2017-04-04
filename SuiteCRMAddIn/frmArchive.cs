@@ -696,7 +696,11 @@ namespace SuiteCRMAddIn
                     return;
                 }
 
-                DaemonWorker.Instance.AddTask(new EmailArchiveAction(Globals.ThisAddIn.SelectedEmails, selectedCrmEntities, this.type));
+                var archiver = new EmailArchiving($"EB-{Globals.ThisAddIn.SelectedEmailCount}", Globals.ThisAddIn.Log);
+                this.ReportOnEmailArchiveSuccess(
+                    Globals.ThisAddIn.SelectedEmails.Select(mailItem =>
+                            archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.type))
+                        .ToList());
 
                 Close();
             }
