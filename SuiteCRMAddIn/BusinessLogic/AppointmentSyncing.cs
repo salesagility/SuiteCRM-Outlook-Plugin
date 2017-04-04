@@ -298,9 +298,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private void MaybeAddAcceptDeclineLinks(eEntryValue crmItem, Outlook.AppointmentItem olItem, string crmType)
         {
-            if (this.DefaultCrmModule.Equals(crmType) && olItem.Body.IndexOf(AcceptDeclineHeader) == -1)
+            string description = crmItem.GetValueAsString("description") ?? string.Empty;
+
+            if (this.DefaultCrmModule.Equals(crmType) && description.IndexOf(AcceptDeclineHeader) == -1)
             {
-                olItem.Body = this.AcceptDeclineLinks(crmItem);
+                olItem.Body = $"{description}\n-- \n\n{this.AcceptDeclineLinks(crmItem)}";
             }
         }
 
@@ -855,7 +857,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private static string AcceptDeclineLink(eEntryValue crmItem, string acceptStatus)
         {
             StringBuilder bob = new StringBuilder();
-            bob.Append($"  To {acceptStatus} this invitation: {Globals.ThisAddIn.Settings.host}/index.php?entryPoint=acceptDecline&module=Meetings")
+            bob.Append($"To {acceptStatus} this invitation: {Globals.ThisAddIn.Settings.host}/index.php?entryPoint=acceptDecline&module=Meetings")
                 .Append($"&user_id={clsSuiteCRMHelper.GetUserId()}")
                 .Append($"&record={crmItem.id}")
                 .Append($"&accept_status={acceptStatus}\n");

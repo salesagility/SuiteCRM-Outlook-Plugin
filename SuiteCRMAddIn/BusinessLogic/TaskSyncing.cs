@@ -224,14 +224,32 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             outlookItem.Subject = crmItem.GetValueAsString("name");
 
-            if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
+            try
             {
-                Log.Warn("\ttItem.StartDate= " + outlookItem.StartDate + ", date_start=" + date_start);
-                outlookItem.StartDate = date_start.Value;
+                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
+                {
+                    Log.Warn("\ttItem.StartDate= " + outlookItem.StartDate + ", date_start=" + date_start);
+                    outlookItem.StartDate = date_start.Value;
+                }
             }
-            if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_due")))
+            catch (Exception fail)
             {
-                outlookItem.DueDate = date_due.Value; // DateTime.Parse(dResult.date_due.value.ToString());
+                /* you (sometimes? always?) can't set the start or due dates of tasks. Investigate. */
+                Log.Error($"TaskSyncing.SetOutlookItemPropertiesFromCrmItem: Failed to set start date on task because {fail.Message}", fail);
+
+            }
+            try
+            { 
+                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_due")))
+                {
+                    outlookItem.DueDate = date_due.Value; // DateTime.Parse(dResult.date_due.value.ToString());
+                }
+            }
+            catch (Exception fail)
+            {
+                /* you (sometimes? always?) can't set the start or due dates of tasks. Investigate. */
+                Log.Error($"TaskSyncing.SetOutlookItemPropertiesFromCrmItem: Failed to set due date on task because {fail.Message}", fail);
+
             }
 
             string body = crmItem.GetValueAsString("description");
