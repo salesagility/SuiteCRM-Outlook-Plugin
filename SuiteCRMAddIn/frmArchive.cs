@@ -260,9 +260,9 @@ namespace SuiteCRMAddIn
                     }
                     else
                     {
-                        this.txtSearch.Enabled = true;
                         this.btnArchive.Enabled = true;
                     }
+                    this.txtSearch.Enabled = true;
                 }
             }
         }
