@@ -25,6 +25,7 @@
 namespace SuiteCRMAddIn
 {
     using BusinessLogic;
+    using Microsoft.Office.Core;
     using SuiteCRMAddIn.Properties;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
@@ -41,6 +42,7 @@ namespace SuiteCRMAddIn
 
     public partial class ThisAddIn
     {
+        private const string ProgId = "SuiteCRMAddIn";
         public static readonly string AddInTitle, AddInVersion;
 
         public SuiteCRMClient.UserSession SuiteCRMUserSession;
@@ -223,30 +225,54 @@ namespace SuiteCRMAddIn
                     else
                     {
                         disable = this.ShowReconfigureOrDisable("Login to CRM failed");
+                        Log.Info("User chose to disable add-in after licence check succeeded but login to CRM failed.");
                     }
                 }
                 else
                 {
                     disable = this.ShowReconfigureOrDisable("Licence check failed");
+                    Log.Info("User chose to disable add-in after licence check failed.");
                 }
             }
 
-            if (success)
+            if (success && !disable)
             {
                 log.Info("Starting normal operations.");
-                    StartSynchronisationProcesses();
+                StartSynchronisationProcesses();
+            }
+            else if (disable)
+            {
+                log.Info("Disabling addin at user request");
+                this.Disable();
             }
             else
             {
-                /* presumably disable is true */
-                this.Disable();
+                /* it's possible for both success AND disable to be true (if login to CRM fails); 
+                 * but logically if success is false disabel must be true, so this branch should
+                 * never be reached. */
+                log.Error($"In ThisAddIn.Run: success is {success}; disable is {disable}; impossible state, disabling.");
             }
         }
 
         private void Disable()
         {
             Log.Warn("Disabling add-in");
-            Application.COMAddIns.Item("SuiteCRMAddIn").Connect = false;
+            int i = 0;
+
+            foreach (COMAddIn addin in Application.COMAddIns)
+            {
+                if (ProgId.Equals(addin.ProgId))
+                {
+                    Log.Debug($"ThisAddIn.Disable: Disabling instance {++i} of addin {ProgId}");
+                    addin.Connect = false;
+                }
+                else
+                {
+                    Log.Debug($"ThisAddIn.Disable: Ignoring addin {addin.ProgId}");
+                }
+            }
+
+            // Application.COMAddIns.Item(ProgId).Connect = false;
         }
 
         /// <summary>
@@ -374,12 +400,14 @@ namespace SuiteCRMAddIn
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
+            Log.Info("ThisAddIn_Shutdown: shutting down normally");
             try
             {
                 if (SuiteCRMUserSession != null)
                     SuiteCRMUserSession.LogOut();
                 if (this.CommandBarExists("SuiteCRM"))
                 {
+                    Log.Info("ThisAddIn_Shutdown: Removing SuiteCRM command bar");
                     this.objSuiteCRMMenuBar2007.Delete();
                 }
                 this.UnregisterEvents();
@@ -394,6 +422,7 @@ namespace SuiteCRMAddIn
         {
             try
             {
+                Log.Info("ThisAddIn.UnregisterEvents: Removing context menu display event handler");
                 this.Application.ItemContextMenuDisplay -= new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
             }
             catch (Exception ex)
@@ -402,6 +431,7 @@ namespace SuiteCRMAddIn
             }
             try
             {
+                Log.Info("ThisAddIn.UnregisterEvents: Removing archive button click event handler");
                 this.btnArvive.Click -= new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
             }
             catch (Exception ex)
@@ -411,7 +441,14 @@ namespace SuiteCRMAddIn
 
             try
             {
-                this.objExplorer.Application.NewMailEx -= new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
+                Log.Info("ThisAddIn.UnregisterEvents: Removing new mail event handler");
+
+                Outlook.ApplicationEvents_11_NewMailExEventHandler handler = new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
+
+                if (handler != null)
+                {
+                    this.objExplorer.Application.NewMailEx -= handler;
+                }
             }
             catch (Exception ex)
             {
@@ -420,6 +457,7 @@ namespace SuiteCRMAddIn
 
             try
             {
+                Log.Info("ThisAddIn.UnregisterEvents: Removing archive item send event handler");
                 this.objExplorer.Application.ItemSend -= new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
             }
             catch (Exception ex)
@@ -427,29 +465,32 @@ namespace SuiteCRMAddIn
                 log.Error("ThisAddIn.UnregisterEvents", ex);
             }
 
-            try
+            DisposeOf(appointmentSynchroniser);
+            DisposeOf(contactSynchroniser);
+            DisposeOf(taskSynchroniser);
+        }
+
+        /// <summary>
+        /// Dispose of this disposable object, with extra logging.
+        /// </summary>
+        /// <param name="toDispose">The object of which to dispose.</param>
+        private void DisposeOf(IDisposable toDispose)
+        {
+            if (toDispose != null)
             {
-                appointmentSynchroniser.Dispose();
+                try
+                {
+                    Log.Debug($"ThisAddIn.UnregisterEvents: Disposing of {toDispose.GetType().Name}");
+                    toDispose.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    log.Error($"DisposeOfSynchroniser: Failed to dispose of instance of {toDispose.GetType().Name}", ex);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                log.Error("AppointmentSyncing.Dispose", ex);
-            }
-            try
-            {
-                contactSynchroniser.Dispose();
-            }
-            catch (Exception ex)
-            {
-                log.Error("ContactSyncing.Dispose", ex);
-            }
-            try
-            {
-                taskSynchroniser.Dispose();
-            }
-            catch (Exception ex)
-            {
-                log.Error("TaskSyncing.Dispose", ex);
+                log.Error("Attempt to dispose of null reference?");
             }
         }
 
