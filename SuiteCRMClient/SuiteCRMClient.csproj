@@ -109,6 +109,7 @@
     <Compile Include="RESTObjects\eUserAuth.cs" />
     <Compile Include="RESTObjects\eUserDetail.cs" />
     <Compile Include="clsSuiteCRMHelper.cs" />
+    <Compile Include="RESTObjects\NameValueCollection.cs" />
     <Compile Include="UserSession.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>

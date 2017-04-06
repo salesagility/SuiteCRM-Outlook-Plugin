@@ -376,36 +376,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        override protected void OutlookItemChanged(Outlook.ContactItem item)
-        {
-            if (item != null)
-            {
-                this.LogItemAction(item, "Allegedly changed?");
-                SaveChangedItem(item);
-            }
-        }
-
-        private void SaveChangedItem(Outlook.ContactItem oItem)
-        {
-            var contact = AddOrGetSyncState(oItem);
-            if (!ShouldPerformSyncNow(contact)) return;
-            if (contact.ShouldSyncWithCrm)
-            {
-                if (contact.ExistedInCrm)
-                {
-                    contact.IsUpdate = 2;
-                    AddOrUpdateItemFromOutlookToCrm(oItem, DefaultCrmModule, contact.CrmEntryId);
-                }
-                else
-                {
-                    AddOrUpdateItemFromOutlookToCrm(oItem, DefaultCrmModule);
-                }
-            }
-            else
-            {
-                RemoveFromCrm(contact);
-            }
-        }
 
         /// <summary>
         /// (Don't actually) remove the item implied by this sync state from CRM.
@@ -430,23 +400,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 base.RemoveFromCrm(state);
             }
-        }
-
-        /// <summary>
-        /// TODO: I (AF) do not understand the purpose of this logic. (Pre-existing code, slightly cleaned-up.)
-        /// </summary>
-        /// <param name="contact"></param>
-        /// <returns></returns>
-        private bool ShouldPerformSyncNow(SyncState<Outlook.ContactItem> contact)
-        {
-            var modifiedSinceSeconds = Math.Abs((DateTime.UtcNow - contact.OModifiedDate).TotalSeconds);
-            if (modifiedSinceSeconds > 5 || modifiedSinceSeconds > 2 && contact.IsUpdate == 0)
-            {
-                contact.OModifiedDate = DateTime.UtcNow;
-                contact.IsUpdate = 1;
-            }
-
-            return (IsCurrentView && contact.IsUpdate == 1);
         }
 
         override protected void OutlookItemAdded(Outlook.ContactItem item)
@@ -506,7 +459,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override string ConstructAndDespatchCrmItem(Outlook.ContactItem olItem, string crmType, string entryId)
         {
-            var data = new List<eNameValue>();
+            var data = new NameValueCollection();
 
             data.Add(clsSuiteCRMHelper.SetNameValuePair("email1", olItem.Email1Address));
             data.Add(clsSuiteCRMHelper.SetNameValuePair("title", olItem.JobTitle));

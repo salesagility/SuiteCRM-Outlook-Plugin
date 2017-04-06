@@ -94,83 +94,12 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olAppointmentItem;
 
-        /// <summary>
-        /// Entry point from event handler when an item is added in Outlook.
-        /// </summary>
-        /// <param name="appointment"></param>
-        override protected void OutlookItemAdded(Outlook.AppointmentItem appointment)
-        {
-            LogItemAction(appointment, "AppointmentSyncing.OutlookItemAdded");
-
-            if (IsCurrentView && !this.ItemsSyncState
-                .Where(a => !a.IsDeletedInOutlook)
-                .Where(a => a.OutlookItem != null)
-                .ToList().Exists(a => a.OutlookItem.EntryID == appointment.EntryID))
-            {
-                AddOrUpdateItemFromOutlookToCrm(appointment, AppointmentSyncing.CrmModule);
-            }
-            else
-            {
-                Log.Warn(String.Format("AppointmentSyncing.OutlookItemAdded: item {0} had already been added", appointment.EntryID));
-            }
-        }
 
         protected override void SaveItem(Outlook.AppointmentItem olItem)
         {
             olItem.Save();
         }
 
-
-        /// <summary>
-        /// Entry point from event handler, called when an Outlook item of class AppointmentItem 
-        /// has changed.
-        /// </summary>
-        /// <param name="olItem">The item which has changed.</param>
-        override protected void OutlookItemChanged(Outlook.AppointmentItem olItem)
-        {
-            LogItemAction(olItem, "AppointmentSyncing.OutlookItemChanged");
-            string entryId = olItem.EntryID;
-            var syncStateForItem = GetExistingSyncState(olItem);
-            if (syncStateForItem != null)
-            {
-                var utcNow = DateTime.UtcNow;
-                if (Math.Abs((utcNow - syncStateForItem.OModifiedDate).TotalSeconds) > 5.0)
-                {
-                    Log.Info("2 callitem.IsUpdate = " + syncStateForItem.IsUpdate);
-                    syncStateForItem.IsUpdate = 0;
-                }
-
-                Log.Info("Before UtcNow - callitem.OModifiedDate= " + (int)(utcNow - syncStateForItem.OModifiedDate).TotalSeconds);
-
-                if (Math.Abs((utcNow - syncStateForItem.OModifiedDate).TotalSeconds) > 2.0 && syncStateForItem.IsUpdate == 0)
-                {
-                    syncStateForItem.OModifiedDate = DateTime.UtcNow;
-                    Log.Info("1 callitem.IsUpdate = " + syncStateForItem.IsUpdate);
-                    syncStateForItem.IsUpdate++;
-                }
-
-                this.LogItemAction(syncStateForItem.OutlookItem, "AppointmentSyncState.OutlookItemChanged, syncing");
-                Log.Info("utcNow= " + DateTime.UtcNow.ToString());
-                Log.Info("UtcNow - callitem.OModifiedDate= " + (int)(DateTime.UtcNow - syncStateForItem.OModifiedDate).TotalSeconds);
-
-                if (IsCurrentView && syncStateForItem.IsUpdate == 1)
-                {
-                    Outlook.UserProperty olPropertyType = olItem.UserProperties[TypePropertyName];
-                    Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[CrmIdPropertyName];
-                    if (olPropertyType != null && olPropertyEntryId != null)
-                    {
-                        syncStateForItem.IsUpdate++;
-                        AddOrUpdateItemFromOutlookToCrm(olItem, olPropertyType.Value.ToString(), olPropertyEntryId.Value.ToString());
-                    }
-                }
-            }
-            else
-            {
-                /* we don't have a sync state for this item (presumably formerly private);
-                 *  that's OK, treat it as new */
-                OutlookItemAdded(olItem);
-            }
-        }
 
         // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
         // (but not for Appointments).
@@ -358,12 +287,27 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
+        /// Add the item implied by this SyncState, which may not exist in CRM, to CRM.
+        /// </summary>
+        /// <param name="syncState">The sync state.</param>
+        /// <returns>The id of the entry added or updated.</returns>
+        protected override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
+        {
+            Outlook.AppointmentItem olItem = syncState.OutlookItem;
+            Outlook.UserProperty olPropertyType = olItem.UserProperties[TypePropertyName];
+            var itemType = olPropertyType != null ? olPropertyType.Value.ToString() : this.DefaultCrmModule;
+
+            return this.AddOrUpdateItemFromOutlookToCrm(olItem, itemType, syncState.CrmEntryId);
+        }
+
+        /// <summary>
         /// Add this Outlook item, which may not exist in CRM, to CRM.
         /// </summary>
         /// <param name="olItem">The outlook item to add.</param>
         /// <param name="crmType">The CRM type to which it should be added</param>
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
+        /// <returns>The id of the entry added o</returns>
         protected override string AddOrUpdateItemFromOutlookToCrm(Outlook.AppointmentItem olItem, string crmType, string entryId = "")
         {
             string result = entryId;
@@ -411,7 +355,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override string ConstructAndDespatchCrmItem(Outlook.AppointmentItem olItem, string crmType, string entryId)
         {
-            List<eNameValue> data = new List<eNameValue>();
+            NameValueCollection data = new NameValueCollection();
 
             DateTime uTCDateTime = new DateTime();
             DateTime time2 = new DateTime();

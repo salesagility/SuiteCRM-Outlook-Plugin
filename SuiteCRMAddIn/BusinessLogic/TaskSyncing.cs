@@ -314,60 +314,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        override protected void OutlookItemChanged(Outlook.TaskItem oItem)
-        {
-            Log.Debug("Outlook Tasks ItemChange");
-            string entryId = oItem.EntryID;
-
-            var taskitem = this.GetExistingSyncState(oItem);
-            if (taskitem != null)
-            {
-                if ((DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 5)
-                {
-                    taskitem.IsUpdate = 0;
-                }
-
-                if ((int)(DateTime.UtcNow - taskitem.OModifiedDate).TotalSeconds > 2 && taskitem.IsUpdate == 0)
-                {
-                    taskitem.OModifiedDate = DateTime.UtcNow;
-                    Log.Warn("1 callitem.IsUpdate = " + taskitem.IsUpdate);
-                    taskitem.IsUpdate++;
-                }
-
-                this.LogItemAction(oItem, "TaskSyncing.OutlookItemChanged");
-            }
-            else
-            {
-                Log.Warn("TaskSyncing.OutlookItemChanged: not found callitem ");
-            }
-
-            if (IsCurrentView && this.GetExistingSyncState(oItem) != null && taskitem.IsUpdate == 1)
-            {
-
-                Outlook.UserProperty oProp1 = oItem.UserProperties["SEntryID"];
-                if (oProp1 != null)
-                {
-                    taskitem.IsUpdate++;
-                    AddOrUpdateItemFromOutlookToCrm(oItem, this.DefaultCrmModule, oProp1.Value.ToString());
-                }
-            }
-        }
-
-        override protected void OutlookItemAdded(Outlook.TaskItem item)
-        {
-                if (IsCurrentView)
-                {
-                    Outlook.UserProperty oProp2 = item.UserProperties["SEntryID"];  // to avoid duplicating of the task
-                    if (oProp2 != null)
-                    {
-                        AddOrUpdateItemFromOutlookToCrm(item, this.DefaultCrmModule, oProp2.Value);
-                    }
-                    else
-                    {
-                        AddOrUpdateItemFromOutlookToCrm(item, this.DefaultCrmModule);
-                    }
-                }
-        }
 
         protected override void EnsureSynchronisationPropertyForOutlookItem(Outlook.TaskItem olItem, string name, string value)
         {
@@ -564,13 +510,45 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             /// <summary>
+            /// True if other is also a ProtoTask I have identically the same content as other.
+            /// </summary>
+            /// <param name="other">Another object, which may be a prototask.</param>
+            /// <returns>True if other is also a ProtoTask I have identically the same content as other.</returns>
+            public override bool Equals(object other)
+            {
+                bool result = false;
+                if (other is ProtoTask)
+                {
+                    Dictionary<string, object> myContents = this.AsNameValues(string.Empty).AsDictionary();
+                    Dictionary<string, object> theirContents = ((ProtoTask)other).AsNameValues(string.Empty).AsDictionary();
+
+                    result = myContents.Keys.Count == theirContents.Keys.Count;
+                    foreach (string key in myContents.Keys)
+                    {
+                        result &= myContents[key].Equals(theirContents[key]);
+                    }
+                }
+
+                return result;
+            }
+
+            /// <summary>
+            /// I'm very like a dictionary constructed from my names/values, but not quite.
+            /// </summary>
+            /// <returns>A hash code </returns>
+            public override int GetHashCode()
+            {
+                return this.AsNameValues(string.Empty).AsDictionary().GetHashCode() + 1;
+            }
+
+            /// <summary>
             /// Construct a name value list (to be serialised as JSON) representing this task.
             /// </summary>
             /// <param name="entryId">The presumed id of this task in CRM, if known.</param>
             /// <returns>a name value list representing this task</returns>
-            public List<eNameValue> AsNameValues(string entryId)
+            public NameValueCollection AsNameValues(string entryId)
             {
-                var dataList = new List<eNameValue>();
+                var dataList = new NameValueCollection();
                 dataList.Add(clsSuiteCRMHelper.SetNameValuePair("name", this.oItem.Subject));
                 dataList.Add(clsSuiteCRMHelper.SetNameValuePair("description", this.Description));
                 dataList.Add(clsSuiteCRMHelper.SetNameValuePair("status", this.Status));

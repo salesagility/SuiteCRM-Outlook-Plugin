@@ -147,7 +147,7 @@ namespace SuiteCRMClient
         /// <param name="data"></param>
         /// <param name="moduleName"></param>
         /// <returns>the CRM id of the object created or modified.</returns>
-        public static string SetEntryUnsafe(List<eNameValue> data, string moduleName = "Emails")
+        public static string SetEntryUnsafe(NameValueCollection data, string moduleName = "Emails")
         {
             return SetEntryUnsafe(data.ToArray(), moduleName);
         }

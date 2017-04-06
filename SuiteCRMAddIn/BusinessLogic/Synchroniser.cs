@@ -375,6 +375,18 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.ResolveUnmatchedItems(itemsToResolve, DefaultCrmModule);
         }
 
+
+        /// <summary>
+        /// Add the item implied by this SyncState, which may not exist in CRM, to CRM.
+        /// </summary>
+        /// <param name="syncState">The sync state.</param>
+        /// <returns>The id of the entry added or updated.</returns>
+        protected virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState)
+        {
+            return this.AddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem, DefaultCrmModule, syncState.CrmEntryId);
+        }
+
+
         /// <summary>
         /// Add this Outlook item, which may not exist in CRM, to CRM.
         /// </summary>
@@ -412,6 +424,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Save this item.
         /// </summary>
+        /// <remarks>
+        /// Because Outlook items are not proper objects, you cannot call the Save method of
+        /// an Outlook item without knowing its exact class explicitly. So there are what look
+        /// like redundant specialisations of this method; they aren't.
+        /// </remarks>
         /// <param name="olItem">The item to save.</param>
         protected abstract void SaveItem(OutlookItemType olItem);
 
@@ -853,9 +870,57 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        protected abstract void OutlookItemAdded(OutlookItemType outlookItem);
 
-        protected abstract void OutlookItemChanged(OutlookItemType outlookItem);
+        /// <summary>
+        /// Entry point from event handler when an item is added in Outlook.
+        /// </summary>
+        /// <remarks>Should always run in the 'VSTA_main' thread.</remarks>
+        /// <param name="olItem">The item that has been added.</param>
+        protected virtual void OutlookItemAdded(OutlookItemType olItem)
+        {
+            LogItemAction(olItem, "AppointmentSyncing.OutlookItemAdded");
+
+            if (olItem != null)
+            {
+                if (IsCurrentView && this.GetExistingSyncState(olItem) == null)
+                {
+                    AddOrUpdateItemFromOutlookToCrm(olItem, this.DefaultCrmModule);
+                }
+                else
+                {
+                    Log.Warn($"AppointmentSyncing.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Entry point from event handler, called when an Outlook item of class AppointmentItem 
+        /// is believed to have changed.
+        /// </summary>
+        /// <param name="olItem">The item which has changed.</param>
+        protected void OutlookItemChanged(OutlookItemType olItem)
+        {
+            LogItemAction(olItem, "Syncroniser.OutlookItemChanged");
+            var syncStateForItem = GetExistingSyncState(olItem);
+            if (syncStateForItem != null)
+            {
+                if (this.ShouldPerformSyncNow(syncStateForItem))
+                {
+                    AddOrUpdateItemFromOutlookToCrm(syncStateForItem);
+                }
+                else if (!syncStateForItem.ShouldSyncWithCrm)
+                {
+                    this.RemoveFromCrm(syncStateForItem);
+                }
+            }
+            else
+            {
+                /* we don't have a sync state for this item (presumably formerly private);
+                 *  that's OK, treat it as new */
+                OutlookItemAdded(olItem);
+            }
+        }
 
         public abstract Outlook.MAPIFolder GetDefaultFolder();
 
@@ -887,5 +952,16 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.LogItemAction(item.OutlookItem, "AppointmentSyncing.RemoveItemSyncState, removed item from queue");
             this.ItemsSyncState.Remove(item);
         }
+
+        /// <summary>
+        /// Should the item represented by this sync state be synchronised now?
+        /// </summary>
+        /// <param name="syncState">The sync state under consideration.</param>
+        /// <returns>True if this synchroniser relates to the current tab and the timing logic is satisfied.</returns>
+        protected bool ShouldPerformSyncNow(SyncState<OutlookItemType> syncState)
+        {
+            return (IsCurrentView && syncState.ShouldPerformSyncNow());
+        }
+
     }
 }
