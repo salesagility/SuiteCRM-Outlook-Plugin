@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using ProtoItems;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
@@ -447,6 +448,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
+
+        /// <summary>
+        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
+        /// </summary>
+        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="crmType">The type within CRM to which the item should be added.</param>
+        /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
+        /// <returns>The CRM id of the object created or modified.</returns>
+        protected override string ConstructAndDespatchCrmItem(Outlook.ContactItem olItem, string crmType, string entryId)
+        {
+            return clsSuiteCRMHelper.SetEntryUnsafe(new ProtoContact(olItem).AsNameValues(entryId), crmType);
+        }
+
         protected override SyncState<Outlook.ContactItem> ConstructSyncState(Outlook.ContactItem oItem)
         {
             return new ContactSyncState
@@ -457,33 +471,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             };
         }
 
-        protected override string ConstructAndDespatchCrmItem(Outlook.ContactItem olItem, string crmType, string entryId)
-        {
-            var data = new NameValueCollection();
-
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("email1", olItem.Email1Address));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("title", olItem.JobTitle));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("phone_work", olItem.BusinessTelephoneNumber));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("phone_home", olItem.HomeTelephoneNumber));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("phone_mobile", olItem.MobileTelephoneNumber));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("phone_fax", olItem.BusinessFaxNumber));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("department", olItem.Department));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_city", olItem.BusinessAddressCity));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_state", olItem.BusinessAddressState));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_postalcode", olItem.BusinessAddressPostalCode));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_country", olItem.BusinessAddressCountry));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_street", olItem.BusinessAddressStreet));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("description", olItem.Body));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("last_name", olItem.LastName));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("first_name", olItem.FirstName));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("account_name", olItem.CompanyName));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("salutation", olItem.Title));
-            data.Add(string.IsNullOrEmpty(entryId) ?
-                clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId()) :
-                clsSuiteCRMHelper.SetNameValuePair("id", entryId));
-
-            return clsSuiteCRMHelper.SetEntryUnsafe(data, crmType);
-        }
 
         /// <summary>
         /// If it was created in Outlook and doesn't exist in CRM,  (in which case it won't yet have a 
@@ -521,8 +508,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olContactItem;
 
-        /* We hava a rare intermittent bug (#95) which leads to all contacts being suddenly deleted from both Outlook and CRM.
-         * Until we have that fixed it would be a really good idea NOT to propagate deletions! */ 
         protected override bool PropagatesLocalDeletions => true;
     }
 }

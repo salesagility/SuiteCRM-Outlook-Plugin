@@ -22,14 +22,13 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using SuiteCRMAddIn.ProtoItems;
+    using SuiteCRMClient;
+    using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Runtime.InteropServices;
-    using SuiteCRMClient.Logging;
-    using SuiteCRMClient;
-    using SuiteCRMClient.RESTObjects;
-    using Newtonsoft.Json;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     public class TaskSyncing: Synchroniser<Outlook.TaskItem>
@@ -277,6 +276,20 @@ namespace SuiteCRMAddIn.BusinessLogic
             return newState;
         }
 
+
+        /// <summary>
+        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
+        /// </summary>
+        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="crmType">The type within CRM to which the item should be added.</param>
+        /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
+        /// <returns>The CRM id of the object created or modified.</returns>
+        protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem, string crmType, string entryId)
+        {
+            return clsSuiteCRMHelper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), crmType);
+        }
+
+
         protected override void GetOutlookItems(Outlook.MAPIFolder taskFolder)
         {
             try
@@ -325,17 +338,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             olProperty.Value = value ?? string.Empty;
         }
 
-        /// <summary>
-        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
-        /// </summary>
-        /// <param name="olItem">The Outlook item.</param>
-        /// <param name="crmType">The type within CRM to which the item should be added.</param>
-        /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
-        /// <returns>The CRM id of the object created or modified.</returns>
-        protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem, string crmType, string entryId)
-        {
-            return clsSuiteCRMHelper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), crmType);
-        }
 
         public override Outlook.MAPIFolder GetDefaultFolder()
         {
@@ -362,237 +364,5 @@ namespace SuiteCRMAddIn.BusinessLogic
         // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
         // (but not for Appointments).
         protected override bool PropagatesLocalDeletions => true;
-
-        /// <summary>
-        /// Broadly, a C# representation of a CRM task.
-        /// </summary>
-        private class ProtoTask
-        {
-            private Outlook.TaskItem oItem;
-            private string dateStart = string.Empty, dateDue = string.Empty;
-            private string body = String.Empty;
-            private string description = String.Empty;
-
-            public string Body
-            {
-                get
-                {
-                    return body;
-                }
-            }
-
-            public string DateStart
-            {
-                get
-                {
-                    return dateStart;
-                }
-            }
-
-            public string DateDue
-            {
-                get
-                {
-                    return dateDue;
-                }
-            }
-
-            public string Description
-            {
-                get
-                {
-                    return description;
-                }
-            }
-
-            public string Priority
-            {
-                get
-                {
-                    string result;
-                    switch (oItem.Importance)
-                    {
-                        case Outlook.OlImportance.olImportanceLow:
-                            result = "Low";
-                            break;
-
-                        case Outlook.OlImportance.olImportanceNormal:
-                            result = "Medium";
-                            break;
-
-                        case Outlook.OlImportance.olImportanceHigh:
-                            result = "High";
-                            break;
-                        default:
-                            result = string.Empty;
-                            break;
-                    }
-
-                    return result;
-                }
-            }
-
-            public string Status
-            {
-                get
-                {
-                    string result;
-                    switch (oItem.Status)
-                    {
-                        case Outlook.OlTaskStatus.olTaskNotStarted:
-                            result = "Not Started";
-                            break;
-                        case Outlook.OlTaskStatus.olTaskInProgress:
-                            result = "In Progress";
-                            break;
-                        case Outlook.OlTaskStatus.olTaskComplete:
-                            result = "Completed";
-                            break;
-                        case Outlook.OlTaskStatus.olTaskDeferred:
-                            result = "Deferred";
-                            break;
-                        default:
-                            result = string.Empty;
-                            break;
-                    }
-
-                    return result;
-                }
-            }
-
-            public ProtoTask(Outlook.TaskItem oItem)
-            {
-                this.oItem = oItem;
-                DateTime uTCDateTime = new DateTime();
-                DateTime time2 = new DateTime();
-                uTCDateTime = oItem.StartDate.ToUniversalTime();
-                if (oItem.DueDate != null)
-                    time2 = oItem.DueDate.ToUniversalTime();
-
-                if (oItem.Body != null)
-                {
-                    body = oItem.Body.ToString();
-                    var times = this.ParseTimesFromTaskBody(body);
-                    if (times != null)
-                    {
-                        uTCDateTime = uTCDateTime.Add(times[0]);
-                        time2 = time2.Add(times[1]);
-
-                        //check max date, date must has value !
-                        if (uTCDateTime.ToUniversalTime().Year < 4000)
-                            dateStart = string.Format("{0:yyyy-MM-dd HH:mm:ss}", uTCDateTime.ToUniversalTime());
-                        if (time2.ToUniversalTime().Year < 4000)
-                            dateDue = string.Format("{0:yyyy-MM-dd HH:mm:ss}", time2.ToUniversalTime());
-                    }
-                    else
-                    {
-                        dateStart = oItem.StartDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
-                        dateDue = oItem.DueDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
-                    }
-
-                }
-                else
-                {
-                    dateStart = oItem.StartDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
-                    dateDue = oItem.DueDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
-                }
-
-                if (!string.IsNullOrEmpty(body))
-                {
-                    int lastIndex = body.LastIndexOf("#<");
-                    if (lastIndex >= 0)
-                        description = body.Remove(lastIndex);
-                    else
-                    {
-                        description = body;
-                    }
-                }
-            }
-
-            /// <summary>
-            /// True if other is also a ProtoTask I have identically the same content as other.
-            /// </summary>
-            /// <param name="other">Another object, which may be a prototask.</param>
-            /// <returns>True if other is also a ProtoTask I have identically the same content as other.</returns>
-            public override bool Equals(object other)
-            {
-                bool result = false;
-                if (other is ProtoTask)
-                {
-                    Dictionary<string, object> myContents = this.AsNameValues(string.Empty).AsDictionary();
-                    Dictionary<string, object> theirContents = ((ProtoTask)other).AsNameValues(string.Empty).AsDictionary();
-
-                    result = myContents.Keys.Count == theirContents.Keys.Count;
-                    foreach (string key in myContents.Keys)
-                    {
-                        result &= myContents[key].Equals(theirContents[key]);
-                    }
-                }
-
-                return result;
-            }
-
-            /// <summary>
-            /// I'm very like a dictionary constructed from my names/values, but not quite.
-            /// </summary>
-            /// <returns>A hash code </returns>
-            public override int GetHashCode()
-            {
-                return this.AsNameValues(string.Empty).AsDictionary().GetHashCode() + 1;
-            }
-
-            /// <summary>
-            /// Construct a name value list (to be serialised as JSON) representing this task.
-            /// </summary>
-            /// <param name="entryId">The presumed id of this task in CRM, if known.</param>
-            /// <returns>a name value list representing this task</returns>
-            public NameValueCollection AsNameValues(string entryId)
-            {
-                var dataList = new NameValueCollection();
-                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("name", this.oItem.Subject));
-                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("description", this.Description));
-                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("status", this.Status));
-                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("date_due", this.DateDue));
-                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("date_start", this.DateStart));
-                dataList.Add(clsSuiteCRMHelper.SetNameValuePair("priority", this.Priority));
-
-                dataList.Add(String.IsNullOrEmpty(entryId) ?
-                    clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId()) :
-                    clsSuiteCRMHelper.SetNameValuePair("id", entryId));
-                return dataList;
-            }
-
-            private TimeSpan[] ParseTimesFromTaskBody(string body)
-            {
-                try
-                {
-                    if (string.IsNullOrEmpty(body))
-                        return null;
-                    TimeSpan[] timesToAdd = new TimeSpan[2];
-                    List<int> hhmm = new List<int>(4);
-
-                    string times = body.Substring(body.LastIndexOf("#<")).Substring(2);
-                    char[] sep = { '<', '#', ':' };
-                    int parsed = 0;
-                    foreach (var digit in times.Split(sep))
-                    {
-                        int.TryParse(digit, out parsed);
-                        hhmm.Add(parsed);
-                        parsed = 0;
-                    }
-
-                    TimeSpan start_time = TimeSpan.FromHours(hhmm[0]).Add(TimeSpan.FromMinutes(hhmm[1]));
-                    TimeSpan due_time = TimeSpan.FromHours(hhmm[2]).Add(TimeSpan.FromMinutes(hhmm[3]));
-                    timesToAdd[0] = start_time;
-                    timesToAdd[1] = due_time;
-                    return timesToAdd;
-                }
-                catch
-                {
-                    // Log.Warn("Body doesn't have time string");
-                    return null;
-                }
-            }
-        }
     }
 }

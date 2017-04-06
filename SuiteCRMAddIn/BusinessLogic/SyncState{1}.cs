@@ -1,5 +1,7 @@
 ﻿
 using Microsoft.Office.Interop.Outlook;
+using SuiteCRMAddIn.ProtoItems;
+using SuiteCRMClient.Logging;
 using System;
 /**
 * Outlook integration for SuiteCRM.
@@ -26,13 +28,37 @@ using System;
 namespace SuiteCRMAddIn.BusinessLogic
 {
     /// <summary>
-    /// The sync state of an item specified type. Contrary to appearances this 
+    /// The sync state of an item of the specified type. Contrary to appearances this 
     /// file is not a backup or a mistake but is vital to the working of the system!
     /// </summary>
     /// <typeparam name="ItemType">The type of the item to be/being synced.</typeparam>
-    public abstract class SyncState<ItemType>: SyncState
+    public abstract class SyncState<ItemType> : SyncState
     {
-        public ItemType OutlookItem { get; set; }
+        /// <summary>
+        /// Backing store for the OutlookItem property.
+        /// </summary>
+        private ItemType olItem;
+
+        /// <summary>
+        /// The outlook item for which I maintain the synchronisation state.
+        /// </summary>
+        public ItemType OutlookItem
+        {
+            get
+            {
+                return olItem;
+            }
+            set
+            {
+                olItem = value;
+                this.Cache = this.CreateProtoItem(value);
+            }
+        }
+
+        /// <summary>
+        /// The cache of the state of the item when it was first linked.
+        /// </summary>
+        public ProtoItem<ItemType> Cache { get; private set; }
 
         /// <summary>
         /// Delete the Outlook item associated with this SyncState.
@@ -47,7 +73,29 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </list> 
         /// </summary>
         /// <returns></returns>
-        internal abstract bool ReallyChanged();
+        protected virtual bool ReallyChanged()
+        {
+            var older = this.Cache.AsNameValues(this.OutlookItemEntryId)
+                .AsDictionary();
+            var current = this.CreateProtoItem(this.OutlookItem)
+                    .AsNameValues(this.OutlookItemEntryId)
+                    .AsDictionary();
+            bool result = older.Keys.Count.Equals(current.Keys.Count);
+
+            foreach (string key in older.Keys){
+                result &= (older[key] == null && current[key] == null) ||
+                    older[key].Equals(current[key]);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Create an appropriate proto-item for this outlook item.
+        /// </summary>
+        /// <param name="outlookItem">The outlook item to copy.</param>
+        /// <returns>the proto-item.</returns>
+        internal abstract ProtoItem<ItemType> CreateProtoItem(ItemType outlookItem);
 
         /// <summary>
         /// Don't send updates immediately on change, to prevent jitter; don't send updates if nothing
@@ -61,16 +109,29 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// and some time has elapsed.</returns>
         internal bool ShouldPerformSyncNow()
         {
-            var utcNow = DateTime.UtcNow;
-            var modifiedSinceSeconds = Math.Abs((utcNow - OModifiedDate).TotalSeconds);
+            DateTime utcNow = DateTime.UtcNow;
+            double modifiedSinceSeconds = Math.Abs((utcNow - OModifiedDate).TotalSeconds);
+            ILogger log = Globals.ThisAddIn.Log;
+            bool reallyChanged = this.ReallyChanged();
+            bool shouldSync = this.ShouldSyncWithCrm;
+            string prefix = $"SyncState.ShouldPerformSyncNow: {this.CrmType} {this.CrmEntryId}";
+
+            log.Debug(reallyChanged ? $"{prefix} has changed." : $"{prefix} has not changed.");
+            log.Debug(shouldSync ? $"{prefix} should be synced." : $"{ prefix} shouldSync not be synced.");
+
             if (modifiedSinceSeconds > 5 || modifiedSinceSeconds > 2 && this.IsUpdate == 0)
             {
                 this.OModifiedDate = utcNow;
                 this.IsUpdate = 1;
             }
 
-            return this.IsUpdate == 1 && this.ShouldSyncWithCrm && this.ReallyChanged();
-        }
+            log.Debug(IsUpdate == 1 ? $"{prefix} is recently updated" : $"{prefix} is not recently updated");
 
+            var result = this.IsUpdate == 1 && shouldSync && reallyChanged;
+
+            log.Debug(result ? $"{prefix} should be synced now" : $"{prefix} should not be synced now");
+
+            return result;
+        }
     }
 }

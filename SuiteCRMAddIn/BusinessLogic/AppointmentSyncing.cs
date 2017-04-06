@@ -33,6 +33,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Text;
+    using ProtoItems;
 
     /// <summary>
     /// Handles the synchronisation of appointments between Outlook and CMS.
@@ -56,7 +57,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The name of the organiser synchronisation property
         /// </summary>
-        private const string OrganiserPropertyName = "SOrganiser";
+        public const string OrganiserPropertyName = "SOrganiser";
         private const string AcceptDeclineHeader = "-- \nAccept/Decline links\n";
 
         public AppointmentSyncing(string name, SyncContext context)
@@ -346,46 +347,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
+
         /// <summary>
         /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmType">The type within CRM to which the item should be added.</param>
-        /// <param name="entryId">The CRM id of this item, or a null or empty string if not known.</param>
+        /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override string ConstructAndDespatchCrmItem(Outlook.AppointmentItem olItem, string crmType, string entryId)
         {
-            NameValueCollection data = new NameValueCollection();
-
-            DateTime uTCDateTime = new DateTime();
-            DateTime time2 = new DateTime();
-            uTCDateTime = olItem.Start.ToUniversalTime();
-            time2 = olItem.End.ToUniversalTime();
-            string str = string.Format("{0:yyyy-MM-dd HH:mm:ss}", uTCDateTime);
-            string str2 = string.Format("{0:yyyy-MM-dd HH:mm:ss}", time2);
-            int durationHours = olItem.Duration / 60;
-            int durationMinutes = olItem.Duration % 60;
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("name", olItem.Subject));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("description", olItem.Body));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("location", olItem.Location));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("date_start", str));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("date_end", str2));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("duration_minutes", durationMinutes.ToString()));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("duration_hours", durationHours.ToString()));
-
-            var organiserProperty = olItem.UserProperties[OrganiserPropertyName];
-            if (organiserProperty == null || string.IsNullOrWhiteSpace(organiserProperty.Value))
-            {
-                data.Add(clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId()));
-            }
-            if (!string.IsNullOrEmpty(entryId))
-            {
-                data.Add(clsSuiteCRMHelper.SetNameValuePair("id", entryId));
-            }
-
-            /* The id of the newly created or modified CRM item */
-            return clsSuiteCRMHelper.SetEntryUnsafe(data.ToArray(), crmType);
+            return clsSuiteCRMHelper.SetEntryUnsafe(new ProtoAppointment(olItem).AsNameValues(entryId), crmType);
         }
+
 
         /// <summary>
         /// Delete this Outlook item from CRM, and tidy up afterwards.
@@ -401,7 +375,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (syncStateForItem != null)
                 {
                     this.RemoveFromCrm(syncStateForItem);
-                    /* TODO: Not at all sure I should remove the sync state */
                     RemoveItemSyncState(syncStateForItem);
                 }
             }

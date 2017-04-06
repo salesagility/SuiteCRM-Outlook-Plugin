@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using Newtonsoft.Json;
+    using ProtoItems;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
@@ -570,6 +571,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
         /// </summary>
+        /// <remarks>
+        /// You'd think that with normal object oriented programming you could just implement this 
+        /// method here, but because Outlook items are not really objects and don't have a common
+        /// superclass you can't. So it has to be implemented in subclasses.
+        /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmType">The type within CRM to which the item should be added.</param>
         /// <param name="entryId">The corresponding entry id in CRM, if known.</param>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SuiteCRMAddIn.ProtoItems;
+using System;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
@@ -22,6 +23,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void DeleteItem()
         {
             this.OutlookItem.Sensitivity = Microsoft.Office.Interop.Outlook.OlSensitivity.olPrivate;
+        }
+
+        internal override ProtoItem<Outlook.ContactItem> CreateProtoItem(Outlook.ContactItem outlookItem)
+        {
+            return new ProtoContact(outlookItem);
         }
     }
 }

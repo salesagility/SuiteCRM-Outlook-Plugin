@@ -205,6 +205,11 @@
     </Compile>
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
+    <Compile Include="ProtoItems\ProtoAppointment.cs" />
+    <Compile Include="ProtoItems\ProtoContact.cs" />
+    <Compile Include="ProtoItems\ProtoItem.cs" />
+    <Compile Include="ProtoItems\ProtoItem{1}.cs" />
+    <Compile Include="ProtoItems\ProtoTask.cs" />
     <Compile Include="BusinessLogic\SyncDirection.cs" />
     <Compile Include="BusinessLogic\DaemonAction.cs" />
     <Compile Include="BusinessLogic\DaemonWorker.cs" />
