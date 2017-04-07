@@ -48,6 +48,22 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override SyncDirection.Direction Direction => settings.SyncContacts;
 
+        /// <summary>
+        /// The actual transmission lock object of this synchroniser.
+        /// </summary>
+        private object txLock = new object();
+
+        /// <summary>
+        /// Allow my parent class to access my transmission lock object.
+        /// </summary>
+        protected override object TransmissionLock
+        {
+            get
+            {
+                return txLock;
+            }
+        }
+
         public override string DefaultCrmModule
         {
             get
@@ -98,7 +114,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        protected override SyncState<Outlook.ContactItem> UpdateFromCrm(Outlook.MAPIFolder folder, string crmType, eEntryValue crmItem)
+        protected override SyncState<Outlook.ContactItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, eEntryValue crmItem)
         {
             SyncState<Outlook.ContactItem> result;
 
@@ -403,25 +419,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        override protected void OutlookItemAdded(Outlook.ContactItem item)
-        {
-            if (IsCurrentView && item != null)
-                AddNewItem(item);
-        }
-
-        private void AddNewItem(Outlook.ContactItem item)
-        {
-            var state = AddOrGetSyncState(item);
-            if (state.ShouldSyncWithCrm)
-            {
-                AddOrUpdateItemFromOutlookToCrm(item, DefaultCrmModule, state.CrmEntryId);
-            }
-            else
-            {
-                Log.Info($"Ignoring addition of {item.FullName} because it is {item.Sensitivity}");
-            }
-        }
-
         /// <summary>
         /// Add this Outlook item, which may not exist in CRM, to CRM.
         /// </summary>
@@ -429,7 +426,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmType">The CRM type to which it should be added</param>
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
-        protected override string AddOrUpdateItemFromOutlookToCrm(Outlook.ContactItem outlookItem, string crmType, string entryId = null)
+        internal override string AddOrUpdateItemFromOutlookToCrm(Outlook.ContactItem outlookItem, string crmType, string entryId = null)
         {
             string result = entryId;
 
@@ -506,8 +503,28 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.EntryID;
         }
 
+        internal override Outlook.OlSensitivity GetSensitivity(Outlook.ContactItem item)
+        {
+            return item.Sensitivity;
+        }
+
+        /// <summary>
+        /// True if the currently open tab in Outlook displays items of my item type.
+        /// </summary>
+        /// <remarks>
+        /// This is used in determining whether an item is in fact newly created by the user;
+        /// it has a certain code smell to it.
+        /// </remarks>
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olContactItem;
 
+        /// <summary>
+        /// Return the sensitivity of this outlook item.
+        /// </summary>
+        /// <remarks>
+        /// Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.
+        /// </remarks>
+        /// <param name="item">The outlook item whose sensitivity is required.</param>
+        /// <returns>the sensitivity of the item.</returns>
         protected override bool PropagatesLocalDeletions => true;
     }
 }

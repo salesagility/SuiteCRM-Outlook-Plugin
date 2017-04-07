@@ -44,6 +44,22 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.fetchQueryPrefix = string.Empty;
         }
 
+        /// <summary>
+        /// The actual transmission lock object of this synchroniser.
+        /// </summary>
+        private object txLock = new object();
+
+        /// <summary>
+        /// Allow my parent class to access my transmission lock object.
+        /// </summary>
+        protected override object TransmissionLock
+        {
+            get
+            {
+                return txLock;
+            }
+        }
+
         public override string DefaultCrmModule
         {
             get
@@ -152,7 +168,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        protected override SyncState<Outlook.TaskItem> UpdateFromCrm(Outlook.MAPIFolder tasksFolder, string crmType, eEntryValue crmItem)
+        protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, string crmType, eEntryValue crmItem)
         {
             SyncState<Outlook.TaskItem> result = null;
 
@@ -364,5 +380,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
         // (but not for Appointments).
         protected override bool PropagatesLocalDeletions => true;
+
+        /// <summary>
+        /// Return the sensitivity of this outlook item.
+        /// </summary>
+        /// <remarks>
+        /// Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.
+        /// </remarks>
+        /// <param name="item">The outlook item whose sensitivity is required.</param>
+        /// <returns>the sensitivity of the item.</returns>
+        internal override Outlook.OlSensitivity GetSensitivity(Outlook.TaskItem item)
+        {
+            return item.Sensitivity;
+        }
     }
 }

@@ -37,13 +37,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public DateTime OModifiedDate { get; set; }
 
-        /// <remarks>
-        /// Legacy code. Neither Andrew Forrest nor I (Simon Brooke) really understand what this 
-        /// is about; its values are small integers and probably ought to be an enum, but we don't 
-        /// know what the values mean.
-        /// </remarks>
-        public int IsUpdate { get; set; }
-
         public bool ExistedInCrm => !string.IsNullOrEmpty(CrmEntryId);
 
         public bool IsPublic => OutlookItemSensitivity == Outlook.OlSensitivity.olNormal;

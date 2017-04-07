@@ -131,6 +131,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
+        /// The actual transmission lock object of this synchroniser.
+        /// </summary>
+        private object txLock = new object();
+
+        /// <summary>
+        /// Allow my parent class to access my transmission lock object.
+        /// </summary>
+        protected override object TransmissionLock
+        {
+            get
+            {
+                return txLock;
+            }
+        }
+
+        /// <summary>
         /// Ensure that this Outlook item has a property of this name with this value.
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
@@ -292,7 +308,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="syncState">The sync state.</param>
         /// <returns>The id of the entry added or updated.</returns>
-        protected override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
         {
             Outlook.AppointmentItem olItem = syncState.OutlookItem;
             Outlook.UserProperty olPropertyType = olItem.UserProperties[TypePropertyName];
@@ -309,7 +325,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
         /// <returns>The id of the entry added o</returns>
-        protected override string AddOrUpdateItemFromOutlookToCrm(Outlook.AppointmentItem olItem, string crmType, string entryId = "")
+        internal override string AddOrUpdateItemFromOutlookToCrm(Outlook.AppointmentItem olItem, string crmType, string entryId = "")
         {
             string result = entryId;
 
@@ -462,7 +478,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmType">The CRM type of the candidate item.</param>
         /// <param name="candidateItem">The candidate item from CRM.</param>
         /// <returns>The synchronisation state of the item updated (if it was updated).</returns>
-        protected override SyncState<Outlook.AppointmentItem> UpdateFromCrm(
+        protected override SyncState<Outlook.AppointmentItem> AddOrUpdateItemFromCrmToOutlook(
             Outlook.MAPIFolder folder,
             string crmType,
             eEntryValue crmItem)
@@ -652,7 +668,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     clsSuiteCRMHelper.GetSugarFields(crmModule));
                 if (invited != null)
                 {
-                    UpdateItemsFromCrmToOutlook(invited, folder, untouched, crmModule);
+                    AddOrUpdateItemsFromCrmToOutlook(invited, folder, untouched, crmModule);
                 }
 
                 try
@@ -780,6 +796,19 @@ namespace SuiteCRMAddIn.BusinessLogic
                 .Append($"&accept_status={acceptStatus}\n");
 
             return bob.ToString();
+        }
+
+        /// <summary>
+        /// Return the sensitivity of this outlook item.
+        /// </summary>
+        /// <remarks>
+        /// Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.
+        /// </remarks>
+        /// <param name="item">The outlook item whose sensitivity is required.</param>
+        /// <returns>the sensitivity of the item.</returns>
+        internal override Outlook.OlSensitivity GetSensitivity(Outlook.AppointmentItem item)
+        {
+            return item.Sensitivity;
         }
     }
 }

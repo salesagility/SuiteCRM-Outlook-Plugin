@@ -1,9 +1,4 @@
-﻿
-using Microsoft.Office.Interop.Outlook;
-using SuiteCRMAddIn.ProtoItems;
-using SuiteCRMClient.Logging;
-using System;
-/**
+﻿/**
 * Outlook integration for SuiteCRM.
 * @package Outlook integration for SuiteCRM
 * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -27,6 +22,10 @@ using System;
 */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using SuiteCRMAddIn.ProtoItems;
+    using SuiteCRMClient.Logging;
+    using System;
+
     /// <summary>
     /// The sync state of an item of the specified type. Contrary to appearances this 
     /// file is not a backup or a mistake but is vital to the working of the system!
@@ -54,6 +53,19 @@ namespace SuiteCRMAddIn.BusinessLogic
                 this.Cache = this.CreateProtoItem(value);
             }
         }
+
+        /// <summary>
+        /// A lock that should be obtained before operations which operate on the TxState or the
+        /// cached value.
+        /// </summary>
+        private object txStateLock = new object();
+
+        /// <remarks>
+        /// Legacy code. Neither Andrew Forrest nor I (Simon Brooke) really understand what this 
+        /// is about; its values are small integers and probably ought to be an enum, but we don't 
+        /// know what the values mean.
+        /// </remarks>
+        internal TransmissionState TxState { get; private set; } = TransmissionState.New;
 
         /// <summary>
         /// The cache of the state of the item when it was first linked.
@@ -109,6 +121,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// and some time has elapsed.</returns>
         internal bool ShouldPerformSyncNow()
         {
+            bool result;
             DateTime utcNow = DateTime.UtcNow;
             double modifiedSinceSeconds = Math.Abs((utcNow - OModifiedDate).TotalSeconds);
             ILogger log = Globals.ThisAddIn.Log;
@@ -119,19 +132,107 @@ namespace SuiteCRMAddIn.BusinessLogic
             log.Debug(reallyChanged ? $"{prefix} has changed." : $"{prefix} has not changed.");
             log.Debug(shouldSync ? $"{prefix} should be synced." : $"{ prefix} shouldSync not be synced.");
 
-            if (modifiedSinceSeconds > 5 || modifiedSinceSeconds > 2 && this.IsUpdate == 0)
+            lock (this.txStateLock)
             {
-                this.OModifiedDate = utcNow;
-                this.IsUpdate = 1;
+                if (modifiedSinceSeconds > 5 || modifiedSinceSeconds > 2 &&
+                (this.TxState == TransmissionState.New || this.TxState == TransmissionState.Synced))
+                {
+                    this.OModifiedDate = utcNow;
+                    this.TxState = TransmissionState.Pending;
+                }
+
+                /* result is set within the lock to prevent one thread capturing another thread's
+                 * state change. */
+                result = this.TxState == TransmissionState.Pending && shouldSync && reallyChanged;
             }
 
-            log.Debug(IsUpdate == 1 ? $"{prefix} is recently updated" : $"{prefix} is not recently updated");
-
-            var result = this.IsUpdate == 1 && shouldSync && reallyChanged;
+            log.Debug(this.TxState == TransmissionState.Pending ? $"{prefix} is recently updated" : $"{prefix} is not recently updated");
 
             log.Debug(result ? $"{prefix} should be synced now" : $"{prefix} should not be synced now");
 
             return result;
+        }
+
+
+        /// <summary>
+        /// Set the transmission state of this SyncState object to pending.
+        /// </summary>
+        internal void SetPending()
+        {
+            lock (this.txStateLock)
+            {
+                this.TxState = TransmissionState.Pending;
+            }
+        }
+
+
+        /// <summary>
+        /// Set the transmission state of this SyncState object to queued.
+        /// </summary>
+        internal void SetQueued()
+        {
+            lock (this.txStateLock)
+            {
+                this.TxState = TransmissionState.Queued;
+            }
+        }
+
+
+        /// <summary>
+        /// Set the transmission state of this SyncState object to synced, and recache its Outlook item.
+        /// </summary>
+        internal void SetSynced()
+        {
+            lock (this.txStateLock)
+            {
+                this.Cache = this.CreateProtoItem(this.OutlookItem);
+                this.TxState = TransmissionState.Synced;
+            }
+        }
+
+
+        /// <summary>
+        /// Set the transmission state of this SyncState object to transmitted.
+        /// </summary>
+        internal void SetTransmitted()
+        {
+            lock (this.txStateLock)
+            {
+                this.TxState = TransmissionState.Transmitted;
+            }
+        }
+
+
+        /// <summary>
+        /// States a SyncState object can be in with regard to transmission and synchronisation
+        /// with CRM. See TxState.
+        /// </summary>
+        public enum TransmissionState
+        {
+            /// <summary>
+            /// This is a new SyncState object which has not yet been transmitted.
+            /// </summary>
+            New,
+            /// <summary>
+            /// A change has been registered on this SyncState object but it has 
+            /// not been transmitted.
+            /// </summary>
+            Pending,
+            /// <summary>
+            /// This SyncState has been queued for transmission but has not yet been 
+            /// transmitted.
+            /// </summary>
+            Queued,
+            /// <summary>
+            /// The Outlook item associated with this SyncState has been transmitted,
+            /// but no confirmation has yet been received that it has been accepted.
+            /// </summary>
+            Transmitted,
+            /// <summary>
+            /// The Outlook item associated with this SyncState has been transmitted
+            /// and accepted by CRM.
+            /// </summary>
+            Synced
         }
     }
 }

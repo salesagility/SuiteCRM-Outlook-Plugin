@@ -205,6 +205,8 @@
     </Compile>
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
+    <Compile Include="BusinessLogic\TransmitNewAction.cs" />
+    <Compile Include="BusinessLogic\TransmitUpdateAction.cs" />
     <Compile Include="ProtoItems\ProtoAppointment.cs" />
     <Compile Include="ProtoItems\ProtoContact.cs" />
     <Compile Include="ProtoItems\ProtoItem.cs" />
