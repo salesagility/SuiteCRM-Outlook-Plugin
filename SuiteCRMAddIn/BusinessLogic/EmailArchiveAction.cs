@@ -10,7 +10,7 @@
     using System.Threading.Tasks;
     using System.Windows.Forms;
 
-    public class EmailArchiveAction : DaemonAction
+    public class EmailArchiveAction : AbstractDaemonAction
     {
         private readonly IEnumerable<MailItem> items;
 
@@ -18,14 +18,23 @@
 
         private readonly string type;
 
-        public EmailArchiveAction(IEnumerable<MailItem> items, IEnumerable<CrmEntity> entities, string type)
+        /// <summary>
+        /// Create a new action to archive some emails
+        /// </summary>
+        /// <remarks>
+        /// It seems reasonable to retry archiving email a certain number of times. Five is a guess.
+        /// </remarks>
+        /// <param name="items">The emails to archive.</param>
+        /// <param name="entities">The entities those mails relate to.</param>
+        /// <param name="type">??</param>
+        public EmailArchiveAction(IEnumerable<MailItem> items, IEnumerable<CrmEntity> entities, string type) : base(5)
         {
             this.items = items;
             this.entities = entities;
             this.type = type;
         }
 
-        public string Description
+        public override string Description
         {
             get
             {
@@ -33,7 +42,7 @@
             }
         }
 
-        public void Perform()
+        public override void Perform()
         {
             var archiver = new EmailArchiving($"EB-{Globals.ThisAddIn.SelectedEmailCount}", Globals.ThisAddIn.Log);
             this.ReportOnEmailArchiveSuccess(

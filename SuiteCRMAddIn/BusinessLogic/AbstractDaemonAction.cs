@@ -22,34 +22,53 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    /// <remarks>Not currently used. You can't make a list of Outlook items detached from their 
-    /// Outlook collection because they're not real objects, and if the current selection changes 
-    /// before the process runs the process acts on the wrong things. I like the idea of 
-    /// asynchronous processing to speed up perceived user interface response, but this isn't 
-    /// working yet.</remarks>
-    public interface DaemonAction
+    /// <summary>
+    /// The Attempts/MaxAttempts plumbing for implementing a DaemonAction.
+    /// Of course, you do not need to specialise this class, but it helps.
+    /// </summary>
+    public abstract class AbstractDaemonAction : DaemonAction
     {
+        /// <summary>
+        /// backing store for the MaxAttempts property.
+        /// </summary>
+        private int maxAttempts;
+
+        public AbstractDaemonAction(int maxAttempts)
+        {
+            this.maxAttempts = maxAttempts;
+        }
+
         /// <summary>
         /// The number of times this item has been attempted.
         /// </summary>
-        int Attempts { get; set; }
+        public int Attempts {get; set;} = 0;
 
         /// <summary>
         /// Get a description of this action.
         /// </summary>
-        string Description {
-            get;
+        public virtual string Description
+        {
+            get
+            {
+                return "Improperly specialised AbstractDaemonAction.";
+            }
         }
 
         /// <summary>
         /// The maximum number of times this action can be attempted before
         /// being abandoned.
         /// </summary>
-        int MaxAttempts { get; }
+        public int MaxAttempts
+        {
+            get
+            {
+                return this.maxAttempts;
+            }
+        }
 
         /// <summary>
         /// Perform this action.
         /// </summary>
-        void Perform();
+        public abstract void Perform();
     }
 }
