@@ -20,8 +20,10 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.Daemon
 {
+    using BusinessLogic;
+
     /// <summary>
     /// An action to transmit to the server an item which is not a new item, but
     /// already has a SyncState.

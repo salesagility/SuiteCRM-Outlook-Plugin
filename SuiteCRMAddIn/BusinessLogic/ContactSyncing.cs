@@ -420,19 +420,21 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Add this Outlook item, which may not exist in CRM, to CRM.
+        /// Add the Outlook item referenced by this sync state, which may not exist in CRM, to CRM.
         /// </summary>
-        /// <param name="outlookItem">The outlook item to add.</param>
-        /// <param name="crmType">The CRM type to which it should be added</param>
+        /// <param name="syncState">The sync state referencing the outlook item to add.</param>
+        /// <param name="crmType">The CRM type ('module') to which it should be added</param>
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
-        internal override string AddOrUpdateItemFromOutlookToCrm(Outlook.ContactItem outlookItem, string crmType, string entryId = null)
+        /// <returns>The id of the entry added o</returns>
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.ContactItem> syncState, string crmType, string entryId = null)
         {
             string result = entryId;
+            var outlookItem = syncState.OutlookItem;
 
             if (this.ShouldAddOrUpdateItemFromOutlookToCrm(outlookItem))
             {
-                result = base.AddOrUpdateItemFromOutlookToCrm(outlookItem, crmType, entryId);
+                result = base.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, entryId);
 
                 Outlook.UserProperty syncProperty = outlookItem.UserProperties["SShouldSync"];
                 string shouldSync = syncProperty == null ?

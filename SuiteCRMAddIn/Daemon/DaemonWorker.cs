@@ -20,8 +20,9 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.Daemon
 {
+    using BusinessLogic;
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Concurrent;

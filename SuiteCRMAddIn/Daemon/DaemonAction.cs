@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.Daemon
 {
     /// <remarks>Not currently used. You can't make a list of Outlook items detached from their 
     /// Outlook collection because they're not real objects, and if the current selection changes 

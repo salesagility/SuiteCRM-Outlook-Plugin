@@ -23,7 +23,7 @@
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using Newtonsoft.Json;
-    using ProtoItems;
+    using Daemon;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
@@ -51,6 +51,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         private const string ExportPermissionToken = "export";
 
         /// <summary>
+        /// A cache, by module name, of whether we have import to CRM, export from CRM,
+        /// of both permissions for the given module.
+        /// </summary>
+        private Dictionary<string, SyncDirection.Direction> crmImportExportPermissionsCache = 
+            new Dictionary<string, SyncDirection.Direction>();
+
+        /// <summary>
         /// The name of the modified date synchronisation property.
         /// </summary>
         protected const string ModifiedDatePropertyName = "SOModifiedDate";
@@ -66,6 +73,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected const string CrmIdPropertyName = "SEntryID";
 
         private readonly SyncContext context;
+
+        /// <summary>
+        /// A lock to prevent enqueueing the same new object twice in different
+        /// threads (unlikely, since it should always be in the VSTA_main thread,
+        /// but let's be paranoid).
+        /// </summary>
+        private object enqueueingLock = new object();
 
         /// <summary>
         /// The prefix for the fetch query, used in FetchRecordsFromCrm, q.v.
@@ -280,18 +294,112 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true if this synchroniser is allowed access to the specified CRM module, with the specified permission.</returns>
         protected bool HasAccess(string moduleName, string permission)
         {
-            try
+            bool result;
+            bool? cached = HasCachedAccess(moduleName, permission);
+
+            if (cached != null)
             {
-                eModuleList oList = clsSuiteCRMHelper.GetModules();
-                return oList.items.FirstOrDefault(a => a.module_label == moduleName)
-                    ?.module_acls1.FirstOrDefault(b => b.action == permission)
-                    ?.access ?? false;
+                result = (bool)cached;
             }
-            catch (Exception)
+            else
             {
-                Log.Warn($"Cannot detect access {moduleName}/{permission}");
-                return false;
+                try
+                {
+                    eModuleList oList = clsSuiteCRMHelper.GetModules();
+                    result = oList.items.FirstOrDefault(a => a.module_label == moduleName)
+                        ?.module_acls1.FirstOrDefault(b => b.action == permission)
+                        ?.access ?? false;
+
+                    CacheAccessPermission(moduleName, permission, result);
+                }
+                catch (Exception)
+                {
+                    Log.Warn($"Cannot detect access {moduleName}/{permission}");
+                    result = false;
+                }
             }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Cache an access permission received from CRM, so we don't have to repeatedly request it.
+        /// </summary>
+        /// <remarks>
+        /// The cache is modified additively. It we already know we have one permission, and find we have the other, then we assume both. There isn't presently any mechanism to remove permissions from the cache, 
+        /// </remarks>
+        /// <param name="moduleName">The module to which access may be granted.</param>
+        /// <param name="direction">The direction in which access may be granted.</param>
+        /// <param name="allowed">The access that should be granted.</param>
+        private void CacheAccessPermission(string moduleName, string direction, bool allowed)
+        {
+            if (this.crmImportExportPermissionsCache.ContainsKey(moduleName))
+            {
+                switch (this.crmImportExportPermissionsCache[moduleName])
+                {
+                    case SyncDirection.Direction.Neither :
+                        /* shouldn't happen as it would be unwise to cache 'neither' unless 
+                         * we know it is true - which we won't. */
+                        CacheAllowAccess(moduleName, direction, allowed);
+                        break;
+                    case SyncDirection.Direction.Export :
+                        if (direction == ImportPermissionToken && allowed)
+                        {
+                            /* if we already had export permission and now we have import permission, we have
+                             * both. */
+                            this.crmImportExportPermissionsCache[moduleName] = SyncDirection.Direction.BiDirectional;
+                        }
+                        break;
+                    case SyncDirection.Direction.Import:
+                        if (direction == ExportPermissionToken && allowed)
+                        {
+                            /* if we already had import permission and now we have export permission, we have
+                             * both. */
+                            this.crmImportExportPermissionsCache[moduleName] = SyncDirection.Direction.BiDirectional;
+                        }
+                        break;
+                }
+            }
+            else
+            {
+                CacheAllowAccess(moduleName, direction, allowed);
+            }
+        }
+
+
+        /// <summary>
+        /// Cache allowed access in the specified direction.
+        /// </summary>
+        /// <remarks>
+        /// Assumes there is currently no cached value for the specified module; if there is,
+        /// it will be overwritten.
+        /// </remarks>
+        /// <param name="moduleName">The module to which access may be granted.</param>
+        /// <param name="direction">The direction in which access may be granted.</param>
+        /// <param name="allowed">The access that should be granted.</param>
+        private void CacheAllowAccess(string moduleName, string direction, bool allowed)
+        {
+            if (allowed)
+            {
+                this.crmImportExportPermissionsCache[moduleName] = direction == ImportPermissionToken ?
+                    SyncDirection.Direction.Export : SyncDirection.Direction.Import;
+            }
+        }
+
+
+        private bool? HasCachedAccess(string moduleName, string permission)
+        {
+            bool? result = null;
+
+            if (this.crmImportExportPermissionsCache.ContainsKey(moduleName))
+            {
+                SyncDirection.Direction cachedValue = this.crmImportExportPermissionsCache[moduleName];
+                result = (permission == ImportPermissionToken && SyncDirection.AllowOutbound(cachedValue)) ||
+                    (permission == ExportPermissionToken && SyncDirection.AllowInbound(cachedValue));
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -305,14 +413,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             var toDeleteFromOutlook = itemsToResolve.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
             var toCreateOnCrmServer = itemsToResolve.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
 
-            foreach (var item in toDeleteFromOutlook)
+            foreach (var syncState in toDeleteFromOutlook)
             {
-                this.RemoveItemAndSyncState(item);
+                this.RemoveItemAndSyncState(syncState);
             }
 
             foreach (var syncState in toCreateOnCrmServer)
             {
-                AddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem, this.DefaultCrmModule);
+                AddOrUpdateItemFromOutlookToCrm(syncState, this.DefaultCrmModule);
             }
         }
 
@@ -416,48 +524,55 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The id of the entry added or updated.</returns>
         internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState)
         {
-            return this.AddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem, DefaultCrmModule, syncState.CrmEntryId);
+            return this.AddOrUpdateItemFromOutlookToCrm(syncState, DefaultCrmModule);
         }
 
 
         /// <summary>
-        /// Add this Outlook item, which may not exist in CRM, to CRM.
+        /// Add the item implied by this SyncState, which may not exist in CRM, to CRM.
         /// </summary>
-        /// <param name="olItem">The outlook item to add.</param>
+        /// <param name="syncState">The sync state.</param>
+        /// <param name="crmType">The CRM type (name of CRM module) of the item.</param>
+        /// <returns>The id of the entry added or updated.</returns>
+        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState, string crmType)
+        {
+            return this.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, syncState.CrmEntryId);
+        }
+
+
+        /// <summary>
+        /// Add the Outlook item referenced by this sync state, which may not exist in CRM, to CRM.
+        /// </summary>
+        /// <param name="syncState">The sync state referencing the outlook item to add.</param>
         /// <param name="crmType">The CRM type ('module') to which it should be added</param>
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
         /// <returns>The id of the entry added o</returns>
-        internal virtual string AddOrUpdateItemFromOutlookToCrm(OutlookItemType olItem, string crmType, string entryId = "")
+        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState, string crmType, string entryId = "")
         {
             string result = entryId;
 
-            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem, crmType))
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem, crmType))
             {
-                SyncState<OutlookItemType> syncState = GetExistingSyncState(olItem);
-
                 try
                 {
                     lock (this.TransmissionLock)
                     {
-                        LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
+                        OutlookItemType outlookItem = syncState.OutlookItem;
+
+                        LogItemAction(outlookItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
 
                         if (syncState != null)
                         {
                             syncState.SetTransmitted();
                         }
 
-                        result = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
+                        result = ConstructAndDespatchCrmItem(outlookItem, crmType, entryId);
                         var utcNow = DateTime.UtcNow;
-                        EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), crmType, result);
-                        this.SaveItem(olItem);
+                        EnsureSynchronisationPropertiesForOutlookItem(outlookItem, utcNow.ToString(), crmType, result);
+                        this.SaveItem(outlookItem);
 
-                        if (syncState == null)
-                        {
-                            syncState = AddOrGetSyncState(olItem, utcNow, result);
-                        }
-
-                        syncState.SetSynced();
+                        syncState.SetSynced(result);
                     }
                 }
                 catch (Exception ex)
@@ -495,15 +610,32 @@ namespace SuiteCRMAddIn.BusinessLogic
             var existingState = GetExistingSyncState(oItem);
             if (existingState != null)
             {
-                existingState.OutlookItem = oItem;
+                if (existingState.OutlookItem != oItem)
+                {
+                    /* if Outlook only holds one item with the same id, then this line MUST be redundant.
+                     * TODO: check logs and simplify this logic if the issue does not occur */
+                    existingState.OutlookItem = oItem;
+                    Log.Error($"Should never happen - two Outlook items with same id ({GetOutlookEntryId(oItem)})?");
+                }
                 return existingState;
             }
             else
             {
-                SyncState<OutlookItemType> newState = ConstructSyncState(oItem);
-                ItemsSyncState.Add(newState);
-                return newState;
+                return ConstructAndAddSyncState(oItem);
             }
+        }
+
+        /// <summary>
+        /// Constructs a new SyncState object for this Outlook item and adds it to my 
+        /// collection of sync states.
+        /// </summary>
+        /// <param name="oItem">The Outlook item to wrap</param>
+        /// <returns>The sync state added.</returns>
+        private SyncState<OutlookItemType> ConstructAndAddSyncState(OutlookItemType oItem)
+        {
+            SyncState<OutlookItemType> newState = ConstructSyncState(oItem);
+            ItemsSyncState.Add(newState);
+            return newState;
         }
 
         /// <summary>
@@ -702,7 +834,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected abstract void EnsureSynchronisationPropertyForOutlookItem(OutlookItemType olItem, string name, string value);
 
         /// <summary>
-        /// Returns true iif user is currently focussed on this (Contacts/Appointments/Tasks) tab.
+        /// Returns true iff user is currently focussed on this (Contacts/Appointments/Tasks) tab.
         /// </summary>
         /// <remarks>
         /// This is used in determining whether an item is in fact newly created by the user;
@@ -957,13 +1089,17 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (olItem != null)
             {
-                if (IsCurrentView && this.GetExistingSyncState(olItem) == null)
+                lock (enqueueingLock)
                 {
-                    DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType>(this, olItem, this.DefaultCrmModule));
-                }
-                else
-                {
-                    Log.Warn($"AppointmentSyncing.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
+                    if (IsCurrentView && this.GetExistingSyncState(olItem) == null)
+                    {
+                        SyncState<OutlookItemType> state = this.ConstructAndAddSyncState(olItem);
+                        DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType>(this, state, this.DefaultCrmModule));
+                    }
+                    else
+                    {
+                        Log.Warn($"AppointmentSyncing.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
+                    }
                 }
             }
         }
@@ -1037,6 +1173,5 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return (IsCurrentView && syncState.ShouldPerformSyncNow());
         }
-
     }
 }

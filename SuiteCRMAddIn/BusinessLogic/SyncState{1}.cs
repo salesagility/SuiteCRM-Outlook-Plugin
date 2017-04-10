@@ -187,9 +187,21 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 this.Cache = this.CreateProtoItem(this.OutlookItem);
                 this.TxState = TransmissionState.Synced;
+                this.OModifiedDate = DateTime.UtcNow;
             }
         }
 
+
+        /// <summary>
+        /// Set the transmission state of this SyncState object to synced and its CRM entry ID to this
+        /// crmEntryId, and recache its Outlook item.
+        /// </summary>
+        /// <param name="crmEntryId">The id of the object in CRM.</param>
+        internal void SetSynced(string crmEntryId)
+        {
+            this.SetSynced();
+            this.CrmEntryId = crmEntryId;
+        }
 
         /// <summary>
         /// Set the transmission state of this SyncState object to transmitted.

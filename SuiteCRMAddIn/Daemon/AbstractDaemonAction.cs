@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.Daemon
 {
     /// <summary>
     /// The Attempts/MaxAttempts plumbing for implementing a DaemonAction.
