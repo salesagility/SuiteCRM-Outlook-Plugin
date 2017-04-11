@@ -150,7 +150,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private clsEmailArchive SerialiseEmailObject(Outlook.MailItem mail, EmailArchiveType archiveType)
         {
             clsEmailArchive mailArchive = new clsEmailArchive();
-            mailArchive.From = mail.SenderEmailAddress;
+            mailArchive.From = ExtractSmtpAddressForSender(mail);
             mailArchive.To = string.Empty;
 
             Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {mail.Subject} dated {mail.SentOn}.");
@@ -184,6 +184,53 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             return mailArchive;
+        }
+
+        /// <summary>
+        /// From this mail item, extract the SMTP sender address if any, else the
+        /// empty string.
+        /// </summary>
+        /// <remarks>
+        /// If the sender is using Exchange (which if they're using Outlook they almost
+        /// certainly are) the 'sender email address' won't be an email address, it will
+        /// be a bizarre LDAP query which CRM will barf on. However, the Sender property
+        /// may well be null, so allow for that too.
+        /// </remarks>
+        /// <param name="mail">The mail item</param>
+        /// <returns>An SMTP address or an empty string.</returns>
+        private string ExtractSmtpAddressForSender(Outlook.MailItem mail)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                switch (mail.SenderEmailType)
+                {
+                    case "SMTP":
+                        result = mail.SenderEmailAddress;
+                        break;
+                    case "EX": /* an Exchange address */
+                        var sender = mail.Sender;
+                        if (sender != null)
+                        {
+                            var exchangeUser = sender.GetExchangeUser();
+                            if (exchangeUser != null)
+                            {
+                                result = exchangeUser.PrimarySmtpAddress;
+                            }
+                        }
+                        break;
+                    default:
+                        this.Log.Warn($"{this.GetType().Name}.ExtractSmtpAddressForSender: unknown email type {mail.SenderEmailType}");
+                        break;
+                }
+            }
+            catch (Exception any)
+            {
+                this.Log.Error($"{this.GetType().Name}.ExtractSmtpAddressForSender: unexpected error", any);
+            }
+
+            return result;
         }
 
         private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = "")
