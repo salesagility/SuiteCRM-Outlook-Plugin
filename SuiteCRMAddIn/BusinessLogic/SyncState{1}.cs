@@ -84,22 +84,35 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <item>The outlook item is different from our cached version.</item>
         /// </list> 
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if the object has changed.</returns>
         protected virtual bool ReallyChanged()
         {
-            var older = this.Cache.AsNameValues(this.OutlookItemEntryId)
-                .AsDictionary();
-            var current = this.CreateProtoItem(this.OutlookItem)
-                    .AsNameValues(this.OutlookItemEntryId)
-                    .AsDictionary();
-            bool result = older.Keys.Count.Equals(current.Keys.Count);
+            bool unchanged;
 
-            foreach (string key in older.Keys){
-                result &= (older[key] == null && current[key] == null) ||
-                    older[key].Equals(current[key]);
+            if (this.Cache == null)
+            {
+                unchanged = false;
+            }
+            else
+            {
+                var older = this.Cache.AsNameValues(this.OutlookItemEntryId)
+                    .AsDictionary();
+                var current = this.CreateProtoItem(this.OutlookItem)
+                        .AsNameValues(this.OutlookItemEntryId)
+                        .AsDictionary();
+                unchanged = older.Keys.Count.Equals(current.Keys.Count);
+
+                if (unchanged)
+                {
+                    foreach (string key in older.Keys)
+                    {
+                        unchanged &= (older[key] == null && current[key] == null) ||
+                            older[key].Equals(current[key]);
+                    }
+                }
             }
 
-            return result;
+            return !unchanged;
         }
 
         /// <summary>
@@ -130,7 +143,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             string prefix = $"SyncState.ShouldPerformSyncNow: {this.CrmType} {this.CrmEntryId}";
 
             log.Debug(reallyChanged ? $"{prefix} has changed." : $"{prefix} has not changed.");
-            log.Debug(shouldSync ? $"{prefix} should be synced." : $"{ prefix} shouldSync not be synced.");
+            log.Debug(shouldSync ? $"{prefix} should be synced." : $"{ prefix} should not be synced.");
 
             lock (this.txStateLock)
             {
