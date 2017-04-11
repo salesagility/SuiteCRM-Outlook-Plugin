@@ -153,24 +153,26 @@ namespace SuiteCRMAddIn.BusinessLogic
                 result = (bool)cached;
                 this.log.Debug("Permissions cache hit");
             }
-            
-            /* there's a slight logic error here which needs more thought. If the cache 
-             * contains only import permission and we want export permission (or vice versa), 
-             * it's possible that there is export permission and we should recheck. But once
-             *  we've checked for export permission and found it isn't there, we shouldn't 
-             *  check again. Currently, we'll recheck on every request, which is wrong.
-             */
-            if (!result)
+            else
             {
                 this.log.Debug("Permissions cache miss");
                 try
                 {
                     eModuleList oList = clsSuiteCRMHelper.GetModules();
-                    result = oList.items.FirstOrDefault(a => a.module_label == moduleName)
-                        ?.module_acls1.FirstOrDefault(b => b.action == permission)
+                    bool canExport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
+                        ?.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)
                         ?.access ?? false;
+                    bool canImport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
+                        ?.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)
+                        ?.access ?? false;
+                        
+                    CacheAccessPermission(moduleName, ExportPermissionToken, canExport);
+                    CacheAccessPermission(moduleName, ImportPermissionToken, canImport);
 
-                    CacheAccessPermission(moduleName, permission, result);
+                    Log.Debug($"Cached {this.crmImportExportPermissionsCache[moduleName]} permission for {moduleName}");
+
+                    result = (permission == ImportPermissionToken && canImport) ||
+                        (permission == ExportPermissionToken && canExport);
                 }
                 catch (Exception)
                 {
@@ -244,7 +246,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (allowed)
             {
                 this.crmImportExportPermissionsCache[moduleName] = direction == ImportPermissionToken ?
-                    SyncDirection.Direction.Export : SyncDirection.Direction.Import;
+                    SyncDirection.Direction.Import : SyncDirection.Direction.Export;
             }
         }
 

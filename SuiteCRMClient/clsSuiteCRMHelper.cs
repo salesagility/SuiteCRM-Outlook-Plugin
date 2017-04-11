@@ -36,6 +36,12 @@ namespace SuiteCRMClient
     {
         private static ILogger Log;
 
+        /// <summary>
+        /// The list of the modules and their permissions change extremely rarely; 
+        /// they may safely be cached for a session.
+        /// </summary>
+        private static eModuleList modulesCache = null;
+
         public static UserSession SuiteCRMUserSession;
 
         public static void SetLog(ILogger log)
@@ -43,14 +49,25 @@ namespace SuiteCRMClient
             Log = log;
         }
 
+        /// <summary>
+        /// Get the list of modules installed in the connected CRM instance, with their
+        /// associated access control lists.
+        /// </summary>
+        /// <remarks>This data changes only rarely, and is consequently cached for the session.
+        /// </remarks>
+        /// <returns>the list of modules installed in the connected CRM instance.</returns>
         public static eModuleList GetModules()
         {
-            EnsureLoggedIn();
-            object data = new
+            if (modulesCache == null)
             {
-                @session = SuiteCRMUserSession.id
-            };
-            return SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);            
+                EnsureLoggedIn();
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id
+                };
+                modulesCache = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);
+            }
+            return modulesCache;             
         }
 
         /// <summary>
