@@ -41,23 +41,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         where OutlookItemType : class
     {
         /// <summary>
-        /// The token used by CRM to indicate import permissions.
-        /// </summary>
-        private const string ImportPermissionToken = "import";
-
-        /// <summary>
-        /// The token used by CRM to indicate export permissions.
-        /// </summary>
-        private const string ExportPermissionToken = "export";
-
-        /// <summary>
-        /// A cache, by module name, of whether we have import to CRM, export from CRM,
-        /// of both permissions for the given module.
-        /// </summary>
-        private Dictionary<string, SyncDirection.Direction> crmImportExportPermissionsCache = 
-            new Dictionary<string, SyncDirection.Direction>();
-
-        /// <summary>
         /// The name of the modified date synchronisation property.
         /// </summary>
         protected const string ModifiedDatePropertyName = "SOModifiedDate";
@@ -101,6 +84,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         };
 
         /// <summary>
+        /// A cache for CRM premissions to prevent continually asking for them.
+        /// </summary>
+        protected readonly CRMPermissionsCache<OutlookItemType> permissionsCache;
+
+        /// <summary>
         /// Construct a new instance of a synchroniser with this thread name and context.
         /// </summary>
         /// <param name="threadName">The name of the thread I shall create.</param>
@@ -110,6 +98,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.context = context;
             InstallEventHandlers();
             this.AddSuiteCrmOutlookCategory();
+            this.permissionsCache = new CRMPermissionsCache<OutlookItemType>(this, context.Log);
             GetOutlookItems(this.GetDefaultFolder());
         }
 
@@ -159,7 +148,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public virtual void SynchroniseAll()
         {
-            if (this.HasExportAccess())
+            if (this.permissionsCache.HasExportAccess())
             {
                 Outlook.MAPIFolder folder = GetDefaultFolder();
 
@@ -230,176 +219,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true if this synchroniser is allowed import access for its default CRM module.</returns>
         protected bool HasImportAccess()
         {
-            return this.HasImportAccess(this.DefaultCrmModule);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed import access for the specified CRM module.
-        /// </summary>
-        /// <param name="crmModule">The name of the CRM module to check.</param>
-        /// <returns>true if this synchroniser is allowed import access for the specified CRM module.</returns>
-        protected bool HasImportAccess(string crmModule)
-        {
-            return this.HasAccess(crmModule, Synchroniser<OutlookItemType>.ImportPermissionToken);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed export access for its default CRM module.
-        /// </summary>
-        /// <returns>true if this synchroniser is allowed export access for its default CRM module.</returns>
-        protected bool HasExportAccess()
-        {
-            return this.HasExportAccess(this.DefaultCrmModule);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed export access for the specified CRM module.
-        /// </summary>
-        /// <param name="crmModule">The name of the CRM module to check.</param>
-        /// <returns>true if this synchroniser is allowed export access for the specified CRM module.</returns>
-        protected bool HasExportAccess(string crmModule)
-        {
-            return this.HasAccess(crmModule, Synchroniser<OutlookItemType>.ExportPermissionToken);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed both import and export access for its default CRM module.
-        /// </summary>
-        /// <returns>true if this synchroniser is allowed both import and export access for its default CRM module.</returns>
-        protected bool HasImportExportAccess()
-        {
-            return this.HasImportExportAccess(this.DefaultCrmModule);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed both import and export access for the specified CRM module.
-        /// </summary>
-        /// <param name="crmModule">The name of the CRM module to check.</param>
-        /// <returns>true if this synchroniser is allowed both import and export access for the specified CRM module.</returns>
-        private bool HasImportExportAccess(string crmModule)
-        {
-            return this.HasImportAccess(crmModule) &&
-                this.HasExportAccess(crmModule);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed access to the specified CRM module, with the specified permission.
-        /// </summary>
-        /// <remarks>
-        /// Note that, surprisingly, although CRM will report what permissions we have, it will not 
-        /// enforce them, so we have to do the honourable thing and not cheat.
-        /// </remarks>
-        /// <param name="moduleName"></param>
-        /// <param name="permission"></param>
-        /// <returns>true if this synchroniser is allowed access to the specified CRM module, with the specified permission.</returns>
-        protected bool HasAccess(string moduleName, string permission)
-        {
-            bool result;
-            bool? cached = HasCachedAccess(moduleName, permission);
-
-            if (cached != null)
-            {
-                result = (bool)cached;
-            }
-            else
-            {
-                try
-                {
-                    eModuleList oList = clsSuiteCRMHelper.GetModules();
-                    result = oList.items.FirstOrDefault(a => a.module_label == moduleName)
-                        ?.module_acls1.FirstOrDefault(b => b.action == permission)
-                        ?.access ?? false;
-
-                    CacheAccessPermission(moduleName, permission, result);
-                }
-                catch (Exception)
-                {
-                    Log.Warn($"Cannot detect access {moduleName}/{permission}");
-                    result = false;
-                }
-            }
-
-            return result;
-        }
-
-
-        /// <summary>
-        /// Cache an access permission received from CRM, so we don't have to repeatedly request it.
-        /// </summary>
-        /// <remarks>
-        /// The cache is modified additively. It we already know we have one permission, and find we have the other, then we assume both. There isn't presently any mechanism to remove permissions from the cache, 
-        /// </remarks>
-        /// <param name="moduleName">The module to which access may be granted.</param>
-        /// <param name="direction">The direction in which access may be granted.</param>
-        /// <param name="allowed">The access that should be granted.</param>
-        private void CacheAccessPermission(string moduleName, string direction, bool allowed)
-        {
-            if (this.crmImportExportPermissionsCache.ContainsKey(moduleName))
-            {
-                switch (this.crmImportExportPermissionsCache[moduleName])
-                {
-                    case SyncDirection.Direction.Neither :
-                        /* shouldn't happen as it would be unwise to cache 'neither' unless 
-                         * we know it is true - which we won't. */
-                        CacheAllowAccess(moduleName, direction, allowed);
-                        break;
-                    case SyncDirection.Direction.Export :
-                        if (direction == ImportPermissionToken && allowed)
-                        {
-                            /* if we already had export permission and now we have import permission, we have
-                             * both. */
-                            this.crmImportExportPermissionsCache[moduleName] = SyncDirection.Direction.BiDirectional;
-                        }
-                        break;
-                    case SyncDirection.Direction.Import:
-                        if (direction == ExportPermissionToken && allowed)
-                        {
-                            /* if we already had import permission and now we have export permission, we have
-                             * both. */
-                            this.crmImportExportPermissionsCache[moduleName] = SyncDirection.Direction.BiDirectional;
-                        }
-                        break;
-                }
-            }
-            else
-            {
-                CacheAllowAccess(moduleName, direction, allowed);
-            }
-        }
-
-
-        /// <summary>
-        /// Cache allowed access in the specified direction.
-        /// </summary>
-        /// <remarks>
-        /// Assumes there is currently no cached value for the specified module; if there is,
-        /// it will be overwritten.
-        /// </remarks>
-        /// <param name="moduleName">The module to which access may be granted.</param>
-        /// <param name="direction">The direction in which access may be granted.</param>
-        /// <param name="allowed">The access that should be granted.</param>
-        private void CacheAllowAccess(string moduleName, string direction, bool allowed)
-        {
-            if (allowed)
-            {
-                this.crmImportExportPermissionsCache[moduleName] = direction == ImportPermissionToken ?
-                    SyncDirection.Direction.Export : SyncDirection.Direction.Import;
-            }
-        }
-
-
-        private bool? HasCachedAccess(string moduleName, string permission)
-        {
-            bool? result = null;
-
-            if (this.crmImportExportPermissionsCache.ContainsKey(moduleName))
-            {
-                SyncDirection.Direction cachedValue = this.crmImportExportPermissionsCache[moduleName];
-                result = (permission == ImportPermissionToken && SyncDirection.AllowOutbound(cachedValue)) ||
-                    (permission == ExportPermissionToken && SyncDirection.AllowInbound(cachedValue));
-            }
-
-            return result;
+            return this.permissionsCache.HasImportAccess(this.DefaultCrmModule);
         }
 
         /// <summary>
@@ -461,7 +281,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     if (SyncDirection.AllowOutbound(Direction))
                     {
-                        if (this.HasImportAccess(crmType))
+                        if (this.permissionsCache.HasImportAccess(crmType))
                         {
                             if (this.GetSensitivity(item) == Outlook.OlSensitivity.olNormal)
                             {
@@ -884,7 +704,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (SyncDirection.AllowOutbound(Direction))
             {
                 var crmEntryId = state.CrmEntryId;
-                if (state.ExistedInCrm && this.HasImportAccess(state.CrmType))
+                if (state.ExistedInCrm && this.permissionsCache.HasImportAccess(state.CrmType))
                 {
                     eNameValue[] data = new eNameValue[2];
                     data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);

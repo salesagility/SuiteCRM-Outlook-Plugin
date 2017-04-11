@@ -87,7 +87,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             Log.Info($"ContactSyncing.SyncFolder: '{folder}'");
             try
             {
-                if (HasAccess(crmModule, "export"))
+                if (this.permissionsCache.HasExportAccess())
                 {
                     var untouched = new HashSet<SyncState<Outlook.ContactItem>>(ItemsSyncState);
 

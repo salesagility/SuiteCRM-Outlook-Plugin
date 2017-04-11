@@ -58,7 +58,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// The name of the organiser synchronisation property
         /// </summary>
         public const string OrganiserPropertyName = "SOrganiser";
+
+        /// <summary>
+        /// Header for a block of accept/decline links in a meeting invite body.
+        /// </summary>
         private const string AcceptDeclineHeader = "-- \nAccept/Decline links\n";
+
 
         public AppointmentSyncing(string name, SyncContext context)
             : base(name, context)
@@ -112,7 +117,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void SynchroniseAll()
         {
             base.SynchroniseAll();
-            if (this.HasExportAccess(AppointmentSyncing.AltCrmModule))
+            if (this.permissionsCache.HasExportAccess(AppointmentSyncing.AltCrmModule))
             {
                 SyncFolder(GetDefaultFolder(), AppointmentSyncing.AltCrmModule);
             }
