@@ -22,23 +22,37 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Runtime.InteropServices;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Exceptions;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
-    using Outlook = Microsoft.Office.Interop.Outlook;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Threading;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
+    /// <remarks>
+    /// Some of functionality of this class is duplicated in uiteCRMClient.Email.clsEmailArchive.
+    /// TODO: Refactor. See issue #125
+    /// </remarks>
     public class EmailArchiving : RepeatingProcess
     {
         private UserSession SuiteCRMUserSession => Globals.ThisAddIn.SuiteCRMUserSession;
 
         private clsSettings settings => Globals.ThisAddIn.Settings;
+
+        /// <summary>
+        /// Magic property tag to get the email address from an Outlook Recipient object.
+        /// </summary>
+        const string PR_SMTP_ADDRESS = "http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
+
+        /// <summary>
+        /// Canonical format to use when saving date/times to CRM; essentially, ISO8601 without the 'T'.
+        /// </summary>
+        public const string EmailDateFormat = "yyyy-MM-dd HH:mm:ss";
 
         public EmailArchiving(string name, ILogger log) : base(name, log)
         {
@@ -150,7 +164,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private clsEmailArchive SerialiseEmailObject(Outlook.MailItem mail, EmailArchiveType archiveType)
         {
             clsEmailArchive mailArchive = new clsEmailArchive();
-            mailArchive.From = mail.SenderEmailAddress;
+            mailArchive.From = ExtractSmtpAddressForSender(mail);
             mailArchive.To = string.Empty;
 
             Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {mail.Subject} dated {mail.SentOn}.");
@@ -168,6 +182,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             mailArchive.Subject = mail.Subject;
+            mailArchive.Sent = DateTimeOfMailItem(mail, "autoOUTBOUND");
             mailArchive.Body = mail.Body;
             mailArchive.HTMLBody = mail.HTMLBody;
             mailArchive.ArchiveType = archiveType;
@@ -184,6 +199,61 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             return mailArchive;
+        }
+
+        /// <summary>
+        /// From this mail item, extract the SMTP sender address if any, else the
+        /// empty string.
+        /// </summary>
+        /// <remarks>
+        /// If the sender is using Exchange (which if they're using Outlook they almost
+        /// certainly are) the 'sender email address' won't be an email address, it will
+        /// be a bizarre LDAP query which CRM will barf on. However, the Sender property
+        /// may well be null, so allow for that too.
+        /// </remarks>
+        /// <param name="mail">The mail item</param>
+        /// <returns>An SMTP address or an empty string.</returns>
+        private string ExtractSmtpAddressForSender(Outlook.MailItem mail)
+        {
+            string result = string.Empty;
+
+            
+
+            try
+            {
+                switch (mail.SenderEmailType)
+                {
+                    case "SMTP":
+                        result = mail.SenderEmailAddress;
+                        break;
+                    case "EX": /* an Exchange address */
+                        var sender = mail.Sender;
+                        if (sender != null)
+                        {
+                            var exchangeUser = sender.GetExchangeUser();
+                            if (exchangeUser != null)
+                            {
+                                result = exchangeUser.PrimarySmtpAddress;
+                            }
+                        }
+
+                        if (string.IsNullOrEmpty(result))
+                        {
+                            var currentUser = Globals.ThisAddIn.Application.ActiveExplorer().Session.CurrentUser.PropertyAccessor;
+                            result = currentUser.GetProperty(PR_SMTP_ADDRESS).ToString();
+                        }
+                        break;
+                    default:
+                        this.Log.Warn($"{this.GetType().Name}.ExtractSmtpAddressForSender: unknown email type {mail.SenderEmailType}");
+                        break;
+                }
+            }
+            catch (Exception any)
+            {
+                this.Log.Error($"{this.GetType().Name}.ExtractSmtpAddressForSender: unexpected error", any);
+            }
+
+            return result;
         }
 
         private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = "")
@@ -477,7 +547,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             eNameValue[] data = new eNameValue[12];
             data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? string.Empty);
-            data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem, type).ToString("yyyy-MM-dd HH:mm:ss"));
+            data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem, type).ToString(EmailDateFormat));
             data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
             data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
             data[4] = clsSuiteCRMHelper.SetNameValuePair("description", mailItem.Body ?? string.Empty);
@@ -493,20 +563,30 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private DateTime DateTimeOfMailItem(Outlook.MailItem mailItem, string type)
         {
-            DateTime dateTime;
+            DateTime result;
+            var now = DateTime.UtcNow;
+
             switch (type)
             {
                 case "autoOUTBOUND":
+                    result = mailItem.CreationTime;
+                    if (result > now)
+                    {
+                        /* if the actual date hasn't yet been set, Outlook will 
+                         * nonchalantly return 1st January 4501 */
+                        result = now;
+                    }
+                    break;
                 case "SendArchive":
-                    dateTime = mailItem.CreationTime;
+                    result = mailItem.CreationTime;
                     break;
                 case null:
                 case "autoINBOUND":
                 default:
-                    dateTime = mailItem.SentOn;
+                    result = mailItem.SentOn;
                     break;
             }
-            return dateTime;
+            return result;
         }
 
         public void CreateEmailRelationshipOrFail(string emailId, CrmEntity entity)
