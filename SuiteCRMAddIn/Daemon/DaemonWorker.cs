@@ -20,8 +20,9 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.Daemon
 {
+    using BusinessLogic;
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Concurrent;
@@ -71,6 +72,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             tasks.Enqueue(task);
         }
 
+        /// <summary>
+        /// Take one task from the queue (if any), and perform it.
+        /// </summary>
         internal override void PerformIteration()
         {
             DaemonAction task;
@@ -79,12 +83,23 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Info($"About to perform {task.Description}.");
 
-                Robustness.DoOrLogError(this.Log, () =>
+                try
                 {
                     task.Perform();
                     Log.Info($"{task.Description} completed.");
-                });
-
+                }
+                catch (Exception any)
+                {
+                    if (++task.Attempts < task.MaxAttempts)
+                    {
+                        tasks.Enqueue(task);
+                        Log.Warn($"{task.Description} failed with error {any.GetType().Name}: {any.Message}; requeueing");
+                    }
+                    else
+                    {
+                        Log.Error($"{task.Description} failed with error {any.GetType().Name}: {any.Message}; too many retries, aborting", any);
+                    }
+                }
             }
         }
     }

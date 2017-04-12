@@ -105,6 +105,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                     () => this.PerformIteration(),
                     $"{this.Name} PerformIteration");
 
+                /* deal with any pending Windows messages, which we don't need to know about */
+                System.Windows.Forms.Application.DoEvents();
+
                 this.lastIterationCompleted = DateTime.UtcNow;
                 await Task.Delay(this.SyncPeriod);
             }
@@ -116,6 +119,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 this.process = null;
             }
         }
+
 
         /// <summary>
         /// Do whatever it is I do, once.

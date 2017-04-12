@@ -60,7 +60,7 @@ namespace SuiteCRMClient.RESTObjects
             set
             {
                 this.name_value_objectField = value;
-                this.name_value_list1 = new List<eNameValue>();
+                this.name_value_list1 = new NameValueCollection();
                 foreach (object objField in value.ToArray<object>())
                 {
                     string strFieldString = objField.ToString();
@@ -71,7 +71,7 @@ namespace SuiteCRMClient.RESTObjects
                 }
             }
         }
-        public List<eNameValue> name_value_list1 { get; set; }
+        public NameValueCollection name_value_list1 { get; set; }
 
         public object GetValue(string key)
         {

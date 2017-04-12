@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.Daemon
 {
     /// <remarks>Not currently used. You can't make a list of Outlook items detached from their 
     /// Outlook collection because they're not real objects, and if the current selection changes 
@@ -30,11 +30,22 @@ namespace SuiteCRMAddIn.BusinessLogic
     public interface DaemonAction
     {
         /// <summary>
+        /// The number of times this item has been attempted.
+        /// </summary>
+        int Attempts { get; set; }
+
+        /// <summary>
         /// Get a description of this action.
         /// </summary>
         string Description {
             get;
         }
+
+        /// <summary>
+        /// The maximum number of times this action can be attempted before
+        /// being abandoned.
+        /// </summary>
+        int MaxAttempts { get; }
 
         /// <summary>
         /// Perform this action.

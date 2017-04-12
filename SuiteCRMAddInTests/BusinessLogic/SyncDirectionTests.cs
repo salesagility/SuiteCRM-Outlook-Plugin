@@ -31,8 +31,8 @@ namespace SuiteCRMAddIn.BusinessLogic.Tests
         public void ToStringTest()
         {
             Assert.AreEqual("None", SyncDirection.ToString(SyncDirection.Direction.Neither));
-            Assert.AreEqual("From CRM to Outlook", SyncDirection.ToString(SyncDirection.Direction.FromCrmToOutlook));
-            Assert.AreEqual("From Outlook to CRM", SyncDirection.ToString(SyncDirection.Direction.FromOutlookToCrm));
+            Assert.AreEqual("From CRM to Outlook", SyncDirection.ToString(SyncDirection.Direction.Export));
+            Assert.AreEqual("From Outlook to CRM", SyncDirection.ToString(SyncDirection.Direction.Import));
             Assert.AreEqual("Both", SyncDirection.ToString(SyncDirection.Direction.BiDirectional));
         }
 
@@ -40,8 +40,8 @@ namespace SuiteCRMAddIn.BusinessLogic.Tests
         public void AllowOutboundTest()
         {
             Assert.IsTrue(SyncDirection.AllowOutbound(SyncDirection.Direction.BiDirectional), "Bidirectional includes both");
-            Assert.IsTrue(SyncDirection.AllowOutbound(SyncDirection.Direction.FromOutlookToCrm), "Explicitly outbound");
-            Assert.IsFalse(SyncDirection.AllowOutbound(SyncDirection.Direction.FromCrmToOutlook), "Explicitly not outbound");
+            Assert.IsTrue(SyncDirection.AllowOutbound(SyncDirection.Direction.Import), "Explicitly outbound");
+            Assert.IsFalse(SyncDirection.AllowOutbound(SyncDirection.Direction.Export), "Explicitly not outbound");
             Assert.IsFalse(SyncDirection.AllowOutbound(SyncDirection.Direction.Neither), "Neither excludes both");
         }
 
@@ -49,8 +49,8 @@ namespace SuiteCRMAddIn.BusinessLogic.Tests
         public void AllowInboundTest()
         {
             Assert.IsTrue(SyncDirection.AllowInbound(SyncDirection.Direction.BiDirectional), "Bidirectional includes both");
-            Assert.IsTrue(SyncDirection.AllowInbound(SyncDirection.Direction.FromCrmToOutlook), "Explicitly inbound");
-            Assert.IsFalse(SyncDirection.AllowInbound(SyncDirection.Direction.FromOutlookToCrm), "Explicitly not inbound");
+            Assert.IsTrue(SyncDirection.AllowInbound(SyncDirection.Direction.Export), "Explicitly inbound");
+            Assert.IsFalse(SyncDirection.AllowInbound(SyncDirection.Direction.Import), "Explicitly not inbound");
             Assert.IsFalse(SyncDirection.AllowInbound(SyncDirection.Direction.Neither), "Neither excludes both");
         }
     }

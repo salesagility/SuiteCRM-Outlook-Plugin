@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using Newtonsoft.Json;
+    using Daemon;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
@@ -40,16 +41,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         where OutlookItemType : class
     {
         /// <summary>
-        /// The token used by CRM to indicate import permissions.
-        /// </summary>
-        private const string ImportPermissionToken = "import";
-
-        /// <summary>
-        /// The token used by CRM to indicate export permissions.
-        /// </summary>
-        private const string ExportPermissionToken = "export";
-
-        /// <summary>
         /// The name of the modified date synchronisation property.
         /// </summary>
         protected const string ModifiedDatePropertyName = "SOModifiedDate";
@@ -65,6 +56,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected const string CrmIdPropertyName = "SEntryID";
 
         private readonly SyncContext context;
+
+        /// <summary>
+        /// A lock to prevent enqueueing the same new object twice in different
+        /// threads (unlikely, since it should always be in the VSTA_main thread,
+        /// but let's be paranoid).
+        /// </summary>
+        private object enqueueingLock = new object();
 
         /// <summary>
         /// The prefix for the fetch query, used in FetchRecordsFromCrm, q.v.
@@ -86,6 +84,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         };
 
         /// <summary>
+        /// A cache for CRM premissions to prevent continually asking for them.
+        /// </summary>
+        protected readonly CRMPermissionsCache<OutlookItemType> permissionsCache;
+
+        /// <summary>
         /// Construct a new instance of a synchroniser with this thread name and context.
         /// </summary>
         /// <param name="threadName">The name of the thread I shall create.</param>
@@ -95,6 +98,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.context = context;
             InstallEventHandlers();
             this.AddSuiteCrmOutlookCategory();
+            this.permissionsCache = new CRMPermissionsCache<OutlookItemType>(this, context.Log);
             GetOutlookItems(this.GetDefaultFolder());
         }
 
@@ -144,7 +148,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public virtual void SynchroniseAll()
         {
-            if (this.HasExportAccess())
+            if (this.permissionsCache.HasExportAccess())
             {
                 Outlook.MAPIFolder folder = GetDefaultFolder();
 
@@ -186,6 +190,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         public abstract SyncDirection.Direction Direction { get; }
 
         /// <summary>
+        /// We need to prevent two simultaneous transmissions of the same object, so it's probably unsafe
+        /// to have two threads transmitting contact items at the same time. But there's no reason why
+        /// we should not transmit contact items and task items at the same time, for example. So each
+        /// Synchorniser subclass will have its own transmission lock.
+        /// </summary>
+        /// <returns>A transmission lock.</returns>
+        protected abstract object TransmissionLock { get; }
+
+        /// <summary>
         /// Get a date stamp for midnight five days ago (why?).
         /// </summary>
         /// <returns>A date stamp for midnight five days ago.</returns>
@@ -206,82 +219,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true if this synchroniser is allowed import access for its default CRM module.</returns>
         protected bool HasImportAccess()
         {
-            return this.HasImportAccess(this.DefaultCrmModule);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed import access for the specified CRM module.
-        /// </summary>
-        /// <param name="crmModule">The name of the CRM module to check.</param>
-        /// <returns>true if this synchroniser is allowed import access for the specified CRM module.</returns>
-        protected bool HasImportAccess(string crmModule)
-        {
-            return this.HasAccess(crmModule, Synchroniser<OutlookItemType>.ImportPermissionToken);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed export access for its default CRM module.
-        /// </summary>
-        /// <returns>true if this synchroniser is allowed export access for its default CRM module.</returns>
-        protected bool HasExportAccess()
-        {
-            return this.HasExportAccess(this.DefaultCrmModule);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed export access for the specified CRM module.
-        /// </summary>
-        /// <param name="crmModule">The name of the CRM module to check.</param>
-        /// <returns>true if this synchroniser is allowed export access for the specified CRM module.</returns>
-        protected bool HasExportAccess(string crmModule)
-        {
-            return this.HasAccess(crmModule, Synchroniser<OutlookItemType>.ExportPermissionToken);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed both import and export access for its default CRM module.
-        /// </summary>
-        /// <returns>true if this synchroniser is allowed both import and export access for its default CRM module.</returns>
-        protected bool HasImportExportAccess()
-        {
-            return this.HasImportExportAccess(this.DefaultCrmModule);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed both import and export access for the specified CRM module.
-        /// </summary>
-        /// <param name="crmModule">The name of the CRM module to check.</param>
-        /// <returns>true if this synchroniser is allowed both import and export access for the specified CRM module.</returns>
-        private bool HasImportExportAccess(string crmModule)
-        {
-            return this.HasImportAccess(crmModule) &&
-                this.HasExportAccess(crmModule);
-        }
-
-        /// <summary>
-        /// Check whether this synchroniser is allowed access to the specified CRM module, with the specified permission.
-        /// </summary>
-        /// <remarks>
-        /// Note that, surprisingly, although CRM will report what permissions we have, it will not 
-        /// enforce them, so we have to do the honourable thing and not cheat.
-        /// </remarks>
-        /// <param name="moduleName"></param>
-        /// <param name="permission"></param>
-        /// <returns>true if this synchroniser is allowed access to the specified CRM module, with the specified permission.</returns>
-        protected bool HasAccess(string moduleName, string permission)
-        {
-            try
-            {
-                eModuleList oList = clsSuiteCRMHelper.GetModules();
-                return oList.items.FirstOrDefault(a => a.module_label == moduleName)
-                    ?.module_acls1.FirstOrDefault(b => b.action == permission)
-                    ?.access ?? false;
-            }
-            catch (Exception)
-            {
-                Log.Warn($"Cannot detect access {moduleName}/{permission}");
-                return false;
-            }
+            return this.permissionsCache.HasImportAccess(this.DefaultCrmModule);
         }
 
         /// <summary>
@@ -295,14 +233,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             var toDeleteFromOutlook = itemsToResolve.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
             var toCreateOnCrmServer = itemsToResolve.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
 
-            foreach (var item in toDeleteFromOutlook)
+            foreach (var syncState in toDeleteFromOutlook)
             {
-                this.RemoveItemAndSyncState(item);
+                this.RemoveItemAndSyncState(syncState);
             }
 
-            foreach (var oItem in toCreateOnCrmServer)
+            foreach (var syncState in toCreateOnCrmServer)
             {
-                AddOrUpdateItemFromOutlookToCrm(oItem.OutlookItem, this.DefaultCrmModule);
+                AddOrUpdateItemFromOutlookToCrm(syncState, this.DefaultCrmModule);
             }
         }
 
@@ -320,49 +258,72 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Perform all the necessary checking before adding or updating an item on CRM.
         /// </summary>
+        /// <remarks>
+        /// TODO TODO TODO: This does NOT actually do all the checking. Checking is also
+        /// done in SyncState.ShouldSyncWithCRM, and possibly other places. Fix.
+        /// </remarks>
         /// <param name="item">The item we may seek to add or update.</param>
         /// <param name="crmType">The CRM type of that item.</param>
         /// <returns>true if we may attempt to add or update that item.</returns>
         protected bool ShouldAddOrUpdateItemFromOutlookToCrm(OutlookItemType item, string crmType)
         {
             bool result;
+            string prefix = "Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm";
 
             try
             {
                 if (item == null)
                 {
-                    Log.Warn($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: attempt to send null {crmType}?");
+                    Log.Warn($"{prefix}: attempt to send null {crmType}?");
                     result = false;
                 }
                 else
                 {
                     if (SyncDirection.AllowOutbound(Direction))
                     {
-                        if (this.HasImportAccess(crmType))
+                        if (this.permissionsCache.HasImportAccess(crmType))
                         {
-                            result = true;
+                            if (this.GetSensitivity(item) == Outlook.OlSensitivity.olNormal)
+                            {
+                                result = true;
+                            }
+                            else
+                            {
+                                Log.Info($"{prefix}: {crmType} not added to CRM because its sensitivity is not public.");
+                                result = false;
+                            }
                         }
                         else
                         {
-                            Log.Info($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: {crmType} not added to CRM because import access is not granted.");
+                            Log.Info($"{prefix}: {crmType} not added to CRM because import access is not granted.");
                             result = false;
                         }
                     }
                     else
                     {
-                        Log.Info($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: {crmType} not added to CRM because synchronisation is not enabled.");
+                        Log.Info($"{prefix}: {crmType} not added to CRM because synchronisation is not enabled.");
                         result = false;
                     }
                 }
             }
             catch (Exception any)
             {
-                Log.Error($"Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm: unexpected failure while checking {crmType}.", any);
+                Log.Error($"{prefix}: unexpected failure while checking {crmType}.", any);
                 result = false;
             }
 
             return result;
         }
+
+        /// <summary>
+        /// Return the sensitivity of this outlook item.
+        /// </summary>
+        /// <remarks>
+        /// Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.
+        /// </remarks>
+        /// <param name="item">The outlook item whose sensitivity is required.</param>
+        /// <returns>the sensitivity of the item.</returns>
+        internal abstract Outlook.OlSensitivity GetSensitivity(OutlookItemType item);
 
         /// <summary>
         /// Given a list of items which exist in Outlook but are missing from CRM, resolve
@@ -375,34 +336,72 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.ResolveUnmatchedItems(itemsToResolve, DefaultCrmModule);
         }
 
+
         /// <summary>
-        /// Add this Outlook item, which may not exist in CRM, to CRM.
+        /// Add the item implied by this SyncState, which may not exist in CRM, to CRM.
         /// </summary>
-        /// <param name="olItem">The outlook item to add.</param>
+        /// <param name="syncState">The sync state.</param>
+        /// <returns>The id of the entry added or updated.</returns>
+        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState)
+        {
+            return this.AddOrUpdateItemFromOutlookToCrm(syncState, DefaultCrmModule);
+        }
+
+
+        /// <summary>
+        /// Add the item implied by this SyncState, which may not exist in CRM, to CRM.
+        /// </summary>
+        /// <param name="syncState">The sync state.</param>
+        /// <param name="crmType">The CRM type (name of CRM module) of the item.</param>
+        /// <returns>The id of the entry added or updated.</returns>
+        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState, string crmType)
+        {
+            return this.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, syncState.CrmEntryId);
+        }
+
+
+        /// <summary>
+        /// Add the Outlook item referenced by this sync state, which may not exist in CRM, to CRM.
+        /// </summary>
+        /// <param name="syncState">The sync state referencing the outlook item to add.</param>
         /// <param name="crmType">The CRM type ('module') to which it should be added</param>
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
         /// <returns>The id of the entry added o</returns>
-        //protected abstract string AddOrUpdateItemFromOutlookToCrm(OutlookItemType item, string crmType, string entryId = string.Empty);
-        protected virtual string AddOrUpdateItemFromOutlookToCrm(OutlookItemType olItem, string crmType, string entryId = "")
+        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState, string crmType, string entryId = "")
         {
             string result = entryId;
 
-            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem, crmType))
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem, crmType))
             {
-                LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
                 try
                 {
-                    result = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
-                    var utcNow = DateTime.UtcNow;
-                    EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), crmType, result);
-                    this.SaveItem(olItem);
+                    lock (this.TransmissionLock)
+                    {
+                        OutlookItemType outlookItem = syncState.OutlookItem;
 
-                    AddOrGetSyncState(olItem, utcNow, result);
+                        LogItemAction(outlookItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
+
+                        if (syncState != null)
+                        {
+                            syncState.SetTransmitted();
+                        }
+
+                        result = ConstructAndDespatchCrmItem(outlookItem, crmType, entryId);
+                        var utcNow = DateTime.UtcNow;
+                        EnsureSynchronisationPropertiesForOutlookItem(outlookItem, utcNow.ToString(), crmType, result);
+                        this.SaveItem(outlookItem);
+
+                        syncState.SetSynced(result);
+                    }
                 }
                 catch (Exception ex)
                 {
                     Log.Error("Synchroniser.AddOrUpdateItemFromOutlookToCrm", ex);
+                    if (syncState != null)
+                    {
+                        syncState.SetPending();
+                    }
                 }
             }
 
@@ -412,6 +411,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Save this item.
         /// </summary>
+        /// <remarks>
+        /// Because Outlook items are not proper objects, you cannot call the Save method of
+        /// an Outlook item without knowing its exact class explicitly. So there are what look
+        /// like redundant specialisations of this method; they aren't.
+        /// </remarks>
         /// <param name="olItem">The item to save.</param>
         protected abstract void SaveItem(OutlookItemType olItem);
 
@@ -426,15 +430,32 @@ namespace SuiteCRMAddIn.BusinessLogic
             var existingState = GetExistingSyncState(oItem);
             if (existingState != null)
             {
-                existingState.OutlookItem = oItem;
+                if (existingState.OutlookItem != oItem)
+                {
+                    /* if Outlook only holds one item with the same id, then this line MUST be redundant.
+                     * TODO: check logs and simplify this logic if the issue does not occur */
+                    existingState.OutlookItem = oItem;
+                    Log.Error($"Should never happen - two Outlook items with same id ({GetOutlookEntryId(oItem)})?");
+                }
                 return existingState;
             }
             else
             {
-                SyncState<OutlookItemType> newState = ConstructSyncState(oItem);
-                ItemsSyncState.Add(newState);
-                return newState;
+                return ConstructAndAddSyncState(oItem);
             }
+        }
+
+        /// <summary>
+        /// Constructs a new SyncState object for this Outlook item and adds it to my 
+        /// collection of sync states.
+        /// </summary>
+        /// <param name="oItem">The Outlook item to wrap</param>
+        /// <returns>The sync state added.</returns>
+        private SyncState<OutlookItemType> ConstructAndAddSyncState(OutlookItemType oItem)
+        {
+            SyncState<OutlookItemType> newState = ConstructSyncState(oItem);
+            ItemsSyncState.Add(newState);
+            return newState;
         }
 
         /// <summary>
@@ -553,6 +574,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
         /// </summary>
+        /// <remarks>
+        /// You'd think that with normal object oriented programming you could just implement this 
+        /// method here, but because Outlook items are not really objects and don't have a common
+        /// superclass you can't. So it has to be implemented in subclasses.
+        /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmType">The type within CRM to which the item should be added.</param>
         /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
@@ -628,9 +654,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected abstract void EnsureSynchronisationPropertyForOutlookItem(OutlookItemType olItem, string name, string value);
 
         /// <summary>
-        /// Returns true iif user is currently focussed on this (Contacts/Appointments/Tasks) tab.
+        /// Returns true iff user is currently focussed on this (Contacts/Appointments/Tasks) tab.
         /// </summary>
-        /// <remarks>TODO: Why should this make a difference?</remarks>
+        /// <remarks>
+        /// This is used in determining whether an item is in fact newly created by the user;
+        /// it has a certain code smell to it.
+        /// </remarks>
         protected abstract bool IsCurrentView { get; }
 
         /// <summary>
@@ -675,7 +704,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (SyncDirection.AllowOutbound(Direction))
             {
                 var crmEntryId = state.CrmEntryId;
-                if (state.ExistedInCrm && this.HasImportAccess(state.CrmType))
+                if (state.ExistedInCrm && this.permissionsCache.HasImportAccess(state.CrmType))
                 {
                     eNameValue[] data = new eNameValue[2];
                     data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);
@@ -687,6 +716,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+
+        /// <summary>
+        /// Parse a date time object from a user property, assuming the ISO 8601 date-time 
+        /// format but ommitting the 'T'. (why? I don't know. TODO: possibly fix).
+        /// </summary>
+        /// <remarks>
+        /// If the expected format is not recognised, a second scan is attempted without a
+        /// specific format; if this fails, it fails silently and the current time is returned.
+        /// </remarks>
+        /// <param name="propertyValue">A property value believed to contain a date time string.</param>
+        /// <returns>A date time object.</returns>
         protected DateTime ParseDateTimeFromUserProperty(string propertyValue)
         {
             if (propertyValue == null) return default(DateTime);
@@ -727,21 +767,23 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 /* when there are no more entries, we'll get a zero-length entry list and nextOffset
                  * will have the same value as thisOffset */
-                UpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
+                AddOrUpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
             }
             while (thisOffset != nextOffset);
 
         }
 
+
         /// <summary>
-        /// Update these items.
+        /// Update these items, which may or may not already exist in Outlook.
         /// </summary>
         /// <param name="items">The items to be synchronised.</param>
         /// <param name="folder">The outlook folder to synchronise into.</param>
-        /// <param name="untouched">A list of items which have not yet been synchronised; this list is 
-        /// modified (destructuvely changed) by the action of this method.</param>
+        /// <param name="untouched">A list of sync states of existing items which have 
+        /// not yet been synchronised; this list is modified (destructuvely changed) 
+        /// by the action of this method.</param>
         /// <param name="crmType">The CRM record type ('module') to be fetched.</param>
-        protected virtual void UpdateItemsFromCrmToOutlook(
+        protected virtual void AddOrUpdateItemsFromCrmToOutlook(
             eEntryValue[] items,
             Outlook.MAPIFolder folder,
             HashSet<SyncState<OutlookItemType>> untouched,
@@ -751,11 +793,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 try
                 {
-                    var state = UpdateFromCrm(folder, crmType, item);
+                    var state = AddOrUpdateItemFromCrmToOutlook(folder, crmType, item);
                     if (state != null)
                     {
                         // i.e., the entry was updated...
                         untouched.Remove(state);
+                        state.SetSynced();
                         LogItemAction(state.OutlookItem, "Synchroniser.UpdateItemsFromCrmToOutlook, item removed from untouched");
                     }
                 }
@@ -767,13 +810,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Update a single appointment in the specified Outlook folder with changes from CRM.
+        /// Update a single item in the specified Outlook folder with changes from CRM. If the item
+        /// does not exist, create it.
         /// </summary>
         /// <param name="folder">The folder to synchronise into.</param>
         /// <param name="crmType">The CRM type of the candidate item.</param>
         /// <param name="candidateItem">The candidate item from CRM.</param>
         /// <returns>The synchronisation state of the item updated (if it was updated).</returns>
-        protected abstract SyncState<OutlookItemType> UpdateFromCrm(Outlook.MAPIFolder folder, string crmType, eEntryValue candidateItem);
+        protected abstract SyncState<OutlookItemType> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, eEntryValue candidateItem);
 
         /// <summary>
         /// Log a message regarding this Outlook item, with detail of the item.
@@ -853,9 +897,61 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        protected abstract void OutlookItemAdded(OutlookItemType outlookItem);
 
-        protected abstract void OutlookItemChanged(OutlookItemType outlookItem);
+        /// <summary>
+        /// Entry point from event handler when an item is added in Outlook.
+        /// </summary>
+        /// <remarks>Should always run in the 'VSTA_main' thread.</remarks>
+        /// <param name="olItem">The item that has been added.</param>
+        protected virtual void OutlookItemAdded(OutlookItemType olItem)
+        {
+            LogItemAction(olItem, "AppointmentSyncing.OutlookItemAdded");
+
+            if (olItem != null)
+            {
+                lock (enqueueingLock)
+                {
+                    if (IsCurrentView && this.GetExistingSyncState(olItem) == null)
+                    {
+                        SyncState<OutlookItemType> state = this.ConstructAndAddSyncState(olItem);
+                        DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType>(this, state, this.DefaultCrmModule));
+                    }
+                    else
+                    {
+                        Log.Warn($"AppointmentSyncing.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Entry point from event handler, called when an Outlook item of class AppointmentItem 
+        /// is believed to have changed.
+        /// </summary>
+        /// <param name="olItem">The item which has changed.</param>
+        protected void OutlookItemChanged(OutlookItemType olItem)
+        {
+            LogItemAction(olItem, "Syncroniser.OutlookItemChanged");
+            var syncStateForItem = GetExistingSyncState(olItem);
+            if (syncStateForItem != null)
+            {
+                if (this.ShouldPerformSyncNow(syncStateForItem))
+                {
+                    DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType>(this, syncStateForItem));
+                }
+                else if (!syncStateForItem.ShouldSyncWithCrm)
+                {
+                    this.RemoveFromCrm(syncStateForItem);
+                }
+            }
+            else
+            {
+                /* we don't have a sync state for this item (presumably formerly private);
+                 *  that's OK, treat it as new */
+                OutlookItemAdded(olItem);
+            }
+        }
 
         public abstract Outlook.MAPIFolder GetDefaultFolder();
 
@@ -886,6 +982,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             this.LogItemAction(item.OutlookItem, "AppointmentSyncing.RemoveItemSyncState, removed item from queue");
             this.ItemsSyncState.Remove(item);
+        }
+
+        /// <summary>
+        /// Should the item represented by this sync state be synchronised now?
+        /// </summary>
+        /// <param name="syncState">The sync state under consideration.</param>
+        /// <returns>True if this synchroniser relates to the current tab and the timing logic is satisfied.</returns>
+        protected bool ShouldPerformSyncNow(SyncState<OutlookItemType> syncState)
+        {
+            return (IsCurrentView && syncState.ShouldPerformSyncNow());
         }
     }
 }

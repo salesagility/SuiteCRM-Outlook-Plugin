@@ -23,7 +23,8 @@
 namespace SuiteCRMAddIn.BusinessLogic
 {
     /// <summary>
-    /// A direction in which things may be synchronised
+    /// A direction in which things may be synchronised. Directions are named
+    /// with respect to CRM.
     /// </summary>
     public class SyncDirection
     {
@@ -33,8 +34,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         public enum Direction
         {
             Neither = 0,
-            FromCrmToOutlook = 1,
-            FromOutlookToCrm = 2,
+            Export = 1,
+            Import = 2,
             BiDirectional = 3
         }
 
@@ -43,7 +44,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="direction">The direction.</param>
         /// <returns>The string.</returns>
-        public static string ToString( Direction direction)
+        public static string ToString(Direction direction)
         {
             string result;
 
@@ -52,10 +53,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 case Direction.Neither:
                     result = "None";
                     break;
-                case Direction.FromCrmToOutlook:
+                case Direction.Export:
                     result = "From CRM to Outlook";
                     break;
-                case Direction.FromOutlookToCrm:
+                case Direction.Import:
                     result = "From Outlook to CRM";
                     break;
                 case Direction.BiDirectional:
@@ -76,7 +77,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if this direction allows inbound transfers.</returns>
         public static bool AllowInbound(Direction direction)
         {
-            return (direction == Direction.FromCrmToOutlook || direction == Direction.BiDirectional);
+            return (direction == Direction.Export || direction == Direction.BiDirectional);
         }
 
         /// <summary>
@@ -86,7 +87,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if this direction allows outbound transfers.</returns>
         public static bool AllowOutbound(Direction direction)
         {
-            return (direction == Direction.FromOutlookToCrm || direction == Direction.BiDirectional);
+            return (direction == Direction.Import || direction == Direction.BiDirectional);
         }
 
     }

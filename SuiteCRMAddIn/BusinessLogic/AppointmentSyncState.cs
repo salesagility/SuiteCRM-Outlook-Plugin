@@ -1,4 +1,5 @@
 ﻿using System;
+using SuiteCRMAddIn.ProtoItems;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
@@ -21,6 +22,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void DeleteItem()
         {
             this.OutlookItem.Delete();
+        }
+
+        internal override ProtoItem<Outlook.AppointmentItem> CreateProtoItem(Outlook.AppointmentItem outlookItem)
+        {
+            return new ProtoAppointment(outlookItem);
         }
     }
 }
