@@ -140,8 +140,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Note that, surprisingly, although CRM will report what permissions we have, it will not 
         /// enforce them, so we have to do the honourable thing and not cheat.
         /// </remarks>
-        /// <param name="moduleName"></param>
-        /// <param name="permission"></param>
+        /// <param name="moduleName">The name of the CRM module being queried.</param>
+        /// <param name="permission">The permission sought.</param>
         /// <returns>true if my synchroniser is allowed access to the specified CRM module, with the specified permission.</returns>
         public bool HasAccess(string moduleName, string permission)
         {

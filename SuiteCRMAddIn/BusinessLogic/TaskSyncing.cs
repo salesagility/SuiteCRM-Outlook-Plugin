@@ -70,15 +70,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override SyncDirection.Direction Direction => settings.SyncCalendar;
 
-        public override void SynchroniseAll()
-        {
-            Outlook.NameSpace oNS = this.Application.GetNamespace("mapi");
-            Outlook.MAPIFolder folder = GetDefaultFolder();
-
-            GetOutlookItems(folder);
-            SyncFolder(folder, CrmModule);
-        }
-
         private Outlook.OlImportance GetImportance(string sImportance)
         {
             Outlook.OlImportance oPriority = Outlook.OlImportance.olImportanceLow;
