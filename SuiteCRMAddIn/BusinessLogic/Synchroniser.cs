@@ -388,20 +388,25 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
 
                         result = ConstructAndDespatchCrmItem(outlookItem, crmType, entryId);
-                        var utcNow = DateTime.UtcNow;
-                        EnsureSynchronisationPropertiesForOutlookItem(outlookItem, utcNow.ToString(), crmType, result);
-                        this.SaveItem(outlookItem);
+                        if (!string.IsNullOrEmpty(result))
+                        {
+                            var utcNow = DateTime.UtcNow;
+                            EnsureSynchronisationPropertiesForOutlookItem(outlookItem, utcNow.ToString(), crmType, result);
+                            this.SaveItem(outlookItem);
 
-                        syncState.SetSynced(result);
+                            syncState.SetSynced(result);
+                        }
+                        else
+                        {
+                            Log.Warn("AppointmentSyncing.AddItemFromOutlookToCrm: Invalid CRM Id returned; item may not be stored.");
+                            syncState.SetPending();
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
                     Log.Error("Synchroniser.AddOrUpdateItemFromOutlookToCrm", ex);
-                    if (syncState != null)
-                    {
-                        syncState.SetPending();
-                    }
+                    syncState.SetPending();
                 }
             }
 

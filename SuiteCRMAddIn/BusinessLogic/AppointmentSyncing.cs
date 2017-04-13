@@ -348,13 +348,22 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     result = base.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, entryId);
 
-                    if (String.IsNullOrEmpty(entryId))
+                    if (String.IsNullOrEmpty(result))
                     {
-                        AddCurrentUserAsOwner(olItem, result);
+                        Log.Warn("AppointmentSyncing.AddItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
                     }
-                    if (olItem.Recipients != null)
+                    else
                     {
-                        AddMeetingRecipientsFromOutlookToCrm(olItem, result);
+                        if (string.IsNullOrEmpty(entryId))
+                        {
+                            /* i.e. this was a new item saved to CRM for the first time */
+                            AddCurrentUserAsOwner(olItem, result);
+
+                            if (olItem.Recipients != null)
+                            {
+                                AddMeetingRecipientsFromOutlookToCrm(olItem, result);
+                            }
+                        }
                     }
                 }
                 else
