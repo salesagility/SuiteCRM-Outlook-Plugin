@@ -239,6 +239,7 @@ namespace SuiteCRMAddIn
             {
                 log.Info("Starting normal operations.");
                 StartSynchronisationProcesses();
+                this.IsLicensed = true;
             }
             else if (disable)
             {
@@ -388,13 +389,22 @@ namespace SuiteCRMAddIn
 
         internal void ManualArchive()
         {
-            if (!HasCrmUserSession)
-            {
-                ShowSettingsForm();
-            }
-            if (HasCrmUserSession)
+            if (HasCrmUserSession && IsLicensed)
             {
                 ShowArchiveForm();
+            }
+            else if (!HasCrmUserSession)
+            {
+                if (this.ShowReconfigureOrDisable("Login to CRM failed")) {
+                    this.Disable();
+                }
+            }
+            else if (!IsLicensed)
+            {
+                if (this.ShowReconfigureOrDisable("Licence check failed"))
+                {
+                    this.Disable();
+                }
             }
         }
 
@@ -677,6 +687,11 @@ namespace SuiteCRMAddIn
                 }
             }
         }
+
+        /// <summary>
+        /// True if this is a licensed copy of the add-in.
+        /// </summary>
+        public bool IsLicensed { get; private set; } = false;
 
         private static void GetTitleAndVersion(out string title, out string versionString)
         {
