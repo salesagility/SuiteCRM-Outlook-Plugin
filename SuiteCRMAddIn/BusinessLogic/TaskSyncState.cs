@@ -16,8 +16,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override void DeleteItem()
         {
-
-            // this.OutlookItem.Delete();
+            this.OutlookItem.Delete();
         }
 
         internal override ProtoItem<Outlook.TaskItem> CreateProtoItem(Outlook.TaskItem outlookItem)
