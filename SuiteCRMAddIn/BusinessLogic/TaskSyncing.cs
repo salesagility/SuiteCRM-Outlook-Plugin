@@ -172,6 +172,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             SyncState<Outlook.TaskItem> result = null;
 
+            Log.Debug($"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {clsSuiteCRMHelper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
+
             if (clsSuiteCRMHelper.GetUserId() == crmItem.GetValueAsString("assigned_user_id"))
             {
                 DateTime? date_start = null;
