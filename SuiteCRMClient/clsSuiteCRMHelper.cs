@@ -27,6 +27,7 @@ namespace SuiteCRMClient
 {
     using RESTObjects;
     using System.Collections;
+    using System.Linq;
     using Exceptions;
     using Logging;
     using Email;
@@ -35,6 +36,12 @@ namespace SuiteCRMClient
     {
         private static ILogger Log;
 
+        /// <summary>
+        /// The list of the modules and their permissions change extremely rarely; 
+        /// they may safely be cached for a session.
+        /// </summary>
+        private static eModuleList modulesCache = null;
+
         public static UserSession SuiteCRMUserSession;
 
         public static void SetLog(ILogger log)
@@ -42,14 +49,54 @@ namespace SuiteCRMClient
             Log = log;
         }
 
+        /// <summary>
+        /// Get the list of modules installed in the connected CRM instance, with their
+        /// associated access control lists.
+        /// </summary>
+        /// <remarks>This data changes only rarely, and is consequently cached for the session.
+        /// </remarks>
+        /// <returns>the list of modules installed in the connected CRM instance.</returns>
         public static eModuleList GetModules()
         {
-            EnsureLoggedIn();
-            object data = new
+            if (modulesCache == null)
             {
-                @session = SuiteCRMUserSession.id
-            };
-            return SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);            
+                EnsureLoggedIn();
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id
+                };
+                modulesCache = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);
+            }
+            return modulesCache;             
+        }
+
+        /// <summary>
+        /// Return only those modules which have relationships to the email module.
+        /// </summary>
+        /// <returns>A list of only those modules which have relationships to the email module.</returns>
+        public static List<module_data> GetModulesHavingEmailRelationships()
+        {
+            List<module_data> modules = new List<module_data>();
+            foreach(module_data module in GetModules().items)
+            {
+                try
+                {
+                    foreach (string field in GetFields(module.module_key))
+                    {
+                        if (field.StartsWith("email_") || field.EndsWith("_email"))
+                        {
+                            modules.Add(module);
+                            break;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    Log.Debug($"SuiteCMHelper.GetModulesHavingEmailRelationships: failed to fetch fields list for {module.module_key}");
+                }
+            }
+
+            return modules;
         }
 
         public static void EnsureLoggedIn()
@@ -117,7 +164,7 @@ namespace SuiteCRMClient
         /// <param name="data"></param>
         /// <param name="moduleName"></param>
         /// <returns>the CRM id of the object created or modified.</returns>
-        public static string SetEntryUnsafe(List<eNameValue> data, string moduleName = "Emails")
+        public static string SetEntryUnsafe(NameValueCollection data, string moduleName = "Emails")
         {
             return SetEntryUnsafe(data.ToArray(), moduleName);
         }
@@ -133,7 +180,9 @@ namespace SuiteCRMClient
                 @name_value_list = values
             };
             eSetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
-            return _result.id.ToString();
+            return _result.id == null ?
+                string.Empty :
+                _result.id.ToString();
         }
 
         public static string getRelationship(string MainModule, string ID, string ModuleToFind)
@@ -199,19 +248,72 @@ namespace SuiteCRMClient
         /// </summary>
         public static bool SetRelationshipUnsafe(eSetRelationshipValue info)
         {
+            bool result;
+
             try
             {
-                return SetRelationship(info);
+                result = TrySetRelationship(info, Objective.Meeting);
+
+                if (!result)
+                {
+                    Log.Warn("SuiteCrmHelper.SetRelationshipUnsafe: failed to set relationship");
+                }
             }
             catch (System.Exception exception)
             {
-                Log.Warn("SetRelationship exception" + exception.ToString());
+                Log.Error("SuiteCrmHelper.SetRelationshipUnsafe:", exception);
                 // Swallow exception(!)
-                return false;
+                result = false;
             }
+
+            return result;
         }
 
-        public static bool SetRelationship(eSetRelationshipValue info)
+        /// <summary>
+        /// The protocols for how link fields are named vary. Try the most likely two possibilities,
+        /// and log failures.
+        /// </summary>
+        /// <param name="relationship">The relationship to set.</param>
+        /// <returns>True if the relationship was created, else false.</returns>
+        public static bool TrySetRelationship(eSetRelationshipValue relationship, Objective objective)
+        {
+            return TrySetRelationship(relationship, $"{relationship.module2}") ||
+                TrySetRelationship(relationship, $"{relationship.module2}_{relationship.module1}") ||
+                TrySetRelationship(relationship, GetActivitiesLinks(relationship.module1, objective));
+        }
+
+        /// <summary>
+        /// Try, in turn, each field in this list of candidate fields seeking one which allows a relationship 
+        /// to be successfully created.
+        /// </summary>
+        /// <remarks>
+        /// If the common relationship field names don't work, brute force it by getting all the possibles.
+        /// </remarks>
+        /// <param name="relationship">The relationship we're trying to make.</param>
+        /// <param name="candidateFields">Fields through which the relationship might be made.</param>
+        /// <returns>True if the relationship was made.</returns>
+        private static bool TrySetRelationship(eSetRelationshipValue relationship, IEnumerable<eField> candidateFields)
+        {
+            bool result = false;
+
+            foreach (eField field in candidateFields)
+            {
+                result |= TrySetRelationship(relationship, field.name.ToLower());
+
+                if (result) break;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// The protocols for how link fields are named vary. Try this possibility,
+        /// and log failures.
+        /// </summary>
+        /// <param name="relationship">The relationship to set.</param>
+        /// <param name="linkFieldName">The link field name to try.</param>
+        /// <returns>True if the relationship was created, else false.</returns>
+        public static bool TrySetRelationship(eSetRelationshipValue info, string linkFieldName)
         {
             EnsureLoggedIn();
             object data = new
@@ -219,12 +321,21 @@ namespace SuiteCRMClient
                 @session = SuiteCRMUserSession.id,
                 @module_name = info.module1,
                 @module_id = info.module1_id,
-                @link_field_name = info.module2,
-                @related_ids = new string[] {info.module2_id}
+                @link_field_name = linkFieldName,
+                @related_ids = new string[] { info.module2_id },
+                @name_value_list = new eNameValue[] { },
+                @delete = info.delete
             };
             var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+
+            if (_value.Failed > 0)
+            {
+                Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
+            }
+
             return (_value.Created != 0);
         }
+
 
         public static void UploadAttachment(clsEmailAttachments objAttachment, string email_id)
         {
@@ -318,33 +429,37 @@ namespace SuiteCRMClient
                 throw new Exception(_result.error.description);                    
             }
 
-            try
+            if (_result.entry_list != null)
             {
-                Hashtable hashtable = new Hashtable();
-                int index = 0;
-                foreach (eEntryValue _value in _result.entry_list)
+                try
                 {
-                    if (!hashtable.Contains(_value.id))
+                    Hashtable hashtable = new Hashtable();
+                    int index = 0;
+                    foreach (eEntryValue _value in _result.entry_list)
                     {
-                        hashtable.Add(_value.id, _value);
+                        if (!hashtable.Contains(_value.id))
+                        {
+                            hashtable.Add(_value.id, _value);
+                        }
+                        _result.entry_list[index] = null;
+                        index++;
                     }
-                    _result.entry_list[index] = null;
-                    index++;
+                    int num2 = 0;
+                    _result.entry_list = null;
+                    _result.entry_list = new eEntryValue[hashtable.Count];
+                    _result.result_count = hashtable.Count;
+                    foreach (DictionaryEntry entry in hashtable)
+                    {
+                        _result.entry_list[num2] = (eEntryValue)entry.Value;
+                        num2++;
+                    }
                 }
-                int num2 = 0;
-                _result.entry_list = null;
-                _result.entry_list = new eEntryValue[hashtable.Count];
-                _result.result_count = hashtable.Count;
-                foreach (DictionaryEntry entry in hashtable)
+                catch (System.Exception)
                 {
-                    _result.entry_list[num2] = (eEntryValue)entry.Value;
-                    num2++;
+                    _result.result_count = 0;
                 }
             }
-            catch (System.Exception)
-            {
-                _result.result_count = 0;
-            }
+
             return _result;
         }
         public static string GetValueByKey(eEntryValue entry, string key)
@@ -360,25 +475,138 @@ namespace SuiteCRMClient
             return str;
         }
 
+        /// <summary>
+        /// Get the module fields data for the module with this name, if any.
+        /// </summary>
+        /// <param name="module">the name of the module to query.</param>
+        /// <returns>A structure of module's fields data.</returns>
+        public static eModuleFields GetFieldsForModule(string module)
+        {
+            eModuleFields result;
+
+            if (!string.IsNullOrEmpty(module))
+            {
+                EnsureLoggedIn();
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = module
+                };
+
+                result = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data);
+            }
+            else
+            {
+                result = new eModuleFields();
+            }
+
+            return result;
+        }
+
         public static List<string> GetFields(string module)
         {
             List<string> list = new List<string>();
-            if (module == null)
-                return list;
 
-            EnsureLoggedIn();
-            object data = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = module
-            };
-            foreach (eField field in SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data).module_fields1)
+            foreach (eField field in GetFieldsForModule(module).moduleFields)
             {
                 list.Add(field.name);
             }
             return list;
         }
 
+        /// <summary>
+        /// Get the names of all the fields of the module with this name whose data type is char or varchar or name.
+        /// </summary>
+        /// <param name="module">The module whose field names we're interested in.</param>
+        /// <returns>The names of the character fields.</returns>
+        public static List<string> GetCharacterFields(string module)
+        {
+            List<string> list = new List<string>();
+
+            foreach (eField field in GetFieldsForModule(module).moduleFields)
+            {
+                switch (field.type)
+                {
+                    case "assigned_user_name":
+                    case "char":
+                    case "fullname":
+                    case "name":
+                    case "readonly":
+                    case "text":
+                    case "varchar":
+                        /* these are fields we can search for string data */
+                        list.Add(field.name);
+                        break;
+                    case "bool":
+                    case "currency":
+                    case "date":
+                    case "datetime":
+                    case "enum":
+                    case "float":
+                    case "id":
+                    case "int":
+                    case "longtext": /* probably safer not to search this */
+                    case "relate":
+                        /* these are not */
+                        break;
+                    default:
+                        Log.Debug($"Unknown field type {field.type}");
+                        break;
+                }
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Find the fields, among the fields of this module, which are links and where
+        /// the name of the relationship linked contains the token '_activities_', prioritising
+        /// those which also contain this objective.
+        /// </summary>
+        /// <param name="module">The name of the module to examine.</param>
+        /// <param name="objective">The objective we're seeking in the relationship.</param>
+        /// <returns>Its activities link fields.</returns>
+        public static IEnumerable<eField> GetActivitiesLinks(string module, Objective objective)
+        {
+            var linkFields = GetFieldsForModule(module).linkFields;
+            var objectiveName = objective.ToString().ToLower();
+            IEnumerable<eField> result = GetSubstringsLinks(linkFields, new List<string>() { "_activities_", objectiveName });
+
+            if (result.Count() == 0)
+            {
+                /* failed to find a relationship with both _activities_ and the objective */
+                result = GetSubstringsLinks(linkFields, new List<string>() { objectiveName });
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Filter from these link fields those whose relationship names contain all of these substrings
+        /// </summary>
+        /// <param name="linkFields">The link fields to filter.</param>
+        /// <param name="substrings">The strings to filter them by.</param>
+        /// <returns>The fields whose relationship names contain all of these substrings.</returns>
+        private static IEnumerable<eField> GetSubstringsLinks(IEnumerable<eField> linkFields, IEnumerable<string> substrings)
+        {
+            return linkFields.Where(l => l.type.Equals("link") && StringContainsAll(l.relationship, substrings));
+        }
+
+        /// <summary>
+        /// Return true if this target contains all these substrings.
+        /// </summary>
+        /// <param name="target">The target string.</param>
+        /// <param name="substrings">The substrings.</param>
+        /// <returns>true if this target contains all these substrings.</returns>
+        private static bool StringContainsAll(string target, IEnumerable<string> substrings)
+        {
+            return string.IsNullOrEmpty(target) ?
+                false :
+                substrings.Where(s => target.Contains(s)).Count() == substrings.Count();
+        }
+
+        /// <remarks>
+        /// TODO: This really should be a data table, not code.
+        /// </remarks>
         public static string[] GetSugarFields(string module)
         {
             string[] strArray = new string[14];
@@ -399,7 +627,7 @@ namespace SuiteCRMClient
             }
             if (module == "Meetings")
             {
-                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees" };
+                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees", "assigned_user_id" };
             }
             if (module == "Calls")
             {

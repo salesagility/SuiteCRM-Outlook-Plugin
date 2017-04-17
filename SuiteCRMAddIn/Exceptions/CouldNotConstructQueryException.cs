@@ -20,25 +20,20 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMAddIn.Exceptions
 {
-    using Newtonsoft.Json;
+    using System;
+    using System.Runtime.Serialization;
 
-    public class eSetRelationshipValue
+    /// <summary>
+    /// An exception thrown if a search query could not be constructed.
+    /// </summary>
+    [Serializable]
+    internal class CouldNotConstructQueryException : Exception
     {
-        [JsonProperty("module1_id")]
-        public string module1_id { get; set; }
-        [JsonProperty("module1")]
-        public string module1 { get; set; }
-        [JsonProperty("module2_id")]
-        public string module2_id { get; set; }
-        [JsonProperty("module2")]
-        public string module2 { get; set; }
-
-        /// <summary>
-        /// Only required if you want to delete a relationsip, in which case set it to 1.
-        /// </summary>
-        [JsonProperty("delete")]
-        public int delete { get; set; } = 0;
+        public CouldNotConstructQueryException(string moduleName, string searchText) : 
+            base($"Could not construct a suitable query to find '{searchText}' in module '{moduleName}")
+        { 
+        }
     }
 }

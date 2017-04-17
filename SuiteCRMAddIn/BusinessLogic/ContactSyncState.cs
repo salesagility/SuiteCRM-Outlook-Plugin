@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SuiteCRMAddIn.ProtoItems;
+using System;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
 namespace SuiteCRMAddIn.BusinessLogic
@@ -15,9 +16,18 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
 
+        /// <summary>
+        /// Don't actually delete contact items from Outlook; instead, mark them private so they
+        /// don't get copied back to CRM.
+        /// </summary>
         public override void DeleteItem()
         {
-            this.OutlookItem.Delete();
+            this.OutlookItem.Sensitivity = Microsoft.Office.Interop.Outlook.OlSensitivity.olPrivate;
+        }
+
+        internal override ProtoItem<Outlook.ContactItem> CreateProtoItem(Outlook.ContactItem outlookItem)
+        {
+            return new ProtoContact(outlookItem);
         }
     }
 }

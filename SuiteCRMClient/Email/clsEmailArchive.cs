@@ -27,8 +27,17 @@ using SuiteCRMClient.Logging;
 
 namespace SuiteCRMClient.Email
 {
+    /// <remarks>
+    /// This class is truly horrid, and most of it is duplicated by better code in BusinessLogic/EmailArchiving.
+    /// TODO: Refactor. See issue #125
+    /// </remarks>
     public class clsEmailArchive
     {
+        /// <summary>
+        /// Canonical format to use when saving date/times to CRM; essentially, ISO8601 without the 'T'.
+        /// </summary>
+        public const string EmailDateFormat = "yyyy-MM-dd HH:mm:ss";
+
         private readonly ILogger _log;
 
         public string From { get; set; }
@@ -37,7 +46,13 @@ namespace SuiteCRMClient.Email
         public string Body { get; set; }
         public string HTMLBody { get; set; }
         public string CC { get; set; }
-        public List<clsEmailAttachments> Attachments { get; set; }
+
+        /// <summary>
+        /// Date/Time sent, if known, else now.
+        /// </summary>
+        public DateTime Sent { get; set; } = DateTime.UtcNow;
+
+        public List<clsEmailAttachments> Attachments { get; set; } = new List<clsEmailAttachments>();
         public EmailArchiveType ArchiveType { get; set; }
         public object contactData;
 
@@ -47,12 +62,10 @@ namespace SuiteCRMClient.Email
         {
             _log = log;
             this.SuiteCRMUserSession = SuiteCRMUserSession;
-            Attachments = new List<clsEmailAttachments>();
         }
 
         public clsEmailArchive()
         {
-            Attachments = new List<clsEmailAttachments>();
         }
         private ArrayList GetValidContactIDs(string strExcludedEmails = "")
         {
@@ -124,6 +137,10 @@ namespace SuiteCRMClient.Email
             return "contacts.id in (SELECT eabr.bean_id FROM email_addr_bean_rel eabr JOIN email_addresses ea ON (ea.id = eabr.email_address_id) WHERE eabr.deleted=0 and ea.email_address = '" + strEmail + "')";
         }
 
+        /// <remarks>
+        /// This is horrid. See See BusinessLogic.EmailArchiving.ConstructCrmItem; these need to be refactored together.
+        /// TODO: Refactor. See issue #125
+        /// </remarks>
         public void Save(string strExcludedEmails = "")
         {
             try
@@ -136,6 +153,7 @@ namespace SuiteCRMClient.Email
                     emailData.Add(new RESTObjects.eNameValue() { name = "from_addr", value = From });
                     emailData.Add(new RESTObjects.eNameValue() { name = "to_addrs", value = To.Replace("\n", "") });
                     emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject });
+                    emailData.Add(new RESTObjects.eNameValue() { name = "date_sent", value = Sent.ToString(EmailDateFormat) });
                     emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body });
                     emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = HTMLBody });
                     emailData.Add(new RESTObjects.eNameValue() { name = "assigned_user_id", value = clsSuiteCRMHelper.GetUserId() });
