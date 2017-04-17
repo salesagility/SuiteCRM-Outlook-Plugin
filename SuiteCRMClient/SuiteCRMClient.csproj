@@ -64,6 +64,7 @@
   <ItemGroup>
     <Compile Include="clsAddValue.cs" />
     <Compile Include="CrmRestServer.cs" />
+    <Compile Include="CrmServerErrorException.cs" />
     <Compile Include="Email\ArchiveResult.cs" />
     <Compile Include="Email\clsEmailArchive.cs" />
     <Compile Include="Email\clsEmailAttachments.cs" />
@@ -74,6 +75,7 @@
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\LogEntryType.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />
+    <Compile Include="Objective.cs" />
     <Compile Include="RESTObjects\eContactDetail.cs" />
     <Compile Include="RESTObjects\eDocumentRevision.cs" />
     <Compile Include="RESTObjects\eEntryValue.cs" />
@@ -107,6 +109,7 @@
     <Compile Include="RESTObjects\eUserAuth.cs" />
     <Compile Include="RESTObjects\eUserDetail.cs" />
     <Compile Include="clsSuiteCRMHelper.cs" />
+    <Compile Include="RESTObjects\NameValueCollection.cs" />
     <Compile Include="UserSession.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>

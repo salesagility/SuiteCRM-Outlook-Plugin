@@ -23,11 +23,11 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using SuiteCRMClient;
 using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
-using ListViewEx;
 using System.Collections.Specialized;
 using SuiteCRMAddIn.BusinessLogic;
 
@@ -175,85 +175,66 @@ namespace SuiteCRMAddIn
 
         private ILogger Log => Globals.ThisAddIn.Log;
 
-        private void listViewAvailableModules_SubItemClicked(object sender, SubItemEventArgs e)
+        private void frmCustomModules_Load(object sender, EventArgs e)
         {
-            try
+            using (new WaitCursor(this))
             {
-                if (e.SubItem == 1)
+                try
                 {
-                    this.lstViewAvailableModules.StartEditing(this.txtDisplay, e.Item, e.SubItem);
+                    clsSuiteCRMHelper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
+
+                    if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
+                    {
+                        MessageBox.Show("Please enter SuiteCRM details in General tab and try again", "Invalid Authentication");
+                        base.Close();
+                        return;
+                    }
+
+                    PopulateCustomModulesListView(this.lstViewAvailableModules, this.IgnoreModules);
                 }
-            }
-            catch (Exception ex)
-            {
-                // Suppress exception
-                Log.Error("Subitem clicked error", ex);
+                catch (Exception ex)
+                {
+                    Log.Warn("frmCustomModules_Load error", ex);
+                    base.Close();
+                    MessageBox.Show(ex.Message, ex.GetType().Name, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
 
-        private void frmCustomModules_Load(object sender, EventArgs e)
+        /// <summary>
+        /// Populate this list view with custom modules, marking those saved in my settings as selected.
+        /// </summary>
+        /// <param name="view">The view to populate.</param>
+        /// <param name="toIgnore">Keys of modules to ignore.</param>
+        protected void PopulateCustomModulesListView(ListView view, List<string> toIgnore)
         {
-            try
+            foreach (module_data module in 
+                clsSuiteCRMHelper.GetModulesHavingEmailRelationships()
+                .OrderBy(i => i.module_key))
             {
-                clsSuiteCRMHelper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
-
-                if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
+                if (!toIgnore.Contains(module.module_key))
                 {
-                    MessageBox.Show("Please enter SuiteCRM details in General tab and try again", "Invalid Authentication");
-                    base.Close();
-                    return;
+                    view.Items.Add(new ListViewItem
+                        {
+                            Checked = IsSelectedCustomModule(module),
+                            Text = module.module_key,
+                            Tag = module.module_key,
+                            SubItems = { string.IsNullOrWhiteSpace(module.module_label) ?
+                                            module.module_key :
+                                            module.module_label}
+                        });
                 }
-                   eModuleList modules = clsSuiteCRMHelper.GetModules();
-                       this.lstViewAvailableModules.SubItemClicked += new SubItemEventHandler(this.listViewAvailableModules_SubItemClicked);
-                       if (this.settings.CustomModules != null)
-                       {
-                           StringEnumerator enumerator = this.settings.CustomModules.GetEnumerator();
-                           while (enumerator.MoveNext())
-                           {
-                               string[] strArray = enumerator.Current.Split(new char[] { '|' });
-                               ListViewItem item = new ListViewItem
-                               {
-                                   Text = strArray[0],
-                                   Tag = strArray[1],
-                                   Checked = true
-                               };
-                               item.SubItems.Add(strArray[1]);
-                               if (strArray[0] != "None" || strArray[1] != "None")
-                                   this.lstViewAvailableModules.Items.Add(item);
-                           }
-                       }
-                       foreach (module_data objModuleData in modules.modules1)
-                       {
-                           string str2 = objModuleData.module_key;
-                           bool flag = false;
-                           if (!this.IgnoreModules.Contains(str2))
-                           {
-                               ListViewItem item2 = new ListViewItem
-                               {
-                                   Text = str2,
-                                   Tag = str2
-                               };
-                               item2.SubItems.Add(string.Empty);
-                               foreach (ListViewItem item3 in this.lstViewAvailableModules.Items)
-                               {
-                                   if (item3.Text == str2)
-                                   {
-                                       flag = true;
-                                   }
-                               }
-                               if (!flag)
-                               {
-                                   this.lstViewAvailableModules.Items.Add(item2);
-                               }
-                           }
-                       }
             }
-            catch (Exception ex)
-            {
-                Log.Warn("frmCustomModules_Load error", ex);
-                base.Close();
-                MessageBox.Show("Please check the Internet connection", "Network Failure", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+        }
+
+        /// <summary>
+        /// Is this module a currently selected custom module?
+        /// </summary>
+        /// <param name="module">The module.</param>
+        /// <returns>True if this module is a currently selected custom module.</returns>
+        private bool IsSelectedCustomModule(module_data module)
+        {
+            return this.settings.CustomModules.Where(i => i.StartsWith($"{module.module_key}|")).Count() > 0;
         }
 
         private void btnSave_Click(object sender, EventArgs e)

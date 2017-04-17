@@ -37,8 +37,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public DateTime OModifiedDate { get; set; }
 
-        public int IsUpdate { get; set; }
-
         public bool ExistedInCrm => !string.IsNullOrEmpty(CrmEntryId);
 
         public bool IsPublic => OutlookItemSensitivity == Outlook.OlSensitivity.olNormal;

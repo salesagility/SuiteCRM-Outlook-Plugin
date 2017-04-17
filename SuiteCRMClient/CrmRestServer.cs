@@ -29,6 +29,7 @@ namespace SuiteCRMClient
     using Newtonsoft.Json;
     using SuiteCRMClient.Logging;
     using System.Web;
+    using RESTObjects;
 
     public class CrmRestServer
     {
@@ -66,6 +67,8 @@ namespace SuiteCRMClient
                 LogRequest(request, strMethod, objInput);
                 LogResponse(jsonResponse);
 #endif
+                CheckForCrmError(jsonResponse);
+
                 return DeserializeJson<T>(jsonResponse);
             }
             catch (Exception ex)
@@ -73,6 +76,31 @@ namespace SuiteCRMClient
                 log.Warn($"Tried calling '{strMethod}' with parameter '{objInput}', timeout is {this.timeout}ms");
                 log.Error($"Failed calling '{strMethod}'", ex);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Check whether this CRM response represents a CRM error, and if it does
+        /// throw it as an exception.
+        /// </summary>
+        /// <param name="jsonResponse">A response from CRM.</param>
+        /// <exception cref="CrmServerErrorException">if the response was recognised as an error.</exception>
+        private void CheckForCrmError(string jsonResponse)
+        {
+            eErrorValue error;
+            try
+            {
+                error = DeserializeJson<eErrorValue>(jsonResponse);
+            }
+            catch (JsonSerializationException)
+            {
+                // it wasn't recognisable as an error. That's fine!
+                error = new eErrorValue();
+            }
+
+            if (error.IsPopulated())
+            {
+                throw new CrmServerErrorException(error);
             }
         }
 

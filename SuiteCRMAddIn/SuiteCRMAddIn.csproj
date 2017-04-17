@@ -203,11 +203,21 @@
     <Compile Include="AddressBook.Designer.cs">
       <DependentUpon>AddressBook.cs</DependentUpon>
     </Compile>
+    <Compile Include="BusinessLogic\CRMPermissionsCache.cs" />
+    <Compile Include="Daemon\AbstractDaemonAction.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
-    <Compile Include="BusinessLogic\DaemonAction.cs" />
-    <Compile Include="BusinessLogic\DaemonWorker.cs" />
-    <Compile Include="BusinessLogic\EmailArchiveAction.cs" />
+    <Compile Include="Daemon\TransmitNewAction.cs" />
+    <Compile Include="Daemon\TransmitUpdateAction.cs" />
+    <Compile Include="ProtoItems\ProtoAppointment.cs" />
+    <Compile Include="ProtoItems\ProtoContact.cs" />
+    <Compile Include="ProtoItems\ProtoItem.cs" />
+    <Compile Include="ProtoItems\ProtoItem{1}.cs" />
+    <Compile Include="ProtoItems\ProtoTask.cs" />
+    <Compile Include="BusinessLogic\SyncDirection.cs" />
+    <Compile Include="Daemon\DaemonAction.cs" />
+    <Compile Include="Daemon\DaemonWorker.cs" />
+    <Compile Include="Daemon\EmailArchiveAction.cs" />
     <Compile Include="BusinessLogic\RunState.cs" />
     <Compile Include="BusinessLogic\LicenceValidation.cs" />
     <Compile Include="BusinessLogic\LicenceValidationHelper.cs" />
@@ -225,6 +235,7 @@
     <Compile Include="BusinessLogic\ThreadSafeList.cs" />
     <Compile Include="clsGlobals.cs" />
     <Compile Include="clsSettings.cs" />
+    <Compile Include="Exceptions\CouldNotConstructQueryException.cs" />
     <Compile Include="EmailAccountArchiveSettingsControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -271,6 +282,9 @@
     </Compile>
     <Compile Include="Robustness.cs" />
     <Compile Include="WaitCursor.cs" />
+    <Compile Include="WithCustomModulesSelectorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <EmbeddedResource Include="AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
     </EmbeddedResource>
@@ -340,14 +354,13 @@
     <EmbeddedResource Include="Menus\MailRead2007.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ListViewEx\ListViewEx.csproj">
-      <Project>{086e7c3c-e203-4335-89b7-b6cbfc3370e2}</Project>
-      <Name>ListViewEx</Name>
-    </ProjectReference>
     <ProjectReference Include="..\SuiteCRMClient\SuiteCRMClient.csproj">
       <Project>{383e8ee7-604d-447d-a2c2-c50080d28f69}</Project>
       <Name>SuiteCRMClient</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

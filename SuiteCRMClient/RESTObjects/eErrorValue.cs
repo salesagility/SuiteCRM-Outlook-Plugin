@@ -37,5 +37,10 @@ namespace SuiteCRMClient.RESTObjects
         public string number { get; set; }
         [JsonProperty("description")]
         public string description { get; set; }
+
+        public bool IsPopulated()
+        {
+            return !String.IsNullOrEmpty(name) && !String.IsNullOrEmpty(number) && !String.IsNullOrEmpty(description);
+        }
     }
 }

@@ -38,7 +38,7 @@ namespace SuiteCRMAddIn
             // 
             // tsResults
             // 
-            this.tsResults.AccessibleName = "";
+            this.tsResults.AccessibleName = string.Empty;
             this.tsResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));

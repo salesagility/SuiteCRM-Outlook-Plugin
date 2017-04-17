@@ -20,25 +20,36 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMAddIn.Daemon
 {
-    using Newtonsoft.Json;
-
-    public class eSetRelationshipValue
+    /// <remarks>Not currently used. You can't make a list of Outlook items detached from their 
+    /// Outlook collection because they're not real objects, and if the current selection changes 
+    /// before the process runs the process acts on the wrong things. I like the idea of 
+    /// asynchronous processing to speed up perceived user interface response, but this isn't 
+    /// working yet.</remarks>
+    public interface DaemonAction
     {
-        [JsonProperty("module1_id")]
-        public string module1_id { get; set; }
-        [JsonProperty("module1")]
-        public string module1 { get; set; }
-        [JsonProperty("module2_id")]
-        public string module2_id { get; set; }
-        [JsonProperty("module2")]
-        public string module2 { get; set; }
+        /// <summary>
+        /// The number of times this item has been attempted.
+        /// </summary>
+        int Attempts { get; set; }
 
         /// <summary>
-        /// Only required if you want to delete a relationsip, in which case set it to 1.
+        /// Get a description of this action.
         /// </summary>
-        [JsonProperty("delete")]
-        public int delete { get; set; } = 0;
+        string Description {
+            get;
+        }
+
+        /// <summary>
+        /// The maximum number of times this action can be attempted before
+        /// being abandoned.
+        /// </summary>
+        int MaxAttempts { get; }
+
+        /// <summary>
+        /// Perform this action.
+        /// </summary>
+        void Perform();
     }
 }
