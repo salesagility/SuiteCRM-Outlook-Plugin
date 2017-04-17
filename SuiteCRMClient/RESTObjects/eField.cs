@@ -45,6 +45,18 @@ namespace SuiteCRMClient.RESTObjects
         public int required { get; set; }
         [JsonProperty("type")]
         public string type { get; set; }
+
+        /// <summary>
+        /// ?The name of the link table? Present if type = 'link'
+        /// </summary>
+        [JsonProperty("relationship")]
+        public string relationship { get; set; }
+
+        /// <summary>
+        /// The module related to. Present if type = 'link'
+        /// </summary>
+        [JsonProperty("module")]
+        public string module { get; set; }
     }
 
 

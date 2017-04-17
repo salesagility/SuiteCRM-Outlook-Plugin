@@ -29,6 +29,8 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using SuiteCRMClient.Logging;
+using SuiteCRMAddIn.BusinessLogic;
+using System.Collections.Generic;
 
 namespace SuiteCRMAddIn
 {
@@ -118,11 +120,11 @@ namespace SuiteCRMAddIn
             }
         }
         [DefaultSettingValue("<?xml version=\"1.0\" encoding=\"utf-16\"?>\r\n<ArrayOfString xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n  <string>None|None</string>\r\n</ArrayOfString>"), UserScopedSetting, DebuggerNonUserCode]
-        public StringCollection CustomModules
+        public List<string> CustomModules
         {
             get
             {
-                return (StringCollection)this["CustomModules"];
+                return (List<string>)this["CustomModules"];
             }
             set
             {
@@ -189,24 +191,24 @@ namespace SuiteCRMAddIn
                 this["AutoArchive"] = value;
             }
         }
-        [DefaultSettingValue("False"), DebuggerNonUserCode, UserScopedSetting]
-        public bool SyncCalendar
+        [DefaultSettingValue("0"), DebuggerNonUserCode, UserScopedSetting]
+        public SyncDirection.Direction SyncCalendar
         {
             get
             {
-                return (bool)this["SyncCalendar"];
+                return (SyncDirection.Direction)this["SyncCalendar"];
             }
             set
             {
                 this["SyncCalendar"] = value;
             }
         }
-        [DefaultSettingValue("False"), DebuggerNonUserCode, UserScopedSetting]
-        public bool SyncContacts
+        [DefaultSettingValue("0"), DebuggerNonUserCode, UserScopedSetting]
+        public SyncDirection.Direction SyncContacts
         {
             get
             {
-                return (bool)this["SyncContacts"];
+                return (SyncDirection.Direction)this["SyncContacts"];
             }
             set
             {
@@ -299,11 +301,11 @@ namespace SuiteCRMAddIn
             }
         }
         [DebuggerNonUserCode, UserScopedSetting]
-        public StringCollection case_dropdown_priority
+        public List<string> case_dropdown_priority
         {
             get
             {
-                return (StringCollection)this["case_dropdown_priority"];
+                return (List<string>)this["case_dropdown_priority"];
             }
             set
             {
@@ -312,11 +314,11 @@ namespace SuiteCRMAddIn
         }
 
         [UserScopedSetting, DebuggerNonUserCode]
-        public StringCollection case_dropdown_status
+        public List<string> case_dropdown_status
         {
             get
             {
-                return (StringCollection)this["case_dropdown_status"];
+                return (List<string>)this["case_dropdown_status"];
             }
             set
             {

@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn
 {
     using BusinessLogic;
+    using Exceptions;
     using Microsoft.Office.Interop.Outlook;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
@@ -33,6 +34,7 @@ namespace SuiteCRMAddIn
     using System.Collections.Specialized;
     using System.Data;
     using System.Linq;
+    using System.Text;
     using System.Windows.Forms;
     using Exception = System.Exception;
 
@@ -53,10 +55,10 @@ namespace SuiteCRMAddIn
         {
             if (this.settings.CustomModules != null)
             {
-                StringEnumerator enumerator = this.settings.CustomModules.GetEnumerator();
-                while (enumerator.MoveNext())
+               //  StringEnumerator enumerator = .GetEnumerator();
+                foreach (string key in this.settings.CustomModules)
                 {
-                    string[] strArray = enumerator.Current.Split(new char[] { '|' });
+                    string[] strArray = key.Split(new char[] { '|' });
                     ListViewItem item = new ListViewItem
                     {
                         Tag = strArray[0],
@@ -175,6 +177,9 @@ namespace SuiteCRMAddIn
         public void Search(string searchText)
         {
             using (WaitCursor.For(this))
+            {
+                this.txtSearch.Enabled = false;
+
                 try
                 {
                     List<string> list = new List<string> { "Accounts", ContactSyncing.CrmModule, "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
@@ -186,92 +191,38 @@ namespace SuiteCRMAddIn
                     else
                     {
                         searchText = searchText.TrimStart(new char[0]);
-                        string[] strArray = searchText.Split(new char[] { ' ' });
-                        string usString = strArray[0];
-                        string str2 = string.Empty;
-                        string str3 = "OR";
-                        if (strArray.Length > 1)
-                        {
-                            str2 = strArray[1];
-                            str3 = "AND";
-                        }
-                        else
-                        {
-                            str2 = strArray[0];
-                        }
+
                         foreach (ListViewItem item in this.lstViewSearchModules.Items)
                         {
+                            TreeNode node = null;
                             try
                             {
-                                TreeNode node;
-                                eGetEntryListResult queryResult;
-                                if (!item.Checked)
+                                if (item.Checked)
                                 {
-                                    continue;
-                                }
-                                string moduleName = item.Tag.ToString();
+                                    string moduleName = item.Tag.ToString();
 
-                                if (moduleName != "All")
-                                {
-                                    if (this.tsResults.Nodes[moduleName] == null)
+                                    if (moduleName != "All")
                                     {
-                                        node = new TreeNode(moduleName)
+                                        node = FindOrCreateNodeForModule(moduleName);
+
+                                        List<string> fieldsToSeek = new List<string>();
+                                        fieldsToSeek.Add("id");
+
+                                        var queryResult = TryQuery(searchText, moduleName, fieldsToSeek);
+                                        if (queryResult != null)
                                         {
-                                            Tag = "root_node",
-                                            Name = moduleName
-                                        };
-                                        this.tsResults.Nodes.Add(node);
-                                    }
-                                    else
-                                    {
-                                        node = this.tsResults.Nodes[moduleName];
-                                    }
-                                    string[] fields = new string[6];
-                                    fields[0] = "id";
-                                    fields[1] = "first_name";
-                                    fields[2] = "last_name";
-                                    fields[3] = "name";
-
-                                    string queryText = ConstructQueryTextForModuleName(searchText, usString, str2, str3, moduleName, fields);
-
-                                    try
-                                    {
-                                        queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                                    }
-                                    catch (System.Exception any)
-                                    {
-                                        Globals.ThisAddIn.Log.Error($"Failure when custom module included (1)\n\tQuery was '{queryText}'", any);
-                                        // Swallow exception(!)
-                                        try {
-                                            queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText.Replace("%", ""), settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+                                            if (queryResult.result_count > 0)
+                                            {
+                                                this.PopulateTree(queryResult, moduleName, node);
+                                            }
                                         }
-                                        catch (Exception secondFail)
+                                        else
                                         {
-                                            queryText = queryText.Replace("%", "");
-                                            Globals.ThisAddIn.Log.Error($"Failure when custom module included (2)\n\tQuery was '{queryText}'", secondFail);
                                             MessageBox.Show(
                                                 $"An error was encountered while querying module '{moduleName}'. The error has been logged",
-                                                "Query error",
+                                                $"Query error in module {moduleName}",
                                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                            queryResult = null;
                                         }
-                                    }
-                                    if (queryResult != null && queryResult.result_count > 0)
-                                    {
-                                        this.populateTree(queryResult, moduleName, node);
-                                    }
-                                    else if (!list.Contains(moduleName) && clsSuiteCRMHelper.GetFields(moduleName).Contains("first_name"))
-                                    {
-                                        queryText = "(" + moduleName.ToLower() + ".first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " " + moduleName.ToLower() + ".last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (" + moduleName.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + moduleName + "' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
-                                        eGetEntryListResult _result2 = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-                                        if (_result2.result_count > 0)
-                                        {
-                                            this.populateTree(_result2, moduleName, node);
-                                        }
-                                    }
-                                    if (node.GetNodeCount(true) <= 0)
-                                    {
-                                        node.Remove();
                                     }
                                 }
                             }
@@ -279,138 +230,336 @@ namespace SuiteCRMAddIn
                             {
                                 Globals.ThisAddIn.Log.Error("Failure when custom module included (3)", any);
 
-                                // Swallow exception(!)
-                                this.tsResults.Nodes.Clear();
+                                MessageBox.Show(
+                                    $"An error was encountered while querying module '{item.Tag.ToString()}'. The error ('{any.Message}') has been logged",
+                                    $"Query error in module {item.Tag.ToString()}",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            finally
+                            {
+                                if (node != null && node.GetNodeCount(true) <= 0)
+                                {
+                                    node.Remove();
+                                }
                             }
                         }
-                        if (this.tsResults.Nodes.Count <= 0)
-                        {
-                            TreeNode node2 = new TreeNode("No results found")
-                            {
-                                Name = "No results",
-                                Text = "No Result"
-                            };
-                            this.tsResults.Nodes.Add(node2);
-                            this.tsResults.CheckBoxes = false;
-                        }
-                        this.txtSearch.Enabled = true;
                     }
                 }
-                catch (System.Exception)
+                catch (System.Exception any)
                 {
-                    // Swallow exception(!)
-
+#if DEBUG
+                    Log.Error("frmArchive.Search: Unexpected error while populating archive tree", any);
+#endif
                     this.tsResults.Nodes.Clear();
-                    TreeNode node2 = new TreeNode("No results found")
-                    {
-                        Name = "No results",
-                        Text = "No Result"
-                    };
-                    this.tsResults.Nodes.Add(node2);
-                    this.tsResults.CheckBoxes = false;
                 }
+                finally
+                {
+                    if (this.tsResults.Nodes.Count <= 0)
+                    {
+                        ShowNoResults(this.tsResults);
+                    }
+                    else
+                    {
+                        this.btnArchive.Enabled = true;
+                    }
+                    this.txtSearch.Enabled = true;
+                }
+            }
         }
 
         /// <summary>
-        /// Refactored from a horrible nest of spaghetti code. I don't yet understand this.
+        /// Clear out this tree and show a single unselectable node labelled 'No results found'
         /// </summary>
-        /// <param name="searchText"></param>
-        /// <param name="usString"></param>
-        /// <param name="str2"></param>
-        /// <param name="str3"></param>
-        /// <param name="moduleName"></param>
-        /// <param name="fields"></param>
-        /// <returns></returns>
-        private static string ConstructQueryTextForModuleName(string searchText, string usString, string str2, string str3, string moduleName, string[] fields)
+        private void ShowNoResults(TreeView tree)
         {
-            string queryText;
+            tree.Nodes.Clear();
+            TreeNode node2 = new TreeNode("No results found")
+            {
+                Name = "No results",
+                Text = "No Result"
+            };
+            tree.Nodes.Add(node2);
+            tree.CheckBoxes = false;
+        }
+
+        private eGetEntryListResult TryQuery(string searchText, string moduleName, List<string> fieldsToSeek)
+        {
+            eGetEntryListResult queryResult = null;
+
+            string queryText = ConstructQueryTextForModuleName(searchText, moduleName, fieldsToSeek);
+            try
+            {
+                queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+            }
+            catch (System.Exception any)
+            {
+                Globals.ThisAddIn.Log.Error($"Failure when custom module included (1)\n\tQuery was '{queryText}'", any);
+
+                queryText = queryText.Replace("%", string.Empty);
+                try
+                {
+                    queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+                }
+                catch (Exception secondFail)
+                {
+                    Globals.ThisAddIn.Log.Error($"Failure when custom module included (2)\n\tQuery was '{queryText}'", secondFail);
+                    queryResult = null;
+                    throw;
+                }
+                if (queryResult == null)
+                {
+                    throw;
+                }
+            }
+
+            return queryResult;
+        }
+
+        /// <summary>
+        /// Find the existing node in my tsResults tree view which represents the module with
+        /// this name; if none is found, create one and add it to the tree.
+        /// </summary>
+        /// <param name="moduleName">The name of the module to be found.</param>
+        /// <returns>A suitable tree node.</returns>
+        private TreeNode FindOrCreateNodeForModule(string moduleName)
+        {
+            TreeNode node;
+            if (this.tsResults.Nodes[moduleName] == null)
+            {
+                node = new TreeNode(moduleName)
+                {
+                    Tag = "root_node",
+                    Name = moduleName
+                };
+                this.tsResults.Nodes.Add(node);
+            }
+            else
+            {
+                node = this.tsResults.Nodes[moduleName];
+            }
+
+            return node;
+        }
+
+        /// <summary>
+        /// Construct suitable query text to query the module with this name for potential connection with this search text.
+        /// </summary>
+        /// <remarks>
+        /// Refactored from a horrible nest of spaghetti code. I don't yet fully understand this.
+        /// </remarks>
+        /// <param name="searchText">The text entered to search for.</param>
+        /// <param name="moduleName">The name of the module to search.</param>
+        /// <param name="fields">The list of fields to pull back, which may be modified by this method.</param>
+        /// <returns>A suitable search query</returns>
+        /// <exception cref="CouldNotConstructQueryException">if no search string could be constructed.</exception>
+        private static string ConstructQueryTextForModuleName(string searchText, string moduleName, List<string> fields)
+        {
+            string queryText = string.Empty;
+            List<string> searchTokens = searchText.Split(new char[] { ' ' }).ToList();
+            var escapedSearchText = clsGlobals.MySqlEscape(searchText);
+            var firstTerm = clsGlobals.MySqlEscape(searchTokens.First());
+            var lastTerm = clsGlobals.MySqlEscape(searchTokens.Last());
+            string logicalOperator = firstTerm == lastTerm ? "OR" : "AND";
+
             switch (moduleName)
             {
                 case ContactSyncing.CrmModule:
-                    queryText = "(contacts.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " contacts.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%') OR (contacts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Contacts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
-                    fields[4] = "account_name";
+                    queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
+                    AddFirstLastAndAccountNames(fields);
                     break;
                 case "Leads":
-                    queryText = "(leads.first_name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%' " + str3 + " leads.last_name LIKE '%" + clsGlobals.MySqlEscape(str2) + "%')  OR (leads.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Leads' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
-                    fields[4] = "account_name";
+                    queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
+                    AddFirstLastAndAccountNames(fields);
                     break;
                 case "Cases":
-                    queryText = "(cases.name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%' OR cases.case_number LIKE '" + clsGlobals.MySqlEscape(searchText) + "')";
-                    fields[4] = "case_number";
+                    queryText = $"(cases.name LIKE '%{escapedSearchText}%' OR cases.case_number LIKE '{escapedSearchText}')";
+                    foreach (string fieldName in new string[] { "name", "case_number" })
+                    {
+                        fields.Add(fieldName);
+                    }
                     break;
                 case "Bugs":
-                    queryText = "(bugs.name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%' " + str3 + " bugs.bug_number LIKE '" + clsGlobals.MySqlEscape(searchText) + "')";
-                    fields[4] = "bug_number";
+                    queryText = $"(bugs.name LIKE '%{escapedSearchText}%' {logicalOperator} bugs.bug_number LIKE '{escapedSearchText}')";
+                    foreach (string fieldName in new string[] { "name", "bug_number" })
+                    {
+                        fields.Add(fieldName);
+                    }
                     break;
                 case "Accounts":
-                    queryText = "(accounts.name LIKE '%" + clsGlobals.MySqlEscape(usString) + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'))";
-                    fields[4] = "account_name";
+                    queryText = "(accounts.name LIKE '%" + firstTerm + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + escapedSearchText + "%'))";
+                    AddFirstLastAndAccountNames(fields);
                     break;
                 default:
-                    queryText = moduleName.ToLower() + ".name LIKE '%" + clsGlobals.MySqlEscape(searchText) + "%'";
+                    List<string> fieldNames = clsSuiteCRMHelper.GetCharacterFields(moduleName);
+
+                    if (fieldNames.Contains("first_name") && fieldNames.Contains("last_name"))
+                    {
+                        /* This is Ian's suggestion */
+                        queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
+                        foreach (string fieldName in new string[] { "first_name", "last_name" })
+                        {
+                            fields.Add(fieldName);
+                        }
+                    }
+                    else
+                    {
+                        queryText = ConstructQueryTextForUnknownModule(moduleName, escapedSearchText);
+                    }
                     break;
+            }
+
+            if (string.IsNullOrEmpty(queryText))
+            {
+                throw new CouldNotConstructQueryException(moduleName, searchText);
             }
 
             return queryText;
         }
 
-        private void populateTree(eGetEntryListResult search_result, string module, TreeNode root_node)
+        /// <summary>
+        /// Add 'first_name', 'last_name', 'name' and 'account_name' to this list of field names.
+        /// </summary>
+        /// <remarks>
+        /// It feels completely wrong to do this in code. There should be a configuration file of
+        /// appropriate fieldnames for module names somewhere, but there isn't. TODO: probably fix.
+        /// </remarks>
+        /// <param name="fields">The list of field names.</param>
+        private static void AddFirstLastAndAccountNames(List<string> fields)
         {
-            foreach (eEntryValue _value in search_result.entry_list)
+            foreach (string fieldName in new string[] { "first_name", "last_name", "name", "account_name" })
             {
-                string s = string.Empty;
-                string key = string.Empty;
-                string valueByKey = string.Empty;
-                key = clsSuiteCRMHelper.GetValueByKey(_value, "id");
-                s = clsSuiteCRMHelper.GetValueByKey(_value, "first_name") + " " + clsSuiteCRMHelper.GetValueByKey(_value, "last_name");
-                if (s == " ")
+                fields.Add(fieldName);
+            }
+        }
+
+        /// <summary>
+        /// If we really don't know anything about the module (which is likely with custom modules)
+        /// the best we can do is see whether any of its text fields matches the search text.
+        /// </summary>
+        /// <param name="moduleName">The name of the module to search.</param>
+        /// <param name="escapedSearchText">The text to search for, escaped for MySQL.</param>
+        /// <returns>A query string.</returns>
+        private static string ConstructQueryTextForUnknownModule(string moduleName, string escapedSearchText)
+        {
+            StringBuilder queryBuilder = new StringBuilder();
+
+            if (clsSuiteCRMHelper.GetActivitiesLinks(moduleName, Objective.Email).Count() > 0)
+            {
+                string tableName = moduleName.ToLower();
+
+                foreach (string fieldName in clsSuiteCRMHelper.GetCharacterFields(moduleName))
                 {
-                    s = clsSuiteCRMHelper.GetValueByKey(_value, "name");
-                }
-                string str4 = module;
-                if (str4 != null)
-                {
-                    if (!(str4 == ContactSyncing.CrmModule) && !(str4 == "Leads"))
+                    if (!String.IsNullOrWhiteSpace(queryBuilder.ToString()))
                     {
-                        if (str4 == "Cases")
-                        {
-                            goto Label_00DC;
-                        }
-                        if (str4 == "Bugs")
-                        {
-                            goto Label_00F0;
-                        }
+                        queryBuilder.Append("OR ");
                     }
-                    else
-                    {
-                        valueByKey = clsSuiteCRMHelper.GetValueByKey(_value, "account_name");
-                    }
+                    queryBuilder.Append($"{tableName}.{fieldName} LIKE '%{escapedSearchText}%' ");
                 }
-                goto Label_0102;
-            Label_00DC:
-                valueByKey = clsSuiteCRMHelper.GetValueByKey(_value, "case_number");
-                goto Label_0102;
-            Label_00F0:
-                valueByKey = clsSuiteCRMHelper.GetValueByKey(_value, "bug_number");
-            Label_0102:
-                if (valueByKey != string.Empty)
+
+                queryBuilder.Append($"OR {tableName} in (select eabr.bean_id from email_addr_bean_rel eabr ")
+                    .Append("INNER JOIN email_addresses ea on eabr.email_address_id = ea.id ")
+                    .Append($"where eabr.bean_module = '{moduleName}' ")
+                    .Append($" and ea.email_address LIKE '{escapedSearchText}'");
+            }
+
+            return queryBuilder.ToString();
+        }
+
+        /// <summary>
+        /// If the search text supplied comprises two space-separated tokens, these are possibly a first and last name;
+        /// if only one token, it's likely an email address, but might be a first or last name. 
+        /// This query explores those possibilities.
+        /// </summary>
+        /// <param name="moduleName">The name of the module to search.</param>
+        /// <param name="emailAddress">The portion of the search text which may be an email address.</param>
+        /// <param name="firstName">The portion of the search text which may be a first name</param>
+        /// <param name="lastName">The portion of the search text which may be a last name</param>
+        /// <returns>If the module has fields 'first_name' and 'last_name', then a potential query string;
+        /// else an empty string.</returns>
+        private static string ConstructQueryTextWithFirstAndLastNames(
+            string moduleName, 
+            string emailAddress, 
+            string firstName, 
+            string lastName)
+        {
+            List<string> fieldNames = clsSuiteCRMHelper.GetCharacterFields(moduleName);
+            string result = string.Empty;
+            string logicalOperator = firstName == lastName ? "OR" : "AND";
+
+            if (fieldNames.Contains("first_name") && fieldNames.Contains("last_name"))
+            {
+                string lowerName = moduleName.ToLower();
+                result = $"({lowerName}.first_name LIKE '%{firstName}%' {logicalOperator} {lowerName}.last_name LIKE '%{lastName}%') OR ({lowerName}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{emailAddress}%'))"; ;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Add a node beneath this parent representing this search result in this module.
+        /// </summary>
+        /// <param name="searchResult">A search result</param>
+        /// <param name="module">The module in which the search was performed</param>
+        /// <param name="parent">The parent node beneath which the new node should be added.</param>
+        private void PopulateTree(eGetEntryListResult searchResult, string module, TreeNode parent)
+        {
+            foreach (eEntryValue entry in searchResult.entry_list)
+            {
+                string key = clsSuiteCRMHelper.GetValueByKey(entry, "id");
+                if (!parent.Nodes.ContainsKey(key))
                 {
-                    s = s + " (" + valueByKey + ")";
-                }
-                if (!root_node.Nodes.ContainsKey(key))
-                {
-                    TreeNode node = new TreeNode(s)
+                    TreeNode node = new TreeNode(ConstructNodeName(module, entry))
                     {
                         Name = key,
                         Tag = key
                     };
-                    root_node.Nodes.Add(node);
+                    parent.Nodes.Add(node);
                 }
             }
-            if (search_result.result_count <= 3)
+            if (searchResult.result_count <= 3)
             {
-                root_node.Expand();
+                parent.Expand();
             }
+        }
+
+        /// <summary>
+        /// Construct suitable label text for a tree node representing this value in this module.
+        /// </summary>
+        /// <param name="module">The name of the module.</param>
+        /// <param name="entry">The value in the module.</param>
+        /// <returns>A canonical tree node label.</returns>
+        private static string ConstructNodeName(string module, eEntryValue entry)
+        {
+            StringBuilder nodeNameBuilder = new StringBuilder();
+            string keyValue = string.Empty;
+            nodeNameBuilder.Append(clsSuiteCRMHelper.GetValueByKey(entry, "first_name"))
+                .Append(" ")
+                .Append(clsSuiteCRMHelper.GetValueByKey(entry, "last_name"));
+
+            if (String.IsNullOrWhiteSpace(nodeNameBuilder.ToString()))
+            {
+                nodeNameBuilder.Append(clsSuiteCRMHelper.GetValueByKey(entry, "name"));
+            }
+
+            switch (module)
+            {
+                case "Cases":
+                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "case_number");
+                    break;
+                case "Bugs":
+                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "bug_number");
+                    break;
+                default:
+                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "account_name");
+                    break;
+            }
+
+            if (keyValue != string.Empty)
+            {
+                nodeNameBuilder.Append($" ({keyValue})");
+            }
+
+            return nodeNameBuilder.ToString();
         }
 
         private List<CrmEntity> GetSelectedCrmEntities(TreeView tree)
@@ -547,7 +696,11 @@ namespace SuiteCRMAddIn
                     return;
                 }
 
-                DaemonWorker.Instance.AddTask(new EmailArchiveAction(Globals.ThisAddIn.SelectedEmails, selectedCrmEntities, this.type));
+                var archiver = new EmailArchiving($"EB-{Globals.ThisAddIn.SelectedEmailCount}", Globals.ThisAddIn.Log);
+                this.ReportOnEmailArchiveSuccess(
+                    Globals.ThisAddIn.SelectedEmails.Select(mailItem =>
+                            archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.type))
+                        .ToList());
 
                 Close();
             }
@@ -586,7 +739,7 @@ namespace SuiteCRMAddIn
                         message +
                         "\n\nThere were some failures:\n" +
                         string.Join("\n", first11Problems.Take(10)) +
-                        (first11Problems.Count > 10 ? "\n[and more]" : "");
+                        (first11Problems.Count > 10 ? "\n[and more]" : string.Empty);
                 }
 
                 MessageBox.Show(message, "Failure");

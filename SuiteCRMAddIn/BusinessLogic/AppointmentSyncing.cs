@@ -33,6 +33,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Text;
+    using ProtoItems;
 
     /// <summary>
     /// Handles the synchronisation of appointments between Outlook and CMS.
@@ -52,6 +53,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// CallsSynchroniser and MeetingsSynchroniser
         /// </remarks>
         public const string AltCrmModule = "Calls";
+
+        /// <summary>
+        /// The name of the organiser synchronisation property
+        /// </summary>
+        public const string OrganiserPropertyName = "SOrganiser";
+
+        /// <summary>
+        /// Header for a block of accept/decline links in a meeting invite body.
+        /// </summary>
+        private const string AcceptDeclineHeader = "-- \nAccept/Decline links\n";
+
 
         public AppointmentSyncing(string name, SyncContext context)
             : base(name, context)
@@ -84,84 +96,16 @@ namespace SuiteCRMAddIn.BusinessLogic
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
         }
 
-        public override bool SyncingEnabled => settings.SyncCalendar;
+        public override SyncDirection.Direction Direction => settings.SyncCalendar;
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olAppointmentItem;
 
-        /// <summary>
-        /// Entry point from event handler when an item is added in Outlook.
-        /// </summary>
-        /// <param name="appointment"></param>
-        override protected void OutlookItemAdded(Outlook.AppointmentItem appointment)
-        {
-            LogItemAction(appointment, "AppointmentSyncing.OutlookItemAdded");
-
-            if (IsCurrentView && !this.ItemsSyncState.Exists(a => a.OutlookItem.EntryID == appointment.EntryID))
-            {
-                AddOrUpdateItemFromOutlookToCrm(appointment, AppointmentSyncing.CrmModule);
-            }
-            else
-            {
-                Log.Warn(String.Format("AppointmentSyncing.OutlookItemAdded: item {0} had already been added", appointment.EntryID));
-            }
-        }
 
         protected override void SaveItem(Outlook.AppointmentItem olItem)
         {
             olItem.Save();
         }
 
-
-        /// <summary>
-        /// Entry point from event handler, called when an Outlook item of class AppointmentItem 
-        /// has changed.
-        /// </summary>
-        /// <param name="olItem">The item which has changed.</param>
-        override protected void OutlookItemChanged(Outlook.AppointmentItem olItem)
-        {
-            LogItemAction(olItem, "AppointmentSyncing.OutlookItemChanged");
-            string entryId = olItem.EntryID;
-            var syncStateForItem = GetSyncStateForItem(olItem);
-            if (syncStateForItem != null)
-            {
-                var utcNow = DateTime.UtcNow;
-                if (Math.Abs((utcNow - syncStateForItem.OModifiedDate).TotalSeconds) > 5.0)
-                {
-                    Log.Info("2 callitem.IsUpdate = " + syncStateForItem.IsUpdate);
-                    syncStateForItem.IsUpdate = 0;
-                }
-
-                Log.Info("Before UtcNow - callitem.OModifiedDate= " + (int)(utcNow - syncStateForItem.OModifiedDate).TotalSeconds);
-
-                if (Math.Abs((utcNow - syncStateForItem.OModifiedDate).TotalSeconds) > 2.0 && syncStateForItem.IsUpdate == 0)
-                {
-                    syncStateForItem.OModifiedDate = DateTime.UtcNow;
-                    Log.Info("1 callitem.IsUpdate = " + syncStateForItem.IsUpdate);
-                    syncStateForItem.IsUpdate++;
-                }
-
-                this.LogItemAction(syncStateForItem.OutlookItem, "AppointmentSyncState.OutlookItemChanged, syncing");
-                Log.Info("utcNow= " + DateTime.UtcNow.ToString());
-                Log.Info("UtcNow - callitem.OModifiedDate= " + (int)(DateTime.UtcNow - syncStateForItem.OModifiedDate).TotalSeconds);
-
-                if (IsCurrentView && syncStateForItem.IsUpdate == 1)
-                {
-                    Outlook.UserProperty olPropertyType = olItem.UserProperties["SType"];
-                    Outlook.UserProperty olPropertyEntryId = olItem.UserProperties["SEntryID"];
-                    if (olPropertyType != null && olPropertyEntryId != null)
-                    {
-                        syncStateForItem.IsUpdate++;
-                        AddOrUpdateItemFromOutlookToCrm(olItem, olPropertyType.Value.ToString(), olPropertyEntryId.Value.ToString());
-                    }
-                }
-            }
-            else
-            {
-                /* we don't have a sync state for this item (presumably formerly private);
-                 *  that's OK, treat it as new */
-                OutlookItemAdded(olItem);
-            }
-        }
 
         // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
         // (but not for Appointments).
@@ -173,7 +117,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void SynchroniseAll()
         {
             base.SynchroniseAll();
-            if (this.HasExportAccess(AppointmentSyncing.AltCrmModule))
+            if (this.permissionsCache.HasExportAccess(AppointmentSyncing.AltCrmModule))
             {
                 SyncFolder(GetDefaultFolder(), AppointmentSyncing.AltCrmModule);
             }
@@ -192,11 +136,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
+        /// The actual transmission lock object of this synchroniser.
+        /// </summary>
+        private object txLock = new object();
+
+        /// <summary>
+        /// Allow my parent class to access my transmission lock object.
+        /// </summary>
+        protected override object TransmissionLock
+        {
+            get
+            {
+                return txLock;
+            }
+        }
+
+        /// <summary>
         /// Ensure that this Outlook item has a property of this name with this value.
         /// </summary>
-        /// <remarks>
-        /// TODO: Candidate for refactoring to superclass.
-        /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
@@ -207,22 +164,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 olProperty = olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
             }
-            olProperty.Value = value;
+            olProperty.Value = value ?? string.Empty;
         }
 
-
+        /// <summary>
+        /// This does not do what it says on the tin. To set the owner it would be necessary to set the assigned_user_id. Delete?
+        /// </summary>
+        /// <param name="olItem"></param>
+        /// <param name="meetingId"></param>
         private void AddCurrentUserAsOwner(Outlook.AppointmentItem olItem, string meetingId)
         {
             LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, adding current user");
 
-            eSetRelationshipValue info = new eSetRelationshipValue
-            {
-                module2 = AppointmentSyncing.CrmModule,
-                module2_id = meetingId,
-                module1 = "Users",
-                module1_id = clsSuiteCRMHelper.GetUserId()
-            };
-            clsSuiteCRMHelper.SetRelationshipUnsafe(info);
+			SetCrmRelationshipFromOutlook(meetingId, "Users", clsSuiteCRMHelper.GetUserId());
         }
 
         private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem aItem, string meetingId)
@@ -230,37 +184,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             LogItemAction(aItem, "AppointmentSyncing.AddMeetingRecipientsFromOutlookToCrm");
             foreach (Outlook.Recipient objRecepient in aItem.Recipients)
             {
-                try
-                {
-                    Log.Info("objRecepientName= " + objRecepient.Name.ToString());
-                    Log.Info("objRecepient= " + objRecepient.Address.ToString());
-                }
-                catch
-                {
-                    Log.Warn("objRecepient ERROR");
-                    continue;
-                }
+                Log.Info($"objRecepientName= {objRecepient.Name}, objRecepient= {objRecepient.Address}");
 
                 string sCID = SetCrmRelationshipFromOutlook(meetingId, objRecepient, ContactSyncing.CrmModule);
+
                 if (sCID != String.Empty)
                 {
                     string AccountID = clsSuiteCRMHelper.getRelationship(ContactSyncing.CrmModule, sCID, "accounts");
 
-                    if (AccountID != String.Empty)
-                    {
-                        eSetRelationshipValue info = new eSetRelationshipValue
-                        {
-                            module2 = AppointmentSyncing.CrmModule,
-                            module2_id = meetingId,
-                            module1 = "Accounts",
-                            module1_id = AccountID
-                        };
-                        clsSuiteCRMHelper.SetRelationshipUnsafe(info);
-                    }
-                    continue;
+                    SetCrmRelationshipFromOutlook(meetingId, "Accounts", AccountID);
                 }
-                if (!String.IsNullOrEmpty(SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Users"))) continue;
-                if (!String.IsNullOrEmpty(SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Leads"))) continue;
+                else if (String.IsNullOrEmpty(SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Contacts"))) {
+                    SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Leads");
+                }
             }
         }
 
@@ -283,48 +219,25 @@ namespace SuiteCRMAddIn.BusinessLogic
             olItem.Body = crmItem.GetValueAsString("description");
 
             LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
-
+            var crmId = crmItem.GetValueAsString("id");
             if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
             {
                 olItem.Start = date_start;
-                int iMin = 0, iHour = 0;
-                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_minutes")))
-                {
-                    iMin = int.Parse(crmItem.GetValueAsString("duration_minutes"));
-                }
-                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_hours")))
-                {
-                    iHour = int.Parse(crmItem.GetValueAsString("duration_hours"));
-                }
-                if (crmType == AppointmentSyncing.CrmModule)
-                {
-                    olItem.Location = crmItem.GetValueAsString("location");
-                    olItem.End = olItem.Start;
-                    if (iHour > 0)
-                        olItem.End.AddHours(iHour);
-                    if (iMin > 0)
-                        olItem.End.AddMinutes(iMin);
-                }
-                Log.Info("\tdefault SetRecepients");
-                SetRecipients(olItem, crmItem.GetValueAsString("id"), crmType);
+                SetOutlookItemDuration(crmType, crmItem, olItem);
 
-                try
-                {
-                    olItem.Duration = iMin + iHour * 60;
-                }
-                catch (Exception)
-                {
-                }
+                Log.Info("\tdefault SetRecepients");
+                SetRecipients(olItem, crmId, crmType);
             }
 
-            string crmId = crmItem.GetValueAsString("id");
-            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.GetValueAsString("date_modified"), crmType, crmId);
+            MaybeAddAcceptDeclineLinks(crmItem, olItem, crmType);
+
+            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
 
             var newState = new AppointmentSyncState(crmType)
             {
                 OutlookItem = olItem,
                 OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
-                CrmEntryId = crmId,
+                CrmEntryId = crmId
             };
             ItemsSyncState.Add(newState);
             olItem.Save();
@@ -334,38 +247,123 @@ namespace SuiteCRMAddIn.BusinessLogic
             return newState;
         }
 
+        private void MaybeAddAcceptDeclineLinks(eEntryValue crmItem, Outlook.AppointmentItem olItem, string crmType)
+        {
+            string description = crmItem.GetValueAsString("description") ?? string.Empty;
+
+            if (this.DefaultCrmModule.Equals(crmType) && description.IndexOf(AcceptDeclineHeader) == -1)
+            {
+                olItem.Body = $"{description}\n-- \n\n{this.AcceptDeclineLinks(crmItem)}";
+            }
+        }
+
         /// <summary>
-        /// Add this Outlook item, which may not exist in CRM, to CRM.
+        /// Set this outlook item's duration, but also end time and location, from this CRM item.
         /// </summary>
-        /// <param name="olItem">The outlook item to add.</param>
-        /// <param name="crmType">The CRM type to which it should be added</param>
+        /// <param name="crmType">The type of the CRM item.</param>
+        /// <param name="crmItem">The CRM item.</param>
+        /// <param name="olItem">The Outlook item.</param>
+        private void SetOutlookItemDuration(string crmType, eEntryValue crmItem, Outlook.AppointmentItem olItem)
+        {
+            int minutes = 0, hours = 0;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_minutes")))
+                {
+                    minutes = int.Parse(crmItem.GetValueAsString("duration_minutes"));
+                }
+                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_hours")))
+                {
+                    hours = int.Parse(crmItem.GetValueAsString("duration_hours"));
+                }
+
+                int durationMinutes = minutes + hours * 60;
+
+                if (crmType == AppointmentSyncing.CrmModule)
+                {
+                    olItem.Location = crmItem.GetValueAsString("location");
+                    olItem.End = olItem.Start.AddMinutes(durationMinutes);
+                }
+
+                olItem.Duration = durationMinutes;
+            }
+            catch (Exception any)
+            {
+                Log.Error("AppointmentSyncing.SetOutlookItemDuration", any);
+            }
+        }
+
+        /// <summary>
+        /// Specialisation: in addition to the standard properties, meetings also require an organiser property.
+        /// </summary>
+        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="crmItem">The CRM item.</param>
+        /// <param name="type">The value for the SType property (CRM module name).</param>
+        protected override void EnsureSynchronisationPropertiesForOutlookItem(Outlook.AppointmentItem olItem, eEntryValue crmItem, string type)
+        {
+            base.EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, type);
+            if (this.DefaultCrmModule.Equals(type))
+            {
+                this.EnsureSynchronisationPropertyForOutlookItem(olItem, OrganiserPropertyName, crmItem.GetValueAsString("assigned_user_id"));
+            }
+        }
+
+        /// <summary>
+        /// Add the item implied by this SyncState, which may not exist in CRM, to CRM.
+        /// </summary>
+        /// <param name="syncState">The sync state.</param>
+        /// <returns>The id of the entry added or updated.</returns>
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
+        {
+            Outlook.AppointmentItem olItem = syncState.OutlookItem;
+            Outlook.UserProperty olPropertyType = olItem.UserProperties[TypePropertyName];
+            var itemType = olPropertyType != null ? olPropertyType.Value.ToString() : this.DefaultCrmModule;
+
+            return this.AddOrUpdateItemFromOutlookToCrm(syncState, itemType, syncState.CrmEntryId);
+        }
+
+        /// <summary>
+        /// Add the Outlook item referenced by this sync state, which may not exist in CRM, to CRM.
+        /// </summary>
+        /// <param name="syncState">The sync state referencing the outlook item to add.</param>
+        /// <param name="crmType">The CRM type ('module') to which it should be added</param>
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
-        protected override string AddOrUpdateItemFromOutlookToCrm(Outlook.AppointmentItem olItem, string crmType, string entryId = "")
+        /// <returns>The id of the entry added o</returns>
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState, string crmType, string entryId = "")
         {
             string result = entryId;
+
+            Outlook.AppointmentItem olItem = syncState.OutlookItem;
 
             if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem, crmType))
             {
                 if (ShouldDeleteFromCrm(olItem))
                 {
-                    /* Issue #14: if it is non-public, it should be removed from or not copied to CRM */
                     LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Deleting");
-                    var syncStateForItem = this.GetSyncStateForItem(olItem);
-
+ 
                     DeleteFromCrm(olItem);
                 }
                 else if (ShouldDespatchToCrm(olItem))
                 {
-                    result = base.AddOrUpdateItemFromOutlookToCrm(olItem, crmType, entryId);
+                    result = base.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, entryId);
 
-                    if (String.IsNullOrEmpty(entryId))
+                    if (String.IsNullOrEmpty(result))
                     {
-                        AddCurrentUserAsOwner(olItem, result);
+                        Log.Warn("AppointmentSyncing.AddItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
                     }
-                    if (olItem.Recipients != null)
+                    else
                     {
-                        AddMeetingRecipientsFromOutlookToCrm(olItem, result);
+                        if (string.IsNullOrEmpty(entryId))
+                        {
+                            /* i.e. this was a new item saved to CRM for the first time */
+                            AddCurrentUserAsOwner(olItem, result);
+
+                            if (olItem.Recipients != null)
+                            {
+                                AddMeetingRecipientsFromOutlookToCrm(olItem, result);
+                            }
+                        }
                     }
                 }
                 else
@@ -381,40 +379,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
+
         /// <summary>
         /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmType">The type within CRM to which the item should be added.</param>
-        /// <param name="entryId">??</param>
+        /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override string ConstructAndDespatchCrmItem(Outlook.AppointmentItem olItem, string crmType, string entryId)
         {
-            List<eNameValue> data = new List<eNameValue>();
-
-            DateTime uTCDateTime = new DateTime();
-            DateTime time2 = new DateTime();
-            uTCDateTime = olItem.Start.ToUniversalTime();
-            time2 = olItem.End.ToUniversalTime();
-            string str = string.Format("{0:yyyy-MM-dd HH:mm:ss}", uTCDateTime);
-            string str2 = string.Format("{0:yyyy-MM-dd HH:mm:ss}", time2);
-            int num = olItem.Duration / 60;
-            int num2 = olItem.Duration % 60;
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("name", olItem.Subject));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("description", olItem.Body));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("location", olItem.Location));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("date_start", str));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("date_end", str2));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("duration_minutes", num2.ToString()));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("duration_hours", num.ToString()));
-
-            data.Add(String.IsNullOrEmpty(entryId) ?
-                clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId()) :
-                clsSuiteCRMHelper.SetNameValuePair("id", entryId));
-
-            /* The id of the newly created or modified CRM item */
-            return clsSuiteCRMHelper.SetEntryUnsafe(data.ToArray(), crmType);
+            return clsSuiteCRMHelper.SetEntryUnsafe(new ProtoAppointment(olItem).AsNameValues(entryId), crmType);
         }
+
 
         /// <summary>
         /// Delete this Outlook item from CRM, and tidy up afterwards.
@@ -426,11 +403,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* Remove the magic properties */
                 RemoveSynchronisationPropertiesFromOutlookItem(olItem);
-                SyncState<Outlook.AppointmentItem> syncStateForItem = GetSyncStateForItem(olItem);
+                SyncState<Outlook.AppointmentItem> syncStateForItem = GetExistingSyncState(olItem);
                 if (syncStateForItem != null)
                 {
                     this.RemoveFromCrm(syncStateForItem);
-                    /* TODO: Not at all sure I should remove the sync state */
                     RemoveItemSyncState(syncStateForItem);
                 }
             }
@@ -445,74 +421,42 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (ItemsSyncState == null)
+                foreach (Outlook.AppointmentItem aItem in appointmentsFolder.Items)
                 {
-                    ItemsSyncState = new ThreadSafeList<SyncState<Outlook.AppointmentItem>>();
-
-                    foreach (Outlook.AppointmentItem aItem in appointmentsFolder.Items)
+                    if (aItem.Start >= this.GetStartDate())
                     {
-                        if (aItem.Start >= this.GetStartDate())
+                        Outlook.UserProperty olPropertyModified = aItem.UserProperties[ModifiedDatePropertyName];
+                        if (olPropertyModified != null)
                         {
-                            Outlook.UserProperty olPropertyModified = aItem.UserProperties["SOModifiedDate"];
-                            if (olPropertyModified != null)
+                            /* The appointment probably already has the three magic properties 
+                             * required for synchronisation; is that a proxy for believing that it
+                             * already exists in CRM? If so, is it reliable? */
+                            Outlook.UserProperty olPropertyType = aItem.UserProperties[TypePropertyName];
+                            Outlook.UserProperty olPropertyEntryId = aItem.UserProperties[CrmIdPropertyName];
+                            var crmType = olPropertyType.Value.ToString();
+                            ItemsSyncState.Add(new AppointmentSyncState(crmType)
                             {
-                                /* The appointment probably already has the three magic properties 
-                                 * required for synchronisation; is that a proxy for believing that it
-                                 * already exists in CRM? If so, is it reliable? */
-                                Outlook.UserProperty olPropertyType = aItem.UserProperties["SType"];
-                                Outlook.UserProperty olPropertyEntryId = aItem.UserProperties["SEntryID"];
-                                var crmType = olPropertyType.Value.ToString();
-                                ItemsSyncState.Add(new AppointmentSyncState(crmType)
-                                {
-                                    OutlookItem = aItem,
-                                    OModifiedDate = DateTime.UtcNow,
-                                    CrmEntryId = olPropertyEntryId.Value.ToString()
-                                });
-                                LogItemAction(aItem, "AppointmentSyncing.GetOutlookItems: Adding known item to queue");
-                            }
-                            else
+                                OutlookItem = aItem,
+                                OModifiedDate = DateTime.UtcNow,
+                                CrmEntryId = olPropertyEntryId.Value.ToString()
+                            });
+                            LogItemAction(aItem, "AppointmentSyncing.GetOutlookItems: Adding known item to queue");
+                        }
+                        else
+                        {
+                            ItemsSyncState.Add(new AppointmentSyncState(AppointmentSyncing.CrmModule)
                             {
-                                ItemsSyncState.Add(new AppointmentSyncState(AppointmentSyncing.CrmModule)
-                                {
-                                    OutlookItem = aItem,
-                                });
-                                LogItemAction(aItem, "AppointmentSyncing.GetOutlookItems: Adding unknown item to queue");
-                            }
+                                OutlookItem = aItem,
+                            });
+                            LogItemAction(aItem, "AppointmentSyncing.GetOutlookItems: Adding unknown item to queue");
                         }
                     }
-                }
+                }                
             }
             catch (Exception ex)
             {
                 Log.Error("ThisAddIn.GetOutlookCalItems", ex);
             }
-        }
-
-        /// <summary>
-        /// Get the unique sync state related to this Outlook item from among my sync states, if present.
-        /// </summary>
-        /// <param name="olItem">The Outlook item to seek</param>
-        /// <returns>The sync state related to that item.</returns>
-        private SyncState<Outlook.AppointmentItem> GetSyncStateForItem(Outlook.AppointmentItem olItem)
-        {
-            SyncState<Outlook.AppointmentItem> result;
-            try
-            {
-                /* if there are duplicate entries I want them logged */
-                result = this.ItemsSyncState.SingleOrDefault(a => a.OutlookItem.EntryID == olItem.EntryID);
-            }
-            catch (InvalidOperationException notUnique)
-            {
-                Log.Error(
-                    String.Format(
-                        "AppointmentSyncing.AddItemFromOutlookToCrm: Id {0} was not unique in this.ItemsSyncState?",
-                        olItem.EntryID),
-                    notUnique);
-
-                result = this.ItemsSyncState.FirstOrDefault(a => a.OutlookItem.EntryID == olItem.EntryID);
-            }
-
-            return result;
         }
 
         /// <summary>
@@ -524,7 +468,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties["SEntryID"];
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[CrmIdPropertyName];
                 string crmId = olPropertyEntryId == null ?
                     "[not present]" :
                     olPropertyEntryId.Value;
@@ -550,7 +494,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmType">The CRM type of the candidate item.</param>
         /// <param name="candidateItem">The candidate item from CRM.</param>
         /// <returns>The synchronisation state of the item updated (if it was updated).</returns>
-        protected override SyncState<Outlook.AppointmentItem> UpdateFromCrm(
+        protected override SyncState<Outlook.AppointmentItem> AddOrUpdateItemFromCrmToOutlook(
             Outlook.MAPIFolder folder,
             string crmType,
             eEntryValue crmItem)
@@ -560,9 +504,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             date_start = date_start.Add(new DateTimeOffset(DateTime.Now).Offset); // correct for offset from UTC.
             if (date_start >= GetStartDate())
             {
-                /* search for the item among the items I already know about */
-                var oItem = this.ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItem.GetValueAsString("id") && a.CrmType == crmType);
-                if (oItem == null)
+                /* search for the item among the sync states I already know about */
+                var syncState = this.GetExistingSyncState(crmItem);
+                if (syncState == null)
                 {
                     /* didn't find it, so add it to Outlook */
                     result = AddNewItemFromCrmToOutlook(folder, crmType, crmItem, date_start);
@@ -570,8 +514,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 else
                 {
                     /* found it, so update it from the CRM item */
-                    result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, date_start, oItem);
+                    result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, date_start, syncState);
                 }
+
+                result.OutlookItem.Save();
             }
 
             return result;
@@ -583,9 +529,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The Outlook item.</param>
         private static void RemoveSynchronisationPropertiesFromOutlookItem(Outlook.AppointmentItem olItem)
         {
-            RemoveSynchronisationPropertyFromOutlookItem(olItem, "SEntryId");
-            RemoveSynchronisationPropertyFromOutlookItem(olItem, "SType");
-            RemoveSynchronisationPropertyFromOutlookItem(olItem, "SOModifiedDate");
+            RemoveSynchronisationPropertyFromOutlookItem(olItem, CrmIdPropertyName);
+            RemoveSynchronisationPropertyFromOutlookItem(olItem, TypePropertyName);
+            RemoveSynchronisationPropertyFromOutlookItem(olItem, ModifiedDatePropertyName);
         }
 
         /// <summary>
@@ -616,27 +562,44 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Sets up a CRM relationship to mimic an Outlook relationship
         /// </summary>
-        /// <param name="_result"></param>
-        /// <param name="objRecepient"></param>
-        /// <param name="relnName"></param>
+        /// <param name="meetingId">The ID of the meeting</param>
+        /// <param name="recipient">The outlook recipient representing the person to link with.</param>
+        /// <param name="foreignModule">the name of the module we're seeking to link with.</param>
         /// <returns></returns>
-        private string SetCrmRelationshipFromOutlook(string _result, Outlook.Recipient objRecepient, string relnName)
+        private string SetCrmRelationshipFromOutlook(string meetingId, Outlook.Recipient recipient, string foreignModule)
         {
-            string sCID = GetID(objRecepient.Address, relnName);
-            if (sCID != String.Empty)
+            string foreignId = GetID(recipient.Address, foreignModule);
+
+            return SetCrmRelationshipFromOutlook(meetingId, foreignModule, foreignId) ?
+                foreignId :
+                string.Empty;
+        }
+
+        /// <summary>
+        /// Sets up a CRM relationship to mimic an Outlook relationship
+        /// </summary>
+        /// <param name="meetingId">The ID of the meeting</param>
+        /// <param name="foreignModule">the name of the module we're seeking to link with.</param>
+        /// <returns>True if a relationship </returns>
+        private bool SetCrmRelationshipFromOutlook(string meetingId, string foreignModule, string foreignId)
+        {
+            bool result = false;
+
+            if (foreignId != String.Empty)
             {
                 eSetRelationshipValue info = new eSetRelationshipValue
                 {
                     module2 = AppointmentSyncing.CrmModule,
-                    module2_id = _result,
-                    module1 = relnName,
-                    module1_id = sCID
+                    module2_id = meetingId,
+                    module1 = foreignModule,
+                    module1_id = foreignId
                 };
-                clsSuiteCRMHelper.SetRelationshipUnsafe(info);
+                result = clsSuiteCRMHelper.SetRelationshipUnsafe(info);
             }
 
-            return sCID;
+            return result;
         }
+
 
         private void SetRecipients(Outlook.AppointmentItem olAppointment, string sMeetingID, string sModule)
         {
@@ -678,7 +641,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true if the Outlook item should be deleted from CRM.</returns>
         private bool ShouldDeleteFromCrm(Outlook.AppointmentItem olItem)
         {
-            Outlook.UserProperty olPropertyEntryId = olItem.UserProperties["SEntryID"];
+            Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[CrmIdPropertyName];
             bool result = (olPropertyEntryId != null && olItem.Sensitivity != Outlook.OlSensitivity.olNormal);
 
             LogItemAction(olItem, $"ShouldDeleteFromCrm returning {result}");
@@ -693,7 +656,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true iff settings.SyncCalendar is true, the item is not null, and it is not private (normal sensitivity)</returns>
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
-            return olItem != null && settings.SyncCalendar && olItem.Sensitivity == Outlook.OlSensitivity.olNormal;
+            var syncConfigured = SyncDirection.AllowOutbound(settings.SyncCalendar);
+            return olItem != null &&
+                syncConfigured && 
+                olItem.Sensitivity == Outlook.OlSensitivity.olNormal;
         }
 
         /// <summary>
@@ -718,7 +684,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     clsSuiteCRMHelper.GetSugarFields(crmModule));
                 if (invited != null)
                 {
-                    UpdateItemsFromCrmToOutlook(invited, folder, untouched, crmModule);
+                    AddOrUpdateItemsFromCrmToOutlook(invited, folder, untouched, crmModule);
                 }
 
                 try
@@ -752,24 +718,30 @@ namespace SuiteCRMAddIn.BusinessLogic
             SyncState<Outlook.AppointmentItem> oItem)
         {
             LogItemAction(oItem.OutlookItem, "AppointmentSyncing.UpdateExistingOutlookItemFromCrm");
-            Outlook.AppointmentItem olAppointment = oItem.OutlookItem;
-            Outlook.UserProperty olPropertyModifiedDate = olAppointment.UserProperties["SOModifiedDate"];
 
-            if (olPropertyModifiedDate.Value != crmItem.GetValueAsString("date_modified"))
+            if (!oItem.IsDeletedInOutlook)
             {
-                olAppointment.Subject = crmItem.GetValueAsString("name");
-                olAppointment.Body = crmItem.GetValueAsString("description");
-                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
-                {
-                    UpdateOutlookStartAndDuration(crmType, crmItem, date_start, olAppointment);
-                }
+                Outlook.AppointmentItem olAppointment = oItem.OutlookItem;
+                Outlook.UserProperty olPropertyModifiedDate = olAppointment.UserProperties[ModifiedDatePropertyName];
 
-                EnsureSynchronisationPropertiesForOutlookItem(olAppointment, crmItem.GetValueAsString("date_modified"), crmType, crmItem.id);
-                olAppointment.Save();
-                LogItemAction(oItem.OutlookItem, "AppointmentSyncing.UpdateExistingOutlookItemFromCrm, item saved");
+                MaybeAddAcceptDeclineLinks(crmItem, oItem.OutlookItem, crmType);
+
+                if (olPropertyModifiedDate.Value != crmItem.GetValueAsString("date_modified"))
+                {
+                    olAppointment.Subject = crmItem.GetValueAsString("name");
+                    olAppointment.Body = crmItem.GetValueAsString("description");
+                    if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
+                    {
+                        UpdateOutlookStartAndDuration(crmType, crmItem, date_start, olAppointment);
+                    }
+
+                    EnsureSynchronisationPropertiesForOutlookItem(olAppointment, crmItem, crmType);
+                    olAppointment.Save();
+                    LogItemAction(oItem.OutlookItem, "AppointmentSyncing.UpdateExistingOutlookItemFromCrm, item saved");
+                }
+                Log.Warn((string)("Not default dResult.date_modified= " + crmItem.GetValueAsString("date_modified")));
+                oItem.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
             }
-            Log.Warn((string)("Not default dResult.date_modified= " + crmItem.GetValueAsString("date_modified")));
-            oItem.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
 
             return oItem;
         }
@@ -806,17 +778,53 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.AppointmentItem> ConstructSyncState(Outlook.AppointmentItem oItem)
         {
-            return new AppointmentSyncState(oItem.UserProperties["SType"]?.Value.ToString())
+            return new AppointmentSyncState(oItem.UserProperties[TypePropertyName]?.Value.ToString())
             {
                 OutlookItem = oItem,
-                CrmEntryId = oItem.UserProperties["SEntryID"]?.Value.ToString(),
-                OModifiedDate = ParseDateTimeFromUserProperty(oItem.UserProperties["SOModifiedDate"]?.Value.ToString()),
+                CrmEntryId = oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
+                OModifiedDate = ParseDateTimeFromUserProperty(oItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()),
             };
         }
 
-        protected override SyncState<Outlook.AppointmentItem> GetExistingSyncState(Outlook.AppointmentItem oItem)
+        internal override string GetOutlookEntryId(Outlook.AppointmentItem olItem)
         {
-            return ItemsSyncState.FirstOrDefault(a => !a.IsDeletedInOutlook && a.OutlookItem.EntryID == oItem.EntryID);
+            return olItem.EntryID;
+        }
+
+        private string AcceptDeclineLinks(eEntryValue crmItem)
+        {
+            StringBuilder bob = new StringBuilder(AcceptDeclineHeader);
+
+            foreach (string acceptStatus in new string[] { "Accept", "Tentative", "Decline" })
+            {
+                bob.Append(AcceptDeclineLink(crmItem, acceptStatus));
+            }
+
+            return bob.ToString();
+        }
+
+        private static string AcceptDeclineLink(eEntryValue crmItem, string acceptStatus)
+        {
+            StringBuilder bob = new StringBuilder();
+            bob.Append($"To {acceptStatus} this invitation: {Globals.ThisAddIn.Settings.host}/index.php?entryPoint=acceptDecline&module=Meetings")
+                .Append($"&user_id={clsSuiteCRMHelper.GetUserId()}")
+                .Append($"&record={crmItem.id}")
+                .Append($"&accept_status={acceptStatus}\n");
+
+            return bob.ToString();
+        }
+
+        /// <summary>
+        /// Return the sensitivity of this outlook item.
+        /// </summary>
+        /// <remarks>
+        /// Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.
+        /// </remarks>
+        /// <param name="item">The outlook item whose sensitivity is required.</param>
+        /// <returns>the sensitivity of the item.</returns>
+        internal override Outlook.OlSensitivity GetSensitivity(Outlook.AppointmentItem item)
+        {
+            return item.Sensitivity;
         }
     }
 }

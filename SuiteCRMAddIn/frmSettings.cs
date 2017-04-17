@@ -83,32 +83,35 @@ namespace SuiteCRMAddIn
 
         private void frmSettings_Load(object sender, EventArgs e)
         {
-            try
+            using (new WaitCursor(this))
             {
-                AddInTitleLabel.Text = ThisAddIn.AddInTitle;
-                AddInVersionLabel.Text = "Version " + ThisAddIn.AddInVersion;
-
-                if (Globals.ThisAddIn.SuiteCRMUserSession == null)
+                try
                 {
-                    Globals.ThisAddIn.SuiteCRMUserSession =
-                        new SuiteCRMClient.UserSession(
-                            "", "", "", "", Log, Globals.ThisAddIn.Settings.RestTimeout);
-                }
+                    AddInTitleLabel.Text = ThisAddIn.AddInTitle;
+                    AddInVersionLabel.Text = "Version " + ThisAddIn.AddInVersion;
 
-                Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
-                LoadSettings();
-                LinkToLogFileDir.Text = ThisAddIn.LogDirPath;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("frmSettings_Load error", ex);
-                // Swallow exception!
+                    if (Globals.ThisAddIn.SuiteCRMUserSession == null)
+                    {
+                        Globals.ThisAddIn.SuiteCRMUserSession =
+                            new SuiteCRMClient.UserSession(
+                                string.Empty, string.Empty, string.Empty, string.Empty, Log, Globals.ThisAddIn.Settings.RestTimeout);
+                    }
+
+                    Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
+                    LoadSettings();
+                    LinkToLogFileDir.Text = ThisAddIn.LogDirPath;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("frmSettings_Load error", ex);
+                    // Swallow exception!
+                }
             }
         }
 
         private void LoadSettings()
         {
-            if (Globals.ThisAddIn.Settings.host != "")
+            if (Globals.ThisAddIn.Settings.host != string.Empty)
             {
                 txtURL.Text = Globals.ThisAddIn.Settings.host;
                 txtUsername.Text = Globals.ThisAddIn.Settings.username;
@@ -124,8 +127,6 @@ namespace SuiteCRMAddIn
             this.txtSyncMaxRecords.Text = Globals.ThisAddIn.Settings.SyncMaxRecords.ToString();
             this.checkBoxShowRightClick.Checked = Globals.ThisAddIn.Settings.PopulateContextLookupList;
             GetAccountAutoArchivingSettings();
-            this.chkSyncCalendar.Checked = Globals.ThisAddIn.Settings.SyncCalendar;
-            this.chkSyncContacts.Checked = Globals.ThisAddIn.Settings.SyncContacts;
 
             txtAutoSync.Text = Globals.ThisAddIn.Settings.ExcludedEmails;
 
@@ -151,6 +152,29 @@ namespace SuiteCRMAddIn
             logLevelSelector.DisplayMember = "Value";
             logLevelSelector.ValueMember = "Key";
             logLevelSelector.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.LogLevel);
+
+            this.PopulateDirectionsMenu(syncCalendarMenu);
+            this.PopulateDirectionsMenu(syncContactsMenu);
+
+            this.syncCalendarMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncCalendar);
+            this.syncContactsMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncContacts);
+        }
+
+        /// <summary>
+        /// Populate one of the two synchronisation direction menus.
+        /// </summary>
+        /// <param name="directionMenu">The menu to populate.</param>
+        private void PopulateDirectionsMenu(ComboBox directionMenu)
+        {
+            var syncDirectionItems = Enum.GetValues(typeof(SyncDirection.Direction))
+                    .Cast<SyncDirection.Direction>()
+                    .Select(p => new { Key = (int)p, Value = SyncDirection.ToString(p) })
+                    .OrderBy(o => o.Key)
+                    .ToList();
+
+            directionMenu.ValueMember = "Key";
+            directionMenu.DisplayMember = "Value";
+            directionMenu.DataSource = syncDirectionItems;
         }
 
         private void GetAccountAutoArchivingSettings()
@@ -215,7 +239,7 @@ namespace SuiteCRMAddIn
                     {
                         txtURL.Text = txtURL.Text + "/";
                     }
-                    if (txtLDAPAuthenticationKey.Text.Trim() == "")
+                    if (txtLDAPAuthenticationKey.Text.Trim() == string.Empty)
                     {
                         txtLDAPAuthenticationKey.Text = null;
                     }
@@ -277,7 +301,7 @@ namespace SuiteCRMAddIn
             {
                 labelKey.Enabled = false;
                 txtLDAPAuthenticationKey.Enabled = false;
-                txtLDAPAuthenticationKey.Text = "";
+                txtLDAPAuthenticationKey.Text = string.Empty;
             }
         }
 
@@ -307,7 +331,7 @@ namespace SuiteCRMAddIn
                 {
                     txtURL.Text = txtURL.Text + "/";
                 }
-                if (txtLDAPAuthenticationKey.Text.Trim() == "")
+                if (txtLDAPAuthenticationKey.Text.Trim() == string.Empty)
                 {
                     txtLDAPAuthenticationKey.Text = null;
                 }
@@ -356,8 +380,9 @@ namespace SuiteCRMAddIn
 
             SaveAccountAutoArchivingSettings();
 
-            Globals.ThisAddIn.Settings.SyncCalendar = this.chkSyncCalendar.Checked;
-            Globals.ThisAddIn.Settings.SyncContacts = this.chkSyncContacts.Checked;
+            Globals.ThisAddIn.Settings.SyncCalendar = (SyncDirection.Direction)this.syncCalendarMenu.SelectedValue;
+            Globals.ThisAddIn.Settings.SyncContacts = (SyncDirection.Direction)this.syncContactsMenu.SelectedValue;
+
             Globals.ThisAddIn.Settings.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked;
             if (this.txtSyncMaxRecords.Text != string.Empty)
             {
