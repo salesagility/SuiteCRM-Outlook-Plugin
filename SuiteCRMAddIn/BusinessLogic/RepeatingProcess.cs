@@ -158,13 +158,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             int tasks = 0;
 
-            foreach (RepeatingProcess process in RepeatingProcess.allInstances)
+            /* make a copy of all instances so I can remove items from it as I iterate */
+            List<RepeatingProcess> stillAlive = new List<RepeatingProcess>();
+            stillAlive.AddRange(RepeatingProcess.allInstances);
+
+            foreach (RepeatingProcess process in stillAlive)
             {
                 var stillToDo = process.PrepareShutdown();
+
                 if (stillToDo == 0 && process.Stop())
                 {
                     /* that's OK... */
                     log.Info($"RepeatingProcess.PrepareShutdownAll: process {process.Name} is stopped.");
+                    RepeatingProcess.allInstances.Remove(process);
                 }
                 else
                 {

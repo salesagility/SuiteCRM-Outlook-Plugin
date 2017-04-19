@@ -207,6 +207,7 @@
     <Compile Include="Daemon\AbstractDaemonAction.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
+    <Compile Include="Daemon\FetchEmailCategoriesAction.cs" />
     <Compile Include="Daemon\TransmitNewAction.cs" />
     <Compile Include="Daemon\TransmitUpdateAction.cs" />
     <Compile Include="Dialogs\ShuttingDownDialog.cs">

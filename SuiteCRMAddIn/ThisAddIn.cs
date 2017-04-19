@@ -417,39 +417,36 @@ namespace SuiteCRMAddIn
             }
         }
 
+        /// <summary>
+        /// Handle the quit signal.
+        /// </summary>
         private void ThisAddIn_Quit()
         {
             Log.Info("ThisAddIn_Quit: signalled to quit");
 
-            try
-            {
-                this.ShutdownProcesses();
-
-                if (SuiteCRMUserSession != null)
-                    SuiteCRMUserSession.LogOut();
-                if (this.CommandBarExists("SuiteCRM"))
-                {
-                    Log.Info("ThisAddIn_Quit: Removing SuiteCRM command bar");
-                    this.objSuiteCRMMenuBar2007.Delete();
-                }
-                this.UnregisterEvents();
-            }
-            catch (Exception ex)
-            {
-                log.Error("ThisAddIn.ThisAddIn_Quit", ex);
-            }
+            this.ShutdownAll();
 
             log.Info("ThisAddIn_Quit: shutdown complete.");
         }
 
+        /// <summary>
+        /// Handle the shutdown signal; this doesn't seem to be being received, but 
+        /// may be in some versions of Outlook.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             Log.Info("ThisAddIn_Shutdown: shutting down normally");
+
             ShutdownAll();
 
             log.Info("ThisAddIn_Shutdown: shutdown complete.");
         }
 
+        /// <summary>
+        /// Everything needed to shut down.
+        /// </summary>
         private void ShutdownAll()
         {
             try
@@ -487,6 +484,8 @@ namespace SuiteCRMAddIn
             {
                 new ShuttingDownDialog(stillToDo, this.log).ShowDialog();
             }
+
+            log.Debug("ShutdownProcesses: complete");
         }
 
         private void UnregisterEvents()

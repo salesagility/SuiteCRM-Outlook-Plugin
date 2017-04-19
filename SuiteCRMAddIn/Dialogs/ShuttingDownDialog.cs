@@ -95,16 +95,18 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void showProgressOrClose()
         {
-            int percentageRemaining = 100 * this.remaining / this.tasks;
-
             if (this.remaining == 0)
             {
+                this.log.Debug("ShuttingDownDialog: completed, closing.");
                 base.Close();
             }
             else
             {
-                this.progress.Value = percentageRemaining;
+                double percentageRemaining = 100 * this.remaining / this.tasks;
+
+                this.progress.Value = 100 - (int)percentageRemaining;
                 this.tasksRemainingLabel.Text = $"{this.remaining}/{this.tasks} tasks remaining";
+                this.log.Debug($"ShuttingDownDialog: progress {percentageRemaining}%; {this.remaining}/{this.tasks}");
             }
         }
     }

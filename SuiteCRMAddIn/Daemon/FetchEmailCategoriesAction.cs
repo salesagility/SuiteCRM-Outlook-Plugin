@@ -50,7 +50,6 @@ namespace SuiteCRMAddIn.Daemon
             this.items = listToModify;
         }
 
-
         /// <summary>
         /// Add the options returned for the 'category' field of the 'email' module to my items
         /// list, which is the list passed in by my caller.
