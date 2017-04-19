@@ -75,37 +75,56 @@ namespace SuiteCRMAddIn
         {
             using (new WaitCursor(this))
             {
-                this.tsResults.AfterCheck += new TreeViewEventHandler(this.tsResults_AfterCheck);
-                this.tsResults.AfterExpand += new TreeViewEventHandler(this.tsResults_AfterExpand);
-                this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
-                this.txtSearch.KeyDown += new KeyEventHandler(this.txtSearch_KeyDown);
-                this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
-                base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
-
-                this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
-
-                if (Globals.ThisAddIn.Settings.ShowCustomModules)
-                {
-                    this.GetCustomModules();
-                }
-                try
-                {
-                    foreach (string str in this.settings.SelectedSearchModules.Split(new char[] { ',' }))
-                    {
-                        int num = Convert.ToInt32(str);
-                        this.lstViewSearchModules.Items[num].Checked = true;
-                    }
-                }
-                catch (System.Exception)
-                {
-                    // Swallow exception(!)
-                }
+                this.AddActionHandlers();
+                this.PopulateUIComponents();
 
                 if (this.settings.AutomaticSearch)
                 {
                     this.btnSearch_Click(null, null);
                 }
             }
+        }
+
+        /// <summary>
+        /// Populate my menus and other user interface components.
+        /// </summary>
+        private void PopulateUIComponents()
+        {
+            this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
+            if (this.settings.EmailCategories != null)
+            {
+                this.categoryInput.DataSource = this.settings.EmailCategories;
+            }
+
+            if (Globals.ThisAddIn.Settings.ShowCustomModules)
+            {
+                this.GetCustomModules();
+            }
+            try
+            {
+                foreach (string str in this.settings.SelectedSearchModules.Split(new char[] { ',' }))
+                {
+                    int num = Convert.ToInt32(str);
+                    this.lstViewSearchModules.Items[num].Checked = true;
+                }
+            }
+            catch (System.Exception)
+            {
+                // Swallow exception(!)
+            }
+        }
+
+        /// <summary>
+        /// Add handlers for my actions
+        /// </summary>
+        private void AddActionHandlers()
+        {
+            this.tsResults.AfterCheck += new TreeViewEventHandler(this.tsResults_AfterCheck);
+            this.tsResults.AfterExpand += new TreeViewEventHandler(this.tsResults_AfterExpand);
+            this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
+            this.txtSearch.KeyDown += new KeyEventHandler(this.txtSearch_KeyDown);
+            this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
+            base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
         }
 
         /// <summary>

@@ -25,6 +25,7 @@
 namespace SuiteCRMAddIn
 {
     using BusinessLogic;
+    using Daemon;
     using Microsoft.Office.Core;
     using SuiteCRMAddIn.Properties;
     using SuiteCRMClient;
@@ -148,6 +149,8 @@ namespace SuiteCRMAddIn
             taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
             appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
             emailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
+
+            DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction(this.settings.EmailCategories));
 
             var outlookExplorer = outlookApp.ActiveExplorer();
             this.objExplorer = outlookExplorer;
