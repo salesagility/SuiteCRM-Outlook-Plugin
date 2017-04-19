@@ -56,8 +56,8 @@ namespace SuiteCRMAddIn.Daemon
         /// </summary>
         public override void Perform()
         {
-            eModuleFields fields = clsSuiteCRMHelper.GetFieldsForModule("Emails");
-            eField field = fields.moduleFields.FirstOrDefault(x => x.name == "category_id");
+            //eModuleFields fields = clsSuiteCRMHelper.GetFieldsForModule("Emails");
+            //eField field = fields.moduleFields.FirstOrDefault(x => x.name == "category_id");
 
             //items.AddRange(field.options.Keys.OrderBy(x => x));
         }

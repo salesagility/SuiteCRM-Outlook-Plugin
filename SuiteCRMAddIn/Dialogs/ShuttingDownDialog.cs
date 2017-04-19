@@ -25,6 +25,7 @@ namespace SuiteCRMAddIn.Dialogs
     using SuiteCRMAddIn.BusinessLogic;
     using SuiteCRMClient.Logging;
     using System.ComponentModel;
+    using System.Threading;
     using System.Windows.Forms;
 
     public partial class ShuttingDownDialog : Form
@@ -77,6 +78,11 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 this.remaining = RepeatingProcess.PrepareShutdownAll(this.log);
                 worker.ReportProgress(100 - 100 * remaining / tasks);
+
+                /* deal with any pending Windows messages, which we don't need to know about */
+                Application.DoEvents();
+
+                Thread.Sleep(1000);
             }
         }
 
