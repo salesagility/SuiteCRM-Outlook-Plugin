@@ -209,6 +209,12 @@
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
     <Compile Include="Daemon\TransmitNewAction.cs" />
     <Compile Include="Daemon\TransmitUpdateAction.cs" />
+    <Compile Include="Dialogs\ShuttingDownDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ShuttingDownDialog.Designer.cs">
+      <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="ProtoItems\ProtoAppointment.cs" />
     <Compile Include="ProtoItems\ProtoContact.cs" />
     <Compile Include="ProtoItems\ProtoItem.cs" />
@@ -287,6 +293,9 @@
     </Compile>
     <EmbeddedResource Include="AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ShuttingDownDialog.resx">
+      <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="EmailAccountArchiveSettingsControl.resx">
       <DependentUpon>EmailAccountArchiveSettingsControl.cs</DependentUpon>

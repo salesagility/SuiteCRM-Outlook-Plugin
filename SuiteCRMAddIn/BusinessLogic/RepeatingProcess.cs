@@ -24,16 +24,22 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     using SuiteCRMClient.Logging;
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Do something repeatedly every five minutes.
+    /// Do something repeatedly.
     /// </summary>
     public abstract class RepeatingProcess
     {
         /// <summary>
-        /// The polling interval; currently hard wired.
+        /// All known instances of repeating processes.
+        /// </summary>
+        private static ThreadSafeList<RepeatingProcess> allInstances = new ThreadSafeList<RepeatingProcess>();
+
+        /// <summary>
+        /// The polling interval; default is five minutes.
         /// </summary>
         protected TimeSpan SyncPeriod = TimeSpan.FromMinutes(5);
 
@@ -75,6 +81,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             this.Log = log;
             this.Name = name;
+            RepeatingProcess.allInstances.Add(this);
         }
 
         /// <summary>
@@ -90,7 +97,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         private Boolean Running
         {
-            get { return this.state == RunState.Running; }
+            get { return this.state == RunState.Running || this.state == RunState.Waiting; }
+        }
+
+        /// <summary>
+        /// True if I am stopped, else false.
+        /// </summary>
+        public Boolean Stopped
+        {
+            get
+            {
+                return this.state == RunState.Stopped;
+            }
         }
 
         /// <summary>
@@ -100,6 +118,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             do
             {
+                lock (processLock)
+                {
+                    this.state = RunState.Running;
+                }
                 Robustness.DoOrLogError(
                     this.Log,
                     () => this.PerformIteration(),
@@ -109,7 +131,15 @@ namespace SuiteCRMAddIn.BusinessLogic
                 System.Windows.Forms.Application.DoEvents();
 
                 this.lastIterationCompleted = DateTime.UtcNow;
-                await Task.Delay(this.SyncPeriod);
+
+                if (this.state == RunState.Running)
+                {
+                    lock (processLock)
+                    {
+                        this.state = RunState.Waiting;
+                    }
+                    await Task.Delay(this.SyncPeriod);
+                }
             }
             while (this.Running);
 
@@ -120,6 +150,43 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        /// <summary>
+        /// Prepare to shutdown all running processes.
+        /// </summary>
+        /// <returns>zero if all processes are stopped, else the number of tasks to complete.</returns>
+        public static int PrepareShutdownAll(ILogger log)
+        {
+            int tasks = 0;
+
+            foreach (RepeatingProcess process in RepeatingProcess.allInstances)
+            {
+                var stillToDo = process.PrepareShutdown();
+                if (stillToDo == 0 && process.Stop())
+                {
+                    /* that's OK... */
+                    log.Info($"RepeatingProcess.PrepareShutdownAll: process {process.Name} is stopped.");
+                }
+                else
+                {
+                    /* one for an unfinished process, plus one for each item still to do */
+                    log.Info($"RepeatingProcess.PrepareShutdownAll: process {process.Name} is running with {stillToDo} tasks to complete.");
+                    tasks += stillToDo + 1;
+                }
+            }
+
+            return tasks;
+        }
+
+        /// <summary>
+        /// Put me into a mode where I finish all the work I have to do quickly.
+        /// </summary>
+        /// <returns>Zero if I may be stopped immediately (this is the default); 
+        /// otherwise an integer indicating the number of work units to complete
+        /// before I can be stopped.</returns>
+        public virtual int PrepareShutdown()
+        {
+            return 0;
+        }
 
         /// <summary>
         /// Do whatever it is I do, once.
@@ -127,15 +194,28 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal abstract void PerformIteration();
 
         /// <summary>
-        /// Stop me at the end of my current iteration; does not force an immediate stop.
+        /// Stop me at the end of my current iteration; does not force an immediate 
+        /// stop unless no work is currently active.
         /// </summary>
-        public void Stop()
+        /// <returns>true if I am now stopped.</returns>
+        public bool Stop()
         {
-            Log.Debug($"Stopping thread {this.Name} at end of current iteration");
             lock (processLock)
             {
-                this.state = RunState.Stopping;
+                if (this.state == RunState.Running)
+                {
+                    this.state = RunState.Stopping;
+                    Log.Debug($"Stopping thread {this.Name} at end of current iteration.");
+                }
+                else
+                {
+                    this.state = RunState.Stopped;
+                    this.process = null;
+                    Log.Debug($"Stopping thread {this.Name} immediately.");
+                }
             }
+
+            return this.Stopped;
         }
 
         /// <summary>
