@@ -31,6 +31,7 @@ namespace SuiteCRMAddIn
     using SuiteCRMClient.Logging;
     using System.Text;
     using System.Collections.Generic;
+    using log4net.Repository;
 
     public class Log4NetLogger: SuiteCRMClient.Logging.ILogger
     {
@@ -166,9 +167,31 @@ namespace SuiteCRMAddIn
             }
         }
 
+        /// <summary>
+        /// Flush all buffers.
+        /// </summary>
+        /// <remarks>
+        /// Thanks to http://stackoverflow.com/questions/2045935/is-there-anyway-to-programmably-flush-the-buffer-in-log4net
+        /// </remarks>
+        public void FlushBuffers()
+        {
+            ILoggerRepository rep = LogManager.GetRepository();
+            foreach (IAppender appender in rep.GetAppenders())
+            {
+                var buffered = appender as BufferingAppenderSkeleton;
+                if (buffered != null)
+                {
+                    buffered.Flush();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Make sure the last items logged get output.
+        /// </summary>
         public void Dispose()
         {
-            // Do nothing.
+            this.FlushBuffers();
         }
 
         private class PatternLayoutWithHeader : PatternLayout

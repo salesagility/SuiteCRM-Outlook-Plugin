@@ -24,11 +24,6 @@ namespace SuiteCRMAddInTests
 {
     using SuiteCRMAddIn.Tests;
     using SuiteCRMClient;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// An abstract superclass for test classes which need a REST service.

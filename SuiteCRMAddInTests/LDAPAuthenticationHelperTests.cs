@@ -1,16 +1,9 @@
 ﻿namespace SuiteCRMClient.Tests
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using SuiteCRMAddIn;
-    using SuiteCRMAddIn.Tests;
     using SuiteCRMAddInTests;
     using SuiteCRMClient;
-    using SuiteCRMClient.Logging;
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     [TestClass()]
     public class LDAPAuthenticationHelperTests : WithRestServiceTests

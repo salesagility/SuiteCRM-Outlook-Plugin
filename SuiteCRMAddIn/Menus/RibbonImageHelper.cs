@@ -20,17 +20,12 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using stdole;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
 namespace SuiteCRMAddIn
 {
+    using stdole;
+    using System.Drawing;
+    using System.Windows.Forms;
+
     public sealed class RibbonImageHelper : AxHost
     {
         private RibbonImageHelper()

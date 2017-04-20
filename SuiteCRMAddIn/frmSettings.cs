@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn
 {
     using BusinessLogic;
     using Microsoft.Office.Interop.Outlook;
+    using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Generic;
@@ -401,6 +402,9 @@ namespace SuiteCRMAddIn
 
             Globals.ThisAddIn.Settings.Save();
             Globals.ThisAddIn.Settings.Reload();
+
+            clsSuiteCRMHelper.FlushUserIdCache();
+
             base.Close();
 
             this.SettingsChanged?.Invoke(this, EventArgs.Empty);
