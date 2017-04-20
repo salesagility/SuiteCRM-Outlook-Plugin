@@ -50,7 +50,7 @@ namespace SuiteCRMAddIn.Daemon
         {
             get
             {
-                return "Improperly specialised AbstractDaemonAction.";
+                return this.GetType().Name;
             }
         }
 

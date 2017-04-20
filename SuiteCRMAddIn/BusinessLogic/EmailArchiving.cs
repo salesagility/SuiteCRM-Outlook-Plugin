@@ -157,6 +157,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             Log.Info($"Archiving {archiveType} email “{objMail.Subject}”");
             var objEmail = SerialiseEmailObject(objMail, archiveType);
+            /* TODO: this is dodgy because it creates a thread we can't clean up. Instead we should create
+             * a new Daemon action to do this. */
             Thread objThread = new Thread(() => ArchiveEmailThread(objEmail, archiveType, strExcludedEmails));
             objThread.Start();
         }
