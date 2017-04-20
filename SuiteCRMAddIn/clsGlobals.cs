@@ -20,18 +20,11 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
-using Microsoft.Office.Interop.Outlook;
-using System.Collections;
-using System.Windows.Forms;
-
 namespace SuiteCRMAddIn
 {
+    using Microsoft.Office.Interop.Outlook;
+    using System.Text.RegularExpressions;
+
 
     public static class clsGlobals
     {

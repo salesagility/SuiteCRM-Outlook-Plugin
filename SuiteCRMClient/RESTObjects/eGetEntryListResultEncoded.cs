@@ -20,16 +20,11 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace SuiteCRMClient.RESTObjects
 {
-   public class eGetEntryListResultEncoded
+    using Newtonsoft.Json;
+
+    public class eGetEntryListResultEncoded
     {
        [JsonProperty("entry_list")]
        public string entry_list { get; set; }

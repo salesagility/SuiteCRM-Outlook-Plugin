@@ -139,11 +139,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             double modifiedSinceSeconds = Math.Abs((utcNow - OModifiedDate).TotalSeconds);
             ILogger log = Globals.ThisAddIn.Log;
             bool reallyChanged = this.ReallyChanged();
-            bool shouldSync = this.ShouldSyncWithCrm;
+            bool isSyncable = this.ShouldSyncWithCrm;
             string prefix = $"SyncState.ShouldPerformSyncNow: {this.CrmType} {this.CrmEntryId}";
 
             log.Debug(reallyChanged ? $"{prefix} has changed." : $"{prefix} has not changed.");
-            log.Debug(shouldSync ? $"{prefix} should be synced." : $"{ prefix} should not be synced.");
+            log.Debug(isSyncable ? $"{prefix} is syncable." : $"{ prefix} is not syncable.");
 
             lock (this.txStateLock)
             {
@@ -156,7 +156,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 /* result is set within the lock to prevent one thread capturing another thread's
                  * state change. */
-                result = this.TxState == TransmissionState.Pending && shouldSync && reallyChanged;
+                result = this.TxState == TransmissionState.Pending && isSyncable && reallyChanged;
             }
 
             log.Debug(this.TxState == TransmissionState.Pending ? $"{prefix} is recently updated" : $"{prefix} is not recently updated");
