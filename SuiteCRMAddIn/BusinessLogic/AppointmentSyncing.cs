@@ -23,17 +23,15 @@
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Runtime.InteropServices;
-    using Newtonsoft.Json;
+    using ProtoItems;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
-    using Outlook = Microsoft.Office.Interop.Outlook;
+    using System;
+    using System.Collections.Generic;
+    using System.Runtime.InteropServices;
     using System.Text;
-    using ProtoItems;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
     /// Handles the synchronisation of appointments between Outlook and CMS.

@@ -123,6 +123,10 @@ namespace SuiteCRMAddIn
             try
             {
                 Prepare();
+
+                Thread background = new Thread(() => Run());
+                background.Name = "Background";
+                background.Start();
             }
             catch (Exception ex)
             {
@@ -146,8 +150,6 @@ namespace SuiteCRMAddIn
             taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
             appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
             emailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
-
-            DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction(this.settings.EmailCategories));
 
             var outlookExplorer = outlookApp.ActiveExplorer();
             this.objExplorer = outlookExplorer;
@@ -240,6 +242,7 @@ namespace SuiteCRMAddIn
             if (success && !disable)
             {
                 log.Info("Starting normal operations.");
+                DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction(this.settings.EmailCategories));
                 StartSynchronisationProcesses();
                 this.IsLicensed = true;
             }
@@ -451,19 +454,19 @@ namespace SuiteCRMAddIn
         {
             try
             {
+                if (this.CommandBarExists("SuiteCRM"))
+                {
+                    Log.Info("ThisAddIn_Shutdown: Removing SuiteCRM command bar");
+                    this.objSuiteCRMMenuBar2007.Delete();
+                }
+
+                this.UnregisterEvents();
                 this.ShutdownProcesses();
 
                 if (SuiteCRMUserSession != null)
                 {
                     SuiteCRMUserSession.LogOut();
                 }
-
-                if (this.CommandBarExists("SuiteCRM"))
-                {
-                    Log.Info("ThisAddIn_Shutdown: Removing SuiteCRM command bar");
-                    this.objSuiteCRMMenuBar2007.Delete();
-                }
-                this.UnregisterEvents();
             }
             catch (Exception ex)
             {

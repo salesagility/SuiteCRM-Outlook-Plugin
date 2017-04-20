@@ -199,6 +199,11 @@ namespace SuiteCRMClient
                 new RestService(this.restServer.SuiteCRMURL.ToString(), this._log)).Authenticate();
         }
 
+        /// <summary>
+        /// The documentation at
+        /// http://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_6.5/Application_Framework/Web_Services/Method_Calls/logout/
+        /// says the response should be null, and it is. So that's fine. 
+        /// </summary>
         public void LogOut()
         {
             try

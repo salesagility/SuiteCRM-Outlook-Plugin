@@ -66,7 +66,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The name by which I am known.
         /// </summary>
-        private readonly string Name;
+        public readonly string Name;
 
         /// <summary>
         /// When my last run ccompleted.
@@ -118,6 +118,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             do
             {
+                var fred = Thread.CurrentThread;
+                if (fred.Name == null)
+                {
+                    Log.Warn($"Anonymous thread {fred.ManagedThreadId} running as '{this.Name}'.");
+                }
+
                 lock (processLock)
                 {
                     this.state = RunState.Running;
