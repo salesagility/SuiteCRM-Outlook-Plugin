@@ -55,6 +55,11 @@ namespace SuiteCRMAddIn.Daemon
         public static DaemonWorker Instance { get { return lazy.Value; } }
 
         /// <summary>
+        /// A way for outside objects to look at the length of the queue.
+        /// </summary>
+        public int QueueLength => tasks.Count;
+
+        /// <summary>
         /// Construct (the one, singleton) instance of the DaemonWorker class
         /// </summary>
         private DaemonWorker() : base("Daemon", Globals.ThisAddIn.Log)
@@ -70,6 +75,16 @@ namespace SuiteCRMAddIn.Daemon
         public void AddTask(DaemonAction task)
         {
             tasks.Enqueue(task);
+        }
+
+        /// <summary>
+        /// Put me into a mode where I finish all the work I have to do quickly.
+        /// </summary>
+        /// <returns></returns>
+        public override int PrepareShutdown()
+        {
+            this.SyncPeriod = TimeSpan.FromMilliseconds(50);
+            return this.QueueLength;
         }
 
         /// <summary>

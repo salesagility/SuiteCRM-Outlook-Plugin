@@ -300,6 +300,10 @@ namespace SuiteCRMAddIn
                 this["ShowConfirmationMessageArchive"] = value;
             }
         }
+
+        /// <remarks>
+        /// I can find no evidence that this is ever used. Dead code?
+        /// </remarks>
         [DebuggerNonUserCode, UserScopedSetting]
         public List<string> case_dropdown_priority
         {
@@ -313,6 +317,9 @@ namespace SuiteCRMAddIn
             }
         }
 
+        /// <remarks>
+        /// I can find no evidence that this is ever used. Dead code?
+        /// </remarks>
         [UserScopedSetting, DebuggerNonUserCode]
         public List<string> case_dropdown_status
         {
@@ -361,6 +368,23 @@ namespace SuiteCRMAddIn
             get { return (int)this["RestTimeout"]; }
             set { this["RestTimeout"] = value; }
         }
+
+        /// <summary>
+        /// Categories for emails. These are actually provided by CRM and not edited by the user, but are cached here.
+        /// </summary>
+        [DefaultSettingValue("<?xml version=\"1.0\" encoding=\"utf-16\"?>\r\n<ArrayOfString xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n  <string>None|None</string>\r\n</ArrayOfString>"), UserScopedSetting, DebuggerNonUserCode]
+        public List<string> EmailCategories
+        {
+            get
+            {
+                return (List<string>)this["EmailCategories"];
+            }
+            set
+            {
+                this["EmailCategories"] = value;
+            }
+        }
+
 
         public static Hashtable accountEntrys = new Hashtable();
         public static AutoCompleteStringCollection accounts = new AutoCompleteStringCollection();

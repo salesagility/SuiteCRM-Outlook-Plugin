@@ -368,12 +368,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="value">The value.</param>
         protected override void EnsureSynchronisationPropertyForOutlookItem(Outlook.ContactItem olItem, string name, string value)
         {
-            Outlook.UserProperty olProperty = olItem.UserProperties[name];
-            if (olProperty == null)
+            try
             {
-                olProperty = olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
+                Outlook.UserProperty olProperty = olItem.UserProperties[name];
+                if (olProperty == null)
+                {
+                    olProperty = olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
+                }
+                olProperty.Value = value ?? string.Empty;
             }
-            olProperty.Value = value ?? string.Empty;
+            finally
+            {
+                this.SaveItem(olItem);
+            }
         }
 
 

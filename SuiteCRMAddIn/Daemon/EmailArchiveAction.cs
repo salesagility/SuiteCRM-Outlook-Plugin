@@ -26,11 +26,8 @@ namespace SuiteCRMAddIn.Daemon
     using Microsoft.Office.Interop.Outlook;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
-    using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using System.Windows.Forms;
 
     public class EmailArchiveAction : AbstractDaemonAction
