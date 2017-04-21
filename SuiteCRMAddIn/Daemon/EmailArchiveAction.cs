@@ -26,48 +26,42 @@ namespace SuiteCRMAddIn.Daemon
     using Microsoft.Office.Interop.Outlook;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Windows.Forms;
 
     public class EmailArchiveAction : AbstractDaemonAction
     {
-        private readonly IEnumerable<MailItem> items;
+        private readonly List<MailItem> items = new List<MailItem>();
 
-        private readonly IEnumerable<CrmEntity> entities;
+        private readonly List<CrmEntity> entities = new List<CrmEntity>();
 
-        private readonly string type;
+        private EmailArchiveType achiveType;
+        private clsEmailArchive emailToArchive;
+        private UserSession session;
 
-        /// <summary>
-        /// Create a new action to archive some emails
-        /// </summary>
-        /// <remarks>
-        /// It seems reasonable to retry archiving email a certain number of times. Five is a guess.
-        /// </remarks>
-        /// <param name="items">The emails to archive.</param>
-        /// <param name="entities">The entities those mails relate to.</param>
-        /// <param name="type">??</param>
-        public EmailArchiveAction(IEnumerable<MailItem> items, IEnumerable<CrmEntity> entities, string type) : base(5)
+        public EmailArchiveAction(UserSession session, clsEmailArchive objEmail, EmailArchiveType archiveType) : base(5)
         {
-            this.items = items;
-            this.entities = entities;
-            this.type = type;
+            this.session = session;
+            this.emailToArchive = objEmail;
+            this.achiveType = archiveType;
         }
+
 
         public override string Description
         {
             get
             {
-                return $"Archiving {items.Count()} items"; ;
+                return $"Archiving {items.Count()} email items"; ;
             }
         }
 
         public override void Perform()
         {
-            var archiver = new EmailArchiving($"EB-{Globals.ThisAddIn.SelectedEmailCount}", Globals.ThisAddIn.Log);
             this.ReportOnEmailArchiveSuccess(
                 items.Select(mailItem =>
-                        archiver.ArchiveEmailWithEntityRelationships(mailItem, this.entities, this.type))
+                        Globals.ThisAddIn.EmailArchiver.ArchiveEmailWithEntityRelationships(mailItem, this.entities, this.achiveType.ToString()))
                     .ToList());
         }
 

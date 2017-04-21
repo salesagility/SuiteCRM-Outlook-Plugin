@@ -696,7 +696,7 @@ namespace SuiteCRMAddIn
                     return;
                 }
 
-                var archiver = new EmailArchiving($"EB-{Globals.ThisAddIn.SelectedEmailCount}", Globals.ThisAddIn.Log);
+                var archiver = Globals.ThisAddIn.EmailArchiver;
                 this.ReportOnEmailArchiveSuccess(
                     Globals.ThisAddIn.SelectedEmails.Select(mailItem =>
                             archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.type))
