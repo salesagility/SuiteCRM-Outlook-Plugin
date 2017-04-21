@@ -146,10 +146,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (objMail.UserProperties["SuiteCRM"] == null)
             {
-                MaybeArchiveEmail(objMail, archiveType, this.settings.ExcludedEmails);
+                bool archived = MaybeArchiveEmail(objMail, archiveType, this.settings.ExcludedEmails);
                 objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
-                objMail.UserProperties["SuiteCRM"].Value = "True";
-                objMail.Categories = "SuiteCRM";
+                objMail.UserProperties["SuiteCRM"].Value = archived ? Boolean.TrueString : Boolean.FalseString;
+                if (archived)
+                {
+                    objMail.Categories = "SuiteCRM";
+                }
                 objMail.Save();
             }
         }
@@ -180,13 +183,15 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             foreach (Outlook.Recipient objRecepient in mail.Recipients)
             {
+                string address = GetSmtpAddress(objRecepient);
+
                 if (mailArchive.To == string.Empty)
                 {
-                    mailArchive.To = objRecepient.Address;
+                    mailArchive.To = address;
                 }
                 else
                 {
-                    mailArchive.To += ";" + objRecepient.Address;
+                    mailArchive.To += ";" + address;
                 }
             }
 
@@ -208,6 +213,36 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             return mailArchive;
+        }
+
+
+        /// <summary>
+        /// From this email recipient, extract the SMTP address (if that's possible).
+        /// </summary>
+        /// <param name="recipient">A recipient object</param>
+        /// <returns>The SMTP address for that object, if it can be recovered, else an empty string.</returns>
+        private string GetSmtpAddress(Outlook.Recipient recipient)
+        {
+            string result = string.Empty;
+
+            switch (recipient.AddressEntry.Type)
+            {
+                case "SMTP":
+                    result = recipient.Address;
+                    break;
+                case "EX": /* an Exchange address */
+                    var exchangeUser = recipient.AddressEntry.GetExchangeUser();
+                    if (exchangeUser != null)
+                    {
+                        result = exchangeUser.PrimarySmtpAddress;
+                    }
+                    break;
+                default:
+                    this.Log.Warn($"{this.GetType().Name}.ExtractSmtpAddressForSender: unknown email type {recipient.AddressEntry.Type}");
+                    break;
+            }
+
+            return result;
         }
 
         /// <summary>
