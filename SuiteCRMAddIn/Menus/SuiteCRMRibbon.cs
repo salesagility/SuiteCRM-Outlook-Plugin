@@ -176,9 +176,7 @@ namespace SuiteCRMAddIn
                     {
                         try
                         {
-                            new EmailArchiving(
-                                "ES-SendAndArchive",
-                                Globals.ThisAddIn.Log).ArchiveNewMailItem(currentItem, EmailArchiveType.Sent);
+                            Globals.ThisAddIn.EmailArchiver.ArchiveNewMailItem(currentItem, EmailArchiveType.Sent);
                         }
                         catch (Exception failedToArchve)
                         {

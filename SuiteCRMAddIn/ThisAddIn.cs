@@ -61,7 +61,11 @@ namespace SuiteCRMAddIn
         private AppointmentSyncing appointmentSynchroniser;
 
         public Office.IRibbonUI RibbonUI { get; set; }
-        private EmailArchiving emailArchiver;
+        public EmailArchiving EmailArchiver
+        {
+            get; private set;
+        }
+
 
         private ILogger log;
 
@@ -149,7 +153,7 @@ namespace SuiteCRMAddIn
             contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
             taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
             appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
-            emailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
+            EmailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
 
             var outlookExplorer = outlookApp.ActiveExplorer();
             this.objExplorer = outlookExplorer;
@@ -366,7 +370,7 @@ namespace SuiteCRMAddIn
             DoOrLogError(() => this.appointmentSynchroniser.Start(), "Starting appointments synchroniser");
             DoOrLogError(() => this.contactSynchroniser.Start(), "Starting contacts synchroniser");
             DoOrLogError(() => this.taskSynchroniser.Start(), "Starting tasks synchroniser");
-            DoOrLogError(() => this.emailArchiver.Start(), "Starting email archiver");
+            DoOrLogError(() => this.EmailArchiver.Start(), "Starting email archiver");
         }
 
         private void cbtnArchive_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
@@ -631,10 +635,12 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook NewMail: email received event");
             try
             {
-                if (!settings.AutoArchive) return;
-                ProcessNewMailItem(
-                    EmailArchiveType.Inbound,
-                    Application.Session.GetItemFromID(EntryID) as Outlook.MailItem);
+                if (settings.AutoArchive)
+                {
+                    ProcessNewMailItem(
+                        EmailArchiveType.Inbound,
+                        Application.Session.GetItemFromID(EntryID) as Outlook.MailItem);
+                }
             }
             catch (Exception ex)
             {
@@ -647,9 +653,11 @@ namespace SuiteCRMAddIn
             if (mailItem == null)
             {
                 log.Info("New 'mail item' was null");
-                return;
             }
-            new EmailArchiving($"EN-{mailItem.SenderEmailAddress}", Globals.ThisAddIn.Log).ProcessEligibleNewMailItem(mailItem, archiveType);
+            else
+            {
+                this.EmailArchiver.ProcessEligibleNewMailItem(mailItem, archiveType);
+            }
         }
 
         /// <summary>

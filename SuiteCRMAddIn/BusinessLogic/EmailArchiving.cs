@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using Daemon;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Exceptions;
@@ -145,7 +146,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (objMail.UserProperties["SuiteCRM"] == null)
             {
-                ArchiveEmail(objMail, archiveType, this.settings.ExcludedEmails);
+                MaybeArchiveEmail(objMail, archiveType, this.settings.ExcludedEmails);
                 objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
                 objMail.UserProperties["SuiteCRM"].Value = "True";
                 objMail.Categories = "SuiteCRM";
@@ -153,19 +154,25 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void ArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = "")
+        private bool MaybeArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
-            Log.Info($"Archiving {archiveType} email “{objMail.Subject}”");
+            bool result = false;
             var objEmail = SerialiseEmailObject(objMail, archiveType);
-            /* TODO: this is dodgy because it creates a thread we can't clean up. Instead we should create
-             * a new Daemon action to do this. */
-            Thread objThread = new Thread(() => ArchiveEmailThread(objEmail, archiveType, strExcludedEmails));
-            objThread.Start();
+            List<string> contactIds = objEmail.GetValidContactIDs(strExcludedEmails);
+
+            if (contactIds.Count > 0)
+            {
+                Log.Info($"Archiving {archiveType} email “{objMail.Subject}”");
+                DaemonWorker.Instance.AddTask(new ArchiveEmailAction(SuiteCRMUserSession, objEmail, archiveType, contactIds));
+                result = true;
+            }
+
+            return result;
         }
 
         private clsEmailArchive SerialiseEmailObject(Outlook.MailItem mail, EmailArchiveType archiveType)
         {
-            clsEmailArchive mailArchive = new clsEmailArchive();
+            clsEmailArchive mailArchive = new clsEmailArchive(SuiteCRMUserSession, Log);
             mailArchive.From = ExtractSmtpAddressForSender(mail);
             mailArchive.To = string.Empty;
 
@@ -218,8 +225,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string ExtractSmtpAddressForSender(Outlook.MailItem mail)
         {
             string result = string.Empty;
-
-            
 
             try
             {
