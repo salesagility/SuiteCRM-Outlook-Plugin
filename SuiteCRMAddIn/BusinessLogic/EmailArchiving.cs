@@ -157,15 +157,25 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private bool MaybeArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = "")
+        /// <summary>
+        /// Get the item with this entry id.
+        /// </summary>
+        /// <param name="entryId">An outlook entry id.</param>
+        /// <returns>the requested item, if found.</returns>
+        public Outlook.MailItem GetItemById(string entryId)
+        {
+            return Globals.ThisAddIn.Application.GetNamespace("MAPI").GetItemFromID(entryId);
+        }
+
+        private bool MaybeArchiveEmail(Outlook.MailItem mailItem, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
             bool result = false;
-            var objEmail = SerialiseEmailObject(objMail, archiveType);
+            var objEmail = SerialiseEmailObject(mailItem, archiveType);
             List<string> contactIds = objEmail.GetValidContactIDs(strExcludedEmails);
 
             if (contactIds.Count > 0)
             {
-                Log.Info($"Archiving {archiveType} email “{objMail.Subject}”");
+                Log.Info($"Archiving {archiveType} email “{mailItem.Subject}”");
                 DaemonWorker.Instance.AddTask(new ArchiveEmailAction(SuiteCRMUserSession, objEmail, archiveType, contactIds));
                 result = true;
             }
@@ -195,6 +205,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
 
+            mailArchive.OutlookId = mail.EntryID;
             mailArchive.Subject = mail.Subject;
             mailArchive.Sent = DateTimeOfMailItem(mail, "autoOUTBOUND");
             mailArchive.Body = mail.Body;

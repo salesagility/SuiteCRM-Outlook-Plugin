@@ -222,9 +222,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             Outlook.AppointmentItem olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
             olItem.Subject = crmItem.GetValueAsString("name");
             olItem.Body = crmItem.GetValueAsString("description");
+            /* set the SEntryID property quickly, create the sync state and save the item, to reduce howlaround */
+            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
+            var crmId = crmItem.GetValueAsString("id");
+            var newState = new AppointmentSyncState(crmType)
+            {
+                OutlookItem = olItem,
+                OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
+                CrmEntryId = crmId
+            };
+            ItemsSyncState.Add(newState);
+            olItem.Save();
 
             LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
-            var crmId = crmItem.GetValueAsString("id");
             if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
             {
                 olItem.Start = date_start;
@@ -236,15 +246,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             MaybeAddAcceptDeclineLinks(crmItem, olItem, crmType);
 
-            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
-
-            var newState = new AppointmentSyncState(crmType)
-            {
-                OutlookItem = olItem,
-                OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
-                CrmEntryId = crmId
-            };
-            ItemsSyncState.Add(newState);
+            /* now modified, save again */
             olItem.Save();
 
             LogItemAction(newState.OutlookItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook, saved item");
