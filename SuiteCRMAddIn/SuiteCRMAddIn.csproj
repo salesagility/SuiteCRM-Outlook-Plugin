@@ -225,7 +225,6 @@
     <Compile Include="BusinessLogic\SyncDirection.cs" />
     <Compile Include="Daemon\DaemonAction.cs" />
     <Compile Include="Daemon\DaemonWorker.cs" />
-    <Compile Include="Daemon\EmailArchiveAction.cs" />
     <Compile Include="BusinessLogic\RunState.cs" />
     <Compile Include="BusinessLogic\LicenceValidation.cs" />
     <Compile Include="BusinessLogic\LicenceValidationHelper.cs" />

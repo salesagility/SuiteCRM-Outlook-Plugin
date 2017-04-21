@@ -43,17 +43,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The name of the modified date synchronisation property.
         /// </summary>
-        protected const string ModifiedDatePropertyName = "SOModifiedDate";
+        public const string ModifiedDatePropertyName = "SOModifiedDate";
 
         /// <summary>
         /// The name of the type synchronisation property.
         /// </summary>
-        protected const string TypePropertyName = "SType";
+        public const string TypePropertyName = "SType";
 
         /// <summary>
         /// The name of the CRM ID synchronisation property.
         /// </summary>
-        protected const string CrmIdPropertyName = "SEntryID";
+        public const string CrmIdPropertyName = "SEntryID";
 
         private readonly SyncContext context;
 
@@ -933,7 +933,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The item that has been added.</param>
         protected virtual void OutlookItemAdded(OutlookItemType olItem)
         {
-            LogItemAction(olItem, "AppointmentSyncing.OutlookItemAdded");
+            LogItemAction(olItem, "Synchroniser.OutlookItemAdded");
 
             if (olItem != null)
             {
@@ -946,7 +946,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     else
                     {
-                        Log.Warn($"AppointmentSyncing.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
+                        Log.Warn($"Synchroniser.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
                     }
                 }
             }

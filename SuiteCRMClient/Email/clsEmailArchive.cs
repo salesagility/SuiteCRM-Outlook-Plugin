@@ -54,6 +54,12 @@ namespace SuiteCRMClient.Email
 
         public List<clsEmailAttachments> Attachments { get; set; } = new List<clsEmailAttachments>();
         public EmailArchiveType ArchiveType { get; set; }
+
+        /// <summary>
+        /// The outlook item id of the item.
+        /// </summary>
+        public string OutlookId { get; set; }
+
         public object contactData;
 
         public UserSession SuiteCRMUserSession;

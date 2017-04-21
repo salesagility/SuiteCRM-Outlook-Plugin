@@ -203,6 +203,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             Outlook.ContactItem olItem = contactFolder.Items.Add(Outlook.OlItemType.olContactItem);
 
             this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
+            olItem.Save();
 
             var newState = new ContactSyncState
             {
@@ -211,7 +212,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 CrmEntryId = crmItem.GetValueAsString("id"),
             };
             ItemsSyncState.Add(newState);
-            olItem.Save();
 
             LogItemAction(newState.OutlookItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook, saved item");
 
