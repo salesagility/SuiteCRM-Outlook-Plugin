@@ -20,22 +20,16 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using SuiteCRMClient.RESTObjects;
-using SuiteCRMClient;
-using Microsoft.Office.Interop.Outlook;
-using SuiteCRMAddIn.BusinessLogic;
-
 namespace SuiteCRMAddIn
 {
+    using Microsoft.Office.Interop.Outlook;
+    using SuiteCRMAddIn.BusinessLogic;
+    using SuiteCRMClient;
+    using SuiteCRMClient.RESTObjects;
+    using System;
+    using System.Linq;
+    using System.Windows.Forms;
+
     public partial class frmAddressBook : Form
     {
         private clsSettings settings = Globals.ThisAddIn.Settings;

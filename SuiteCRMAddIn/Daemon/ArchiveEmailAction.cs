@@ -1,4 +1,5 @@
-﻿/**
+﻿
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -20,20 +21,37 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMAddIn.Daemon
 {
+    using SuiteCRMClient;
+    using SuiteCRMClient.Email;
     using System.Collections.Generic;
-    using Newtonsoft.Json;
-
-    public class eContacts
+    public class ArchiveEmailAction : AbstractDaemonAction
     {
-        [JsonProperty("entry_list")]
-        public List<Entry> entry_list { get; set; }
-    }
+        private EmailArchiveType achiveType;
+        private clsEmailArchive emailToArchive;
+        private UserSession session;
+        private List<string> contactIds = new List<string>();
 
-    public class Entry
-    {
-        [JsonProperty("id")]
-        public string id { get; set; }
+        public ArchiveEmailAction(
+            UserSession session, 
+            clsEmailArchive emailToArchive, 
+            EmailArchiveType archiveType, 
+            List<string> contactIds) : base(5)
+        {
+            this.session = session;
+            this.emailToArchive = emailToArchive;
+            this.achiveType = archiveType;
+            this.contactIds.AddRange(contactIds);
+        }
+
+        public override void Perform()
+        {
+            if (session.IsLoggedIn)
+            {
+                this.emailToArchive.SuiteCRMUserSession = session;
+                this.emailToArchive.Save(this.contactIds);
+            }
+        }
     }
 }

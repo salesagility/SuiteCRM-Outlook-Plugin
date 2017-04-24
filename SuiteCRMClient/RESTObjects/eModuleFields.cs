@@ -20,16 +20,13 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-
 namespace SuiteCRMClient.RESTObjects
 {
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+    using System.Collections.Generic;
+    using System.Linq;
+
     public class eModuleFields
     {
         [JsonProperty("error")]
@@ -51,7 +48,7 @@ namespace SuiteCRMClient.RESTObjects
                 foreach (object objField in value.ToArray<object>())
                 {
                     string fieldSpecification = objField.ToString();
-                    fieldSpecification = fieldSpecification.Remove(0, fieldSpecification.IndexOf('{'));
+                    fieldSpecification = fieldSpecification.Remove(0, fieldSpecification.IndexOfAny(new char[] { '{', '[' }));
                     eField field = JsonConvert.DeserializeObject<eField>(fieldSpecification);
                     this.moduleFields.Add(field);
                 }

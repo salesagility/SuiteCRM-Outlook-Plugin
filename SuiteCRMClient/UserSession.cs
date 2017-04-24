@@ -86,7 +86,7 @@ namespace SuiteCRMClient
         /// <summary>
         /// Logs in to the CRM server.
         /// </summary>
-        /// <returns>if the server returned at 'polling_interval' value in the response packet, then that value, else null.</returns>
+        /// <returns>if the server returned a 'polling_interval' value in the response packet, then that value, else null.</returns>
         public int? Login()
         {
             int? result = null;
@@ -199,6 +199,11 @@ namespace SuiteCRMClient
                 new RestService(this.restServer.SuiteCRMURL.ToString(), this._log)).Authenticate();
         }
 
+        /// <summary>
+        /// The documentation at
+        /// http://support.sugarcrm.com/Documentation/Sugar_Developer/Sugar_Developer_Guide_6.5/Application_Framework/Web_Services/Method_Calls/logout/
+        /// says the response should be null, and it is. So that's fine. 
+        /// </summary>
         public void LogOut()
         {
             try

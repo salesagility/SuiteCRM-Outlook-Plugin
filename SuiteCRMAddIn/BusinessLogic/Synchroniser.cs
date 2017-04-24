@@ -43,17 +43,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The name of the modified date synchronisation property.
         /// </summary>
-        protected const string ModifiedDatePropertyName = "SOModifiedDate";
+        public const string ModifiedDatePropertyName = "SOModifiedDate";
 
         /// <summary>
         /// The name of the type synchronisation property.
         /// </summary>
-        protected const string TypePropertyName = "SType";
+        public const string TypePropertyName = "SType";
 
         /// <summary>
         /// The name of the CRM ID synchronisation property.
         /// </summary>
-        protected const string CrmIdPropertyName = "SEntryID";
+        public const string CrmIdPropertyName = "SEntryID";
 
         private readonly SyncContext context;
 
@@ -178,6 +178,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected clsSettings settings => Context.settings;
 
+        private bool readyToExit = false;
 
         /// <summary>
         /// List of the synchronisation state of all items which may require synchronisation.
@@ -220,6 +221,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected bool HasImportAccess()
         {
             return this.permissionsCache.HasImportAccess(this.DefaultCrmModule);
+        }
+
+        public override int PrepareShutdown()
+        {
+            if (!this.readyToExit)
+            {
+                /* remove event handlers when preparing shutdown, to prevent recursive issues */
+                this.RemoveEventHandlers();
+
+                /* brute force save everything. Not happy about this... */
+                foreach (var syncState in this.ItemsSyncState)
+                {
+                    this.SaveItem(syncState.OutlookItem);
+                }
+
+                this.readyToExit = true;
+            }
+            return base.PrepareShutdown();
         }
 
         /// <summary>
@@ -374,12 +393,12 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (this.ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem, crmType))
             {
+                OutlookItemType outlookItem = syncState.OutlookItem;
+
                 try
                 {
                     lock (this.TransmissionLock)
                     {
-                        OutlookItemType outlookItem = syncState.OutlookItem;
-
                         LogItemAction(outlookItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
 
                         if (syncState != null)
@@ -407,6 +426,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     Log.Error("Synchroniser.AddOrUpdateItemFromOutlookToCrm", ex);
                     syncState.SetPending();
+                }
+                finally
+                {
+                    this.SaveItem(outlookItem);
                 }
             }
 
@@ -834,7 +857,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public void Dispose()
         {
-            RemoveEventHandlers();
+            // RemoveEventHandlers();
         }
 
         protected void InstallEventHandlers()
@@ -910,7 +933,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The item that has been added.</param>
         protected virtual void OutlookItemAdded(OutlookItemType olItem)
         {
-            LogItemAction(olItem, "AppointmentSyncing.OutlookItemAdded");
+            LogItemAction(olItem, "Synchroniser.OutlookItemAdded");
 
             if (olItem != null)
             {
@@ -923,7 +946,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     else
                     {
-                        Log.Warn($"AppointmentSyncing.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
+                        Log.Warn($"Synchroniser.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
                     }
                 }
             }
@@ -938,23 +961,30 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected void OutlookItemChanged(OutlookItemType olItem)
         {
             LogItemAction(olItem, "Syncroniser.OutlookItemChanged");
-            var syncStateForItem = GetExistingSyncState(olItem);
-            if (syncStateForItem != null)
+            try
             {
-                if (this.ShouldPerformSyncNow(syncStateForItem))
+                var syncStateForItem = GetExistingSyncState(olItem);
+                if (syncStateForItem != null)
                 {
-                    DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType>(this, syncStateForItem));
+                    if (this.ShouldPerformSyncNow(syncStateForItem))
+                    {
+                        DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType>(this, syncStateForItem));
+                    }
+                    else if (!syncStateForItem.ShouldSyncWithCrm)
+                    {
+                        this.RemoveFromCrm(syncStateForItem);
+                    }
                 }
-                else if (!syncStateForItem.ShouldSyncWithCrm)
+                else
                 {
-                    this.RemoveFromCrm(syncStateForItem);
+                    /* we don't have a sync state for this item (presumably formerly private);
+                     * that's OK, treat it as new */
+                    OutlookItemAdded(olItem);
                 }
             }
-            else
+            finally
             {
-                /* we don't have a sync state for this item (presumably formerly private);
-                 *  that's OK, treat it as new */
-                OutlookItemAdded(olItem);
+                this.SaveItem(olItem);
             }
         }
 

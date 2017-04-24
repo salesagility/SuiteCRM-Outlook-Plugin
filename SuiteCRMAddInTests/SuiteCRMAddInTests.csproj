@@ -52,6 +52,14 @@
   <ItemGroup>
     <Compile Include="BusinessLogic\LicenceValidationHelperTests.cs" />
     <Compile Include="BusinessLogic\SyncDirectionTests.cs" />
+    <Compile Include="AbstractWithCrmConnectionTest.cs" />
+    <Compile Include="Daemon\FetchEmailCategoriesActionTests.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Settings.cs" />
     <Compile Include="WithLoggerTests.cs" />
     <Compile Include="LDAPAuthenticationHelperTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -66,6 +74,13 @@
       <Project>{383e8ee7-604d-447d-a2c2-c50080d28f69}</Project>
       <Name>SuiteCRMClient</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>PublicSettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

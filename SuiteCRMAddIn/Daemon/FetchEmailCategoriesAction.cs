@@ -59,7 +59,7 @@ namespace SuiteCRMAddIn.Daemon
             eModuleFields fields = clsSuiteCRMHelper.GetFieldsForModule("Emails");
             eField field = fields.moduleFields.FirstOrDefault(x => x.name == "category_id");
 
-            //items.AddRange(field.options.Keys.OrderBy(x => x));
+            items.AddRange(field.Options.Keys.OrderBy(x => x));
         }
     }
 }

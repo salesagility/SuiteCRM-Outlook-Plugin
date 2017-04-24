@@ -20,16 +20,11 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace SuiteCRMClient.RESTObjects
 {
-   public class eReturnDocumentRevision
+    using Newtonsoft.Json;
+
+    public class eReturnDocumentRevision
     {
        [JsonProperty("document_revision")]
        public SuiteCRMClient.RESTObjects.eDocumentRevision document_revision { get; set; }
