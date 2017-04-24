@@ -20,16 +20,11 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace SuiteCRMClient.RESTObjects
 {
-   public class eGetMailmergeDocumentResult
+    using Newtonsoft.Json;
+
+    public class eGetMailmergeDocumentResult
     {
        [JsonProperty("error")]
        public eErrorValue error{ get; set; }

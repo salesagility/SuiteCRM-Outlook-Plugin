@@ -20,16 +20,11 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace SuiteCRMClient.RESTObjects
 {
-   public class eIdMod
+    using Newtonsoft.Json;
+
+    public class eIdMod
     {
        [JsonProperty("date_modified")]
        public string date_modified { get; set; }

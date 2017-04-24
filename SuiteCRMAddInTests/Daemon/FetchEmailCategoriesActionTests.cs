@@ -20,55 +20,52 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.Daemon
+namespace SuiteCRMAddIn.Daemon.Tests
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using SuiteCRMAddIn.Daemon;
+    using SuiteCRMAddIn.Tests;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+
     /// <summary>
-    /// The Attempts/MaxAttempts plumbing for implementing a DaemonAction.
-    /// Of course, you do not need to specialise this class, but it helps.
+    /// Test that FetchEmailCategoriesAction actually fetches some categories.
     /// </summary>
-    public abstract class AbstractDaemonAction : DaemonAction
+    [TestClass()]
+    public class FetchEmailCategoriesActionTests : AbstractWithCrmConnectionTest
     {
         /// <summary>
-        /// backing store for the MaxAttempts property.
+        /// The action I test.
         /// </summary>
-        private int maxAttempts;
+        public FetchEmailCategoriesAction action { get; private set; }
 
-        public AbstractDaemonAction(int maxAttempts)
+        /// <summary>
+        /// The list of categories which performing my action should modify.
+        /// </summary>
+        private readonly List<string> categories = new List<string>();
+
+        /// <summary>
+        /// Specialisation: I need an action.
+        /// </summary>
+        [TestInitialize()]
+        public override void Initialize()
         {
-            this.maxAttempts = maxAttempts;
+            base.Initialize();
+            this.action = new FetchEmailCategoriesAction(categories);
         }
 
         /// <summary>
-        /// The number of times this item has been attempted.
+        /// After performing my action, there should be some categories.
         /// </summary>
-        public int Attempts {get; set;} = 0;
-
-        /// <summary>
-        /// Get a description of this action.
-        /// </summary>
-        public virtual string Description
+        [TestMethod()]
+        public void PerformTest()
         {
-            get
-            {
-                return this.GetType().Name;
-            }
+            Assert.AreEqual(0, categories.Count);
+            this.action.Perform();
+            Assert.AreNotEqual(0, categories.Count);
         }
-
-        /// <summary>
-        /// The maximum number of times this action can be attempted before
-        /// being abandoned.
-        /// </summary>
-        public int MaxAttempts
-        {
-            get
-            {
-                return this.maxAttempts;
-            }
-        }
-
-        /// <summary>
-        /// Perform this action.
-        /// </summary>
-        public abstract void Perform();
     }
 }

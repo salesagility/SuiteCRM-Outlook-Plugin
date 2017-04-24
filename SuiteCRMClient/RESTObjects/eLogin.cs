@@ -20,17 +20,10 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
-using System.IO;
-using Newtonsoft.Json;
-
 namespace SuiteCRMClient.RESTObjects
 {
+    using Newtonsoft.Json;
+
     public class Login
     {
         [JsonProperty("id")]

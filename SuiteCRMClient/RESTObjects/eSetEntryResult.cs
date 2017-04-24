@@ -20,16 +20,11 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace SuiteCRMClient.RESTObjects
 {
-   public class eSetEntryResult
+    using Newtonsoft.Json;
+
+    public class eSetEntryResult
     {
        [JsonProperty("error")]
        public eErrorValue error { get; set; }

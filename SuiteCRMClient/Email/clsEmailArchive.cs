@@ -54,6 +54,12 @@ namespace SuiteCRMClient.Email
 
         public List<clsEmailAttachments> Attachments { get; set; } = new List<clsEmailAttachments>();
         public EmailArchiveType ArchiveType { get; set; }
+
+        /// <summary>
+        /// The outlook item id of the item.
+        /// </summary>
+        public string OutlookId { get; set; }
+
         public object contactData;
 
         public UserSession SuiteCRMUserSession;
@@ -67,69 +73,87 @@ namespace SuiteCRMClient.Email
         public clsEmailArchive()
         {
         }
-        private ArrayList GetValidContactIDs(string strExcludedEmails = "")
+
+        /// <summary>
+        /// Get contact ids of all email addresses in my From, To, or CC fields which 
+        /// are known to CRM and not included in these excluded addresses.
+        /// </summary>
+        /// <param name="contatenatedExcludedAddresses">A string containing zero or many email 
+        /// addresses for which contact ids should not be returned.</param>
+        /// <returns>A list of strings representing CRM contact ids.</returns>
+        public List<string> GetValidContactIDs(string contatenatedExcludedAddresses = "")
+        {
+            return GetValidContactIds(ConstructAddressList(contatenatedExcludedAddresses.ToUpper()));
+        }
+
+        /// <summary>
+        /// Get contact ids of all email addresses in my From, To, or CC fields which 
+        /// are known to CRM and not included in these excluded addresses.
+        /// </summary>
+        /// <param name="excludedAddresses">email addresses for which contact ids should 
+        /// not be returned.</param>
+        /// <returns>A list of strings representing CRM contact ids.</returns>
+        private List<string> GetValidContactIds(List<string> excludedAddresses)
         {
             clsSuiteCRMHelper.EnsureLoggedIn(SuiteCRMUserSession);
 
-            ArrayList arrRet = new ArrayList();
-            ArrayList arrCheckedList = new ArrayList();
-            string strEmails = "";
-            strEmails = From + ";" + To;
-            //if (ArchiveType == 1)
-            //    strEmails = From + ";" + To;
-            //else if (ArchiveType == 2)
-            //    strEmails = From;
-            //else if (ArchiveType == 3)
-            //    strEmails = To;
-            if (strEmails != "")
+            List<string> result = new List<string>();
+            List<string> checkedAddresses = new List<string>();
+
+            try
             {
-                try
+                foreach (string address in ConstructAddressList($"{From};{To};{CC}"))
                 {
-                    foreach (string strEmail in strEmails.Split(';'))
+                    if (!checkedAddresses.Contains(address) && !excludedAddresses.Contains(address.ToUpper()))
                     {
-                        if (arrCheckedList.Contains(strEmail))
-                            continue;
-
-                        // To check Excluded Emails
-                        if (strExcludedEmails != "")
-                        {
-                            string strMails = strExcludedEmails;
-                            string[] arrMails = strMails.Split(',', ';', '\n', ':', ' ', '\t');
-                            foreach (string strSplitEmails in arrMails)
-                            {
-                                if (strEmail.Trim().ToUpper() == strSplitEmails.Trim().ToUpper())
-                                {
-                                    return new ArrayList();
-                                }
-                            }
-                        }
-
-                        contactData = new
-                          {
-                              @session = SuiteCRMUserSession.id,
-                              @module_name = "Contacts",
-                              @query = GetContactIDQuery(strEmail),
-                              @order_by = "",
-                              @offset = 0,
-                              @select_fields = new string[] { "id" },
-                              @max_results = 1
-                          };
-                        var contactReturn = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eContacts>("get_entry_list", contactData);
+                        var contactReturn = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eContacts>("get_entry_list",
+                            ConstructGetContactIdByAddressPacket(address));
 
                         if (contactReturn.entry_list != null && contactReturn.entry_list.Count > 0)
                         {
-                            arrRet.Add(contactReturn.entry_list[0].id);
+                            result.Add(contactReturn.entry_list[0].id);
                         }
-                        arrCheckedList.Add(strEmail);
                     }
-                }
-                catch (Exception ex)
-                {
-                    _log.Warn("GetValidContactIDs error", ex);
-                    throw;
+                    checkedAddresses.Add(address);
                 }
             }
-            return arrRet;
+            catch (Exception ex)
+            {
+                _log.Warn("GetValidContactIDs error", ex);
+                throw;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// From this concatenation of addresses, return a list of individual addresses.
+        /// </summary>
+        /// <remarks>
+        /// There's no checking to establish that the addresses returned are even syntactically valid.
+        /// </remarks>
+        /// <param name="contatenatedAddresses">A string believed to contain 0 or many email 
+        /// addresses separated by whitespace or punctuation.</param>
+        /// <returns>A list of possible addresses extracted from the list.</returns>
+        private static List<string> ConstructAddressList(string contatenatedAddresses)
+        {
+            List<string> addresses = new List<string>();
+            addresses.AddRange(contatenatedAddresses.Split(',', ';', '\n', ':', ' ', '\t'));
+            return addresses;
+        }
+
+        private object ConstructGetContactIdByAddressPacket(string address)
+        {
+            return new
+            {
+                @session = SuiteCRMUserSession.id,
+                @module_name = "Contacts",
+                @query = GetContactIDQuery(address),
+                @order_by = "",
+                @offset = 0,
+                @select_fields = new string[] { "id" },
+                @max_results = 1
+            };
         }
 
         private string GetContactIDQuery(string strEmail)
@@ -145,82 +169,39 @@ namespace SuiteCRMClient.Email
         {
             try
             {
-                ArrayList arrCRMContacts = GetValidContactIDs(strExcludedEmails);
+                Save(GetValidContactIDs(strExcludedEmails));
+            }
+            catch (Exception ex)
+            {
+                _log.Error("clsEmailArchive.Save", ex);
+                throw;
+            }
+        }
 
-                if (arrCRMContacts.Count > 0)
+        /// <summary>
+        /// Save my email to CRM, and link it to these contact ids.
+        /// </summary>
+        /// <param name="crmContactIds">The contact ids to link with.</param>
+        public void Save(List<string> crmContactIds)
+        {
+            var restServer = SuiteCRMUserSession.RestServer;
+            try
+            {
+                if (crmContactIds.Count > 0)
                 {
-                    List<RESTObjects.eNameValue> emailData = new List<RESTObjects.eNameValue>();
-                    emailData.Add(new RESTObjects.eNameValue() { name = "from_addr", value = From });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "to_addrs", value = To.Replace("\n", "") });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "date_sent", value = Sent.ToString(EmailDateFormat) });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = HTMLBody });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "assigned_user_id", value = clsSuiteCRMHelper.GetUserId() });
-                    emailData.Add(new RESTObjects.eNameValue() { name = "status", value = "archived" });
-                    object contactData = new
+                    var emailResult = restServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry",
+                        ConstructEmailPacket());
+
+                    foreach (string contactId in crmContactIds)
                     {
-                        @session = SuiteCRMUserSession.id,
-                        @module_name = "Emails",
-                        @name_value_list = emailData
-                    };
-                    var emailResult = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", contactData);
-
-
-                    foreach (string strContactID in arrCRMContacts)
-                    {
-                        object contacRelationshipData = new
-                        {
-                            @session = SuiteCRMUserSession.id,
-                            @module_name = "Contacts",
-                            @module_id = strContactID,
-                            @link_field_name = "emails",
-                            @related_ids = new string[] { emailResult.id }
-                        };
-                        var relResult = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", contacRelationshipData);
-
+                        restServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship",
+                            ConstructContactRelationshipPacket(emailResult.id, contactId));
                     }
 
-                    //Attachments
-                    foreach (clsEmailAttachments objAttachment in Attachments)
+                    foreach (clsEmailAttachments attachment in Attachments)
                     {
-                        //Initialize AddIn attachment
-                        List<RESTObjects.eNameValue> initNoteData = new List<RESTObjects.eNameValue>();
-                        initNoteData.Add(new RESTObjects.eNameValue() { name = "name", value = objAttachment.DisplayName });
-
-                        object initNoteDataWebFormat = new
-                        {
-                            @session = SuiteCRMUserSession.id,
-                            @module_name = "Notes",
-                            @name_value_list = initNoteData
-                        };
-                        var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", initNoteDataWebFormat);
-
-                        //upload the attachment  
-                        RESTObjects.eNewNoteAttachment attachment = new RESTObjects.eNewNoteAttachment();
-                        attachment.ID = res.id;
-                        attachment.FileName = objAttachment.DisplayName;
-                        attachment.FileCotent = objAttachment.FileContentInBase64String;
-
-                        object attachmentDataWebFormat = new
-                        {
-                            @session = SuiteCRMUserSession.id,
-                            @note = attachment
-                        };
-
-                        var attachmentResult = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_note_attachment", attachmentDataWebFormat);
-
-                        //Relate the email and the attachment
-                        object contacRelationshipData = new
-                        {
-                            @session = SuiteCRMUserSession.id,
-                            @module_name = "Emails",
-                            @module_id = emailResult.id,
-                            @link_field_name = "notes",
-                            @related_ids = new string[] { attachmentResult.id }
-                        };
-                        var rel = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", contacRelationshipData);
-
+                        BindAttachmentInCRM(emailResult.id,
+                            TransmitAttachmentPacket(ConstructAttachmentPacket(attachment)).id);
                     }
                 }
             }
@@ -229,6 +210,123 @@ namespace SuiteCRMClient.Email
                 _log.Error("clsEmailArchive.Save", ex);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Construct a packet representing my email.
+        /// </summary>
+        /// <returns>A packet which, when transmitted to CRM, will instantiate my email.</returns>
+        private object ConstructEmailPacket()
+        {
+            List<RESTObjects.eNameValue> emailData = new List<RESTObjects.eNameValue>();
+            emailData.Add(new RESTObjects.eNameValue() { name = "from_addr", value = From });
+            emailData.Add(new RESTObjects.eNameValue() { name = "to_addrs", value = To.Replace("\n", "") });
+            emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject });
+            emailData.Add(new RESTObjects.eNameValue() { name = "date_sent", value = Sent.ToString(EmailDateFormat) });
+            emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body });
+            emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = HTMLBody });
+            emailData.Add(new RESTObjects.eNameValue() { name = "assigned_user_id", value = clsSuiteCRMHelper.GetUserId() });
+            emailData.Add(new RESTObjects.eNameValue() { name = "status", value = "archived" });
+            object contactData = new
+            {
+                @session = SuiteCRMUserSession.id,
+                @module_name = "Emails",
+                @name_value_list = emailData
+            };
+            return contactData;
+        }
+
+        private void BindAttachmentInCRM(string emailId, string attachmentId)
+        {
+            //Relate the email and the attachment
+            SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship",
+                ConstructAttachmentRelationshipPacket(emailId, attachmentId));
+        }
+
+        /// <summary>
+        /// Construct a packet representing the relationship between the email represented 
+        /// by this email id and the attachment represented by this attachment id.
+        /// </summary>
+        /// <param name="emailId">The id of the email.</param>
+        /// <param name="attachmentId">The id of the attachment.</param>
+        /// <returns>A packet which, when transmitted to CRM, will instantiate this relationship.</returns>
+        private object ConstructAttachmentRelationshipPacket(string emailId, string attachmentId)
+        {
+            return ConstructRelationshipPacket(emailId, attachmentId, "Emails", "notes");
+        }
+
+        /// <summary>
+        /// Construct a packet representing the relationship between the email represented 
+        /// by this email id and the contact represented by this contact id.
+        /// </summary>
+        /// <param name="emailId">The id of the email.</param>
+        /// <param name="contactId">The id of the contact.</param>
+        /// <returns>A packet which, when transmitted to CRM, will instantiate this relationship.</returns>
+        private object ConstructContactRelationshipPacket(string emailId, string contactId)
+        {
+            return ConstructRelationshipPacket(contactId, emailId, "Contacts", "emails");
+        }
+
+        /// <summary>
+        /// Construct a packet representing the relationship between the object represented 
+        /// by this module id in the module with this module name and the object in the foreign
+        /// module linked through this link field represented by this foreign id.
+        /// </summary>
+        /// <param name="moduleId">The id of the record in the named module.</param>
+        /// <param name="foreignId">The id of the record in the foreign module.</param>
+        /// <param name="moduleName">The name of the module in which the record is to be created.</param>
+        /// <param name="linkField">The name of the link field in the named module which links to the foreign module.</param>
+        /// <returns>A packet which, when transmitted to CRM, will instantiate this relationship.</returns>
+        private object ConstructRelationshipPacket(string moduleId, string foreignId, string moduleName, string linkField)
+        {
+            return new
+            {
+                session = SuiteCRMUserSession.id,
+                module_name = moduleName,
+                module_id = moduleId,
+                link_field_name = linkField,
+                related_ids = new string[] { foreignId }
+            };
+        }
+
+        private RESTObjects.eNewSetEntryResult TransmitAttachmentPacket(object attachmentPacket)
+        {
+            return SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_note_attachment", attachmentPacket);
+        }
+
+        /// <summary>
+        /// Construct a packet representing this attachment.
+        /// </summary>
+        /// <remarks>
+        /// Messy; confuses construction and transmission. Could do with refactoring.
+        /// </remarks>
+        /// <param name="attachment">The attachment to represent.</param>
+        /// <returns>A packet which, when transmitted to CRM, will instantiate this attachment.</returns>
+        private object ConstructAttachmentPacket(clsEmailAttachments attachment)
+        {
+            List<RESTObjects.eNameValue> initNoteData = new List<RESTObjects.eNameValue>();
+            initNoteData.Add(new RESTObjects.eNameValue() { name = "name", value = attachment.DisplayName });
+
+            object initNoteDataWebFormat = new
+            {
+                @session = SuiteCRMUserSession.id,
+                @module_name = "Notes",
+                @name_value_list = initNoteData
+            };
+            var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", initNoteDataWebFormat);
+
+            RESTObjects.eNewNoteAttachment note = new RESTObjects.eNewNoteAttachment();
+            note.ID = res.id;
+            note.FileName = attachment.DisplayName;
+            note.FileCotent = attachment.FileContentInBase64String;
+
+            object attachmentDataWebFormat = new
+            {
+                @session = SuiteCRMUserSession.id,
+                @note = note
+            };
+
+            return attachmentDataWebFormat;
         }
     }
 }

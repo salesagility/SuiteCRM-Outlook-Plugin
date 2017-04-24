@@ -44,6 +44,13 @@ namespace SuiteCRMClient
 
         public static UserSession SuiteCRMUserSession;
 
+        /// <summary>
+        /// We don't always want to call out to the server to get the user id, and sometimes 
+        /// we really really don't. It's unlikely to change often in a session - in fact it 
+        /// can currently change only when the user changes settings.
+        /// </summary>
+        public static string CachedUserId { get; private set; } = string.Empty;
+
         public static void SetLog(ILogger log)
         {
             Log = log;
@@ -106,7 +113,7 @@ namespace SuiteCRMClient
 
         public static void EnsureLoggedIn(UserSession userSession)
         {
-            string strUserID = clsSuiteCRMHelper.GetUserId();
+            string strUserID = clsSuiteCRMHelper.GetRealUserId();
             if (strUserID == "")
             {
                 userSession.Login();
@@ -114,23 +121,50 @@ namespace SuiteCRMClient
         }
 
 
+        /// <summary>
+        /// Clear the user id cache.
+        /// </summary>
+        public static void FlushUserIdCache()
+        {
+            CachedUserId = string.Empty;
+        }
+
+
+        /// <summary>
+        /// Return the CRM id of the current user.
+        /// </summary>
+        /// <returns>the CRM id of the current user.</returns>
         public static string GetUserId()
         {
+            if (string.IsNullOrEmpty(CachedUserId))
+            {
+                CachedUserId = GetRealUserId();
+            }
+            return CachedUserId;
+        }
+
+
+        /// <summary>
+        /// Get the CRM id of the current user, ignoring the cache.
+        /// </summary>
+        /// <returns>the CRM id of the current user.</returns>
+        private static string GetRealUserId()
+        {
+            string userId;
             try
             {
-                string userId = "";
                 object data = new
                 {
                     @session = SuiteCRMUserSession.id
                 };
                 userId = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_user_id", data);
-                return userId;
             }
             catch (Exception)
             {
                 // Swallow exception(!)
-                return "";
+                userId = string.Empty;
             }
+            return userId;
         }
 
         /// <summary>

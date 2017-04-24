@@ -25,6 +25,8 @@
 namespace SuiteCRMAddIn
 {
     using BusinessLogic;
+    using Daemon;
+    using Dialogs;
     using Microsoft.Office.Core;
     using SuiteCRMAddIn.Properties;
     using SuiteCRMClient;
@@ -49,7 +51,7 @@ namespace SuiteCRMAddIn
         private clsSettings settings;
         private Outlook.Explorer objExplorer;
         public Office.CommandBarPopup objSuiteCRMMenuBar2007;
-        public Office.CommandBarButton btnArvive;
+        public Office.CommandBarButton btnArchive;
         public Office.CommandBarButton btnSettings;
         public OutlookMajorVersion OutlookVersion;
 
@@ -59,7 +61,11 @@ namespace SuiteCRMAddIn
         private AppointmentSyncing appointmentSynchroniser;
 
         public Office.IRibbonUI RibbonUI { get; set; }
-        private EmailArchiving emailArchiver;
+        public EmailArchiving EmailArchiver
+        {
+            get; private set;
+        }
+
 
         private ILogger log;
 
@@ -147,7 +153,7 @@ namespace SuiteCRMAddIn
             contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
             taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
             appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
-            emailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
+            EmailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
 
             var outlookExplorer = outlookApp.ActiveExplorer();
             this.objExplorer = outlookExplorer;
@@ -157,6 +163,8 @@ namespace SuiteCRMAddIn
             // TODO: install/remove these event handlers when settings.AutoArchive changes:
             outlookApp.NewMailEx += new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
             outlookApp.ItemSend += new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
+
+            ((Outlook.ApplicationEvents_11_Event)Application).Quit += new Outlook.ApplicationEvents_11_QuitEventHandler(ThisAddIn_Quit);
 
             if (OutlookVersion < OutlookMajorVersion.Outlook2010)
             {
@@ -179,15 +187,15 @@ namespace SuiteCRMAddIn
         private void ConstructOutlook2007MenuBar()
         {
             objSuiteCRMMenuBar2007.Caption = "SuiteCRM";
-            this.btnArvive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
-            this.btnArvive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
-            this.btnArvive.Caption = "Archive";
-            this.btnArvive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
-            this.btnArvive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
-            this.btnArvive.Visible = true;
-            this.btnArvive.BeginGroup = true;
-            this.btnArvive.TooltipText = "Archive selected emails to SuiteCRM";
-            this.btnArvive.Enabled = true;
+            this.btnArchive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
+            this.btnArchive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
+            this.btnArchive.Caption = "Archive";
+            this.btnArchive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+            this.btnArchive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
+            this.btnArchive.Visible = true;
+            this.btnArchive.BeginGroup = true;
+            this.btnArchive.TooltipText = "Archive selected emails to SuiteCRM";
+            this.btnArchive.Enabled = true;
             this.btnSettings = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
             this.btnSettings.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
             this.btnSettings.Caption = "Settings";
@@ -238,6 +246,7 @@ namespace SuiteCRMAddIn
             if (success && !disable)
             {
                 log.Info("Starting normal operations.");
+                DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction(this.settings.EmailCategories));
                 StartSynchronisationProcesses();
                 this.IsLicensed = true;
             }
@@ -327,8 +336,19 @@ namespace SuiteCRMAddIn
 
         private IEnumerable<string> GetLogHeader(clsSettings settings)
         {
-            yield return $"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}";
-            foreach (var s in GetKeySettings(settings)) yield return s;
+            List<string> result = new List<string>();
+
+            try
+            {
+                result.Add($"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}");
+                result.AddRange(GetKeySettings(settings));
+            }
+            catch (Exception any)
+            {
+                result.Add($"Exception {any.GetType().Name} '{any.Message}' while printing log header");
+            }
+
+            return result;
         }
 
         private IEnumerable<string> GetKeySettings(clsSettings settings)
@@ -354,7 +374,7 @@ namespace SuiteCRMAddIn
             DoOrLogError(() => this.appointmentSynchroniser.Start(), "Starting appointments synchroniser");
             DoOrLogError(() => this.contactSynchroniser.Start(), "Starting contacts synchroniser");
             DoOrLogError(() => this.taskSynchroniser.Start(), "Starting tasks synchroniser");
-            DoOrLogError(() => this.emailArchiver.Start(), "Starting email archiver");
+            DoOrLogError(() => this.EmailArchiver.Start(), "Starting email archiver");
         }
 
         private void cbtnArchive_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
@@ -383,7 +403,7 @@ namespace SuiteCRMAddIn
 
         public void ShowArchiveForm()
         {
-            frmArchive objForm = new frmArchive();
+            ArchiveDialog objForm = new ArchiveDialog();
             objForm.ShowDialog();
         }
 
@@ -408,9 +428,38 @@ namespace SuiteCRMAddIn
             }
         }
 
+        /// <summary>
+        /// Handle the quit signal.
+        /// </summary>
+        private void ThisAddIn_Quit()
+        {
+            Log.Info("ThisAddIn_Quit: signalled to quit");
+
+            this.ShutdownAll();
+
+            log.Info("ThisAddIn_Quit: shutdown complete.");
+        }
+
+        /// <summary>
+        /// Handle the shutdown signal; this doesn't seem to be being received, but 
+        /// may be in some versions of Outlook.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             Log.Info("ThisAddIn_Shutdown: shutting down normally");
+
+            ShutdownAll();
+
+            log.Info("ThisAddIn_Shutdown: shutdown complete.");
+        }
+
+        /// <summary>
+        /// Everything needed to shut down.
+        /// </summary>
+        private void ShutdownAll()
+        {
             try
             {
                 if (SuiteCRMUserSession != null)
@@ -420,12 +469,36 @@ namespace SuiteCRMAddIn
                     Log.Info("ThisAddIn_Shutdown: Removing SuiteCRM command bar");
                     this.objSuiteCRMMenuBar2007.Delete();
                 }
+
                 this.UnregisterEvents();
+                this.ShutdownProcesses();
+
+                if (SuiteCRMUserSession != null)
+                {
+                    SuiteCRMUserSession.LogOut();
+                }
             }
             catch (Exception ex)
             {
                 log.Error("ThisAddIn.ThisAddIn_Shutdown", ex);
             }
+        }
+
+
+        /// <summary>
+        /// Shutdown all running RepeatingProcess instances, showing a progress bar 
+        /// dialog if this cannot be done immediately, 
+        /// </summary>
+        private void ShutdownProcesses()
+        {
+            int stillToDo = RepeatingProcess.PrepareShutdownAll(this.log);
+
+            if (stillToDo != 0)
+            {
+                new ShuttingDownDialog(stillToDo, this.log).ShowDialog();
+            }
+
+            log.Debug("ShutdownProcesses: complete");
         }
 
         private void UnregisterEvents()
@@ -442,7 +515,7 @@ namespace SuiteCRMAddIn
             try
             {
                 Log.Info("ThisAddIn.UnregisterEvents: Removing archive button click event handler");
-                this.btnArvive.Click -= new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
+                this.btnArchive.Click -= new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
             }
             catch (Exception ex)
             {
@@ -568,10 +641,12 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook NewMail: email received event");
             try
             {
-                if (!settings.AutoArchive) return;
-                ProcessNewMailItem(
-                    EmailArchiveType.Inbound,
-                    Application.Session.GetItemFromID(EntryID) as Outlook.MailItem);
+                if (settings.AutoArchive)
+                {
+                    ProcessNewMailItem(
+                        EmailArchiveType.Inbound,
+                        Application.Session.GetItemFromID(EntryID) as Outlook.MailItem);
+                }
             }
             catch (Exception ex)
             {
@@ -586,7 +661,10 @@ namespace SuiteCRMAddIn
                 log.Info("New 'mail item' was null");
                 return;
             }
-            new EmailArchiving($"EN-{mailItem.SenderEmailAddress}", Globals.ThisAddIn.Log).ProcessEligibleNewMailItem(mailItem, archiveType);
+            else
+            {
+                this.EmailArchiver.ProcessEligibleNewMailItem(mailItem, archiveType);
+            }
         }
 
         /// <summary>

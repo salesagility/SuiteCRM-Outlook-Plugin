@@ -26,9 +26,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace SuiteCRMClient.RESTObjects
 {
+    using Newtonsoft.Json;
+
     public class eField
     {
         [JsonProperty("default_value")]
@@ -39,8 +42,35 @@ namespace SuiteCRMClient.RESTObjects
         public string label { get; set; }
         [JsonProperty("name")]
         public string name { get; set; }
-        //[JsonProperty("options")]
-        //public List<RESTObjects.name_value> options { get; set; }
+
+        private object rawOptions;
+
+        [JsonProperty("options")]
+        public object optionsField
+        {
+            get
+            {
+                return this.rawOptions;
+            }
+            set
+            {
+                this.rawOptions = value;
+
+                if (value is JArray)
+                {
+                    // this means there are no options; do nothing
+                }
+                else
+                {
+                    foreach (KeyValuePair<string, JToken> entry in ((JObject)value))
+                    {
+                        this.Options[entry.Key] = entry.Value.ToObject<eNameValue>();
+                    }
+                }
+            }
+        }
+        public Dictionary<string,RESTObjects.eNameValue> Options = new Dictionary<string, eNameValue>();
+
         [JsonProperty("required")]
         public int required { get; set; }
         [JsonProperty("type")]
