@@ -43,27 +43,33 @@ namespace SuiteCRMClient.RESTObjects
         [JsonProperty("name")]
         public string name { get; set; }
 
-        //private JObject rawOptions;
+        private object rawOptions;
 
-        //[JsonProperty("options")]
-        //public JObject optionsField
-        //{
-        //    get
-        //    {
-        //        return this.rawOptions;
-        //    }
-        //    set
-        //    {
-        //        this.rawOptions = value;
-        //        foreach (object rawPair in value.ToArray<object>())
-        //        {
-        //            string pairSpecification = rawPair.ToString();
-        //            pairSpecification = pairSpecification.Remove(0, pairSpecification.IndexOf('{'));
-        //            this.options.Add(JsonConvert.DeserializeObject<eNameValue>(pairSpecification));
-        //        }
-        //    }
-        //}
-        //public List<RESTObjects.eNameValue> options = new List<RESTObjects.eNameValue>();
+        [JsonProperty("options")]
+        public object optionsField
+        {
+            get
+            {
+                return this.rawOptions;
+            }
+            set
+            {
+                this.rawOptions = value;
+
+                if (value is JArray)
+                {
+                    // this means there are no options; do nothing
+                }
+                else
+                {
+                    foreach (KeyValuePair<string, JToken> entry in ((JObject)value))
+                    {
+                        this.Options[entry.Key] = entry.Value.ToObject<eNameValue>();
+                    }
+                }
+            }
+        }
+        public Dictionary<string,RESTObjects.eNameValue> Options = new Dictionary<string, eNameValue>();
 
         [JsonProperty("required")]
         public int required { get; set; }

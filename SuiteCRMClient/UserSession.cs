@@ -86,7 +86,7 @@ namespace SuiteCRMClient
         /// <summary>
         /// Logs in to the CRM server.
         /// </summary>
-        /// <returns>if the server returned at 'polling_interval' value in the response packet, then that value, else null.</returns>
+        /// <returns>if the server returned a 'polling_interval' value in the response packet, then that value, else null.</returns>
         public int? Login()
         {
             int? result = null;

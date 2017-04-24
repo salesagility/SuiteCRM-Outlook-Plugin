@@ -20,10 +20,10 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using SuiteCRMAddIn.BusinessLogic;
-    partial class frmArchive
+    partial class ArchiveDialog
     {
         /// <summary>
         /// Required designer variable.
@@ -57,7 +57,7 @@ namespace SuiteCRMAddIn
             System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Leads");
             System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("Cases");
             System.Windows.Forms.ListViewItem listViewItem6 = new System.Windows.Forms.ListViewItem("Bugs");
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmArchive));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ArchiveDialog));
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.btnSearch = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
@@ -66,6 +66,8 @@ namespace SuiteCRMAddIn
             this.tsResults = new System.Windows.Forms.TreeView();
             this.btnArchive = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.categoryLabel = new System.Windows.Forms.Label();
+            this.categoryInput = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // txtSearch
@@ -123,9 +125,9 @@ namespace SuiteCRMAddIn
             listViewItem4,
             listViewItem5,
             listViewItem6});
-            this.lstViewSearchModules.Location = new System.Drawing.Point(326, 68);
+            this.lstViewSearchModules.Location = new System.Drawing.Point(304, 68);
             this.lstViewSearchModules.Name = "lstViewSearchModules";
-            this.lstViewSearchModules.Size = new System.Drawing.Size(134, 262);
+            this.lstViewSearchModules.Size = new System.Drawing.Size(156, 262);
             this.lstViewSearchModules.TabIndex = 3;
             this.lstViewSearchModules.UseCompatibleStateImageBehavior = false;
             this.lstViewSearchModules.View = System.Windows.Forms.View.Details;
@@ -142,7 +144,7 @@ namespace SuiteCRMAddIn
             this.tsResults.CheckBoxes = true;
             this.tsResults.Location = new System.Drawing.Point(9, 68);
             this.tsResults.Name = "tsResults";
-            this.tsResults.Size = new System.Drawing.Size(311, 262);
+            this.tsResults.Size = new System.Drawing.Size(289, 262);
             this.tsResults.TabIndex = 4;
             this.tsResults.Tag = "tree_search_results";
             this.tsResults.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.tsResults_AfterCheck);
@@ -173,7 +175,25 @@ namespace SuiteCRMAddIn
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
-            // frmArchive
+            // categoryLabel
+            // 
+            this.categoryLabel.AutoSize = true;
+            this.categoryLabel.Location = new System.Drawing.Point(12, 341);
+            this.categoryLabel.Name = "categoryLabel";
+            this.categoryLabel.Size = new System.Drawing.Size(49, 13);
+            this.categoryLabel.TabIndex = 7;
+            this.categoryLabel.Text = "Category";
+            // 
+            // categoryInput
+            // 
+            this.categoryInput.FormattingEnabled = true;
+            this.categoryInput.Location = new System.Drawing.Point(68, 337);
+            this.categoryInput.Name = "categoryInput";
+            this.categoryInput.Size = new System.Drawing.Size(230, 21);
+            this.categoryInput.TabIndex = 8;
+            this.categoryInput.SelectedIndexChanged += new System.EventHandler(this.categoryInput_SelectedIndexChanged);
+            // 
+            // ArchiveDialog
             // 
             this.AcceptButton = this.btnArchive;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -182,6 +202,8 @@ namespace SuiteCRMAddIn
             this.AutoSize = true;
             this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(465, 366);
+            this.Controls.Add(this.categoryInput);
+            this.Controls.Add(this.categoryLabel);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnArchive);
             this.Controls.Add(this.tsResults);
@@ -193,7 +215,7 @@ namespace SuiteCRMAddIn
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(481, 404);
-            this.Name = "frmArchive";
+            this.Name = "ArchiveDialog";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -214,6 +236,8 @@ namespace SuiteCRMAddIn
         private System.Windows.Forms.ColumnHeader colList;
         private System.Windows.Forms.TreeView tsResults;
         private System.Windows.Forms.Button btnArchive;
-        private System.Windows.Forms.Button btnCancel;      
+        private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Label categoryLabel;
+        private System.Windows.Forms.ComboBox categoryInput;
     }
 }

@@ -336,15 +336,19 @@ namespace SuiteCRMAddIn
 
         private IEnumerable<string> GetLogHeader(clsSettings settings)
         {
+            List<string> result = new List<string>();
+
             try
             {
-                yield return $"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}";
-                foreach (var s in GetKeySettings(settings)) yield return s;
+                result.Add($"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}");
+                result.AddRange(GetKeySettings(settings));
             }
-            finally
+            catch (Exception any)
             {
-
+                result.Add($"Exception {any.GetType().Name} '{any.Message}' while printing log header");
             }
+
+            return result;
         }
 
         private IEnumerable<string> GetKeySettings(clsSettings settings)
@@ -399,7 +403,7 @@ namespace SuiteCRMAddIn
 
         public void ShowArchiveForm()
         {
-            frmArchive objForm = new frmArchive();
+            ArchiveDialog objForm = new ArchiveDialog();
             objForm.ShowDialog();
         }
 
@@ -458,6 +462,8 @@ namespace SuiteCRMAddIn
         {
             try
             {
+                if (SuiteCRMUserSession != null)
+                    SuiteCRMUserSession.LogOut();
                 if (this.CommandBarExists("SuiteCRM"))
                 {
                     Log.Info("ThisAddIn_Shutdown: Removing SuiteCRM command bar");
@@ -653,6 +659,7 @@ namespace SuiteCRMAddIn
             if (mailItem == null)
             {
                 log.Info("New 'mail item' was null");
+                return;
             }
             else
             {
