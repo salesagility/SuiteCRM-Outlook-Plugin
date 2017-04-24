@@ -403,7 +403,7 @@ namespace SuiteCRMAddIn
 
         public void ShowArchiveForm()
         {
-            frmArchive objForm = new frmArchive();
+            ArchiveDialog objForm = new ArchiveDialog();
             objForm.ShowDialog();
         }
 

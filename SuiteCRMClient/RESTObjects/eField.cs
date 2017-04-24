@@ -46,7 +46,6 @@ namespace SuiteCRMClient.RESTObjects
         private object rawOptions;
 
         [JsonProperty("options")]
-        // public Dictionary<string,eNameValue> optionsField { get; set; }
         public object optionsField
         {
             get
@@ -56,11 +55,10 @@ namespace SuiteCRMClient.RESTObjects
             set
             {
                 this.rawOptions = value;
-                string type = value.GetType().Name;
 
                 if (value is JArray)
                 {
-                    // do nothing
+                    // this means there are no options; do nothing
                 }
                 else
                 {
