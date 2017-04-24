@@ -935,20 +935,27 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             LogItemAction(olItem, "Synchroniser.OutlookItemAdded");
 
-            if (olItem != null)
+            if (Globals.ThisAddIn.IsLicensed)
             {
-                lock (enqueueingLock)
+                if (olItem != null)
                 {
-                    if (IsCurrentView && this.GetExistingSyncState(olItem) == null)
+                    lock (enqueueingLock)
                     {
-                        SyncState<OutlookItemType> state = this.ConstructAndAddSyncState(olItem);
-                        DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType>(this, state, this.DefaultCrmModule));
-                    }
-                    else
-                    {
-                        Log.Warn($"Synchroniser.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
+                        if (IsCurrentView && this.GetExistingSyncState(olItem) == null)
+                        {
+                            SyncState<OutlookItemType> state = this.ConstructAndAddSyncState(olItem);
+                            DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType>(this, state, this.DefaultCrmModule));
+                        }
+                        else
+                        {
+                            Log.Warn($"Synchroniser.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
+                        }
                     }
                 }
+            }
+            else
+            {
+                Log.Warn($"Synchroniser.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} not added because not licensed");
             }
         }
 
@@ -961,30 +968,38 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected void OutlookItemChanged(OutlookItemType olItem)
         {
             LogItemAction(olItem, "Syncroniser.OutlookItemChanged");
-            try
+
+            if (Globals.ThisAddIn.IsLicensed)
             {
-                var syncStateForItem = GetExistingSyncState(olItem);
-                if (syncStateForItem != null)
+                try
                 {
-                    if (this.ShouldPerformSyncNow(syncStateForItem))
+                    var syncStateForItem = GetExistingSyncState(olItem);
+                    if (syncStateForItem != null)
                     {
-                        DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType>(this, syncStateForItem));
+                        if (this.ShouldPerformSyncNow(syncStateForItem))
+                        {
+                            DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType>(this, syncStateForItem));
+                        }
+                        else if (!syncStateForItem.ShouldSyncWithCrm)
+                        {
+                            this.RemoveFromCrm(syncStateForItem);
+                        }
                     }
-                    else if (!syncStateForItem.ShouldSyncWithCrm)
+                    else
                     {
-                        this.RemoveFromCrm(syncStateForItem);
+                        /* we don't have a sync state for this item (presumably formerly private);
+                         * that's OK, treat it as new */
+                        OutlookItemAdded(olItem);
                     }
                 }
-                else
+                finally
                 {
-                    /* we don't have a sync state for this item (presumably formerly private);
-                     * that's OK, treat it as new */
-                    OutlookItemAdded(olItem);
+                    this.SaveItem(olItem);
                 }
             }
-            finally
+            else
             {
-                this.SaveItem(olItem);
+                Log.Warn($"Synchroniser.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} not updated because not licensed");
             }
         }
 

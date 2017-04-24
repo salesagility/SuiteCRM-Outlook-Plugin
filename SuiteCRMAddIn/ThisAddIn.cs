@@ -390,8 +390,14 @@ namespace SuiteCRMAddIn
 
         public void ShowAddressBook()
         {
-            frmAddressBook objAddressBook = new frmAddressBook();
-            objAddressBook.Show();
+            if (HasCrmUserSession && this.IsLicensed)
+            {
+                new frmAddressBook().Show();
+            }
+            else
+            {
+                ReconfigureOrDisable();
+            }
         }
 
         public void ShowSettingsForm()
@@ -413,9 +419,18 @@ namespace SuiteCRMAddIn
             {
                 ShowArchiveForm();
             }
-            else if (!HasCrmUserSession)
+            else
             {
-                if (this.ShowReconfigureOrDisable("Login to CRM failed")) {
+                ReconfigureOrDisable();
+            }
+        }
+
+        private void ReconfigureOrDisable()
+        {
+            if (!HasCrmUserSession)
+            {
+                if (this.ShowReconfigureOrDisable("Login to CRM failed"))
+                {
                     this.Disable();
                 }
             }
@@ -627,8 +642,10 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook ItemSend: email sent event");
             try
             {
-                if (!settings.AutoArchive) return;
-                ProcessNewMailItem(EmailArchiveType.Sent, item as Outlook.MailItem);
+                if (this.IsLicensed && settings.AutoArchive)
+                {
+                    ProcessNewMailItem(EmailArchiveType.Sent, item as Outlook.MailItem);
+                }
             }
             catch (Exception ex)
             {
@@ -641,7 +658,7 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook NewMail: email received event");
             try
             {
-                if (settings.AutoArchive)
+                if (this.IsLicensed && settings.AutoArchive)
                 {
                     ProcessNewMailItem(
                         EmailArchiveType.Inbound,
