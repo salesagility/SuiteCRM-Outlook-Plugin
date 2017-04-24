@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using BusinessLogic;
     using Exceptions;
@@ -38,10 +38,10 @@ namespace SuiteCRMAddIn
     using System.Windows.Forms;
     using Exception = System.Exception;
 
-    public partial class frmArchive : Form
+    public partial class ArchiveDialog : Form
     {
 
-        public frmArchive()
+        public ArchiveDialog()
         {
             InitializeComponent();
         }
@@ -782,6 +782,24 @@ namespace SuiteCRMAddIn
         private void txtSearch_Leave(object sender, EventArgs e)
         {
             this.AcceptButton = btnArchive;
+        }
+
+        /// <summary>
+        /// If the Category input changes, set its current value as the Category property on 
+        /// each of the currently selected emails.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void categoryInput_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            foreach (MailItem mail in Globals.ThisAddIn.SelectedEmails)
+            {
+                if (mail.UserProperties[EmailArchiving.CRMCategoryPropertyName] == null)
+                {
+                    mail.UserProperties.Add(EmailArchiving.CRMCategoryPropertyName, OlUserPropertyType.olText);
+                }
+                mail.UserProperties[EmailArchiving.CRMCategoryPropertyName].Value = categoryInput.SelectedItem.ToString();
+            }
         }
     }
 }

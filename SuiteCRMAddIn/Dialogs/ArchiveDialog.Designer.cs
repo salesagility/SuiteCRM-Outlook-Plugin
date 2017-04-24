@@ -20,10 +20,10 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using SuiteCRMAddIn.BusinessLogic;
-    partial class frmArchive
+    partial class ArchiveDialog
     {
         /// <summary>
         /// Required designer variable.
@@ -57,7 +57,7 @@ namespace SuiteCRMAddIn
             System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Leads");
             System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("Cases");
             System.Windows.Forms.ListViewItem listViewItem6 = new System.Windows.Forms.ListViewItem("Bugs");
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmArchive));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ArchiveDialog));
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.btnSearch = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
@@ -191,8 +191,9 @@ namespace SuiteCRMAddIn
             this.categoryInput.Name = "categoryInput";
             this.categoryInput.Size = new System.Drawing.Size(230, 21);
             this.categoryInput.TabIndex = 8;
+            this.categoryInput.SelectedIndexChanged += new System.EventHandler(this.categoryInput_SelectedIndexChanged);
             // 
-            // frmArchive
+            // ArchiveDialog
             // 
             this.AcceptButton = this.btnArchive;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -214,7 +215,7 @@ namespace SuiteCRMAddIn
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(481, 404);
-            this.Name = "frmArchive";
+            this.Name = "ArchiveDialog";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;

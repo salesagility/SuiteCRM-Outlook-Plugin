@@ -51,15 +51,18 @@ namespace SuiteCRMAddIn.Daemon
         }
 
         /// <summary>
-        /// Add the options returned for the 'category' field of the 'email' module to my items
-        /// list, which is the list passed in by my caller.
+        /// Replace the items in my items list, which is the list passed in by the caller, with
+        /// the options returned for the 'category_id' field of the 'email' module.
         /// </summary>
         public override void Perform()
         {
-            eModuleFields fields = clsSuiteCRMHelper.GetFieldsForModule("Emails");
-            eField field = fields.moduleFields.FirstOrDefault(x => x.name == "category_id");
+            eField field = clsSuiteCRMHelper.GetFieldsForModule("Emails").moduleFields.FirstOrDefault(x => x.name == "category_id");
 
-            items.AddRange(field.Options.Keys.OrderBy(x => x));
+            if (field != null)
+            {
+                items.Clear();
+                items.AddRange(field.Options.Keys.OrderBy(x => x));
+            }
         }
     }
 }

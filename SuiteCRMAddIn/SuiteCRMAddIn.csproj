@@ -260,11 +260,11 @@
     <Compile Include="ReconfigureOrDisableDialog.Designer.cs">
       <DependentUpon>ReconfigureOrDisableDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmArchive.cs">
+    <Compile Include="Dialogs\ArchiveDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmArchive.Designer.cs">
-      <DependentUpon>frmArchive.cs</DependentUpon>
+    <Compile Include="Dialogs\ArchiveDialog.Designer.cs">
+      <DependentUpon>ArchiveDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="frmCustomModules.cs">
       <SubType>Form</SubType>
@@ -301,8 +301,8 @@
     <EmbeddedResource Include="EmailAccountArchiveSettingsControl.resx">
       <DependentUpon>EmailAccountArchiveSettingsControl.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="frmArchive.resx">
-      <DependentUpon>frmArchive.cs</DependentUpon>
+    <EmbeddedResource Include="Dialogs\ArchiveDialog.resx">
+      <DependentUpon>ArchiveDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="frmCustomModules.resx">
       <DependentUpon>frmCustomModules.cs</DependentUpon>

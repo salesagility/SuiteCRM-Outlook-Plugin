@@ -55,6 +55,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public const string EmailDateFormat = "yyyy-MM-dd HH:mm:ss";
 
+        /// <summary>
+        /// The name of the Outlook user property on which we will store the CRM Category associated
+        /// with an email, of any.
+        /// </summary>
+        public const string CRMCategoryPropertyName = "SuiteCRMCategory";
+
         public EmailArchiving(string name, ILogger log) : base(name, log)
         {
         }
@@ -598,7 +604,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>A CRM representation of the item, as a set of name/value pairs.</returns>
         private eNameValue[] ConstructCrmItem(Outlook.MailItem mailItem, string type)
         {
-            eNameValue[] data = new eNameValue[12];
+            eNameValue[] data = new eNameValue[13];
+            string category = mailItem.UserProperties[CRMCategoryPropertyName] != null ?
+                mailItem.UserProperties[CRMCategoryPropertyName].Value :
+                string.Empty;
+
             data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? string.Empty);
             data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem, type).ToString(EmailDateFormat));
             data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
@@ -611,6 +621,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", mailItem.BCC);
             data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", mailItem.ReplyRecipientNames);
             data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
+            data[12] = clsSuiteCRMHelper.SetNameValuePair("category_id", category);
             return data;
         }
 
