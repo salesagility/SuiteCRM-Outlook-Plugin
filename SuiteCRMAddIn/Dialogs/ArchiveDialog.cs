@@ -781,6 +781,7 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void txtSearch_Leave(object sender, EventArgs e)
         {
+            btnSearch_Click(sender, e);
             this.AcceptButton = btnArchive;
         }
 
