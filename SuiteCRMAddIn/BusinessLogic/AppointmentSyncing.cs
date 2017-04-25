@@ -23,17 +23,15 @@
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Runtime.InteropServices;
-    using Newtonsoft.Json;
+    using ProtoItems;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
-    using Outlook = Microsoft.Office.Interop.Outlook;
+    using System;
+    using System.Collections.Generic;
+    using System.Runtime.InteropServices;
     using System.Text;
-    using ProtoItems;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
     /// Handles the synchronisation of appointments between Outlook and CMS.
@@ -224,9 +222,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             Outlook.AppointmentItem olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
             olItem.Subject = crmItem.GetValueAsString("name");
             olItem.Body = crmItem.GetValueAsString("description");
+            /* set the SEntryID property quickly, create the sync state and save the item, to reduce howlaround */
+            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
+            var crmId = crmItem.GetValueAsString("id");
+            var newState = new AppointmentSyncState(crmType)
+            {
+                OutlookItem = olItem,
+                OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
+                CrmEntryId = crmId
+            };
+            ItemsSyncState.Add(newState);
+            olItem.Save();
 
             LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
-            var crmId = crmItem.GetValueAsString("id");
             if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
             {
                 olItem.Start = date_start;
@@ -238,15 +246,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             MaybeAddAcceptDeclineLinks(crmItem, olItem, crmType);
 
-            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
-
-            var newState = new AppointmentSyncState(crmType)
-            {
-                OutlookItem = olItem,
-                OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
-                CrmEntryId = crmId
-            };
-            ItemsSyncState.Add(newState);
+            /* now modified, save again */
             olItem.Save();
 
             LogItemAction(newState.OutlookItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook, saved item");
@@ -627,14 +627,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                     foreach (var relationship in relationships)
                     {
                         string phone_work = relationship.GetValueAsString("phone_work");
-                        string sTemp =
-                            (sModule == AppointmentSyncing.CrmModule) || String.IsNullOrWhiteSpace(phone_work) ?
-                                relationship.GetValueAsString("email1") :
-                                relationship.GetValueAsString("email1") + ":" + phone_work;
+                        string email1 = relationship.GetValueAsString("email1");
+                        string identifier = (sModule == AppointmentSyncing.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
+                                email1 :
+                                $"{email1} : {phone_work}";
 
-                        if (!String.IsNullOrWhiteSpace(sTemp))
+                        if (!String.IsNullOrWhiteSpace(identifier))
                         {
-                            olAppointment.Recipients.Add(sTemp);
+                            olAppointment.Recipients.Add(identifier);
                         }
                     }
                 }

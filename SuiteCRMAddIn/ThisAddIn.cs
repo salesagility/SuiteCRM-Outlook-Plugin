@@ -61,7 +61,11 @@ namespace SuiteCRMAddIn
         private AppointmentSyncing appointmentSynchroniser;
 
         public Office.IRibbonUI RibbonUI { get; set; }
-        private EmailArchiving emailArchiver;
+        public EmailArchiving EmailArchiver
+        {
+            get; private set;
+        }
+
 
         private ILogger log;
 
@@ -123,6 +127,10 @@ namespace SuiteCRMAddIn
             try
             {
                 Prepare();
+
+                Thread background = new Thread(() => Run());
+                background.Name = "Background";
+                background.Start();
             }
             catch (Exception ex)
             {
@@ -145,9 +153,7 @@ namespace SuiteCRMAddIn
             contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
             taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
             appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
-            emailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
-
-            DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction(this.settings.EmailCategories));
+            EmailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
 
             var outlookExplorer = outlookApp.ActiveExplorer();
             this.objExplorer = outlookExplorer;
@@ -240,6 +246,7 @@ namespace SuiteCRMAddIn
             if (success && !disable)
             {
                 log.Info("Starting normal operations.");
+                DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction(this.settings.EmailCategories));
                 StartSynchronisationProcesses();
                 this.IsLicensed = true;
             }
@@ -329,15 +336,19 @@ namespace SuiteCRMAddIn
 
         private IEnumerable<string> GetLogHeader(clsSettings settings)
         {
+            List<string> result = new List<string>();
+
             try
             {
-                yield return $"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}";
-                foreach (var s in GetKeySettings(settings)) yield return s;
+                result.Add($"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}");
+                result.AddRange(GetKeySettings(settings));
             }
-            finally
+            catch (Exception any)
             {
-
+                result.Add($"Exception {any.GetType().Name} '{any.Message}' while printing log header");
             }
+
+            return result;
         }
 
         private IEnumerable<string> GetKeySettings(clsSettings settings)
@@ -363,7 +374,7 @@ namespace SuiteCRMAddIn
             DoOrLogError(() => this.appointmentSynchroniser.Start(), "Starting appointments synchroniser");
             DoOrLogError(() => this.contactSynchroniser.Start(), "Starting contacts synchroniser");
             DoOrLogError(() => this.taskSynchroniser.Start(), "Starting tasks synchroniser");
-            DoOrLogError(() => this.emailArchiver.Start(), "Starting email archiver");
+            DoOrLogError(() => this.EmailArchiver.Start(), "Starting email archiver");
         }
 
         private void cbtnArchive_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
@@ -379,8 +390,14 @@ namespace SuiteCRMAddIn
 
         public void ShowAddressBook()
         {
-            frmAddressBook objAddressBook = new frmAddressBook();
-            objAddressBook.Show();
+            if (HasCrmUserSession && this.IsLicensed)
+            {
+                new frmAddressBook().Show();
+            }
+            else
+            {
+                ReconfigureOrDisable();
+            }
         }
 
         public void ShowSettingsForm()
@@ -392,7 +409,7 @@ namespace SuiteCRMAddIn
 
         public void ShowArchiveForm()
         {
-            frmArchive objForm = new frmArchive();
+            ArchiveDialog objForm = new ArchiveDialog();
             objForm.ShowDialog();
         }
 
@@ -402,9 +419,18 @@ namespace SuiteCRMAddIn
             {
                 ShowArchiveForm();
             }
-            else if (!HasCrmUserSession)
+            else
             {
-                if (this.ShowReconfigureOrDisable("Login to CRM failed")) {
+                ReconfigureOrDisable();
+            }
+        }
+
+        private void ReconfigureOrDisable()
+        {
+            if (!HasCrmUserSession)
+            {
+                if (this.ShowReconfigureOrDisable("Login to CRM failed"))
+                {
                     this.Disable();
                 }
             }
@@ -451,19 +477,21 @@ namespace SuiteCRMAddIn
         {
             try
             {
+                if (SuiteCRMUserSession != null)
+                    SuiteCRMUserSession.LogOut();
+                if (this.CommandBarExists("SuiteCRM"))
+                {
+                    Log.Info("ThisAddIn_Shutdown: Removing SuiteCRM command bar");
+                    this.objSuiteCRMMenuBar2007.Delete();
+                }
+
+                this.UnregisterEvents();
                 this.ShutdownProcesses();
 
                 if (SuiteCRMUserSession != null)
                 {
                     SuiteCRMUserSession.LogOut();
                 }
-
-                if (this.CommandBarExists("SuiteCRM"))
-                {
-                    Log.Info("ThisAddIn_Shutdown: Removing SuiteCRM command bar");
-                    this.objSuiteCRMMenuBar2007.Delete();
-                }
-                this.UnregisterEvents();
             }
             catch (Exception ex)
             {
@@ -614,8 +642,10 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook ItemSend: email sent event");
             try
             {
-                if (!settings.AutoArchive) return;
-                ProcessNewMailItem(EmailArchiveType.Sent, item as Outlook.MailItem);
+                if (this.IsLicensed && settings.AutoArchive)
+                {
+                    ProcessNewMailItem(EmailArchiveType.Sent, item as Outlook.MailItem);
+                }
             }
             catch (Exception ex)
             {
@@ -628,10 +658,12 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook NewMail: email received event");
             try
             {
-                if (!settings.AutoArchive) return;
-                ProcessNewMailItem(
-                    EmailArchiveType.Inbound,
-                    Application.Session.GetItemFromID(EntryID) as Outlook.MailItem);
+                if (this.IsLicensed && settings.AutoArchive)
+                {
+                    ProcessNewMailItem(
+                        EmailArchiveType.Inbound,
+                        Application.Session.GetItemFromID(EntryID) as Outlook.MailItem);
+                }
             }
             catch (Exception ex)
             {
@@ -646,7 +678,10 @@ namespace SuiteCRMAddIn
                 log.Info("New 'mail item' was null");
                 return;
             }
-            new EmailArchiving($"EN-{mailItem.SenderEmailAddress}", Globals.ThisAddIn.Log).ProcessEligibleNewMailItem(mailItem, archiveType);
+            else
+            {
+                this.EmailArchiver.ProcessEligibleNewMailItem(mailItem, archiveType);
+            }
         }
 
         /// <summary>
