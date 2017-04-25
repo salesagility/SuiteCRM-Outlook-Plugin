@@ -627,14 +627,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                     foreach (var relationship in relationships)
                     {
                         string phone_work = relationship.GetValueAsString("phone_work");
-                        string sTemp =
-                            (sModule == AppointmentSyncing.CrmModule) || String.IsNullOrWhiteSpace(phone_work) ?
-                                relationship.GetValueAsString("email1") :
-                                relationship.GetValueAsString("email1") + ":" + phone_work;
+                        string email1 = relationship.GetValueAsString("email1");
+                        string identifier = (sModule == AppointmentSyncing.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
+                                email1 :
+                                $"{email1} : {phone_work}";
 
-                        if (!String.IsNullOrWhiteSpace(sTemp))
+                        if (!String.IsNullOrWhiteSpace(identifier))
                         {
-                            olAppointment.Recipients.Add(sTemp);
+                            olAppointment.Recipients.Add(identifier);
                         }
                     }
                 }
