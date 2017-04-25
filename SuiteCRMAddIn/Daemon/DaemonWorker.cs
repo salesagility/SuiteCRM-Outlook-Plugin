@@ -26,16 +26,12 @@ namespace SuiteCRMAddIn.Daemon
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Concurrent;
+    using System.Threading;
 
     /// <summary>
     /// A thing which maintains a queue of tasks and executes them in turn. Explicitly 
     /// a singleton.
     /// </summary>
-    /// <remarks>Not currently used. You can't make a list of Outlook items detached from their 
-    /// Outlook collection because they're not real objects, and if the current selection changes 
-    /// before the process runs the process acts on the wrong things. I like the idea of 
-    /// asynchronous processing to speed up perceived user interface response, but this isn't 
-    /// working yet.</remarks>
     public class DaemonWorker : RepeatingProcess
     {
         /// <summary>

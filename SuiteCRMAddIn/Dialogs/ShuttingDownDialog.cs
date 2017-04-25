@@ -64,6 +64,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.showProgressOrClose();
 
             fred.WorkerReportsProgress = true;
+            
             fred.ProgressChanged += fred_ProgressChanged;
             fred.DoWork += fred_DoWork;
 
@@ -73,6 +74,10 @@ namespace SuiteCRMAddIn.Dialogs
         private void fred_DoWork(object sender, DoWorkEventArgs e)
         {
             var worker = sender as BackgroundWorker;
+            if (Thread.CurrentThread.Name == null)
+            {
+                Thread.CurrentThread.Name = "Shutdown";
+            }
 
             while (remaining > 0)
             {

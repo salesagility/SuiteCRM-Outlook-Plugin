@@ -271,6 +271,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             Outlook.TaskItem olItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
             this.SetOutlookItemPropertiesFromCrmItem(crmItem, date_start, date_due, time_start, time_due, olItem);
+            olItem.Save();
 
             var newState = new TaskSyncState
             {
@@ -279,7 +280,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 CrmEntryId = crmItem.GetValueAsString("id"),
             };
             ItemsSyncState.Add(newState);
-            olItem.Save();
             LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
 
             return newState;

@@ -98,7 +98,7 @@ namespace SuiteCRMClient
                 error = new eErrorValue();
             }
 
-            if (error.IsPopulated())
+            if (error != null && error.IsPopulated())
             {
                 throw new CrmServerErrorException(error);
             }
