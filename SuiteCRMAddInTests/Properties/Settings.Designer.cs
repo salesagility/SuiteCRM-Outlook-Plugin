@@ -106,5 +106,53 @@ namespace SuiteCRMAddInTests.Properties {
                 this["LogLevel"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("TestUser")]
+        public string LDAPValidUser {
+            get {
+                return ((string)(this["LDAPValidUser"]));
+            }
+            set {
+                this["LDAPValidUser"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("test")]
+        public string LDAPValidPass {
+            get {
+                return ((string)(this["LDAPValidPass"]));
+            }
+            set {
+                this["LDAPValidPass"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("b8794235718652747b82fd713deac078")]
+        public string LicencePublicKey {
+            get {
+                return ((string)(this["LicencePublicKey"]));
+            }
+            set {
+                this["LicencePublicKey"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("e10a9aff077e983deca51e5d3688636c")]
+        public string LicenceCustomerKey {
+            get {
+                return ((string)(this["LicenceCustomerKey"]));
+            }
+            set {
+                this["LicenceCustomerKey"] = value;
+            }
+        }
     }
 }

@@ -2,15 +2,16 @@
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using SuiteCRMAddInTests;
+    using SuiteCRMAddInTests.Properties;
     using SuiteCRMClient;
     using System;
 
     [TestClass()]
     public class LDAPAuthenticationHelperTests : WithRestServiceTests
     {
-        string validUser = "";
-        string validPass = "";
-        string validKey = "";
+        string validUser = Settings.Default.LDAPValidUser;
+        string validPass = Settings.Default.LDAPValidPass;
+        string validKey = Settings.Default.LDAPKey;
 
         [TestMethod()]
         public void LDAPAuthenticationHelperTest()
@@ -28,7 +29,7 @@
         }
 
         [TestMethod()]
-        public void AuthenticateTest()
+        public void LDAPAuthenticationHelperAuthenticateTest()
         {
             Assert.IsFalse(
                 String.IsNullOrWhiteSpace(
