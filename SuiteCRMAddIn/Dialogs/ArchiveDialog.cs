@@ -91,9 +91,15 @@ namespace SuiteCRMAddIn.Dialogs
         private void PopulateUIComponents()
         {
             this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
-            if (this.settings.EmailCategories != null)
+            if (this.settings.EmailCategories != null && this.settings.EmailCategories.IsImplemented)
             {
                 this.categoryInput.DataSource = this.settings.EmailCategories;
+            }
+            else
+            {
+                this.categoryInput.Enabled = false;
+                this.categoryInput.Visible = false;
+                this.categoryLabel.Visible = false;
             }
 
             if (Globals.ThisAddIn.Settings.ShowCustomModules)
