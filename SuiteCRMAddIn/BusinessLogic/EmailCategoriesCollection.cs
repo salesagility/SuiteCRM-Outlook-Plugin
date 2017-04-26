@@ -20,12 +20,8 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.Daemon.Tests
+namespace SuiteCRMAddIn.BusinessLogic
 {
-    using BusinessLogic;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using SuiteCRMAddIn.Daemon;
-    using SuiteCRMAddIn.Tests;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -33,40 +29,30 @@ namespace SuiteCRMAddIn.Daemon.Tests
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Test that FetchEmailCategoriesAction actually fetches some categories.
+    /// A list of the email categories known to the connected CRM instance, if that
+    /// CRM instance supports the email categories feature. If it does not, the 
+    /// IsImplemented property will be false.
     /// </summary>
-    [TestClass()]
-    public class FetchEmailCategoriesActionTests : AbstractWithCrmConnectionTest
+    public class EmailCategoriesCollection : List<string>
     {
         /// <summary>
-        /// The action I test.
+        /// True if my connected CRM instance implementes email categories.
         /// </summary>
-        public FetchEmailCategoriesAction action { get; private set; }
+        private bool isImplemented = true;
 
         /// <summary>
-        /// The list of categories which performing my action should modify.
+        /// True if my connected CRM instance implementes email categories.
         /// </summary>
-        private readonly EmailCategoriesCollection categories = new EmailCategoriesCollection();
-
-        /// <summary>
-        /// Specialisation: I need an action.
-        /// </summary>
-        [TestInitialize()]
-        public override void Initialize()
+        public bool IsImplemented
         {
-            base.Initialize();
-            this.action = new FetchEmailCategoriesAction(categories);
-        }
-
-        /// <summary>
-        /// After performing my action, there should be some categories.
-        /// </summary>
-        [TestMethod()]
-        public void FetchEmailCategoriesActionPerformTest()
-        {
-            Assert.AreEqual(0, categories.Count);
-            this.action.Perform();
-            Assert.AreNotEqual(0, categories.Count);
+            get
+            {
+                return this.isImplemented && this.Count > 0;
+            }
+            internal set
+            {
+                this.isImplemented = value;
+            }
         }
     }
 }

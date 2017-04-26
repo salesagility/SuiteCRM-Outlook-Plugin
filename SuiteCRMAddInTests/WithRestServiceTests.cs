@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddInTests
 {
+    using Properties;
     using SuiteCRMAddIn.Tests;
     using SuiteCRMClient;
 
@@ -37,7 +38,7 @@ namespace SuiteCRMAddInTests
 
         public WithRestServiceTests()
         {
-            this.service = new RestService("http://demo.suitecrm.com/suitecrm77/", this.Log);
+            this.service = new RestService(Settings.Default.host, this.Log);
         }
     }
 }
