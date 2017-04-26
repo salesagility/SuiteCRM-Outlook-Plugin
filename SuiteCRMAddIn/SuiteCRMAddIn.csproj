@@ -204,6 +204,7 @@
       <DependentUpon>AddressBook.cs</DependentUpon>
     </Compile>
     <Compile Include="BusinessLogic\CRMPermissionsCache.cs" />
+    <Compile Include="BusinessLogic\EmailCategoriesCollection.cs" />
     <Compile Include="Daemon\AbstractDaemonAction.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncing.cs" />

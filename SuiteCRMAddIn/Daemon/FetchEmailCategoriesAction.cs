@@ -23,6 +23,7 @@
  */
 namespace SuiteCRMAddIn.Daemon
 {
+    using BusinessLogic;
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
     using System.Collections.Generic;
@@ -39,13 +40,13 @@ namespace SuiteCRMAddIn.Daemon
         /// <summary>
         /// The list of items I shall modify.
         /// </summary>
-        private readonly List<string> items;
+        private readonly EmailCategoriesCollection items;
 
         /// <summary>
         /// Construct a new instance of the FetchEmailCategoriesAction class.
         /// </summary>
         /// <param name="listToModify">The list of items I shall modify</param>
-        public FetchEmailCategoriesAction(List<string> listToModify) : base(5)
+        public FetchEmailCategoriesAction(EmailCategoriesCollection listToModify) : base(5)
         {
             this.items = listToModify;
         }
@@ -60,8 +61,14 @@ namespace SuiteCRMAddIn.Daemon
 
             if (field != null)
             {
+                items.IsImplemented = true;
                 items.Clear();
                 items.AddRange(field.Options.Keys.OrderBy(x => x));
+            }
+            else
+            {
+                /* the CRM instance does not have the category_id field in its emails module */
+                items.IsImplemented = false;
             }
         }
     }

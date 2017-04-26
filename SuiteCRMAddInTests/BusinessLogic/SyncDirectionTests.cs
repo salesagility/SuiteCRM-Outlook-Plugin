@@ -28,7 +28,7 @@ namespace SuiteCRMAddIn.BusinessLogic.Tests
     public class SyncDirectionTests
     {
         [TestMethod()]
-        public void ToStringTest()
+        public void SyncDirectionToStringTest()
         {
             Assert.AreEqual("None", SyncDirection.ToString(SyncDirection.Direction.Neither));
             Assert.AreEqual("From CRM to Outlook", SyncDirection.ToString(SyncDirection.Direction.Export));
@@ -37,7 +37,7 @@ namespace SuiteCRMAddIn.BusinessLogic.Tests
         }
 
         [TestMethod()]
-        public void AllowOutboundTest()
+        public void SyncDirectionAllowOutboundTest()
         {
             Assert.IsTrue(SyncDirection.AllowOutbound(SyncDirection.Direction.BiDirectional), "Bidirectional includes both");
             Assert.IsTrue(SyncDirection.AllowOutbound(SyncDirection.Direction.Import), "Explicitly outbound");
@@ -46,7 +46,7 @@ namespace SuiteCRMAddIn.BusinessLogic.Tests
         }
 
         [TestMethod()]
-        public void AllowInboundTest()
+        public void SyncDirectionAllowInboundTest()
         {
             Assert.IsTrue(SyncDirection.AllowInbound(SyncDirection.Direction.BiDirectional), "Bidirectional includes both");
             Assert.IsTrue(SyncDirection.AllowInbound(SyncDirection.Direction.Export), "Explicitly inbound");

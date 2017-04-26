@@ -373,11 +373,11 @@ namespace SuiteCRMAddIn
         /// Categories for emails. These are actually provided by CRM and not edited by the user, but are cached here.
         /// </summary>
         [UserScopedSetting, DebuggerNonUserCode]
-        public List<string> EmailCategories
+        public EmailCategoriesCollection EmailCategories
         {
             get
             {
-                return (List<string>)this["EmailCategories"];
+                return (EmailCategoriesCollection)this["EmailCategories"];
             }
             set
             {
