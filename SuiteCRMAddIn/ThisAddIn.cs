@@ -477,8 +477,6 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                if (SuiteCRMUserSession != null)
-                    SuiteCRMUserSession.LogOut();
                 if (this.CommandBarExists("SuiteCRM"))
                 {
                     Log.Info("ThisAddIn_Shutdown: Removing SuiteCRM command bar");
@@ -596,8 +594,8 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                string text1 = Application.ActiveExplorer().CommandBars[name].Name;
-                return true;
+                var explorer = Application.ActiveExplorer();
+                return (explorer != null && explorer.CommandBars[name] != null);
             }
             catch (System.Exception)
             {
