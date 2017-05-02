@@ -1,0 +1,39 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="SuiteCRMAddInTests.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="host" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://demo.suitecrm.com/suitecrm77/</Value>
+    </Setting>
+    <Setting Name="username" Type="System.String" Scope="User">
+      <Value Profile="(Default)">TestUser</Value>
+    </Setting>
+    <Setting Name="password" Type="System.String" Scope="User">
+      <Value Profile="(Default)">test</Value>
+    </Setting>
+    <Setting Name="LDAPKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="RestTimeout" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">300000</Value>
+    </Setting>
+    <Setting Name="LogDirPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\temp</Value>
+    </Setting>
+    <Setting Name="LogLevel" Type="SuiteCRMClient.Logging.LogEntryType" Scope="User">
+      <Value Profile="(Default)">Debug</Value>
+    </Setting>
+    <Setting Name="LDAPValidUser" Type="System.String" Scope="User">
+      <Value Profile="(Default)">TestUser</Value>
+    </Setting>
+    <Setting Name="LDAPValidPass" Type="System.String" Scope="User">
+      <Value Profile="(Default)">test</Value>
+    </Setting>
+    <Setting Name="LicencePublicKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">b8794235718652747b82fd713deac078</Value>
+    </Setting>
+    <Setting Name="LicenceCustomerKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">e10a9aff077e983deca51e5d3688636c</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

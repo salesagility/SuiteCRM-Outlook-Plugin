@@ -55,6 +55,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public const string EmailDateFormat = "yyyy-MM-dd HH:mm:ss";
 
+        /// <summary>
+        /// The name of the Outlook user property on which we will store the CRM Category associated
+        /// with an email, of any.
+        /// </summary>
+        public const string CRMCategoryPropertyName = "SuiteCRMCategory";
+
         public EmailArchiving(string name, ILogger log) : base(name, log)
         {
         }
@@ -146,23 +152,36 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (objMail.UserProperties["SuiteCRM"] == null)
             {
-                MaybeArchiveEmail(objMail, archiveType, this.settings.ExcludedEmails);
+                bool archived = MaybeArchiveEmail(objMail, archiveType, this.settings.ExcludedEmails);
                 objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
-                objMail.UserProperties["SuiteCRM"].Value = "True";
-                objMail.Categories = "SuiteCRM";
+                objMail.UserProperties["SuiteCRM"].Value = archived ? Boolean.TrueString : Boolean.FalseString;
+                if (archived)
+                {
+                    objMail.Categories = "SuiteCRM";
+                }
                 objMail.Save();
             }
         }
 
-        private bool MaybeArchiveEmail(Outlook.MailItem objMail, EmailArchiveType archiveType, string strExcludedEmails = "")
+        /// <summary>
+        /// Get the item with this entry id.
+        /// </summary>
+        /// <param name="entryId">An outlook entry id.</param>
+        /// <returns>the requested item, if found.</returns>
+        public Outlook.MailItem GetItemById(string entryId)
+        {
+            return Globals.ThisAddIn.Application.GetNamespace("MAPI").GetItemFromID(entryId);
+        }
+
+        private bool MaybeArchiveEmail(Outlook.MailItem mailItem, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
             bool result = false;
-            var objEmail = SerialiseEmailObject(objMail, archiveType);
+            var objEmail = SerialiseEmailObject(mailItem, archiveType);
             List<string> contactIds = objEmail.GetValidContactIDs(strExcludedEmails);
 
             if (contactIds.Count > 0)
             {
-                Log.Info($"Archiving {archiveType} email “{objMail.Subject}”");
+                Log.Info($"Archiving {archiveType} email “{mailItem.Subject}”");
                 DaemonWorker.Instance.AddTask(new ArchiveEmailAction(SuiteCRMUserSession, objEmail, archiveType, contactIds));
                 result = true;
             }
@@ -180,16 +199,19 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             foreach (Outlook.Recipient objRecepient in mail.Recipients)
             {
+                string address = GetSmtpAddress(objRecepient);
+
                 if (mailArchive.To == string.Empty)
                 {
-                    mailArchive.To = objRecepient.Address;
+                    mailArchive.To = address;
                 }
                 else
                 {
-                    mailArchive.To += ";" + objRecepient.Address;
+                    mailArchive.To += ";" + address;
                 }
             }
 
+            mailArchive.OutlookId = mail.EntryID;
             mailArchive.Subject = mail.Subject;
             mailArchive.Sent = DateTimeOfMailItem(mail, "autoOUTBOUND");
             mailArchive.Body = mail.Body;
@@ -208,6 +230,36 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             return mailArchive;
+        }
+
+
+        /// <summary>
+        /// From this email recipient, extract the SMTP address (if that's possible).
+        /// </summary>
+        /// <param name="recipient">A recipient object</param>
+        /// <returns>The SMTP address for that object, if it can be recovered, else an empty string.</returns>
+        private string GetSmtpAddress(Outlook.Recipient recipient)
+        {
+            string result = string.Empty;
+
+            switch (recipient.AddressEntry.Type)
+            {
+                case "SMTP":
+                    result = recipient.Address;
+                    break;
+                case "EX": /* an Exchange address */
+                    var exchangeUser = recipient.AddressEntry.GetExchangeUser();
+                    if (exchangeUser != null)
+                    {
+                        result = exchangeUser.PrimarySmtpAddress;
+                    }
+                    break;
+                default:
+                    this.Log.Warn($"{this.GetType().Name}.ExtractSmtpAddressForSender: unknown email type {recipient.AddressEntry.Type}");
+                    break;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -552,7 +604,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>A CRM representation of the item, as a set of name/value pairs.</returns>
         private eNameValue[] ConstructCrmItem(Outlook.MailItem mailItem, string type)
         {
-            eNameValue[] data = new eNameValue[12];
+            eNameValue[] data = new eNameValue[13];
+            string category = mailItem.UserProperties[CRMCategoryPropertyName] != null ?
+                mailItem.UserProperties[CRMCategoryPropertyName].Value :
+                string.Empty;
+
             data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? string.Empty);
             data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem, type).ToString(EmailDateFormat));
             data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
@@ -565,6 +621,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", mailItem.BCC);
             data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", mailItem.ReplyRecipientNames);
             data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
+            data[12] = clsSuiteCRMHelper.SetNameValuePair("category_id", category);
             return data;
         }
 

@@ -22,8 +22,10 @@
  */
 namespace SuiteCRMAddIn.Tests
 {
-    using System.Collections.Generic;
+    using SuiteCRMAddInTests.Properties;
     using SuiteCRMClient.Logging;
+    using System;
+    using System.Collections.Generic;
 
     /// <summary>
     /// An abstract superclass for test classes which need a logger.
@@ -40,12 +42,33 @@ namespace SuiteCRMAddIn.Tests
         /// </summary>
         public WithLoggerTests()
         {
-            this.Log = Log4NetLogger.FromFilePath("add-in-tests", "c:\\temp\\suitecrmoutlook-test.log", () => GetLogHeader(), LogEntryType.Debug);
+            var settings = Settings.Default;
+
+            Log = Log4NetLogger.FromFilePath(
+                "add-in",
+                 $"{settings.LogDirPath}suitecrmoutlook-tests.log", () => GetLogHeader(settings), settings.LogLevel);
         }
 
-        private IEnumerable<string> GetLogHeader()
+
+        /// <summary>
+        /// Gets a simplified log header, required by the logging framework.
+        /// </summary>
+        /// <param name="settings">My settings.</param>
+        /// <returns>A suitable header for a log file.</returns>
+        private IEnumerable<string> GetLogHeader(Settings settings)
         {
-            yield return "Froboz";
+            List<string> result = new List<string>();
+
+            try
+            {
+                result.Add($"SuiteCRMAddInTests");
+            }
+            catch (Exception any)
+            {
+                result.Add($"Exception {any.GetType().Name} '{any.Message}' while printing log header");
+            }
+
+            return result;
         }
     }
 }

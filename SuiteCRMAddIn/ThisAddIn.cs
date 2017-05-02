@@ -336,15 +336,19 @@ namespace SuiteCRMAddIn
 
         private IEnumerable<string> GetLogHeader(clsSettings settings)
         {
+            List<string> result = new List<string>();
+
             try
             {
-                yield return $"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}";
-                foreach (var s in GetKeySettings(settings)) yield return s;
+                result.Add($"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}");
+                result.AddRange(GetKeySettings(settings));
             }
-            finally
+            catch (Exception any)
             {
-
+                result.Add($"Exception {any.GetType().Name} '{any.Message}' while printing log header");
             }
+
+            return result;
         }
 
         private IEnumerable<string> GetKeySettings(clsSettings settings)
@@ -386,8 +390,14 @@ namespace SuiteCRMAddIn
 
         public void ShowAddressBook()
         {
-            frmAddressBook objAddressBook = new frmAddressBook();
-            objAddressBook.Show();
+            if (HasCrmUserSession && this.IsLicensed)
+            {
+                new frmAddressBook().Show();
+            }
+            else
+            {
+                ReconfigureOrDisable();
+            }
         }
 
         public void ShowSettingsForm()
@@ -399,7 +409,7 @@ namespace SuiteCRMAddIn
 
         public void ShowArchiveForm()
         {
-            frmArchive objForm = new frmArchive();
+            ArchiveDialog objForm = new ArchiveDialog();
             objForm.ShowDialog();
         }
 
@@ -409,9 +419,18 @@ namespace SuiteCRMAddIn
             {
                 ShowArchiveForm();
             }
-            else if (!HasCrmUserSession)
+            else
             {
-                if (this.ShowReconfigureOrDisable("Login to CRM failed")) {
+                ReconfigureOrDisable();
+            }
+        }
+
+        private void ReconfigureOrDisable()
+        {
+            if (!HasCrmUserSession)
+            {
+                if (this.ShowReconfigureOrDisable("Login to CRM failed"))
+                {
                     this.Disable();
                 }
             }
@@ -575,8 +594,8 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                string text1 = Application.ActiveExplorer().CommandBars[name].Name;
-                return true;
+                var explorer = Application.ActiveExplorer();
+                return (explorer != null && explorer.CommandBars[name] != null);
             }
             catch (System.Exception)
             {
@@ -621,8 +640,10 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook ItemSend: email sent event");
             try
             {
-                if (!settings.AutoArchive) return;
-                ProcessNewMailItem(EmailArchiveType.Sent, item as Outlook.MailItem);
+                if (this.IsLicensed && settings.AutoArchive)
+                {
+                    ProcessNewMailItem(EmailArchiveType.Sent, item as Outlook.MailItem);
+                }
             }
             catch (Exception ex)
             {
@@ -635,7 +656,7 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook NewMail: email received event");
             try
             {
-                if (settings.AutoArchive)
+                if (this.IsLicensed && settings.AutoArchive)
                 {
                     ProcessNewMailItem(
                         EmailArchiveType.Inbound,
@@ -653,6 +674,7 @@ namespace SuiteCRMAddIn
             if (mailItem == null)
             {
                 log.Info("New 'mail item' was null");
+                return;
             }
             else
             {

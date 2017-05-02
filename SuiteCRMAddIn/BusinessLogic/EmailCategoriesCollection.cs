@@ -20,25 +20,39 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddInTests
+namespace SuiteCRMAddIn.BusinessLogic
 {
-    using Properties;
-    using SuiteCRMAddIn.Tests;
-    using SuiteCRMClient;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
 
     /// <summary>
-    /// An abstract superclass for test classes which need a REST service.
+    /// A list of the email categories known to the connected CRM instance, if that
+    /// CRM instance supports the email categories feature. If it does not, the 
+    /// IsImplemented property will be false.
     /// </summary>
-    public abstract class WithRestServiceTests : WithLoggerTests
+    public class EmailCategoriesCollection : List<string>
     {
         /// <summary>
-        /// A lot of the things we will want to test require access to a REST service.
+        /// True if my connected CRM instance implementes email categories.
         /// </summary>
-        protected RestService service;
+        private bool isImplemented = true;
 
-        public WithRestServiceTests()
+        /// <summary>
+        /// True if my connected CRM instance implementes email categories.
+        /// </summary>
+        public bool IsImplemented
         {
-            this.service = new RestService(Settings.Default.host, this.Log);
+            get
+            {
+                return this.isImplemented && this.Count > 0;
+            }
+            internal set
+            {
+                this.isImplemented = value;
+            }
         }
     }
 }

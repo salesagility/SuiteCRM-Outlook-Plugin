@@ -222,9 +222,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             Outlook.AppointmentItem olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
             olItem.Subject = crmItem.GetValueAsString("name");
             olItem.Body = crmItem.GetValueAsString("description");
+            /* set the SEntryID property quickly, create the sync state and save the item, to reduce howlaround */
+            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
+            var crmId = crmItem.GetValueAsString("id");
+            var newState = new AppointmentSyncState(crmType)
+            {
+                OutlookItem = olItem,
+                OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
+                CrmEntryId = crmId
+            };
+            ItemsSyncState.Add(newState);
+            olItem.Save();
 
             LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
-            var crmId = crmItem.GetValueAsString("id");
             if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
             {
                 olItem.Start = date_start;
@@ -236,15 +246,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             MaybeAddAcceptDeclineLinks(crmItem, olItem, crmType);
 
-            EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
-
-            var newState = new AppointmentSyncState(crmType)
-            {
-                OutlookItem = olItem,
-                OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
-                CrmEntryId = crmId
-            };
-            ItemsSyncState.Add(newState);
+            /* now modified, save again */
             olItem.Save();
 
             LogItemAction(newState.OutlookItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook, saved item");
@@ -431,15 +433,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                     if (aItem.Start >= this.GetStartDate())
                     {
                         Outlook.UserProperty olPropertyModified = aItem.UserProperties[ModifiedDatePropertyName];
-                        if (olPropertyModified != null)
+                        Outlook.UserProperty olPropertyType = aItem.UserProperties[TypePropertyName];
+                        Outlook.UserProperty olPropertyEntryId = aItem.UserProperties[CrmIdPropertyName];
+                        if (olPropertyModified != null &&
+                            olPropertyType != null &&
+                            olPropertyEntryId != null)
                         {
                             /* The appointment probably already has the three magic properties 
                              * required for synchronisation; is that a proxy for believing that it
                              * already exists in CRM? If so, is it reliable? */
-                            Outlook.UserProperty olPropertyType = aItem.UserProperties[TypePropertyName];
-                            Outlook.UserProperty olPropertyEntryId = aItem.UserProperties[CrmIdPropertyName];
-                            var crmType = olPropertyType.Value.ToString();
-                            ItemsSyncState.Add(new AppointmentSyncState(crmType)
+                            ItemsSyncState.Add(new AppointmentSyncState(olPropertyType.Value.ToString())
                             {
                                 OutlookItem = aItem,
                                 OModifiedDate = DateTime.UtcNow,
@@ -625,14 +628,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                     foreach (var relationship in relationships)
                     {
                         string phone_work = relationship.GetValueAsString("phone_work");
-                        string sTemp =
-                            (sModule == AppointmentSyncing.CrmModule) || String.IsNullOrWhiteSpace(phone_work) ?
-                                relationship.GetValueAsString("email1") :
-                                relationship.GetValueAsString("email1") + ":" + phone_work;
+                        string email1 = relationship.GetValueAsString("email1");
+                        string identifier = (sModule == AppointmentSyncing.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
+                                email1 :
+                                $"{email1} : {phone_work}";
 
-                        if (!String.IsNullOrWhiteSpace(sTemp))
+                        if (!String.IsNullOrWhiteSpace(identifier))
                         {
-                            olAppointment.Recipients.Add(sTemp);
+                            olAppointment.Recipients.Add(identifier);
                         }
                     }
                 }

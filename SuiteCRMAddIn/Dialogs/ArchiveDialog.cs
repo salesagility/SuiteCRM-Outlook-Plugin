@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using BusinessLogic;
     using Exceptions;
@@ -38,10 +38,10 @@ namespace SuiteCRMAddIn
     using System.Windows.Forms;
     using Exception = System.Exception;
 
-    public partial class frmArchive : Form
+    public partial class ArchiveDialog : Form
     {
 
-        public frmArchive()
+        public ArchiveDialog()
         {
             InitializeComponent();
         }
@@ -75,37 +75,62 @@ namespace SuiteCRMAddIn
         {
             using (new WaitCursor(this))
             {
-                this.tsResults.AfterCheck += new TreeViewEventHandler(this.tsResults_AfterCheck);
-                this.tsResults.AfterExpand += new TreeViewEventHandler(this.tsResults_AfterExpand);
-                this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
-                this.txtSearch.KeyDown += new KeyEventHandler(this.txtSearch_KeyDown);
-                this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
-                base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
-
-                this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
-
-                if (Globals.ThisAddIn.Settings.ShowCustomModules)
-                {
-                    this.GetCustomModules();
-                }
-                try
-                {
-                    foreach (string str in this.settings.SelectedSearchModules.Split(new char[] { ',' }))
-                    {
-                        int num = Convert.ToInt32(str);
-                        this.lstViewSearchModules.Items[num].Checked = true;
-                    }
-                }
-                catch (System.Exception)
-                {
-                    // Swallow exception(!)
-                }
+                this.AddActionHandlers();
+                this.PopulateUIComponents();
 
                 if (this.settings.AutomaticSearch)
                 {
                     this.btnSearch_Click(null, null);
                 }
             }
+        }
+
+        /// <summary>
+        /// Populate my menus and other user interface components.
+        /// </summary>
+        private void PopulateUIComponents()
+        {
+            this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
+            if (this.settings.EmailCategories != null && this.settings.EmailCategories.IsImplemented)
+            {
+                this.categoryInput.DataSource = this.settings.EmailCategories;
+            }
+            else
+            {
+                this.categoryInput.Enabled = false;
+                this.categoryInput.Visible = false;
+                this.categoryLabel.Visible = false;
+            }
+
+            if (Globals.ThisAddIn.Settings.ShowCustomModules)
+            {
+                this.GetCustomModules();
+            }
+            try
+            {
+                foreach (string str in this.settings.SelectedSearchModules.Split(new char[] { ',' }))
+                {
+                    int num = Convert.ToInt32(str);
+                    this.lstViewSearchModules.Items[num].Checked = true;
+                }
+            }
+            catch (System.Exception)
+            {
+                // Swallow exception(!)
+            }
+        }
+
+        /// <summary>
+        /// Add handlers for my actions
+        /// </summary>
+        private void AddActionHandlers()
+        {
+            this.tsResults.AfterCheck += new TreeViewEventHandler(this.tsResults_AfterCheck);
+            this.tsResults.AfterExpand += new TreeViewEventHandler(this.tsResults_AfterExpand);
+            this.tsResults.NodeMouseClick += new TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
+            this.txtSearch.KeyDown += new KeyEventHandler(this.txtSearch_KeyDown);
+            this.lstViewSearchModules.ItemChecked += new ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
+            base.FormClosed += new FormClosedEventHandler(this.frmArchive_FormClosed);
         }
 
         /// <summary>
@@ -762,7 +787,26 @@ namespace SuiteCRMAddIn
 
         private void txtSearch_Leave(object sender, EventArgs e)
         {
+            btnSearch_Click(sender, e);
             this.AcceptButton = btnArchive;
+        }
+
+        /// <summary>
+        /// If the Category input changes, set its current value as the Category property on 
+        /// each of the currently selected emails.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void categoryInput_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            foreach (MailItem mail in Globals.ThisAddIn.SelectedEmails)
+            {
+                if (mail.UserProperties[EmailArchiving.CRMCategoryPropertyName] == null)
+                {
+                    mail.UserProperties.Add(EmailArchiving.CRMCategoryPropertyName, OlUserPropertyType.olText);
+                }
+                mail.UserProperties[EmailArchiving.CRMCategoryPropertyName].Value = categoryInput.SelectedItem.ToString();
+            }
         }
     }
 }
