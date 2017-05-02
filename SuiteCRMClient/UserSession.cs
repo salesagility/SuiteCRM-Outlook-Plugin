@@ -153,6 +153,7 @@ namespace SuiteCRMClient
                     throw;
                 }
             }
+
             AwaitingAuthentication = false;
             return result;
         }
