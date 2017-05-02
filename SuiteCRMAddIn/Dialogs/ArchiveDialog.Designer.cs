@@ -51,12 +51,6 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("All");
-            System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("Accounts");
-            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("Contacts");
-            System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("Leads");
-            System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("Cases");
-            System.Windows.Forms.ListViewItem listViewItem6 = new System.Windows.Forms.ListViewItem("Bugs");
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ArchiveDialog));
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.btnSearch = new System.Windows.Forms.Button();
@@ -106,25 +100,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.lstViewSearchModules.CheckBoxes = true;
             this.lstViewSearchModules.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colList});
-            listViewItem1.StateImageIndex = 0;
-            listViewItem1.Tag = "All";
-            listViewItem2.StateImageIndex = 0;
-            listViewItem2.Tag = "Accounts";
-            listViewItem3.StateImageIndex = 0;
-            listViewItem3.Tag = "Contacts";
-            listViewItem4.StateImageIndex = 0;
-            listViewItem4.Tag = "Leads";
-            listViewItem5.StateImageIndex = 0;
-            listViewItem5.Tag = "Cases";
-            listViewItem6.StateImageIndex = 0;
-            listViewItem6.Tag = "Bugs";
-            this.lstViewSearchModules.Items.AddRange(new System.Windows.Forms.ListViewItem[] {
-            listViewItem1,
-            listViewItem2,
-            listViewItem3,
-            listViewItem4,
-            listViewItem5,
-            listViewItem6});
             this.lstViewSearchModules.Location = new System.Drawing.Point(304, 68);
             this.lstViewSearchModules.Name = "lstViewSearchModules";
             this.lstViewSearchModules.Size = new System.Drawing.Size(156, 262);

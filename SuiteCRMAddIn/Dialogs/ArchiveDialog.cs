@@ -40,6 +40,7 @@ namespace SuiteCRMAddIn.Dialogs
 
     public partial class ArchiveDialog : Form
     {
+        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSyncing.CrmModule, "Leads", "Opportunities", "Project" };
 
         public ArchiveDialog()
         {
@@ -51,7 +52,10 @@ namespace SuiteCRMAddIn.Dialogs
 
         private ILogger Log => Globals.ThisAddIn.Log;
 
-        private void GetCustomModules()
+        /// <summary>
+        /// Add any selected custom modules to the list view
+        /// </summary>
+        private void AddCustomModules()
         {
             if (this.settings.CustomModules != null)
             {
@@ -70,6 +74,29 @@ namespace SuiteCRMAddIn.Dialogs
             }
         }
 
+        /// <summary>
+        /// Add the standard modules to the list view.
+        /// </summary>
+        private void AddStandardModules()
+        {
+            eModuleList allModules = clsSuiteCRMHelper.GetModules();
+            foreach (string moduleKey in this.standardModules.OrderBy(x => x))
+            {
+                var module = allModules.items.FirstOrDefault(x => x.module_key == moduleKey);
+                if (module != null)
+                {
+                    this.lstViewSearchModules.Items.Add(new ListViewItem
+                    {
+                        Tag = module.module_key,
+                        Text = module.module_label
+                    });
+                }
+                else
+                {
+                    Log.Warn($"Standard modules '{moduleKey}' was not found on the CRM system");
+                }
+            }
+        }
 
         private void frmArchive_Load(object sender, EventArgs e)
         {
@@ -102,9 +129,11 @@ namespace SuiteCRMAddIn.Dialogs
                 this.categoryLabel.Visible = false;
             }
 
+            this.AddStandardModules();
+
             if (Globals.ThisAddIn.Settings.ShowCustomModules)
             {
-                this.GetCustomModules();
+                this.AddCustomModules();
             }
             try
             {
@@ -207,7 +236,6 @@ namespace SuiteCRMAddIn.Dialogs
 
                 try
                 {
-                    List<string> list = new List<string> { "Accounts", ContactSyncing.CrmModule, "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
                     this.tsResults.CheckBoxes = true;
                     if (searchText == string.Empty)
                     {

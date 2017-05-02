@@ -122,6 +122,10 @@ namespace SuiteCRMClient
                     userSession.Login();
                     result = clsSuiteCRMHelper.GetRealUserId() != null;
                 }
+                else
+                {
+                    result = true;
+                }
             }
 
             return result;
