@@ -106,18 +106,25 @@ namespace SuiteCRMClient
             return modules;
         }
 
-        public static void EnsureLoggedIn()
+        public static bool EnsureLoggedIn()
         {
-            EnsureLoggedIn(SuiteCRMUserSession);
+            return EnsureLoggedIn(SuiteCRMUserSession);
         }
 
-        public static void EnsureLoggedIn(UserSession userSession)
+        public static bool EnsureLoggedIn(UserSession userSession)
         {
-            string strUserID = clsSuiteCRMHelper.GetRealUserId();
-            if (strUserID == "")
+            bool result = false; 
+            if (userSession != null)
             {
-                userSession.Login();
+                string userId = clsSuiteCRMHelper.GetRealUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userSession.Login();
+                    result = clsSuiteCRMHelper.GetRealUserId() != null;
+                }
             }
+
+            return result;
         }
 
 
@@ -150,20 +157,24 @@ namespace SuiteCRMClient
         /// <returns>the CRM id of the current user.</returns>
         private static string GetRealUserId()
         {
-            string userId;
-            try
+            string userId = string.Empty;
+
+            if (SuiteCRMUserSession != null)
             {
-                object data = new
+                try
                 {
-                    @session = SuiteCRMUserSession.id
-                };
-                userId = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_user_id", data);
+                    object data = new
+                    {
+                        @session = SuiteCRMUserSession.id
+                    };
+                    userId = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_user_id", data);
+                }
+                catch (Exception)
+                {
+                    // Swallow exception(!)
+                }
             }
-            catch (Exception)
-            {
-                // Swallow exception(!)
-                userId = string.Empty;
-            }
+
             return userId;
         }
 
@@ -349,25 +360,35 @@ namespace SuiteCRMClient
         /// <returns>True if the relationship was created, else false.</returns>
         public static bool TrySetRelationship(eSetRelationshipValue info, string linkFieldName)
         {
-            EnsureLoggedIn();
-            object data = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = info.module1,
-                @module_id = info.module1_id,
-                @link_field_name = linkFieldName,
-                @related_ids = new string[] { info.module2_id },
-                @name_value_list = new eNameValue[] { },
-                @delete = info.delete
-            };
-            var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+            bool result;
 
-            if (_value.Failed > 0)
+            if (EnsureLoggedIn())
             {
-                Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = info.module1,
+                    @module_id = info.module1_id,
+                    @link_field_name = linkFieldName,
+                    @related_ids = new string[] { info.module2_id },
+                    @name_value_list = new eNameValue[] { },
+                    @delete = info.delete
+                };
+                var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+
+                if (_value.Failed > 0)
+                {
+                    Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
+                }
+
+                result = (_value.Created != 0);
+            }
+            else
+            {
+                result = false;
             }
 
-            return (_value.Created != 0);
+            return result;
         }
 
 
@@ -518,7 +539,7 @@ namespace SuiteCRMClient
         {
             eModuleFields result;
 
-            if (!string.IsNullOrEmpty(module))
+            if (!string.IsNullOrEmpty(module) && SuiteCRMUserSession!= null)
             {
                 EnsureLoggedIn();
                 object data = new
