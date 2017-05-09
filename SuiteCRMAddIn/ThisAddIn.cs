@@ -246,7 +246,8 @@ namespace SuiteCRMAddIn
             if (success && !disable)
             {
                 log.Info("Starting normal operations.");
-                DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction(this.settings.EmailCategories));
+
+                DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction(this.settings));
                 StartSynchronisationProcesses();
                 this.IsLicensed = true;
             }
