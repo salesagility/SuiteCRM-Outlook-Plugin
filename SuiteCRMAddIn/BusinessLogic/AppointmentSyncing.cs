@@ -433,15 +433,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                     if (aItem.Start >= this.GetStartDate())
                     {
                         Outlook.UserProperty olPropertyModified = aItem.UserProperties[ModifiedDatePropertyName];
-                        if (olPropertyModified != null)
+                        Outlook.UserProperty olPropertyType = aItem.UserProperties[TypePropertyName];
+                        Outlook.UserProperty olPropertyEntryId = aItem.UserProperties[CrmIdPropertyName];
+                        if (olPropertyModified != null &&
+                            olPropertyType != null &&
+                            olPropertyEntryId != null)
                         {
                             /* The appointment probably already has the three magic properties 
                              * required for synchronisation; is that a proxy for believing that it
                              * already exists in CRM? If so, is it reliable? */
-                            Outlook.UserProperty olPropertyType = aItem.UserProperties[TypePropertyName];
-                            Outlook.UserProperty olPropertyEntryId = aItem.UserProperties[CrmIdPropertyName];
-                            var crmType = olPropertyType.Value.ToString();
-                            ItemsSyncState.Add(new AppointmentSyncState(crmType)
+                            ItemsSyncState.Add(new AppointmentSyncState(olPropertyType.Value.ToString())
                             {
                                 OutlookItem = aItem,
                                 OModifiedDate = DateTime.UtcNow,

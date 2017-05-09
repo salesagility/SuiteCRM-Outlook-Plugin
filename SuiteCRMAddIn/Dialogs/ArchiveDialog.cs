@@ -40,6 +40,7 @@ namespace SuiteCRMAddIn.Dialogs
 
     public partial class ArchiveDialog : Form
     {
+        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSyncing.CrmModule, "Leads", "Opportunities", "Project" };
 
         public ArchiveDialog()
         {
@@ -51,7 +52,10 @@ namespace SuiteCRMAddIn.Dialogs
 
         private ILogger Log => Globals.ThisAddIn.Log;
 
-        private void GetCustomModules()
+        /// <summary>
+        /// Add any selected custom modules to the list view
+        /// </summary>
+        private void AddCustomModules()
         {
             if (this.settings.CustomModules != null)
             {
@@ -70,6 +74,29 @@ namespace SuiteCRMAddIn.Dialogs
             }
         }
 
+        /// <summary>
+        /// Add the standard modules to the list view.
+        /// </summary>
+        private void AddStandardModules()
+        {
+            eModuleList allModules = clsSuiteCRMHelper.GetModules();
+            foreach (string moduleKey in this.standardModules.OrderBy(x => x))
+            {
+                var module = allModules.items.FirstOrDefault(x => x.module_key == moduleKey);
+                if (module != null)
+                {
+                    this.lstViewSearchModules.Items.Add(new ListViewItem
+                    {
+                        Tag = module.module_key,
+                        Text = module.module_label
+                    });
+                }
+                else
+                {
+                    Log.Warn($"Standard modules '{moduleKey}' was not found on the CRM system");
+                }
+            }
+        }
 
         private void frmArchive_Load(object sender, EventArgs e)
         {
@@ -102,9 +129,11 @@ namespace SuiteCRMAddIn.Dialogs
                 this.categoryLabel.Visible = false;
             }
 
+            this.AddStandardModules();
+
             if (Globals.ThisAddIn.Settings.ShowCustomModules)
             {
-                this.GetCustomModules();
+                this.AddCustomModules();
             }
             try
             {
@@ -207,7 +236,6 @@ namespace SuiteCRMAddIn.Dialogs
 
                 try
                 {
-                    List<string> list = new List<string> { "Accounts", ContactSyncing.CrmModule, "Leads", "Bugs", "Projects", "Cases", "Opportunties" };
                     this.tsResults.CheckBoxes = true;
                     if (searchText == string.Empty)
                     {
@@ -429,6 +457,14 @@ namespace SuiteCRMAddIn.Dialogs
                     else
                     {
                         queryText = ConstructQueryTextForUnknownModule(moduleName, escapedSearchText);
+
+                        foreach (string candidate in new string[] {"name", "description"})
+                        {
+                            if (fieldNames.Contains(candidate))
+                            {
+                                fields.Add(candidate);
+                            }
+                        }
                     }
                     break;
             }
@@ -481,10 +517,10 @@ namespace SuiteCRMAddIn.Dialogs
                     queryBuilder.Append($"{tableName}.{fieldName} LIKE '%{escapedSearchText}%' ");
                 }
 
-                queryBuilder.Append($"OR {tableName} in (select eabr.bean_id from email_addr_bean_rel eabr ")
+                queryBuilder.Append($"OR {tableName}.id in (select eabr.bean_id from email_addr_bean_rel eabr ")
                     .Append("INNER JOIN email_addresses ea on eabr.email_address_id = ea.id ")
                     .Append($"where eabr.bean_module = '{moduleName}' ")
-                    .Append($" and ea.email_address LIKE '{escapedSearchText}'");
+                    .Append($" and ea.email_address LIKE '{escapedSearchText}')");
             }
 
             return queryBuilder.ToString();
@@ -568,11 +604,11 @@ namespace SuiteCRMAddIn.Dialogs
 
             switch (module)
             {
-                case "Cases":
-                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "case_number");
-                    break;
                 case "Bugs":
                     keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "bug_number");
+                    break;
+                case "Cases":
+                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "case_number");
                     break;
                 default:
                     keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "account_name");
