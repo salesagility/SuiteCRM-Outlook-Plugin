@@ -588,10 +588,13 @@ namespace SuiteCRMClient
                 {
                     case "assigned_user_name":
                     case "char":
+                    case "email":
                     case "fullname":
                     case "name":
+                    case "phone":
                     case "readonly":
                     case "text":
+                    case "url":
                     case "varchar":
                         /* these are fields we can search for string data */
                         list.Add(field.name);
