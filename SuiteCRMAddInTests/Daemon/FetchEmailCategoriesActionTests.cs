@@ -44,9 +44,9 @@ namespace SuiteCRMAddIn.Daemon.Tests
         public FetchEmailCategoriesAction action { get; private set; }
 
         /// <summary>
-        /// The list of categories which performing my action should modify.
+        /// The settings which performing my action should modify.
         /// </summary>
-        private readonly EmailCategoriesCollection categories = new EmailCategoriesCollection();
+        private readonly clsSettings settings = new clsSettings();
 
         /// <summary>
         /// Specialisation: I need an action.
@@ -55,18 +55,18 @@ namespace SuiteCRMAddIn.Daemon.Tests
         public override void Initialize()
         {
             base.Initialize();
-            this.action = new FetchEmailCategoriesAction(categories);
+            this.action = new FetchEmailCategoriesAction(settings);
         }
 
         /// <summary>
-        /// After performing my action, there should be some categories.
+        /// After performing my action, there should be some categories in my settings.
         /// </summary>
         [TestMethod()]
         public void FetchEmailCategoriesActionPerformTest()
         {
-            Assert.AreEqual(0, categories.Count);
+            Assert.AreEqual(0, settings.EmailCategories.Count);
             this.action.Perform();
-            Assert.AreNotEqual(0, categories.Count);
+            Assert.AreNotEqual(0, settings.EmailCategories.Count);
         }
     }
 }

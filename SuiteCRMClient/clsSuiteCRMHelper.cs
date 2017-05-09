@@ -42,6 +42,14 @@ namespace SuiteCRMClient
         /// </summary>
         private static eModuleList modulesCache = null;
 
+        /// <summary>
+        /// A map that maps module names to the list of fields in the named module.
+        /// </summary>
+        /// <remarks>
+        /// Module fields change equally rarely. Cache em, too!
+        /// </remarks>
+        private static Dictionary<string, eModuleFields> moduleFieldsCache = new Dictionary<string, eModuleFields>();
+
         public static UserSession SuiteCRMUserSession;
 
         /// <summary>
@@ -106,18 +114,29 @@ namespace SuiteCRMClient
             return modules;
         }
 
-        public static void EnsureLoggedIn()
+        public static bool EnsureLoggedIn()
         {
-            EnsureLoggedIn(SuiteCRMUserSession);
+            return EnsureLoggedIn(SuiteCRMUserSession);
         }
 
-        public static void EnsureLoggedIn(UserSession userSession)
+        public static bool EnsureLoggedIn(UserSession userSession)
         {
-            string strUserID = clsSuiteCRMHelper.GetRealUserId();
-            if (strUserID == "")
+            bool result = false; 
+            if (userSession != null)
             {
-                userSession.Login();
+                string userId = clsSuiteCRMHelper.GetRealUserId();
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userSession.Login();
+                    result = clsSuiteCRMHelper.GetRealUserId() != null;
+                }
+                else
+                {
+                    result = true;
+                }
             }
+
+            return result;
         }
 
 
@@ -150,20 +169,24 @@ namespace SuiteCRMClient
         /// <returns>the CRM id of the current user.</returns>
         private static string GetRealUserId()
         {
-            string userId;
-            try
+            string userId = string.Empty;
+
+            if (SuiteCRMUserSession != null)
             {
-                object data = new
+                try
                 {
-                    @session = SuiteCRMUserSession.id
-                };
-                userId = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_user_id", data);
+                    object data = new
+                    {
+                        @session = SuiteCRMUserSession.id
+                    };
+                    userId = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_user_id", data);
+                }
+                catch (Exception)
+                {
+                    // Swallow exception(!)
+                }
             }
-            catch (Exception)
-            {
-                // Swallow exception(!)
-                userId = string.Empty;
-            }
+
             return userId;
         }
 
@@ -349,25 +372,35 @@ namespace SuiteCRMClient
         /// <returns>True if the relationship was created, else false.</returns>
         public static bool TrySetRelationship(eSetRelationshipValue info, string linkFieldName)
         {
-            EnsureLoggedIn();
-            object data = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = info.module1,
-                @module_id = info.module1_id,
-                @link_field_name = linkFieldName,
-                @related_ids = new string[] { info.module2_id },
-                @name_value_list = new eNameValue[] { },
-                @delete = info.delete
-            };
-            var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+            bool result;
 
-            if (_value.Failed > 0)
+            if (EnsureLoggedIn())
             {
-                Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = info.module1,
+                    @module_id = info.module1_id,
+                    @link_field_name = linkFieldName,
+                    @related_ids = new string[] { info.module2_id },
+                    @name_value_list = new eNameValue[] { },
+                    @delete = info.delete
+                };
+                var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+
+                if (_value.Failed > 0)
+                {
+                    Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
+                }
+
+                result = (_value.Created != 0);
+            }
+            else
+            {
+                result = false;
             }
 
-            return (_value.Created != 0);
+            return result;
         }
 
 
@@ -518,20 +551,28 @@ namespace SuiteCRMClient
         {
             eModuleFields result;
 
-            if (!string.IsNullOrEmpty(module))
+            if (clsSuiteCRMHelper.moduleFieldsCache.ContainsKey(module))
             {
-                EnsureLoggedIn();
-                object data = new
-                {
-                    @session = SuiteCRMUserSession.id,
-                    @module_name = module
-                };
-
-                result = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data);
+                result = clsSuiteCRMHelper.moduleFieldsCache[module];
             }
             else
             {
-                result = new eModuleFields();
+                if (!string.IsNullOrEmpty(module) && SuiteCRMUserSession != null)
+                {
+                    EnsureLoggedIn();
+                    object data = new
+                    {
+                        @session = SuiteCRMUserSession.id,
+                        @module_name = module
+                    };
+
+                    result = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data);
+                    clsSuiteCRMHelper.moduleFieldsCache[module] = result;
+                }
+                else
+                {
+                    result = new eModuleFields();
+                }
             }
 
             return result;
@@ -559,33 +600,42 @@ namespace SuiteCRMClient
 
             foreach (eField field in GetFieldsForModule(module).moduleFields)
             {
-                switch (field.type)
+                if (!field.name.EndsWith("_c"))
                 {
-                    case "assigned_user_name":
-                    case "char":
-                    case "fullname":
-                    case "name":
-                    case "readonly":
-                    case "text":
-                    case "varchar":
-                        /* these are fields we can search for string data */
-                        list.Add(field.name);
-                        break;
-                    case "bool":
-                    case "currency":
-                    case "date":
-                    case "datetime":
-                    case "enum":
-                    case "float":
-                    case "id":
-                    case "int":
-                    case "longtext": /* probably safer not to search this */
-                    case "relate":
-                        /* these are not */
-                        break;
-                    default:
-                        Log.Debug($"Unknown field type {field.type}");
-                        break;
+                    /* fields with names ending '_c' are generally in a separate 'custom' table */
+                    switch (field.type)
+                    {
+                        case "char":
+                        case "email":
+                        case "fullname":
+                        case "name":
+                        case "phone":
+                        case "readonly":
+                        case "text":
+                        case "url":
+                        case "varchar":
+                            /* these are fields we can search for string data */
+                            list.Add(field.name);
+                            break;
+                        case "assigned_user_name":
+                        case "bool":
+                        case "currency":
+                        case "date":
+                        case "datetime":
+                        case "enum":
+                        case "float":
+                        case "id":
+                        case "image": /* you could search image fields but it's 
+                        * unlikely to be useful */
+                        case "int":
+                        case "longtext": /* probably safer not to search this */
+                        case "relate":
+                            /* these are not */
+                            break;
+                        default:
+                            Log.Debug($"Unknown field type {field.type}");
+                            break;
+                    }
                 }
             }
             return list;

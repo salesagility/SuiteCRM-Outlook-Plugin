@@ -32,6 +32,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Collections.Generic;
     using System.Linq;
     using System.Runtime.InteropServices;
+    using System.Security.Cryptography;
+    using System.Text;
     using System.Threading;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -343,10 +345,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             byte[] strRet = null;
 
             Log.Info($"EmailArchiving.GetAttachmentBytes: serialising attachment '{objMailAttachment.FileName}' of email '{objMail.Subject}'.");
-
+            
             if (objMailAttachment != null)
             {
-                var temporaryAttachmentPath = Environment.SpecialFolder.MyDocuments.ToString() + "\\SuiteCRMTempAttachmentPath";
+                var tempPath = System.IO.Path.GetTempPath();
+                var hash = BitConverter.ToString(((HashAlgorithm)CryptoConfig.CreateFromName("MD5")).ComputeHash(new UTF8Encoding().GetBytes(objMail.EntryID)));
+                var temporaryAttachmentPath = $"{tempPath}\\Attachments_{hash}";
+
                 if (!System.IO.Directory.Exists(temporaryAttachmentPath))
                 {
                     System.IO.Directory.CreateDirectory(temporaryAttachmentPath);
