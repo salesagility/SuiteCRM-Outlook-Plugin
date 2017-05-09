@@ -606,6 +606,8 @@ namespace SuiteCRMClient
                     case "enum":
                     case "float":
                     case "id":
+                    case "image": /* you could search image fields but it's 
+                        * unlikely to be useful */
                     case "int":
                     case "longtext": /* probably safer not to search this */
                     case "relate":
