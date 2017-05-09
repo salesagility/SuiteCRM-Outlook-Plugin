@@ -457,6 +457,14 @@ namespace SuiteCRMAddIn.Dialogs
                     else
                     {
                         queryText = ConstructQueryTextForUnknownModule(moduleName, escapedSearchText);
+
+                        foreach (string candidate in new string[] {"name", "description"})
+                        {
+                            if (fieldNames.Contains(candidate))
+                            {
+                                fields.Add(candidate);
+                            }
+                        }
                     }
                     break;
             }
@@ -509,10 +517,10 @@ namespace SuiteCRMAddIn.Dialogs
                     queryBuilder.Append($"{tableName}.{fieldName} LIKE '%{escapedSearchText}%' ");
                 }
 
-                queryBuilder.Append($"OR {tableName} in (select eabr.bean_id from email_addr_bean_rel eabr ")
+                queryBuilder.Append($"OR {tableName}.id in (select eabr.bean_id from email_addr_bean_rel eabr ")
                     .Append("INNER JOIN email_addresses ea on eabr.email_address_id = ea.id ")
                     .Append($"where eabr.bean_module = '{moduleName}' ")
-                    .Append($" and ea.email_address LIKE '{escapedSearchText}'");
+                    .Append($" and ea.email_address LIKE '{escapedSearchText}')");
             }
 
             return queryBuilder.ToString();
@@ -596,11 +604,11 @@ namespace SuiteCRMAddIn.Dialogs
 
             switch (module)
             {
-                case "Cases":
-                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "case_number");
-                    break;
                 case "Bugs":
                     keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "bug_number");
+                    break;
+                case "Cases":
+                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "case_number");
                     break;
                 default:
                     keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "account_name");
