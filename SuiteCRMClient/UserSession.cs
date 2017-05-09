@@ -99,50 +99,7 @@ namespace SuiteCRMClient
                 }
                 else
                 {
-                    AwaitingAuthentication = true;
-                    var username = SuiteCRMUsername != null ? SuiteCRMUsername : string.Empty;
-                    var password = this.SuiteCRMPassword != null ? this.SuiteCRMPassword : string.Empty;
-
-                    object loginData = new
-                    {
-                        user_auth = new
-                        {
-                            user_name = username,
-                            password = global::SuiteCRMClient.UserSession.GetMD5Hash(password)
-                        }
-                    };
-                    var loginReturn = this.restServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
-                    if (loginReturn.ErrorName != null)
-                    {
-                        loginData = new
-                        {
-                            @user_auth = new
-                            {
-                                @user_name = username,
-                                @password = password
-                            }
-                        };
-                        loginReturn = this.restServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
-                        if (loginReturn.ErrorName != null)
-                        {
-                            id = String.Empty;
-                            SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
-                            throw new Exception(loginReturn.ErrorDescription);
-                        }
-                        else
-                        {
-                            id = loginReturn.SessionID;
-                            SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
-                            result = loginReturn.PollingInterval;
-                        }
-                    }
-                    else
-                    {
-                        id = loginReturn.SessionID;
-                        SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
-                        result = loginReturn.PollingInterval;
-                    }
-                    AwaitingAuthentication = false;
+                    result = AuthenticateCRM();
                 }
             }
             catch (Exception ex)
@@ -154,6 +111,70 @@ namespace SuiteCRMClient
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Authenticate against CRM.
+        /// </summary>
+        /// <returns>A polling interval value, it returned by the host (currently it isn't)</returns>
+        private int? AuthenticateCRM()
+        {
+            int? result;
+            AwaitingAuthentication = true;
+            var username = SuiteCRMUsername != null ? SuiteCRMUsername : string.Empty;
+            var password = this.SuiteCRMPassword != null ? this.SuiteCRMPassword : string.Empty;
+
+            var hashedPass = global::SuiteCRMClient.UserSession.GetMD5Hash(password);
+            RESTObjects.Login loginReturn;
+
+            try
+            {
+                loginReturn = AuthenticateCRM(username, hashedPass);
+
+                id = loginReturn.SessionID;
+                SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                result = loginReturn.PollingInterval;
+            }
+            catch (CrmServerErrorException)
+            {
+                try
+                {
+                    loginReturn = AuthenticateCRM(username, password);
+
+                    id = loginReturn.SessionID;
+                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                    result = loginReturn.PollingInterval;
+
+                }
+                catch (CrmServerErrorException)
+                {
+                    id = String.Empty;
+                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+                    throw;
+                }
+            }
+
+            AwaitingAuthentication = false;
+            return result;
+        }
+
+        /// <summary>
+        /// Authenticate against CRM, using this username and password.
+        /// </summary>
+        /// <param name="username">The username.</param>
+        /// <param name="pass">The password.</param>
+        /// <returns>An encapsulated session ID, essentially.</returns>
+        private RESTObjects.Login AuthenticateCRM(string username, string pass)
+        {
+            object loginData = new
+            {
+                user_auth = new
+                {
+                    user_name = username,
+                    password = pass
+                }
+            };
+            return this.restServer.GetCrmResponse<RESTObjects.Login>("login", loginData);
         }
 
         /// <summary>
