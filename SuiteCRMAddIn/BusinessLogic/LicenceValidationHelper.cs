@@ -156,14 +156,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                     break;
                 case HttpStatusCode.BadRequest:
                     /* that's a conventionally signalled fail. */
-                    result = false;
+                    result = true;
                     break;
                 default:
                     logger.Warn(
                         String.Format(
                             "LicenceValidationHelper.InterpretStatusCode: Unexpected status code {0}", 
                             response.StatusCode));
-                    result = false;
+                    result = true;
                     break;
             }
 
