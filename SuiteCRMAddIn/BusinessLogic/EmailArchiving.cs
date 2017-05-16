@@ -177,12 +177,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             bool result = false;
             var objEmail = SerialiseEmailObject(mailItem, archiveType);
-            List<string> contactIds = objEmail.GetValidContactIDs(strExcludedEmails);
+            List<string> contacts = objEmail.GetValidContactIDs(strExcludedEmails);
 
-            if (contactIds.Count > 0)
+            if (contacts.Count > 0)
             {
                 Log.Info($"Archiving {archiveType} email “{mailItem.Subject}”");
-                DaemonWorker.Instance.AddTask(new ArchiveEmailAction(SuiteCRMUserSession, objEmail, archiveType, contactIds));
+                DaemonWorker.Instance.AddTask(new ArchiveEmailAction(SuiteCRMUserSession, objEmail, archiveType, contacts));
                 result = true;
             }
 
