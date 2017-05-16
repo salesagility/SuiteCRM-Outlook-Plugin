@@ -32,8 +32,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Collections.Generic;
     using System.Linq;
     using System.Runtime.InteropServices;
-    using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -340,17 +338,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public byte[] GetAttachmentBytes(Outlook.Attachment objMailAttachment, Outlook.MailItem objMail)
+        public byte[] GetAttachmentBytes(Outlook.Attachment attachment, Outlook.MailItem mail)
         {
             byte[] strRet = null;
 
-            Log.Info($"EmailArchiving.GetAttachmentBytes: serialising attachment '{objMailAttachment.FileName}' of email '{objMail.Subject}'.");
+            Log.Info($"EmailArchiving.GetAttachmentBytes: serialising attachment '{attachment.FileName}' of email '{mail.Subject}'.");
             
-            if (objMailAttachment != null)
+            if (attachment != null)
             {
                 var tempPath = System.IO.Path.GetTempPath();
-                var hash = BitConverter.ToString(((HashAlgorithm)CryptoConfig.CreateFromName("MD5")).ComputeHash(new UTF8Encoding().GetBytes(objMail.EntryID)));
-                var temporaryAttachmentPath = $"{tempPath}\\Attachments_{hash}";
+                string uid = Guid.NewGuid().ToString();
+                var temporaryAttachmentPath = $"{tempPath}\\Attachments_{uid}";
 
                 if (!System.IO.Directory.Exists(temporaryAttachmentPath))
                 {
@@ -358,22 +356,22 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 try
                 {
-                    var attachmentFilePath = temporaryAttachmentPath + "\\" + objMailAttachment.FileName;
-                    objMailAttachment.SaveAsFile(attachmentFilePath);
+                    var attachmentFilePath = temporaryAttachmentPath + "\\" + attachment.FileName;
+                    attachment.SaveAsFile(attachmentFilePath);
                     strRet = System.IO.File.ReadAllBytes(attachmentFilePath);
                 }
                 catch (COMException ex)
                 {
                     try
                     {
-                        Log.Warn("Failed to get attachment bytes for " + objMailAttachment.DisplayName, ex);
+                        Log.Warn("Failed to get attachment bytes for " + attachment.DisplayName, ex);
                         // Swallow exception(!)
 
                         string strName = temporaryAttachmentPath + "\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
-                        objMail.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
+                        mail.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         foreach (string strFileName in System.IO.Directory.GetFiles(strName.Replace(".html", "_files")))
                         {
-                            if (strFileName.EndsWith("\\" + objMailAttachment.DisplayName))
+                            if (strFileName.EndsWith("\\" + attachment.DisplayName))
                             {
                                 strRet = System.IO.File.ReadAllBytes(strFileName);
                                 break;
