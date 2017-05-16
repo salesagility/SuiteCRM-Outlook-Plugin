@@ -2,7 +2,7 @@
 
 ### What's in this repository ###
 
-SuiteCRM Outlook Plug-In v3.0.3 - forked to customize license checks and complie for personal use.
+SuiteCRM Outlook Plug-In v3.0.3
 
 This repository has been created to allow community members to collaborate and contribute to the project.
 
