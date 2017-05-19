@@ -111,7 +111,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error($"EmailArchiving.ProcessFolderItems; folder {objFolder.Name}:", ex);
+                Log.Error($"EmailArchiving.ArchiveFolderItems; folder {objFolder.Name}:", ex);
             }
         }
 

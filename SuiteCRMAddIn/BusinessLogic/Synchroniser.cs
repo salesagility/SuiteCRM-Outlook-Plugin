@@ -827,12 +827,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                         // i.e., the entry was updated...
                         untouched.Remove(state);
                         state.SetSynced();
-                        LogItemAction(state.OutlookItem, "Synchroniser.UpdateItemsFromCrmToOutlook, item removed from untouched");
+                        LogItemAction(state.OutlookItem, "Synchroniser.AddOrUpdateItemsFromCrmToOutlook, item removed from untouched");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Synchroniser.UpdateItemsFromCrmToOutlook", ex);
+                    Log.Error("Synchroniser.AddOrUpdateItemsFromCrmToOutlook", ex);
                 }
             }
         }

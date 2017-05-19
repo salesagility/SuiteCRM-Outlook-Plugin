@@ -31,6 +31,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Text;
+    using System.Text.RegularExpressions;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -60,7 +61,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Header for a block of accept/decline links in a meeting invite body.
         /// </summary>
-        private const string AcceptDeclineHeader = "-- \nAccept/Decline links\n";
+        private const string AcceptDeclineHeader = "-- \nAccept/Decline links";
 
 
         public AppointmentSyncing(string name, SyncContext context)
@@ -254,14 +255,98 @@ namespace SuiteCRMAddIn.BusinessLogic
             return newState;
         }
 
+        /// <summary>
+        /// A meeting created in CRM cannot natively be accepted or declined in Outlook. Add links to allow
+        /// acceptance/decline to the body of the item, if they do not already exist.
+        /// </summary>
+        /// <remarks>
+        /// There are multiple potential gotchas here. The body may already contain the description (it should, 
+        /// they're meant to be copies of the same text); but either may have been edited independently of the
+        /// other. Either may already contain accept/decline links. And line feeds may have been replaced
+        /// by line-feed/carriage-return pairs. We want to end up with
+        /// 1. ONE copy of the body text;
+        /// 2. ONE copy of the 'description' text, if different;
+        /// 3. ONE copy of the accept.decline links.
+        /// </remarks>
+        /// <param name="crmItem">The CRM version of the item</param>
+        /// <param name="olItem">The Outlook version, assumed to be of the same item.</param>
+        /// <param name="crmType">The CRM type of the item.</param>
         private void MaybeAddAcceptDeclineLinks(eEntryValue crmItem, Outlook.AppointmentItem olItem, string crmType)
         {
-            string description = crmItem.GetValueAsString("description") ?? string.Empty;
+            Outlook.UserProperty olPropertyModified = olItem.UserProperties[ModifiedDatePropertyName];
 
-            if (this.DefaultCrmModule.Equals(crmType) && description.IndexOf(AcceptDeclineHeader) == -1)
+            if (this.DefaultCrmModule.Equals(crmType))
             {
-                olItem.Body = $"{description}\n-- \n\n{this.AcceptDeclineLinks(crmItem)}";
+                string crmVersion = StripAndTruncate(
+                    crmItem.GetValueAsString("description") ?? string.Empty,
+                    AcceptDeclineHeader);
+                string outlookVersion = StripAndTruncate(olItem.Body, AcceptDeclineHeader);
+                string preferredVersion;
+
+                if (outlookVersion.Equals(crmVersion))
+                {
+                    preferredVersion = outlookVersion;
+                }
+                else if (olPropertyModified != null &&
+                    ParseDateTimeFromUserProperty(olPropertyModified.Value.ToString()) > crmItem.GetValueAsDateTime("date_modified"))
+                {
+                    preferredVersion = outlookVersion;
+                }
+                else
+                {
+                    preferredVersion = crmVersion;
+                }
+
+                olItem.Body = $"{preferredVersion}\n\n{this.AcceptDeclineLinks(crmItem)}";
             }
+        }
+
+        /// <summary>
+        /// If the string to modify contains the string to seek (ignoring differences in line ends)
+        /// return that part of the string to modify which precedes the string to seek; otherwise
+        /// return the string to modify unmodified. THIS IS NASTY. 
+        /// </summary>
+        /// <param name="toModify">The string which may be modified.</param>
+        /// <param name="toSeek">The string to seek.</param>
+        /// <returns>that part of the string to modify which precedes the string to seek.</returns>
+        private string StripAndTruncate(string toModify, string toSeek)
+        {
+            var offset = IndexIgnoreLineEnds(toModify, toSeek);
+            var prefix = offset == -1 ?
+                toModify :
+                StripReturns(toModify).Substring(0, offset);
+
+            return Regex.Replace(prefix, @"\s+$", string.Empty);
+        }
+
+        /// <summary>
+        /// Find the index of the string to seek in the string to search, ignoring differences in line ends.
+        /// </summary>
+        /// <remarks>
+        /// This is obviously impossible since differences in line ends result in differences in offset; this 
+        /// method treats any concatenation of potential line-end characters as a single character.
+        /// </remarks>
+        /// <param name="toSearch">The string to be searched.</param>
+        /// <param name="toSeek">The string to seek.</param>
+        /// <returns>An approximation of the index, or -1 if not found.</returns>
+        private int IndexIgnoreLineEnds(string toSearch, string toSeek)
+        {
+            string strippedSearch = Regex.Replace(string.IsNullOrEmpty(toSearch) ? string.Empty : toSearch, @" *[\n\r]+", ".");
+            string strippedSeek = Regex.Replace(string.IsNullOrEmpty(toSeek) ? string.Empty : toSeek, @" *[\n\r]+", ".");
+
+            return strippedSearch.IndexOf(strippedSeek);
+        }
+
+        /// <summary>
+        /// Remove carriage return characters from this string.
+        /// </summary>
+        /// <param name="input">The string, which may contain carriage return characters.</param>
+        /// <returns>A similar string, which does not. If input is null, return an empty string.</returns>
+        private string StripReturns(string input)
+        {
+            return string.IsNullOrWhiteSpace(input) ?
+                string.Empty :
+                Regex.Replace(input, @" *\r", "");
         }
 
         /// <summary>
@@ -802,6 +887,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string AcceptDeclineLinks(eEntryValue crmItem)
         {
             StringBuilder bob = new StringBuilder(AcceptDeclineHeader);
+            bob.Append(Environment.NewLine);
 
             foreach (string acceptStatus in new string[] { "Accept", "Tentative", "Decline" })
             {
@@ -817,7 +903,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             bob.Append($"To {acceptStatus} this invitation: {Globals.ThisAddIn.Settings.host}/index.php?entryPoint=acceptDecline&module=Meetings")
                 .Append($"&user_id={clsSuiteCRMHelper.GetUserId()}")
                 .Append($"&record={crmItem.id}")
-                .Append($"&accept_status={acceptStatus}\n");
+                .Append($"&accept_status={acceptStatus}")
+                .Append(Environment.NewLine);
 
             return bob.ToString();
         }
