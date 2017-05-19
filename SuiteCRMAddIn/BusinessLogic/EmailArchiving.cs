@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -35,8 +35,11 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Threading;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
+    /// <summary>
+    /// The agent which handles the automatic and manual archiving of emails.
+    /// </summary>
     /// <remarks>
-    /// Some of functionality of this class is duplicated in uiteCRMClient.Email.clsEmailArchive.
+    /// Some of functionality of this class is duplicated in SuiteCRMClient.Email.clsEmailArchive.
     /// TODO: Refactor. See issue #125
     /// </remarks>
     public class EmailArchiving : RepeatingProcess
@@ -343,7 +346,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             byte[] strRet = null;
 
             Log.Info($"EmailArchiving.GetAttachmentBytes: serialising attachment '{attachment.FileName}' of email '{mail.Subject}'.");
-            
+
             if (attachment != null)
             {
                 var tempPath = System.IO.Path.GetTempPath();
@@ -432,7 +435,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var warnings = CreateEmailRelationshipsWithEntities(result.EmailId, selectedCrmEntities);
                 result = ArchiveResult.Success(
                     result.EmailId,
-                    result.Problems == null ? 
+                    result.Problems == null ?
                     warnings :
                     result.Problems.Concat(warnings));
             }
@@ -471,7 +474,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="mailItem">The email item to send.</param>
         /// <param name="type">?unknown</param>
-        /// <returns>An archive result comprising the CRM id of the email, if stored, 
+        /// <returns>An archive result comprising the CRM id of the email, if stored,
         /// and a list of exceptions encountered in the process.</returns>
         public ArchiveResult SaveEmailToCrm(Outlook.MailItem mailItem, string type)
         {
@@ -567,7 +570,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="mailItem">The mail item to despatch.</param>
         /// <param name="type">?unknown.</param>
-        /// <returns>An archive result comprising the CRM id of the email, if stored, 
+        /// <returns>An archive result comprising the CRM id of the email, if stored,
         /// and a list of exceptions encountered in the process.</returns>
         private ArchiveResult ConstructAndDespatchCrmItem(Outlook.MailItem mailItem, string type)
         {
@@ -639,7 +642,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     result = mailItem.CreationTime;
                     if (result > now)
                     {
-                        /* if the actual date hasn't yet been set, Outlook will 
+                        /* if the actual date hasn't yet been set, Outlook will
                          * nonchalantly return 1st January 4501 */
                         result = now;
                     }

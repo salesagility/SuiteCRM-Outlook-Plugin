@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -36,7 +36,10 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// <summary>
     /// Synchronise items of the class for which I am responsible.
     /// </summary>
-    /// <typeparam name="OutlookItemType">The class of item for which I am responsible.</typeparam>
+    /// <remarks>
+    /// It's arguable that specialisations of this class ought to be singletons, but currently they are not.
+    /// </remarks>
+    /// <typeparam name="OutlookItemType">The class of item that I am responsible for synchronising.</typeparam>
     public abstract class Synchroniser<OutlookItemType> : RepeatingProcess, IDisposable
         where OutlookItemType : class
     {
@@ -474,7 +477,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Constructs a new SyncState object for this Outlook item and adds it to my 
+        /// Constructs a new SyncState object for this Outlook item and adds it to my
         /// collection of sync states.
         /// </summary>
         /// <param name="oItem">The Outlook item to wrap</param>
@@ -600,10 +603,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
+        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM.
         /// </summary>
         /// <remarks>
-        /// You'd think that with normal object oriented programming you could just implement this 
+        /// You'd think that with normal object oriented programming you could just implement this
         /// method here, but because Outlook items are not really objects and don't have a common
         /// superclass you can't. So it has to be implemented in subclasses.
         /// </remarks>
@@ -614,7 +617,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected abstract string ConstructAndDespatchCrmItem(OutlookItemType olItem, string crmType, string entryId);
 
         /// <summary>
-        /// Every Outlook item which is to be synchronised must have a property SOModifiedDate, 
+        /// Every Outlook item which is to be synchronised must have a property SOModifiedDate,
         /// a property SType, and a property SEntryId, referencing respectively the last time it
         /// was modified, the type of CRM item it is to be synchronised with, and the id of the
         /// CRM item it is to be synchronised with.
@@ -638,8 +641,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected virtual void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, eEntryValue crmItem)
         {
             this.EnsureSynchronisationPropertiesForOutlookItem(
-                olItem, 
-                crmItem, 
+                olItem,
+                crmItem,
                 this.DefaultCrmModule);
         }
 
@@ -659,7 +662,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Every Outlook item which is to be synchronised must have a property SOModifiedDate, 
+        /// Every Outlook item which is to be synchronised must have a property SOModifiedDate,
         /// a property SType, and a property SEntryId, referencing respectively the last time it
         /// was modified, the type of CRM item it is to be synchronised with, and the id of the
         /// CRM item it is to be synchronised with.
@@ -746,7 +749,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Parse a date time object from a user property, assuming the ISO 8601 date-time 
+        /// Parse a date time object from a user property, assuming the ISO 8601 date-time
         /// format but ommitting the 'T'. (why? I don't know. TODO: possibly fix).
         /// </summary>
         /// <remarks>
@@ -807,8 +810,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="items">The items to be synchronised.</param>
         /// <param name="folder">The outlook folder to synchronise into.</param>
-        /// <param name="untouched">A list of sync states of existing items which have 
-        /// not yet been synchronised; this list is modified (destructuvely changed) 
+        /// <param name="untouched">A list of sync states of existing items which have
+        /// not yet been synchronised; this list is modified (destructuvely changed)
         /// by the action of this method.</param>
         /// <param name="crmType">The CRM record type ('module') to be fetched.</param>
         protected virtual void AddOrUpdateItemsFromCrmToOutlook(
@@ -961,7 +964,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Entry point from event handler, called when an Outlook item of class AppointmentItem 
+        /// Entry point from event handler, called when an Outlook item of class AppointmentItem
         /// is believed to have changed.
         /// </summary>
         /// <param name="olItem">The item which has changed.</param>

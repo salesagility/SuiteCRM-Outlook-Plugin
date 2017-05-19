@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -31,6 +31,9 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Runtime.InteropServices;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
+    /// <summary>
+    /// An agent which synchronises Outlook Task items with CRM.
+    /// </summary>
     public class TaskSyncing: Synchroniser<Outlook.TaskItem>
     {
         /// <summary>
@@ -247,7 +250,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             }
             try
-            { 
+            {
                 if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_due")))
                 {
                     outlookItem.DueDate = date_due.Value; // DateTime.Parse(dResult.date_due.value.ToString());
@@ -287,7 +290,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
+        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM.
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmType">The type within CRM to which the item should be added.</param>

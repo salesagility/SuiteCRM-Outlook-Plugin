@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -33,6 +33,9 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Windows.Forms;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
+    /// <summary>
+    /// An agent which synchronises Outlook Contact items with CRM.
+    /// </summary>
     public class ContactSyncing: Synchroniser<Outlook.ContactItem>
     {
         /// <summary>
@@ -142,7 +145,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* The date_modified value in CRM does not get updated when the sync_contact value
                  * is changed. But seeing this value can only be updated at the CRM side, if it
-                 * has changed the change must have been at the CRM side. It doesn't change to false, 
+                 * has changed the change must have been at the CRM side. It doesn't change to false,
                  * it simply ceases to be sent. Set the item to Private in Outlook. */
                 if (syncStateForItem.OutlookItem.Sensitivity != Outlook.OlSensitivity.olPrivate)
                 {
@@ -245,8 +248,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Return true if this CRM contact should be synchronised with Outlook.
         /// </summary>
         /// <remarks>
-        /// If the 'Sync to Outlook' field is set in CRM, we get 'true' as the value of crmItem.sync_contact. 
-        /// But if the field is not set, we do not (or do not reliably) get 'false'. The sync_contact 
+        /// If the 'Sync to Outlook' field is set in CRM, we get 'true' as the value of crmItem.sync_contact.
+        /// But if the field is not set, we do not (or do not reliably) get 'false'. The sync_contact
         /// property may have a value of ''.
         /// </remarks>
         /// <param name="crmContact">The CRM contact.</param>
@@ -273,7 +276,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Update an existing Outlook item with values taken from a corresponding CRM item. Note that 
+        /// Update an existing Outlook item with values taken from a corresponding CRM item. Note that
         /// this just overwrites all values in the Outlook item.
         /// </summary>
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
@@ -316,7 +319,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Set all those properties of this outlook item whose values are different from the 
+        /// Set all those properties of this outlook item whose values are different from the
         /// equivalent values on this CRM item. Update the synchronisation properties only if some
         /// other property has actually changed.
         /// </summary>
@@ -354,9 +357,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             EnsureSynchronisationPropertiesForOutlookItem(
-                outlookItem, 
-                crmItem.GetValueAsString("date_modified"), 
-                crmItem.GetValueAsString("sync_contact"), 
+                outlookItem,
+                crmItem.GetValueAsString("date_modified"),
+                crmItem.GetValueAsString("sync_contact"),
                 crmItem.GetValueAsString("id"));
         }
 
@@ -450,13 +453,13 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 EnsureSyncWithOutlookSetInCRM(result, syncProperty);
             }
- 
+
             return result;
         }
 
 
         /// <summary>
-        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM. 
+        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM.
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmType">The type within CRM to which the item should be added.</param>
@@ -479,7 +482,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// If it was created in Outlook and doesn't exist in CRM,  (in which case it won't yet have a 
+        /// If it was created in Outlook and doesn't exist in CRM,  (in which case it won't yet have a
         /// magic SShouldSync property) then we need to guarantee changes made in CRM are copied back
         /// by setting the Sync to Outlook checkbox in CRM.
         /// </summary>
