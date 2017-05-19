@@ -22,11 +22,13 @@
  */
 namespace SuiteCRMAddIn.Daemon
 {
-    /// <remarks>Not currently used. You can't make a list of Outlook items detached from their 
-    /// Outlook collection because they're not real objects, and if the current selection changes 
-    /// before the process runs the process acts on the wrong things. I like the idea of 
-    /// asynchronous processing to speed up perceived user interface response, but this isn't 
-    /// working yet.</remarks>
+    /// <summary>An action to be queued and performed by the DaemonWorker.</summary>
+	/// <remarks>
+    /// DaemonActions are intended to be run essentially once, but may be allowed a number of attempts 
+	/// (intended to be limited) in case, for example due to network problems, the first attempt(s) fail. 
+	/// However, DaemonActions are not intended for things which are to be run repeatedly. For that, 
+	/// specialise [RepeatingProcess](class_suite_c_r_m_add_in_1_1_business_logic_1_1_repeating_process.html).
+    /// <remarks>
     public interface DaemonAction
     {
         /// <summary>
