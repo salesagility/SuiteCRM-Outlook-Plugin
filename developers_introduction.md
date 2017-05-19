@@ -14,6 +14,10 @@ The original code makes heavy use of Hungarian notation, and nothing conformed t
 
 This is being improved, gradually. Newly created forms and dialogs, for example, are now in the namespace SuiteCRMAddin.Dialogs, and have class names ending in **Dialog**, whereas older forms and dialogs are found in SuiteCRMAddIn with names prefixed **frm**. The intention is that they should gradually be migrated.
 
+## Documentation
+
+Documentation is partial and incomplete; and, since we don't know the original designers intention and have had to infer it from the code, some may be mistaken or just plain wrong. We are gradually trying to improve this situation.
+
 Broadly, all inline documentation has been written by Simon; at the point that he took over there was very little inline documentation at all. He is to be blamed, therefore, for all the bits that are wrong or out of date.
 
-
+HTML documentation is generated from the inline documentation using [doxygen](https://www.stack.nl/~dimitri/doxygen/). **The HTML documentation should never be directly edited**. Instead please edit inline documentation in the code, and regenerate with doxygen. A convention has been adopted of adding a file *Documentation.cs* to each package, to contain package level documentation. By convention this file should contain no class or other code.
