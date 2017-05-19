@@ -52,3 +52,7 @@ bin
 obj
 
 licencekey\.txt
+
+Documentation/html/
+
+Documentation/latex/
