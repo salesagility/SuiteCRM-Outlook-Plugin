@@ -65,10 +65,12 @@
     <Compile Include="clsAddValue.cs" />
     <Compile Include="CrmRestServer.cs" />
     <Compile Include="CrmServerErrorException.cs" />
+    <Compile Include="Documentation.cs" />
     <Compile Include="Email\ArchiveResult.cs" />
     <Compile Include="Email\clsEmailArchive.cs" />
     <Compile Include="Email\clsEmailAttachments.cs" />
     <Compile Include="CrmEntity.cs" />
+    <Compile Include="Email\Documentation.cs" />
     <Compile Include="Email\EmailArchiveType.cs" />
     <Compile Include="Exceptions\CrmSaveDataException.cs" />
     <Compile Include="LDAPAuthenticationHelper.cs" />
@@ -76,6 +78,7 @@
     <Compile Include="Logging\LogEntryType.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />
     <Compile Include="Objective.cs" />
+    <Compile Include="RESTObjects\Documentation.cs" />
     <Compile Include="RESTObjects\eContactDetail.cs" />
     <Compile Include="RESTObjects\eDocumentRevision.cs" />
     <Compile Include="RESTObjects\eEntryValue.cs" />
