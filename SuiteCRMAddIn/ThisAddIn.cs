@@ -190,7 +190,7 @@ namespace SuiteCRMAddIn
             this.btnArchive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
             this.btnArchive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
             this.btnArchive.Caption = "Archive";
-            this.btnArchive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+            this.btnArchive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRMLogo);
             this.btnArchive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
             this.btnArchive.Visible = true;
             this.btnArchive.BeginGroup = true;
@@ -403,7 +403,7 @@ namespace SuiteCRMAddIn
 
         public void ShowSettingsForm()
         {
-            var settingsForm = new frmSettings();
+            var settingsForm = new SettingsDialog();
             settingsForm.SettingsChanged += (sender, args) => this.LogKeySettings(settings);
             settingsForm.ShowDialog();
         }
@@ -615,7 +615,7 @@ namespace SuiteCRMAddIn
                 Office.CommandBarButton objMainMenu = (Office.CommandBarButton)CommandBar.Controls.Add(Microsoft.Office.Core.MsoControlType.msoControlButton, this.missing, this.missing, this.missing, this.missing);
                 objMainMenu.Caption = "SuiteCRM Archive";
                 objMainMenu.Visible = true;
-                objMainMenu.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+                objMainMenu.Picture = RibbonImageHelper.Convert(Resources.SuiteCRMLogo);
                 objMainMenu.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.contextMenuArchiveButton_Click);
             }
             catch (Exception)

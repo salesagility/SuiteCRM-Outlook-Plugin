@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using BusinessLogic;
     using Microsoft.Office.Interop.Outlook;
@@ -33,11 +33,11 @@ namespace SuiteCRMAddIn
     using System.Windows.Forms;
     using Exception = System.Exception;
 
-    public partial class frmSettings : Form
+    public partial class SettingsDialog : Form
     {
         public EventHandler SettingsChanged;
 
-        public frmSettings()
+        public SettingsDialog()
         {
             InitializeComponent();
         }
@@ -285,7 +285,7 @@ namespace SuiteCRMAddIn
         {
             if (cbShowCustomModules.Checked)
             {
-                frmCustomModules objfrmCustomModules = new frmCustomModules();
+                CustomModulesDialog objfrmCustomModules = new CustomModulesDialog();
                 objfrmCustomModules.ShowDialog();
             }
         }
@@ -310,7 +310,7 @@ namespace SuiteCRMAddIn
         {
             if (cbShowCustomModules.Checked)
             {
-                frmCustomModules objfrmCustomModules = new frmCustomModules();
+                CustomModulesDialog objfrmCustomModules = new CustomModulesDialog();
                 objfrmCustomModules.ShowDialog();
             }
         }

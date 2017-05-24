@@ -197,10 +197,10 @@
     can be found.
   -->
   <ItemGroup>
-    <Compile Include="AddressBook.cs">
+    <Compile Include="Dialogs\AddressBook.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="AddressBook.Designer.cs">
+    <Compile Include="Dialogs\AddressBook.Designer.cs">
       <DependentUpon>AddressBook.cs</DependentUpon>
     </Compile>
     <Compile Include="BusinessLogic\CRMPermissionsCache.cs" />
@@ -222,6 +222,11 @@
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="Exceptions\Documentation.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="ProtoItems\Documentation.cs" />
     <Compile Include="ProtoItems\ProtoAppointment.cs" />
     <Compile Include="ProtoItems\ProtoContact.cs" />
@@ -249,21 +254,16 @@
     <Compile Include="clsGlobals.cs" />
     <Compile Include="clsSettings.cs" />
     <Compile Include="Exceptions\CouldNotConstructQueryException.cs" />
-    <Compile Include="EmailAccountArchiveSettingsControl.cs">
+    <Compile Include="Dialogs\EmailAccountArchiveSettingsControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="EmailAccountArchiveSettingsControl.Designer.cs">
+    <Compile Include="Dialogs\EmailAccountArchiveSettingsControl.Designer.cs">
       <DependentUpon>EmailAccountArchiveSettingsControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="ReconfigureOrDisableDialog.cs">
+    <Compile Include="Dialogs\ReconfigureOrDisableDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ReconfigureOrDisableDialog.Designer.cs">
+    <Compile Include="Dialogs\ReconfigureOrDisableDialog.Designer.cs">
       <DependentUpon>ReconfigureOrDisableDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="Dialogs\ArchiveDialog.cs">
@@ -272,17 +272,17 @@
     <Compile Include="Dialogs\ArchiveDialog.Designer.cs">
       <DependentUpon>ArchiveDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmCustomModules.cs">
+    <Compile Include="Dialogs\CustomModulesDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmCustomModules.Designer.cs">
-      <DependentUpon>frmCustomModules.cs</DependentUpon>
+    <Compile Include="Dialogs\CustomModulesDialog.Designer.cs">
+      <DependentUpon>CustomModulesDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmSettings.cs">
+    <Compile Include="Dialogs\SettingsDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmSettings.Designer.cs">
-      <DependentUpon>frmSettings.cs</DependentUpon>
+    <Compile Include="Dialogs\SettingsDialog.Designer.cs">
+      <DependentUpon>SettingsDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="FileLogger.cs" />
     <Compile Include="Log4NetLogger.cs" />
@@ -295,33 +295,36 @@
     </Compile>
     <Compile Include="Robustness.cs" />
     <Compile Include="WaitCursor.cs" />
-    <Compile Include="WithCustomModulesSelectorForm.cs">
+    <Compile Include="Dialogs\WithCustomModulesSelectorForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <EmbeddedResource Include="AddressBook.resx">
+    <EmbeddedResource Include="Dialogs\AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ShuttingDownDialog.resx">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="EmailAccountArchiveSettingsControl.resx">
+    <EmbeddedResource Include="Dialogs\EmailAccountArchiveSettingsControl.resx">
       <DependentUpon>EmailAccountArchiveSettingsControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ArchiveDialog.resx">
       <DependentUpon>ArchiveDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="frmCustomModules.resx">
-      <DependentUpon>frmCustomModules.cs</DependentUpon>
+    <EmbeddedResource Include="Dialogs\CustomModulesDialog.resx">
+      <DependentUpon>CustomModulesDialog.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="frmSettings.resx">
-      <DependentUpon>frmSettings.cs</DependentUpon>
+    <EmbeddedResource Include="Dialogs\SettingsDialog.resx">
+      <DependentUpon>SettingsDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\WithCustomModulesSelectorForm.resx">
+      <DependentUpon>WithCustomModulesSelectorForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <SubType>Designer</SubType>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="ReconfigureOrDisableDialog.resx">
+    <EmbeddedResource Include="Dialogs\ReconfigureOrDisableDialog.resx">
       <DependentUpon>ReconfigureOrDisableDialog.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
@@ -357,6 +360,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Images\SuiteCRM.png" />
     <None Include="Images\AddressBook.png" />
     <None Include="Images\Archive.png" />
     <Content Include="Images\Cancel.png" />
@@ -366,7 +370,6 @@
     <Content Include="Images\SendAndArchive.png" />
     <Content Include="Images\Settings.png" />
     <Content Include="Images\SuiteCRM.ico" />
-    <None Include="Resources\SendAndArchive.bmp" />
     <EmbeddedResource Include="Menus\MailRead2007.xml" />
   </ItemGroup>
   <ItemGroup>
@@ -378,6 +381,7 @@
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

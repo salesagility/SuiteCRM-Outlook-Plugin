@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using Microsoft.Office.Interop.Outlook;
     using SuiteCRMAddIn.BusinessLogic;

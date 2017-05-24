@@ -143,9 +143,9 @@ namespace SuiteCRMAddIn.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap SuiteCRM1 {
+        internal static System.Drawing.Bitmap SuiteCRMLogo {
             get {
-                object obj = ResourceManager.GetObject("SuiteCRM1", resourceCulture);
+                object obj = ResourceManager.GetObject("SuiteCRMLogo", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
