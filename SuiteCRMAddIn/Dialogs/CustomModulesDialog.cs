@@ -31,15 +31,15 @@ using SuiteCRMClient.RESTObjects;
 using System.Collections.Specialized;
 using SuiteCRMAddIn.BusinessLogic;
 
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
-    public partial class frmCustomModules : Form
+    public partial class CustomModulesDialog : Form
     {
         private clsSettings settings = Globals.ThisAddIn.Settings;
         private List<string> IgnoreModules = new List<string>();
         private TextBox txtDisplay;
 
-        public frmCustomModules()
+        public CustomModulesDialog()
         {
             InitializeComponent();
             this.txtDisplay = new TextBox();

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using BusinessLogic;
     using SuiteCRMClient.Logging;

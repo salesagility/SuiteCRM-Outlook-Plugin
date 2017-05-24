@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
@@ -29,7 +29,7 @@ namespace SuiteCRMAddIn
     using System.Windows.Forms;
 
     /// <summary>
-    /// Both frmCustomModules and frmArchive user a custom modules selector, which each was building
+    /// Both CustomModulesDialog and ArchiveDialog use a custom modules selector, which each was building
     /// in a different way and each was building badly. This is a common superclass for both forms,
     /// providing a single simple populator for this control.
     /// </summary>
@@ -56,6 +56,20 @@ namespace SuiteCRMAddIn
                     }
                 }
             }
+        }
+
+        private void InitializeComponent()
+        {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(WithCustomModulesSelectorForm));
+            this.SuspendLayout();
+            // 
+            // WithCustomModulesSelectorForm
+            // 
+            this.ClientSize = new System.Drawing.Size(284, 262);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Name = "WithCustomModulesSelectorForm";
+            this.ResumeLayout(false);
+
         }
     }
 }

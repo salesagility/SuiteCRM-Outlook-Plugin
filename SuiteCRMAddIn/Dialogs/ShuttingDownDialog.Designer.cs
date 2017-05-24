@@ -65,7 +65,7 @@
             // 
             // icon
             // 
-            this.icon.Image = global::SuiteCRMAddIn.Properties.Resources.SuiteCRM1;
+            this.icon.Image = global::SuiteCRMAddIn.Properties.Resources.SuiteCRMLogo;
             this.icon.Location = new System.Drawing.Point(12, 9);
             this.icon.Name = "icon";
             this.icon.Size = new System.Drawing.Size(37, 37);
