@@ -64,6 +64,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         private RunState state = RunState.Stopped;
 
         /// <summary>
+        /// A mechanism to cancel delays during shutdown.
+        /// </summary>
+        private CancellationTokenSource interrupter = new CancellationTokenSource();
+
+
+        /// <summary>
         /// The name by which I am known.
         /// </summary>
         public readonly string Name;
@@ -93,9 +99,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// True if I should be running, else false.
+        /// True if I should be active, else false.
         /// </summary>
-        private Boolean Running
+        private Boolean IsActive
         {
             get { return this.state == RunState.Running || this.state == RunState.Waiting; }
         }
@@ -140,17 +146,25 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 if (this.state == RunState.Running)
                 {
-                    lock (processLock)
+                    try
                     {
-                        this.state = RunState.Waiting;
+                        lock (processLock)
+                        {
+                            this.state = RunState.Waiting;
+                        }
+                        await Task.Delay(this.SyncPeriod, interrupter.Token);
                     }
-                    await Task.Delay(this.SyncPeriod);
+                    catch (TaskCanceledException)
+                    {
+                        // that's OK, that's what's supposed to happen.
+                    }
                 }
             }
-            while (this.Running);
+            while (this.IsActive);
 
             lock (processLock)
             {
+                Log.Debug($"Stopping thread {this.Name} immediately.");
                 this.state = RunState.Stopped;
                 this.process = null;
             }
@@ -214,16 +228,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             lock (processLock)
             {
-                if (this.state == RunState.Running)
+                if (this.IsActive)
                 {
                     this.state = RunState.Stopping;
+                    interrupter.Cancel();
                     Log.Debug($"Stopping thread {this.Name} at end of current iteration.");
-                }
-                else
-                {
-                    this.state = RunState.Stopped;
-                    this.process = null;
-                    Log.Debug($"Stopping thread {this.Name} immediately.");
                 }
             }
 
