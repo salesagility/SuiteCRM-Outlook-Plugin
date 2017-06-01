@@ -30,28 +30,24 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class SyncContext
     {
-        private readonly Outlook.Application _application;
-        private readonly clsSettings _settings;
-        private Outlook.OlItemType _currentFolderItemType;
+        private readonly Outlook.Application application;
+        private Outlook.OlItemType currentFolderItemType;
 
-        public SyncContext(Outlook.Application application, clsSettings settings)
+        public SyncContext(Outlook.Application application)
         {
-            _application = application;
-            _settings = settings;
-            _currentFolderItemType = Outlook.OlItemType.olMailItem;
+            this.application = application;
+            currentFolderItemType = Outlook.OlItemType.olMailItem;
         }
 
-        public Outlook.Application Application => _application;
-
-        public clsSettings settings => _settings;
+        public Outlook.Application Application => application;
 
         public ILogger Log => Globals.ThisAddIn.Log;
 
-        public Outlook.OlItemType CurrentFolderItemType => _currentFolderItemType;
+        public Outlook.OlItemType CurrentFolderItemType => currentFolderItemType;
 
         public void SetCurrentFolder(Outlook.MAPIFolder folder)
         {
-            _currentFolderItemType = folder.DefaultItemType;
+            currentFolderItemType = folder.DefaultItemType;
         }
     }
 }

@@ -46,8 +46,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     {
         private UserSession SuiteCRMUserSession => Globals.ThisAddIn.SuiteCRMUserSession;
 
-        private clsSettings settings => Globals.ThisAddIn.Settings;
-
         /// <summary>
         /// Magic property tag to get the email address from an Outlook Recipient object.
         /// </summary>
@@ -74,7 +72,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Debug("Auto-Archive iteration started");
 
-                var minReceivedDateTime = DateTime.UtcNow.AddDays(0 - settings.DaysOldEmailToAutoArchive);
+                var minReceivedDateTime = DateTime.UtcNow.AddDays(0 - Properties.Settings.Default.DaysOldEmailToAutoArchive);
                 var foldersToBeArchived = GetMailFolders(Globals.ThisAddIn.Application.Session.Folders)
                     .Where(FolderShouldBeAutoArchived);
 
@@ -93,7 +91,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private bool FolderShouldBeAutoArchived(Outlook.Folder folder) => FolderShouldBeAutoArchived(folder.EntryID);
 
         private bool FolderShouldBeAutoArchived(string folderEntryId)
-            => settings.AutoArchiveFolders?.Contains(folderEntryId) ?? false;
+            => Properties.Settings.Default.AutoArchiveFolders?.Contains(folderEntryId) ?? false;
 
         private void ArchiveFolderItems(Outlook.Folder objFolder, DateTime minReceivedDateTime)
         {
@@ -143,9 +141,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             switch (type)
             {
                 case EmailArchiveType.Inbound:
-                    return settings.AccountsToArchiveInbound.Contains(storeId);
+                    return Properties.Settings.Default.AccountsToArchiveInbound.Contains(storeId);
                 case EmailArchiveType.Sent:
-                    return settings.AccountsToArchiveOutbound.Contains(storeId);
+                    return Properties.Settings.Default.AccountsToArchiveOutbound.Contains(storeId);
                 default:
                     return false;
             }
@@ -155,7 +153,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (objMail.UserProperties["SuiteCRM"] == null)
             {
-                bool archived = MaybeArchiveEmail(objMail, archiveType, this.settings.ExcludedEmails);
+                bool archived = MaybeArchiveEmail(objMail, archiveType, Properties.Settings.Default.ExcludedEmails);
                 objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
                 objMail.UserProperties["SuiteCRM"].Value = archived ? Boolean.TrueString : Boolean.FalseString;
                 if (archived)
@@ -220,7 +218,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             mailArchive.Body = mail.Body;
             mailArchive.HTMLBody = mail.HTMLBody;
             mailArchive.ArchiveType = archiveType;
-            if (settings.ArchiveAttachments)
+            if (Properties.Settings.Default.ArchiveAttachments)
             {
                 foreach (Outlook.Attachment objMailAttachments in mail.Attachments)
                 {
@@ -516,7 +514,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             var warnings = new List<System.Exception>();
 
-            if (settings.ArchiveAttachments)
+            if (Properties.Settings.Default.ArchiveAttachments)
             {
                 foreach (Outlook.Attachment attachment in mailItem.Attachments)
                 {

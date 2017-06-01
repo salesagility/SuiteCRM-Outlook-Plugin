@@ -82,7 +82,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             string[] fields = new string[1];
             fields[0] = "id";
-            eGetEntryListResult _result = clsSuiteCRMHelper.GetEntryList(sModule, str5, settings.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+            eGetEntryListResult _result = clsSuiteCRMHelper.GetEntryList(sModule, str5, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
             if (_result.result_count > 0)
             {
                 return clsSuiteCRMHelper.GetValueByKey(_result.entry_list[0], "id");
@@ -95,7 +95,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
         }
 
-        public override SyncDirection.Direction Direction => settings.SyncCalendar;
+        public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncCalendar;
 
         protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olAppointmentItem;
 
@@ -749,7 +749,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true iff settings.SyncCalendar is true, the item is not null, and it is not private (normal sensitivity)</returns>
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
-            var syncConfigured = SyncDirection.AllowOutbound(settings.SyncCalendar);
+            var syncConfigured = SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar);
             return olItem != null &&
                 syncConfigured && 
                 olItem.Sensitivity == Outlook.OlSensitivity.olNormal;
@@ -900,7 +900,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private static string AcceptDeclineLink(eEntryValue crmItem, string acceptStatus)
         {
             StringBuilder bob = new StringBuilder();
-            bob.Append($"To {acceptStatus} this invitation: {Globals.ThisAddIn.Settings.host}/index.php?entryPoint=acceptDecline&module=Meetings")
+            bob.Append($"To {acceptStatus} this invitation: {Properties.Settings.Default.Host}/index.php?entryPoint=acceptDecline&module=Meetings")
                 .Append($"&user_id={clsSuiteCRMHelper.GetUserId()}")
                 .Append($"&record={crmItem.id}")
                 .Append($"&accept_status={acceptStatus}")

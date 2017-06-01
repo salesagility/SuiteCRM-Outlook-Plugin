@@ -32,7 +32,6 @@ namespace SuiteCRMAddIn.Dialogs
 
     public partial class frmAddressBook : Form
     {
-        private clsSettings settings = Globals.ThisAddIn.Settings;
         public frmAddressBook()
         {
             this.InitializeComponent();

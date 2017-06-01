@@ -252,7 +252,6 @@
     <Compile Include="BusinessLogic\TaskSyncState.cs" />
     <Compile Include="BusinessLogic\ThreadSafeList.cs" />
     <Compile Include="clsGlobals.cs" />
-    <Compile Include="clsSettings.cs" />
     <Compile Include="Exceptions\CouldNotConstructQueryException.cs" />
     <Compile Include="Dialogs\EmailAccountArchiveSettingsControl.cs">
       <SubType>UserControl</SubType>
@@ -294,6 +293,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Robustness.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="WaitCursor.cs" />
     <Compile Include="Dialogs\WithCustomModulesSelectorForm.cs">
       <SubType>Form</SubType>

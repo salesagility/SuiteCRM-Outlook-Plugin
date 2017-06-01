@@ -46,18 +46,18 @@ namespace SuiteCRMAddIn.BusinessLogic
             return this;
         }
 
-        public void Load(clsSettings settings)
+        public void Load()
         {
-            SelectedFolderEntryIds = new HashSet<string>(settings.AutoArchiveFolders);
-            AccountsToArchiveInbound = new HashSet<string>(settings.AccountsToArchiveInbound);
-            AccountsToArchiveOutbound = new HashSet<string>(settings.AccountsToArchiveOutbound);
+            SelectedFolderEntryIds = new HashSet<string>(Properties.Settings.Default.AutoArchiveFolders);
+            AccountsToArchiveInbound = new HashSet<string>(Properties.Settings.Default.AccountsToArchiveInbound);
+            AccountsToArchiveOutbound = new HashSet<string>(Properties.Settings.Default.AccountsToArchiveOutbound);
         }
 
-        public void Save(clsSettings settings)
+        public void Save()
         {
-            settings.AutoArchiveFolders = SelectedFolderEntryIds.ToList();
-            settings.AccountsToArchiveInbound = AccountsToArchiveInbound.ToList();
-            settings.AccountsToArchiveOutbound = AccountsToArchiveOutbound.ToList();
+            Properties.Settings.Default.AutoArchiveFolders = SelectedFolderEntryIds.ToList();
+            Properties.Settings.Default.AccountsToArchiveInbound = AccountsToArchiveInbound.ToList();
+            Properties.Settings.Default.AccountsToArchiveOutbound = AccountsToArchiveOutbound.ToList();
         }
 
         public static EmailAccountsArchiveSettings Combine(IEnumerable<EmailAccountsArchiveSettings> accountSettings)

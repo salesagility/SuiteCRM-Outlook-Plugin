@@ -49,7 +49,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.fetchQueryPrefix = "contacts.assigned_user_id = '{0}'";
         }
 
-        public override SyncDirection.Direction Direction => settings.SyncContacts;
+        public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncContacts;
 
         /// <summary>
         /// The actual transmission lock object of this synchroniser.

@@ -71,7 +71,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public override SyncDirection.Direction Direction => settings.SyncCalendar;
+        public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncCalendar;
 
         private Outlook.OlImportance GetImportance(string sImportance)
         {

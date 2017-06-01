@@ -44,7 +44,7 @@ namespace SuiteCRMAddIn.Dialogs
                 {
                     ListViewItem item = new ListViewItem
                     {
-                        Checked = Globals.ThisAddIn.Settings.CustomModules.Select(i => i == moduleKey).Count() > 0,
+                        Checked = Properties.Settings.Default.CustomModules.Select(i => i == moduleKey).Count() > 0,
                         Text = moduleKey,
                         Tag = moduleKey,
                         SubItems = { module.module_label }
