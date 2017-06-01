@@ -509,14 +509,17 @@ namespace SuiteCRMAddIn.Dialogs
 
                 foreach (string fieldName in clsSuiteCRMHelper.GetCharacterFields(moduleName))
                 {
-                    if (!String.IsNullOrWhiteSpace(queryBuilder.ToString()))
+                    switch (fieldName)
                     {
-                        queryBuilder.Append("OR ");
+                        case "name":
+                        case "first_name":
+                        case "last_name":
+                            queryBuilder.Append($"{tableName}.{fieldName} LIKE '%{escapedSearchText}%' OR ");
+                            break;
                     }
-                    queryBuilder.Append($"{tableName}.{fieldName} LIKE '%{escapedSearchText}%' ");
                 }
 
-                queryBuilder.Append($"OR {tableName}.id in (select eabr.bean_id from email_addr_bean_rel eabr ")
+                queryBuilder.Append($"{tableName}.id in (select eabr.bean_id from email_addr_bean_rel eabr ")
                     .Append("INNER JOIN email_addresses ea on eabr.email_address_id = ea.id ")
                     .Append($"where eabr.bean_module = '{moduleName}' ")
                     .Append($" and ea.email_address LIKE '{escapedSearchText}')");

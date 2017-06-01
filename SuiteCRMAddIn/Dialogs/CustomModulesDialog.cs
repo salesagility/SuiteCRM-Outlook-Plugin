@@ -233,7 +233,8 @@ namespace SuiteCRMAddIn.Dialogs
         /// <returns>True if this module is a currently selected custom module.</returns>
         private bool IsSelectedCustomModule(module_data module)
         {
-            return Properties.Settings.Default.CustomModules.Where(i => i.StartsWith($"{module.module_key}|")).Count() > 0;
+            return Properties.Settings.Default.CustomModules != null &&
+                Properties.Settings.Default.CustomModules.Where(i => i.StartsWith($"{module.module_key}|")).Count() > 0;
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -241,7 +242,7 @@ namespace SuiteCRMAddIn.Dialogs
             try
             {
                 bool flag = true;
-                Properties.Settings.Default.CustomModules.Clear();
+                Properties.Settings.Default.CustomModules = new List<string>();
                 foreach (ListViewItem item in this.lstViewAvailableModules.CheckedItems)
                 {
                     if (item.SubItems[1].Text != string.Empty)
