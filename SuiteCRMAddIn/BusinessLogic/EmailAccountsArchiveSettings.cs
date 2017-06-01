@@ -29,6 +29,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     {
         public EmailAccountsArchiveSettings()
         {
+            this.Clear();
         }
 
         public HashSet<string> SelectedFolderEntryIds { get; private set; }
@@ -48,9 +49,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public void Load()
         {
-            SelectedFolderEntryIds = new HashSet<string>(Properties.Settings.Default.AutoArchiveFolders);
-            AccountsToArchiveInbound = new HashSet<string>(Properties.Settings.Default.AccountsToArchiveInbound);
-            AccountsToArchiveOutbound = new HashSet<string>(Properties.Settings.Default.AccountsToArchiveOutbound);
+            SelectedFolderEntryIds = new HashSet<string>(Properties.Settings.Default.AutoArchiveFolders ?? new List<string>());
+            AccountsToArchiveInbound = new HashSet<string>(Properties.Settings.Default.AccountsToArchiveInbound ?? new List<string>());
+            AccountsToArchiveOutbound = new HashSet<string>(Properties.Settings.Default.AccountsToArchiveOutbound ?? new List<string>());
         }
 
         public void Save()

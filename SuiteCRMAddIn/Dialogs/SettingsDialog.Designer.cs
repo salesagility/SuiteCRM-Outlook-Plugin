@@ -279,9 +279,9 @@ namespace SuiteCRMAddIn.Dialogs
             this.checkBoxShowRightClick.AutoSize = true;
             this.checkBoxShowRightClick.Location = new System.Drawing.Point(26, 214);
             this.checkBoxShowRightClick.Name = "checkBoxShowRightClick";
-            this.checkBoxShowRightClick.Size = new System.Drawing.Size(251, 17);
+            this.checkBoxShowRightClick.Size = new System.Drawing.Size(247, 17);
             this.checkBoxShowRightClick.TabIndex = 15;
-            this.checkBoxShowRightClick.Text = "Show SugarCRM Records in Right Click Menus";
+            this.checkBoxShowRightClick.Text = "Show SuiteCRM Records in Right Click Menus";
             this.checkBoxShowRightClick.UseVisualStyleBackColor = true;
             // 
             // checkBoxAutomaticSearch

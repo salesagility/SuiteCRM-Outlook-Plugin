@@ -35,7 +35,7 @@ namespace SuiteCRMAddIn.Dialogs
 
         public EmailAccountsArchiveSettings SaveSettings()
         {
-            var result = new EmailAccountsArchiveSettings().Clear();
+            var result = new EmailAccountsArchiveSettings();
             if (_outlookStoreId != null)
             {
                 GetCheckedFoldersHelper(tsResults.Nodes, result.SelectedFolderEntryIds);

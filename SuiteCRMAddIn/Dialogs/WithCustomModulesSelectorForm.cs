@@ -40,7 +40,7 @@ namespace SuiteCRMAddIn.Dialogs
             foreach (module_data module in clsSuiteCRMHelper.GetModules().items.OrderBy(i => i.module_key))
             {
                 string moduleKey = module.module_key;
-                if (!ignoreModules.Contains(moduleKey))
+                if (!ignoreModules.Contains(moduleKey) && Properties.Settings.Default.CustomModules != null)
                 {
                     ListViewItem item = new ListViewItem
                     {

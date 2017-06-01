@@ -137,16 +137,24 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private bool EmailShouldBeArchived(EmailArchiveType type, Outlook.Store store)
         {
+            bool result;
             var storeId = store.StoreID;
             switch (type)
             {
                 case EmailArchiveType.Inbound:
-                    return Properties.Settings.Default.AccountsToArchiveInbound.Contains(storeId);
+                    result = Properties.Settings.Default.AccountsToArchiveInbound != null &&
+                        Properties.Settings.Default.AccountsToArchiveInbound.Contains(storeId);
+                    break;
                 case EmailArchiveType.Sent:
-                    return Properties.Settings.Default.AccountsToArchiveOutbound.Contains(storeId);
+                    result = Properties.Settings.Default.AccountsToArchiveOutbound != null &&
+                        Properties.Settings.Default.AccountsToArchiveOutbound.Contains(storeId);
+                    break;
                 default:
-                    return false;
+                    result = false;
+                    break;
             }
+
+            return result;
         }
 
         public void ArchiveNewMailItem(Outlook.MailItem objMail, EmailArchiveType archiveType)
