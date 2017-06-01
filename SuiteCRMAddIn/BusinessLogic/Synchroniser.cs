@@ -179,8 +179,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected Outlook.Application Application => Context.Application;
 
-        protected clsSettings settings => Context.settings;
-
         private bool readyToExit = false;
 
         /// <summary>
