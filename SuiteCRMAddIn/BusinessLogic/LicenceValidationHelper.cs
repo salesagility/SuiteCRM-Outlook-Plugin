@@ -83,7 +83,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// This program is open source. You are entitled to download the source and to make
         /// alterations. If you want to disable licence key checking, this method should just
         /// return true. However, we have put a great deal of work into writing this program
-        /// for you, and we deserve to eat too; so we'd appreciate it if you didn't.
+        /// for you, and want to continuing supporting it; so we'd appreciate it if you didn't.
         /// </remarks>
         /// <returns>true if validation succeeds, or if the validation server fails or times out; else false.</returns>
         public bool Validate()
