@@ -477,6 +477,10 @@ namespace SuiteCRMAddIn
                 {
                     SuiteCRMUserSession.LogOut();
                 }
+
+                DisposeOf(appointmentSynchroniser);
+                DisposeOf(contactSynchroniser);
+                DisposeOf(taskSynchroniser);
             }
             catch (Exception ex)
             {
@@ -512,15 +516,9 @@ namespace SuiteCRMAddIn
             {
                 log.Error("ThisAddIn.UnregisterEvents", ex);
             }
-            try
-            {
-                Log.Info("ThisAddIn.UnregisterEvents: Removing archive button click event handler");
-                this.btnArchive.Click -= new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
-            }
-            catch (Exception ex)
-            {
-                log.Error("ThisAddIn.UnregisterEvents", ex);
-            }
+
+            UnregisterButtonClickHandler(this.btnArchive, this.cbtnArchive_Click);
+            UnregisterButtonClickHandler(this.btnSettings, this.cbtnSettings_Click);
 
             try
             {
@@ -547,10 +545,22 @@ namespace SuiteCRMAddIn
             {
                 log.Error("ThisAddIn.UnregisterEvents", ex);
             }
+        }
 
-            DisposeOf(appointmentSynchroniser);
-            DisposeOf(contactSynchroniser);
-            DisposeOf(taskSynchroniser);
+        private void UnregisterButtonClickHandler(CommandBarButton button, _CommandBarButtonEvents_ClickEventHandler clickHandler)
+        {
+            if (button != null)
+            {
+                try
+                {
+                    Log.Info("ThisAddIn.UnregisterEvents: Removing archive button click event handler");
+                    button.Click -= new Office._CommandBarButtonEvents_ClickEventHandler(clickHandler);
+                }
+                catch (Exception ex)
+                {
+                    log.Error("ThisAddIn.UnregisterEvents", ex);
+                }
+            }
         }
 
         /// <summary>
@@ -563,17 +573,17 @@ namespace SuiteCRMAddIn
             {
                 try
                 {
-                    Log.Debug($"ThisAddIn.UnregisterEvents: Disposing of {toDispose.GetType().Name}");
+                    Log.Debug($"ThisAddIn.DisposeOf: Disposing of {toDispose.GetType().Name}");
                     toDispose.Dispose();
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"DisposeOfSynchroniser: Failed to dispose of instance of {toDispose.GetType().Name}", ex);
+                    log.Error($"ThisAddIn.DisposeOf: Failed to dispose of instance of {toDispose.GetType().Name}", ex);
                 }
             }
             else
             {
-                log.Error("Attempt to dispose of null reference?");
+                log.Error("ThisAddIn.DisposeOf: Attempt to dispose of null reference?");
             }
         }
 

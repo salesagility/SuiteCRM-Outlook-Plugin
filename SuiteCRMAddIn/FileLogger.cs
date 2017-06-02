@@ -32,13 +32,13 @@ namespace SuiteCRMAddIn
     /// <remarks>
     /// TODO: This class does not appear to be used and should probably be deleted.
     /// </remarks>
-    public class FileLogger : ILogger
+    public class FileLogger : AbstractLogger
     {
         private readonly string _logDirPath;
 
         public LogEntryType level = LogEntryType.Error;
 
-        public LogEntryType Level
+        public override LogEntryType Level
         {
             get
             {
@@ -56,7 +56,7 @@ namespace SuiteCRMAddIn
             _logDirPath = logDirPath;
         }
 
-        public void AddEntry(string logMessage, LogEntryType type)
+        public override void AddEntry(string logMessage, LogEntryType type)
         {
             var logFilePath = _logDirPath + "Log-" + System.DateTime.Today.ToString("MM-dd-yyyy") + "." + "txt";
             var logFileInfo = new FileInfo(logFilePath);
@@ -104,7 +104,7 @@ namespace SuiteCRMAddIn
                 : new FileStream(logFilePath, FileMode.Append);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             // Do nothing.
         }

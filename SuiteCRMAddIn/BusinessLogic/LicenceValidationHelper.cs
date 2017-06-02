@@ -27,6 +27,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Net;
     using System.Net.Sockets;
     using System.Text;
@@ -78,6 +79,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Validate my key pair.
         /// </summary>
+        /// <remarks>
+        /// This program is open source. You are entitled to download the source and to make
+        /// alterations. If you want to disable licence key checking, this method should just
+        /// return true. However, we have put a great deal of work into writing this program
+        /// for you, and want to continuing supporting it; so we'd appreciate it if you didn't.
+        /// </remarks>
         /// <returns>true if validation succeeds, or if the validation server fails or times out; else false.</returns>
         public bool Validate()
         {
@@ -156,13 +163,24 @@ namespace SuiteCRMAddIn.BusinessLogic
                     break;
                 case HttpStatusCode.BadRequest:
                     /* that's a conventionally signalled fail. */
+                    /* the licence server doesn't actually report the encoding in a header, 
+                     * but it seems to be ASCII. */
+                    var encoding = Encoding.ASCII; 
+
+                    using (var responseStream = response.GetResponseStream())
+                    {
+                        using (var reader = new StreamReader(responseStream, encoding))
+                        {
+                            logger.ShowAndAddEntry($"Licence server responded {reader.ReadToEnd()}", LogEntryType.Error);
+                        }
+                    }
+
                     result = false;
                     break;
                 default:
-                    logger.Warn(
-                        String.Format(
-                            "LicenceValidationHelper.InterpretStatusCode: Unexpected status code {0}", 
-                            response.StatusCode));
+                    logger.ShowAndAddEntry(
+                        $"Licence server responded with an unexpected status code {response.StatusCode}", 
+                        LogEntryType.Warning);
                     result = false;
                     break;
             }

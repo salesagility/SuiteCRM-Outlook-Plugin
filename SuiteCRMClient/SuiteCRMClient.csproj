@@ -74,6 +74,7 @@
     <Compile Include="Email\EmailArchiveType.cs" />
     <Compile Include="Exceptions\CrmSaveDataException.cs" />
     <Compile Include="LDAPAuthenticationHelper.cs" />
+    <Compile Include="Logging\AbstractLogger.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\LogEntryType.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />
