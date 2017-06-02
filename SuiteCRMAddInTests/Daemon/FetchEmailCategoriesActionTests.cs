@@ -46,7 +46,7 @@ namespace SuiteCRMAddIn.Daemon.Tests
         /// <summary>
         /// The settings which performing my action should modify.
         /// </summary>
-        private readonly clsSettings settings = new clsSettings();
+//        private readonly clsSettings settings = new clsSettings();
 
         /// <summary>
         /// Specialisation: I need an action.
@@ -55,7 +55,7 @@ namespace SuiteCRMAddIn.Daemon.Tests
         public override void Initialize()
         {
             base.Initialize();
-            this.action = new FetchEmailCategoriesAction(settings);
+//            this.action = new FetchEmailCategoriesAction(settings);
         }
 
         /// <summary>
@@ -64,9 +64,9 @@ namespace SuiteCRMAddIn.Daemon.Tests
         [TestMethod()]
         public void FetchEmailCategoriesActionPerformTest()
         {
-            Assert.AreEqual(0, settings.EmailCategories.Count);
+//            Assert.AreEqual(0, settings.EmailCategories.Count);
             this.action.Perform();
-            Assert.AreNotEqual(0, settings.EmailCategories.Count);
+//            Assert.AreNotEqual(0, settings.EmailCategories.Count);
         }
     }
 }
