@@ -393,6 +393,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.AcceptButton = this.btnFinish;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoSize = true;
             this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(608, 393);
             this.Controls.Add(this.btnCancel);
@@ -400,7 +401,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.Controls.Add(this.groupBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(624, 431);
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(624, 431);
             this.Name = "frmAddressBook";
