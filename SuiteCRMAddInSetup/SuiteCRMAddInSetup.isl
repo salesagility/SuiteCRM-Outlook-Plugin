@@ -4398,9 +4398,9 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKAPPPOOLS</td><td>##IDS_PROGMSG_IIS_ROLLBACKAPPPOOLS##</td><td/></row>
 		<row><td>PROGMSG_IIS_ROLLBACKVROOTS</td><td>##IDS_PROGMSG_IIS_ROLLBACKVROOTS##</td><td/></row>
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
-		<row><td>ProductCode</td><td>{7D2339B3-980B-4AF0-8428-56ABB4CD7EF0}</td><td/></row>
+		<row><td>ProductCode</td><td>{58920F7D-BBA4-452E-9337-FE958FB06EBE}</td><td/></row>
 		<row><td>ProductName</td><td>SuiteCRMAddIn</td><td/></row>
-		<row><td>ProductVersion</td><td>3.0.4.3</td><td/></row>
+		<row><td>ProductVersion</td><td>3.0.4.4</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
