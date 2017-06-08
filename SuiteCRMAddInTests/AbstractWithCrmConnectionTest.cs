@@ -61,7 +61,7 @@ namespace SuiteCRMAddIn.Tests
                             settings.username,
                             settings.password,
                             settings.LDAPKey,
-                            ThisAddIn.ProgId,
+                            ThisAddIn.AddInTitle,
                             Log,
                             settings.RestTimeout);
                     SuiteCRMUserSession.AwaitingAuthentication = true;
@@ -88,7 +88,7 @@ namespace SuiteCRMAddIn.Tests
                             String.Empty,
                             String.Empty,
                             String.Empty,
-                            ThisAddIn.ProgId,
+                            ThisAddIn.AddInTitle,
                             Log,
                             settings.RestTimeout);
                 }

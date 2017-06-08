@@ -714,7 +714,7 @@ namespace SuiteCRMAddIn
                             Properties.Settings.Default.Username,
                             Properties.Settings.Default.Password, 
                             Properties.Settings.Default.LDAPKey, 
-                            ThisAddIn.ProgId,
+                            ThisAddIn.AddInTitle,
                             log,
                             Properties.Settings.Default.RestTimeout);
                     SuiteCRMUserSession.AwaitingAuthentication = true;
@@ -748,7 +748,7 @@ namespace SuiteCRMAddIn
                             String.Empty, 
                             String.Empty, 
                             String.Empty, 
-                            ThisAddIn.ProgId,
+                            ThisAddIn.AddInTitle,
                             log,
                             Properties.Settings.Default.RestTimeout);
                 }
