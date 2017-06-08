@@ -116,18 +116,18 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public void ProcessEligibleNewMailItem(Outlook.MailItem objMail, EmailArchiveType archiveType)
+        public void ProcessEligibleNewMailItem(Outlook.MailItem olItem, EmailArchiveType archiveType)
         {
-            var parentFolder = objMail.Parent as Outlook.Folder;
+            var parentFolder = olItem.Parent as Outlook.Folder;
             if (parentFolder == null)
             {
-                Log.Debug($"NULL email folder for {archiveType} “{objMail.Subject}”");
+                Log.Debug($"NULL email folder for {archiveType} “{olItem.Subject}”");
                 return;
             }
 
             if (EmailShouldBeArchived(archiveType, parentFolder.Store))
             {
-                ArchiveNewMailItem(objMail, archiveType);
+                ArchiveNewMailItem(olItem, archiveType);
             }
             else
             {
@@ -157,18 +157,24 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        public void ArchiveNewMailItem(Outlook.MailItem objMail, EmailArchiveType archiveType)
+        public void ArchiveNewMailItem(Outlook.MailItem olItem, EmailArchiveType archiveType)
         {
-            if (objMail.UserProperties["SuiteCRM"] == null)
+            if (olItem.UserProperties["SuiteCRM"] == null)
             {
-                bool archived = MaybeArchiveEmail(objMail, archiveType, Properties.Settings.Default.ExcludedEmails);
-                objMail.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
-                objMail.UserProperties["SuiteCRM"].Value = archived ? Boolean.TrueString : Boolean.FalseString;
-                if (archived)
+                try
                 {
-                    objMail.Categories = "SuiteCRM";
+                    bool archived = MaybeArchiveEmail(olItem, archiveType, Properties.Settings.Default.ExcludedEmails);
+                    olItem.UserProperties.Add("SuiteCRM", Outlook.OlUserPropertyType.olText, true, Outlook.OlUserPropertyType.olText);
+                    olItem.UserProperties["SuiteCRM"].Value = archived ? Boolean.TrueString : Boolean.FalseString;
+                    if (archived)
+                    {
+                        olItem.Categories = "SuiteCRM";
+                    }
                 }
-                objMail.Save();
+                finally
+                {
+                    olItem.Save();
+                }
             }
         }
 
@@ -182,15 +188,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             return Globals.ThisAddIn.Application.GetNamespace("MAPI").GetItemFromID(entryId);
         }
 
-        private bool MaybeArchiveEmail(Outlook.MailItem mailItem, EmailArchiveType archiveType, string strExcludedEmails = "")
+        private bool MaybeArchiveEmail(Outlook.MailItem olItem, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
             bool result = false;
-            var objEmail = SerialiseEmailObject(mailItem, archiveType);
+            var objEmail = SerialiseEmailObject(olItem, archiveType);
             List<string> contacts = objEmail.GetValidContactIDs(strExcludedEmails);
 
             if (contacts.Count > 0)
             {
-                Log.Info($"Archiving {archiveType} email “{mailItem.Subject}”");
+                Log.Info($"Archiving {archiveType} email “{olItem.Subject}”");
                 DaemonWorker.Instance.AddTask(new ArchiveEmailAction(SuiteCRMUserSession, objEmail, archiveType, contacts));
                 result = true;
             }
@@ -198,15 +204,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        private clsEmailArchive SerialiseEmailObject(Outlook.MailItem mail, EmailArchiveType archiveType)
+        private clsEmailArchive SerialiseEmailObject(Outlook.MailItem olItem, EmailArchiveType archiveType)
         {
             clsEmailArchive mailArchive = new clsEmailArchive(SuiteCRMUserSession, Log);
-            mailArchive.From = ExtractSmtpAddressForSender(mail);
+            mailArchive.From = ExtractSmtpAddressForSender(olItem);
             mailArchive.To = string.Empty;
 
-            Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {mail.Subject} dated {mail.SentOn}.");
+            Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
 
-            foreach (Outlook.Recipient objRecepient in mail.Recipients)
+            foreach (Outlook.Recipient objRecepient in olItem.Recipients)
             {
                 string address = GetSmtpAddress(objRecepient);
 
@@ -220,20 +226,20 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
 
-            mailArchive.OutlookId = mail.EntryID;
-            mailArchive.Subject = mail.Subject;
-            mailArchive.Sent = DateTimeOfMailItem(mail, "autoOUTBOUND");
-            mailArchive.Body = mail.Body;
-            mailArchive.HTMLBody = mail.HTMLBody;
+            mailArchive.OutlookId = olItem.EntryID;
+            mailArchive.Subject = olItem.Subject;
+            mailArchive.Sent = DateTimeOfMailItem(olItem, "autoOUTBOUND");
+            mailArchive.Body = olItem.Body;
+            mailArchive.HTMLBody = olItem.HTMLBody;
             mailArchive.ArchiveType = archiveType;
             if (Properties.Settings.Default.ArchiveAttachments)
             {
-                foreach (Outlook.Attachment objMailAttachments in mail.Attachments)
+                foreach (Outlook.Attachment objMailAttachments in olItem.Attachments)
                 {
                     mailArchive.Attachments.Add(new clsEmailAttachments
                     {
                         DisplayName = objMailAttachments.DisplayName,
-                        FileContentInBase64String = GetAttachmentBytes(objMailAttachments, mail)
+                        FileContentInBase64String = GetAttachmentBytes(objMailAttachments, olItem)
                     });
                 }
             }
@@ -281,21 +287,21 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// be a bizarre LDAP query which CRM will barf on. However, the Sender property
         /// may well be null, so allow for that too.
         /// </remarks>
-        /// <param name="mail">The mail item</param>
+        /// <param name="olItem">The mail item</param>
         /// <returns>An SMTP address or an empty string.</returns>
-        private string ExtractSmtpAddressForSender(Outlook.MailItem mail)
+        private string ExtractSmtpAddressForSender(Outlook.MailItem olItem)
         {
             string result = string.Empty;
 
             try
             {
-                switch (mail.SenderEmailType)
+                switch (olItem.SenderEmailType)
                 {
                     case "SMTP":
-                        result = mail.SenderEmailAddress;
+                        result = olItem.SenderEmailAddress;
                         break;
                     case "EX": /* an Exchange address */
-                        var sender = mail.Sender;
+                        var sender = olItem.Sender;
                         if (sender != null)
                         {
                             var exchangeUser = sender.GetExchangeUser();
@@ -312,7 +318,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                         break;
                     default:
-                        this.Log.Warn($"{this.GetType().Name}.ExtractSmtpAddressForSender: unknown email type {mail.SenderEmailType}");
+                        this.Log.Warn($"{this.GetType().Name}.ExtractSmtpAddressForSender: unknown email type {olItem.SenderEmailType}");
                         break;
                 }
             }
@@ -324,7 +330,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        private void ArchiveEmailThread(clsEmailArchive objEmail, EmailArchiveType archiveType, string strExcludedEmails = "")
+        private void ArchiveEmailThread(clsEmailArchive crmItem, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
             try
             {
@@ -336,8 +342,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     if (SuiteCRMUserSession.IsLoggedIn)
                     {
-                        objEmail.SuiteCRMUserSession = SuiteCRMUserSession;
-                        objEmail.Save(strExcludedEmails);
+                        crmItem.SuiteCRMUserSession = SuiteCRMUserSession;
+                        crmItem.Save(strExcludedEmails);
                     }
                 }
             }
@@ -347,11 +353,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public byte[] GetAttachmentBytes(Outlook.Attachment attachment, Outlook.MailItem mail)
+        public byte[] GetAttachmentBytes(Outlook.Attachment attachment, Outlook.MailItem olItem)
         {
             byte[] strRet = null;
 
-            Log.Info($"EmailArchiving.GetAttachmentBytes: serialising attachment '{attachment.FileName}' of email '{mail.Subject}'.");
+            Log.Info($"EmailArchiving.GetAttachmentBytes: serialising attachment '{attachment.FileName}' of email '{olItem.Subject}'.");
 
             if (attachment != null)
             {
@@ -377,7 +383,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         // Swallow exception(!)
 
                         string strName = temporaryAttachmentPath + "\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
-                        mail.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
+                        olItem.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
                         foreach (string strFileName in System.IO.Directory.GetFiles(strName.Replace(".html", "_files")))
                         {
                             if (strFileName.EndsWith("\\" + attachment.DisplayName))
@@ -433,9 +439,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public ArchiveResult ArchiveEmailWithEntityRelationships(Outlook.MailItem mailItem, IEnumerable<CrmEntity> selectedCrmEntities, string type)
+        public ArchiveResult ArchiveEmailWithEntityRelationships(Outlook.MailItem olItem, IEnumerable<CrmEntity> selectedCrmEntities, string type)
         {
-            var result = this.SaveEmailToCrm(mailItem, type);
+            var result = this.SaveEmailToCrm(olItem, type);
             if (result.IsSuccess)
             {
                 var warnings = CreateEmailRelationshipsWithEntities(result.EmailId, selectedCrmEntities);
@@ -467,39 +473,45 @@ namespace SuiteCRMAddIn.BusinessLogic
             return failures;
         }
 
-        private void SaveMailItemIfNecessary(Outlook.MailItem o, string type)
+        private void SaveMailItemIfNecessary(Outlook.MailItem olItem, string type)
         {
             if (type == "SendArchive")
             {
-                o.Save();
+                olItem.Save();
             }
         }
 
         /// <summary>
         /// Save this email item, of this type, to CRM.
         /// </summary>
-        /// <param name="mailItem">The email item to send.</param>
+        /// <param name="olItem">The email item to send.</param>
         /// <param name="type">?unknown</param>
         /// <returns>An archive result comprising the CRM id of the email, if stored,
         /// and a list of exceptions encountered in the process.</returns>
-        public ArchiveResult SaveEmailToCrm(Outlook.MailItem mailItem, string type)
+        public ArchiveResult SaveEmailToCrm(Outlook.MailItem olItem, string type)
         {
             ArchiveResult result;
             try
             {
-                SaveMailItemIfNecessary(mailItem, type);
+                SaveMailItemIfNecessary(olItem, type);
 
-                result = ConstructAndDespatchCrmItem(mailItem, type);
+                result = ConstructAndDespatchCrmItem(olItem, type);
 
                 if (!String.IsNullOrEmpty(result.EmailId))
                 {
                     /* we successfully saved the email item itself */
-                    mailItem.Categories = "SuiteCRM";
-                    mailItem.Save();
-
-                    if (mailItem.Attachments.Count > 0)
+                    try
                     {
-                        result = ConstructAndDespatchAttachments(mailItem, result);
+                        olItem.Categories = "SuiteCRM";
+                    }
+                    finally
+                    {
+                        olItem.Save();
+                    }
+
+                    if (olItem.Attachments.Count > 0)
+                    {
+                        result = ConstructAndDespatchAttachments(olItem, result);
                     }
                 }
             }
@@ -515,18 +527,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct and despatch CRM representations of the attachments of this email item to CRM.
         /// </summary>
-        /// <param name="mailItem">The mail item whose attachments should be sent.</param>
+        /// <param name="olItem">The mail item whose attachments should be sent.</param>
         /// <param name="result">The result of transmitting the item itself to CRM.</param>
         /// <returns>A (possibly modified) archive result.</returns>
-        private ArchiveResult ConstructAndDespatchAttachments(Outlook.MailItem mailItem, ArchiveResult result)
+        private ArchiveResult ConstructAndDespatchAttachments(Outlook.MailItem olItem, ArchiveResult result)
         {
             var warnings = new List<System.Exception>();
 
             if (Properties.Settings.Default.ArchiveAttachments)
             {
-                foreach (Outlook.Attachment attachment in mailItem.Attachments)
+                foreach (Outlook.Attachment attachment in olItem.Attachments)
                 {
-                    warnings.Add(ConstructAndDespatchCrmAttachment(mailItem, result.EmailId, attachment));
+                    warnings.Add(ConstructAndDespatchCrmAttachment(olItem, result.EmailId, attachment));
                 }
             }
 
@@ -545,11 +557,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct and despatch a CRM representation of this attachment to CRM.
         /// </summary>
-        /// <param name="mailItem">The mail item to which this attachment is attached.</param>
+        /// <param name="olItem">The mail item to which this attachment is attached.</param>
         /// <param name="crmId">The id of that mail item in CRM.</param>
         /// <param name="attachment">The attachment to despatch.</param>
         /// <returns>Any exception which was thrown while attempting to despatch the attachment.</returns>
-        private Exception ConstructAndDespatchCrmAttachment(Outlook.MailItem mailItem, string crmId, Outlook.Attachment attachment)
+        private Exception ConstructAndDespatchCrmAttachment(Outlook.MailItem olItem, string crmId, Outlook.Attachment attachment)
         {
             Exception result = null;
             try
@@ -558,7 +570,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     new clsEmailAttachments
                     {
                         DisplayName = attachment.DisplayName,
-                        FileContentInBase64String = GetAttachmentBytes(attachment, mailItem)
+                        FileContentInBase64String = GetAttachmentBytes(attachment, olItem)
                     },
                     crmId);
             }
@@ -574,14 +586,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct and despatch a CRM representation of this mail item, without its attachments, to CRM
         /// </summary>
-        /// <param name="mailItem">The mail item to despatch.</param>
+        /// <param name="olItem">The mail item to despatch.</param>
         /// <param name="type">?unknown.</param>
         /// <returns>An archive result comprising the CRM id of the email, if stored,
         /// and a list of exceptions encountered in the process.</returns>
-        private ArchiveResult ConstructAndDespatchCrmItem(Outlook.MailItem mailItem, string type)
+        private ArchiveResult ConstructAndDespatchCrmItem(Outlook.MailItem olItem, string type)
         {
             ArchiveResult result;
-            eNameValue[] crmItem = ConstructCrmItem(mailItem, type);
+            eNameValue[] crmItem = ConstructCrmItem(olItem, type);
 
             try
             {
@@ -611,33 +623,33 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct a CRM representation of this mail item, without its attachments if any.
         /// </summary>
-        /// <param name="mailItem">The mail item.</param>
+        /// <param name="olItem">The mail item.</param>
         /// <param name="type">?unknown.</param>
         /// <returns>A CRM representation of the item, as a set of name/value pairs.</returns>
-        private eNameValue[] ConstructCrmItem(Outlook.MailItem mailItem, string type)
+        private eNameValue[] ConstructCrmItem(Outlook.MailItem olItem, string type)
         {
             eNameValue[] data = new eNameValue[13];
-            string category = mailItem.UserProperties[CRMCategoryPropertyName] != null ?
-                mailItem.UserProperties[CRMCategoryPropertyName].Value :
+            string category = olItem.UserProperties[CRMCategoryPropertyName] != null ?
+                olItem.UserProperties[CRMCategoryPropertyName].Value :
                 string.Empty;
 
-            data[0] = clsSuiteCRMHelper.SetNameValuePair("name", mailItem.Subject ?? string.Empty);
-            data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(mailItem, type).ToString(EmailDateFormat));
-            data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", mailItem.EntryID);
+            data[0] = clsSuiteCRMHelper.SetNameValuePair("name", olItem.Subject ?? string.Empty);
+            data[1] = clsSuiteCRMHelper.SetNameValuePair("date_sent", DateTimeOfMailItem(olItem, type).ToString(EmailDateFormat));
+            data[2] = clsSuiteCRMHelper.SetNameValuePair("message_id", olItem.EntryID);
             data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
-            data[4] = clsSuiteCRMHelper.SetNameValuePair("description", mailItem.Body ?? string.Empty);
-            data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", mailItem.HTMLBody ?? string.Empty);
-            data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(mailItem, type));
-            data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", mailItem.To);
-            data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", mailItem.CC);
-            data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", mailItem.BCC);
-            data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", mailItem.ReplyRecipientNames);
+            data[4] = clsSuiteCRMHelper.SetNameValuePair("description", olItem.Body ?? string.Empty);
+            data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", olItem.HTMLBody ?? string.Empty);
+            data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(olItem, type));
+            data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", olItem.To);
+            data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", olItem.CC);
+            data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", olItem.BCC);
+            data[10] = clsSuiteCRMHelper.SetNameValuePair("reply_to_addr", olItem.ReplyRecipientNames);
             data[11] = clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId());
             data[12] = clsSuiteCRMHelper.SetNameValuePair("category_id", category);
             return data;
         }
 
-        private DateTime DateTimeOfMailItem(Outlook.MailItem mailItem, string type)
+        private DateTime DateTimeOfMailItem(Outlook.MailItem olItem, string type)
         {
             DateTime result;
             var now = DateTime.UtcNow;
@@ -645,7 +657,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             switch (type)
             {
                 case "autoOUTBOUND":
-                    result = mailItem.CreationTime;
+                    result = olItem.CreationTime;
                     if (result > now)
                     {
                         /* if the actual date hasn't yet been set, Outlook will
@@ -654,12 +666,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     break;
                 case "SendArchive":
-                    result = mailItem.CreationTime;
+                    result = olItem.CreationTime;
                     break;
                 case null:
                 case "autoINBOUND":
                 default:
-                    result = mailItem.SentOn;
+                    result = olItem.SentOn;
                     break;
             }
             return result;
