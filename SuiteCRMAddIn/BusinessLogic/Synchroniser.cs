@@ -856,6 +856,31 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected abstract SyncState<OutlookItemType> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, eEntryValue crmItem);
 
         /// <summary>
+        /// Find any existing Outlook items which appear to be identical to this CRM item.
+        /// </summary>
+        /// <param name="crmItem">The CRM item to match.</param>
+        /// <returns>A list of matching Outlook items.</returns>
+        protected List<SyncState<OutlookItemType>> FindMatches(eEntryValue crmItem)
+        {
+            List<SyncState<OutlookItemType>> result =
+                ItemsSyncState.Where(a => this.IsMatch(a.OutlookItem, crmItem))
+                .ToList<SyncState<OutlookItemType>>();
+
+            return result;
+        }
+
+        /// <summary>
+        /// Return true if this Outlook item appears to represent the same item as this CRM item.
+        /// </summary>
+        /// <remarks>
+        /// Intended to help block howlaround.
+        /// </remarks>
+        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="crmItem">The CRM item.</param>
+        /// <returns>true if this Outlook item appears to represent the same item as this CRM item.</returns>
+        protected abstract bool IsMatch(OutlookItemType olItem, eEntryValue crmItem);
+
+        /// <summary>
         /// Log a message regarding this Outlook item, with detail of the item.
         /// </summary>
         /// <param name="olItem">The outlook item.</param>

@@ -523,6 +523,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             return item.Sensitivity;
         }
 
+        protected override bool IsMatch(Outlook.ContactItem olItem, eEntryValue crmItem)
+        {
+            return olItem.FirstName == crmItem.GetValueAsString("first_name") &&
+                olItem.LastName == crmItem.GetValueAsString("last_name") &&
+                olItem.Email1Address == crmItem.GetValueAsString("email1");
+        }
+
         /// <summary>
         /// True if the currently open tab in Outlook displays items of my item type.
         /// </summary>

@@ -28,6 +28,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System;
+    using System.Linq;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Text;
@@ -635,7 +636,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (syncState == null)
                 {
                     /* didn't find it, so add it to Outlook */
-                    result = AddNewItemFromCrmToOutlook(folder, crmType, crmItem, date_start);
+                    var matches = this.FindMatches(crmItem);
+
+                    if (matches.Count == 0)
+                    {
+                        result = AddNewItemFromCrmToOutlook(folder, crmType, crmItem, date_start);
+                    }
+                    else
+                    {
+                        this.Log.Warn($"Howlaround detected? '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
+                    }
                 }
                 else
                 {
@@ -647,6 +657,18 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             return result;
+        }
+
+        protected override bool IsMatch(Outlook.AppointmentItem olItem, eEntryValue crmItem)
+        {
+            var crmItemStartUTC = crmItem.GetValueAsDateTime("date_start");
+            var crmItemName = crmItem.GetValueAsString("name");
+
+            var olItemStartUTC = olItem.StartUTC;
+            var subject = olItem.Subject;
+
+            return subject == crmItemName &&
+                olItemStartUTC == crmItemStartUTC;
         }
 
         /// <summary>

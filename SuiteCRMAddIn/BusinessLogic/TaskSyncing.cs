@@ -411,5 +411,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return olItem.Sensitivity;
         }
+
+        protected override bool IsMatch(Outlook.TaskItem olItem, eEntryValue crmItem)
+        {
+            return olItem.Subject == crmItem.GetValueAsString("name") &&
+                olItem.StartDate.ToUniversalTime() == crmItem.GetValueAsDateTime("date_start").ToUniversalTime();
+        }
     }
 }
