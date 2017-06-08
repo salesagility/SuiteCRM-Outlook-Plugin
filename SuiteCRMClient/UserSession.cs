@@ -56,6 +56,8 @@ namespace SuiteCRMClient
             get { return this.restServer; }
         }
 
+        public string ApplicationName { get; private set; }
+
         /// <summary>
         /// Construct a new instance of a UserSession. Note that all these parameters (except log) 
         /// come from the settings object, and it would be much simpler to just pass that in; 
@@ -68,7 +70,7 @@ namespace SuiteCRMClient
         /// <param name="ldapKey">The LDAP key to authenticate with.</param>
         /// <param name="log">The logger to log to.</param>
         /// <param name="timeout">The timeout for calls to the URL.</param>
-        public UserSession(string URL, string Username, string Password, string ldapKey, ILogger log, int timeout)
+        public UserSession(string URL, string Username, string Password, string ldapKey, string applicationName, ILogger log, int timeout)
         {
             _log = log;
             this.restServer = new CrmRestServer(log, timeout);
@@ -76,9 +78,10 @@ namespace SuiteCRMClient
             if (URL != String.Empty)
             {
                 this.restServer.SuiteCRMURL = new Uri(URL);
-                SuiteCRMUsername = Username;
-                SuiteCRMPassword = Password;
-                LDAPKey = ldapKey;
+                this.SuiteCRMUsername = Username;
+                this.SuiteCRMPassword = Password;
+                this.LDAPKey = ldapKey;
+                this.ApplicationName = applicationName;
             }
             id = String.Empty;
         }
@@ -171,7 +174,8 @@ namespace SuiteCRMClient
                 user_auth = new
                 {
                     user_name = username,
-                    password = pass
+                    password = pass,
+                    application_name = this.ApplicationName
                 }
             };
             return this.restServer.GetCrmResponse<RESTObjects.Login>("login", loginData);

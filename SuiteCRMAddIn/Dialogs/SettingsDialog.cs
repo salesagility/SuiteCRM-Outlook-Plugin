@@ -95,7 +95,7 @@ namespace SuiteCRMAddIn.Dialogs
                     {
                         Globals.ThisAddIn.SuiteCRMUserSession =
                             new SuiteCRMClient.UserSession(
-                                string.Empty, string.Empty, string.Empty, string.Empty, Log, Properties.Settings.Default.RestTimeout);
+                                string.Empty, string.Empty, string.Empty, string.Empty, ThisAddIn.ProgId, Log, Properties.Settings.Default.RestTimeout);
                     }
 
                     Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
@@ -250,6 +250,7 @@ namespace SuiteCRMAddIn.Dialogs
                             txtUsername.Text.Trim(), 
                             txtPassword.Text.Trim(), 
                             txtLDAPAuthenticationKey.Text.Trim(), 
+                            ThisAddIn.ProgId,
                             Log, 
                             Properties.Settings.Default.RestTimeout);
 
@@ -342,6 +343,7 @@ namespace SuiteCRMAddIn.Dialogs
                         txtUsername.Text.Trim(),
                         txtPassword.Text.Trim(),
                         txtLDAPAuthenticationKey.Text.Trim(),
+                        ThisAddIn.ProgId,
                         Log,
                         Properties.Settings.Default.RestTimeout);
                 Globals.ThisAddIn.SuiteCRMUserSession.Login();

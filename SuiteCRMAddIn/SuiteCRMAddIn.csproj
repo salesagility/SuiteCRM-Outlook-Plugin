@@ -293,7 +293,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Robustness.cs" />
-    <Compile Include="Settings.cs" />
     <Compile Include="WaitCursor.cs" />
     <Compile Include="Dialogs\WithCustomModulesSelectorForm.cs">
       <SubType>Form</SubType>

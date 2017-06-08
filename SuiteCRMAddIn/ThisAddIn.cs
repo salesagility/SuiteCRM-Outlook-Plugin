@@ -44,7 +44,7 @@ namespace SuiteCRMAddIn
 
     public partial class ThisAddIn
     {
-        private const string ProgId = "SuiteCRMAddIn";
+        public const string ProgId = "SuiteCRMAddIn";
         public static readonly string AddInTitle, AddInVersion;
 
         public SuiteCRMClient.UserSession SuiteCRMUserSession;
@@ -714,6 +714,7 @@ namespace SuiteCRMAddIn
                             Properties.Settings.Default.Username,
                             Properties.Settings.Default.Password, 
                             Properties.Settings.Default.LDAPKey, 
+                            ThisAddIn.ProgId,
                             log,
                             Properties.Settings.Default.RestTimeout);
                     SuiteCRMUserSession.AwaitingAuthentication = true;
@@ -747,6 +748,7 @@ namespace SuiteCRMAddIn
                             String.Empty, 
                             String.Empty, 
                             String.Empty, 
+                            ThisAddIn.ProgId,
                             log,
                             Properties.Settings.Default.RestTimeout);
                 }
