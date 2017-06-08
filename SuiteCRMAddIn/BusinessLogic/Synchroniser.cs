@@ -862,9 +862,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>A list of matching Outlook items.</returns>
         protected List<SyncState<OutlookItemType>> FindMatches(eEntryValue crmItem)
         {
-            List<SyncState<OutlookItemType>> result =
-                ItemsSyncState.Where(a => this.IsMatch(a.OutlookItem, crmItem))
-                .ToList<SyncState<OutlookItemType>>();
+            List<SyncState<OutlookItemType>> result;
+
+            try
+            {
+                result = ItemsSyncState.Where(a => this.IsMatch(a.OutlookItem, crmItem))
+                    .ToList<SyncState<OutlookItemType>>();
+            }
+            catch (Exception any)
+            {
+                this.Log.Error("Exception while checking for matches", any);
+                result = new List<SyncState<OutlookItemType>>();
+            }
 
             return result;
         }
