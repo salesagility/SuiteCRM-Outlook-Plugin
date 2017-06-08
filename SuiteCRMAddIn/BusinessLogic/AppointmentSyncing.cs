@@ -325,12 +325,27 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>that part of the string to modify which precedes the string to seek.</returns>
         private string StripAndTruncate(string toModify, string toSeek)
         {
-            var offset = IndexIgnoreLineEnds(toModify, toSeek);
-            var prefix = offset == -1 ?
-                toModify :
-                StripReturns(toModify).Substring(0, offset);
+            string result;
 
-            return Regex.Replace(prefix, @"\s+$", string.Empty);
+            if (string.IsNullOrEmpty(toSeek))
+            {
+                result = toModify;
+            }
+            else if (string.IsNullOrWhiteSpace(toModify))
+            {
+                result = string.Empty;
+            }
+            else
+            {
+                var offset = IndexIgnoreLineEnds(toModify, toSeek);
+                var prefix = offset == -1 ?
+                    toModify :
+                    StripReturns(toModify).Substring(0, offset);
+
+                result = Regex.Replace(prefix, @"\s+$", string.Empty);
+            }
+
+            return result;
         }
 
         /// <summary>
