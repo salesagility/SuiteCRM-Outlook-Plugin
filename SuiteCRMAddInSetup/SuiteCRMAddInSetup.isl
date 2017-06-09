@@ -1890,12 +1890,12 @@
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I4">ISAttributes</col>
 		<col def="S72">ISComponentSubFolder_</col>
-		<row><td>microsoft.office.tools.commo</td><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.outlo</td><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>1</td><td/></row>
-		<row><td>newtonsoft.json.dll</td><td>Newtonsoft.Json.dll</td><td>NEWTON~1.DLL|Newtonsoft.Json.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\Newtonsoft.Json.dll</td><td>1</td><td/></row>
-		<row><td>suitecrmaddin.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.MAN|SuiteCRMAddIn.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.dll.manifest</td><td>1</td><td/></row>
+		<row><td>microsoft.office.tools.commo</td><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>1</td><td/></row>
+		<row><td>microsoft.office.tools.outlo</td><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>1</td><td/></row>
+		<row><td>newtonsoft.json.dll</td><td>Newtonsoft.Json.dll</td><td>NEWTON~1.DLL|Newtonsoft.Json.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\Newtonsoft.Json.dll</td><td>1</td><td/></row>
+		<row><td>suitecrmaddin.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.MAN|SuiteCRMAddIn.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\SuiteCRMAddIn.dll.manifest</td><td>1</td><td/></row>
 		<row><td>suitecrmaddin.primary_output</td><td>SuiteCRMAddIn.Primary_output</td><td>SuiteCRMAddIn.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;SuiteCRMAddIn&gt;|Built</td><td>3</td><td/></row>
-		<row><td>suitecrmaddin.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.VST|SuiteCRMAddIn.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Debug\SuiteCRMAddIn.vsto</td><td>1</td><td/></row>
+		<row><td>suitecrmaddin.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.VST|SuiteCRMAddIn.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\SuiteCRMAddIn.vsto</td><td>1</td><td/></row>
 	</table>
 
 	<table name="FileSFPCatalog">
@@ -4017,7 +4017,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISTheme</td><td>InstallShield Blue.theme</td></row>
 		<row><td>ISUSLock</td><td>{61A790E4-9219-4622-8A29-6BC24DE6B0D0}</td></row>
 		<row><td>ISUSSignature</td><td>{F1280AA3-C75F-4733-84BD-23500D9612AE}</td></row>
-		<row><td>ISVisitedViews</td><td>viewAssistant,viewObjects,viewProject,viewDependencies,viewSystemSearch,viewFeatureFiles,viewRegistry,viewISToday,viewAppV,viewAppFiles,viewSetupTypes,viewSetupDesign,viewRealSetupDesign,viewSupportFiles,viewCustomActions,viewInstallScriptStd,viewCE,viewRelease,viewDesignPatches,viewLearnMore,viewUpdateService,viewUpgradePaths,viewEnvironmentVariables,viewTextMessages,viewServices,viewUI,viewShortcuts</td></row>
+		<row><td>ISVisitedViews</td><td>viewAssistant,viewObjects,viewProject,viewDependencies,viewSystemSearch,viewFeatureFiles,viewRegistry,viewISToday,viewAppV,viewAppFiles,viewSetupTypes,viewSetupDesign,viewRealSetupDesign,viewSupportFiles,viewCustomActions,viewInstallScriptStd,viewCE,viewRelease,viewDesignPatches,viewLearnMore,viewUpdateService,viewUpgradePaths,viewEnvironmentVariables,viewTextMessages,viewServices,viewUI</td></row>
 		<row><td>Limited</td><td>1</td></row>
 		<row><td>LockPermissionMode</td><td>1</td></row>
 		<row><td>MsiExecCmdLineOptions</td><td/></row>
@@ -4398,9 +4398,9 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKAPPPOOLS</td><td>##IDS_PROGMSG_IIS_ROLLBACKAPPPOOLS##</td><td/></row>
 		<row><td>PROGMSG_IIS_ROLLBACKVROOTS</td><td>##IDS_PROGMSG_IIS_ROLLBACKVROOTS##</td><td/></row>
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
-		<row><td>ProductCode</td><td>{BA46A10E-CF17-414A-BAA3-0C2FC3F8608B}</td><td/></row>
+		<row><td>ProductCode</td><td>{6B454238-9E78-4258-B4FA-29D45B32D04F}</td><td/></row>
 		<row><td>ProductName</td><td>SuiteCRMAddIn</td><td/></row>
-		<row><td>ProductVersion</td><td>3.0.4.6</td><td/></row>
+		<row><td>ProductVersion</td><td>3.0.5.0</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
