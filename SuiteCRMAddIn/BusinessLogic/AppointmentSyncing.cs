@@ -28,6 +28,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System;
+    using System.Linq;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Text;
@@ -626,27 +627,49 @@ namespace SuiteCRMAddIn.BusinessLogic
             eEntryValue crmItem)
         {
             SyncState<Outlook.AppointmentItem> result = null;
-            DateTime date_start = DateTime.ParseExact(crmItem.GetValueAsString("date_start"), "yyyy-MM-dd HH:mm:ss", null);
-            date_start = date_start.Add(new DateTimeOffset(DateTime.Now).Offset); // correct for offset from UTC.
-            if (date_start >= GetStartDate())
+            DateTime dateStart = crmItem.GetValueAsDateTime("date_start");
+
+            if (dateStart >= GetStartDate())
             {
                 /* search for the item among the sync states I already know about */
                 var syncState = this.GetExistingSyncState(crmItem);
                 if (syncState == null)
                 {
-                    /* didn't find it, so add it to Outlook */
-                    result = AddNewItemFromCrmToOutlook(folder, crmType, crmItem, date_start);
+                    /* check for howlaround */
+                    var matches = this.FindMatches(crmItem);
+
+                    if (matches.Count == 0)
+                    {
+                        /* didn't find it, so add it to Outlook */
+                        result = AddNewItemFromCrmToOutlook(folder, crmType, crmItem, dateStart);
+                    }
+                    else
+                    {
+                        this.Log.Warn($"Howlaround detected? Appointment '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
+                    }
                 }
                 else
                 {
                     /* found it, so update it from the CRM item */
-                    result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, date_start, syncState);
+                    result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, syncState);
                 }
 
                 result.OutlookItem.Save();
             }
 
             return result;
+        }
+
+        protected override bool IsMatch(Outlook.AppointmentItem olItem, eEntryValue crmItem)
+        {
+            var crmItemStart = crmItem.GetValueAsDateTime("date_start");
+            var crmItemName = crmItem.GetValueAsString("name");
+
+            var olItemStart = olItem.Start;
+            var subject = olItem.Subject;
+
+            return subject == crmItemName &&
+                olItemStart == crmItemStart;
         }
 
         /// <summary>
@@ -736,6 +759,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private void SetRecipients(Outlook.AppointmentItem olItem, string sMeetingID, string sModule)
         {
+            this.LogItemAction(olItem, "SetRecipients");
+
             try
             {
                 olItem.MeetingStatus = Outlook.OlMeetingStatus.olMeeting;
@@ -918,7 +943,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                         olItem.End.AddHours(hours);
                     if (minutes > 0)
                         olItem.End.AddMinutes(minutes);
-                    Log.Info("\tSetRecepients");
                     SetRecipients(olItem, crmItem.GetValueAsString("id"), crmType);
                 }
                 olItem.Duration = minutes + hours * 60;

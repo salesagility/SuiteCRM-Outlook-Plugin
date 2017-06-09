@@ -117,9 +117,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        // TODO: this is horrible and should be reworked.
         protected override SyncState<Outlook.ContactItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, eEntryValue crmItem)
         {
-            SyncState<Outlook.ContactItem> result;
+            SyncState<Outlook.ContactItem> result = null;
 
             String id = crmItem.GetValueAsString("id");
             SyncState<Outlook.ContactItem> syncStateForItem = GetExistingSyncState(crmItem);
@@ -133,7 +134,18 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 if (syncStateForItem == null)
                 {
-                    result = AddNewItemFromCrmToOutlook(folder, crmItem);
+                    /* check for howlaround */
+                    var matches = this.FindMatches(crmItem);
+
+                    if (matches.Count == 0)
+                    {
+                        /* didn't find it, so add it to Outlook */
+                        result = AddNewItemFromCrmToOutlook(folder, crmItem);
+                    }
+                    else
+                    {
+                        this.Log.Warn($"Howlaround detected? Appointment '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
+                    }
                 }
                 else
                 {
@@ -521,6 +533,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override Outlook.OlSensitivity GetSensitivity(Outlook.ContactItem item)
         {
             return item.Sensitivity;
+        }
+
+        protected override bool IsMatch(Outlook.ContactItem olItem, eEntryValue crmItem)
+        {
+            return olItem.FirstName == crmItem.GetValueAsString("first_name") &&
+                olItem.LastName == crmItem.GetValueAsString("last_name") &&
+                olItem.Email1Address == crmItem.GetValueAsString("email1");
         }
 
         /// <summary>
