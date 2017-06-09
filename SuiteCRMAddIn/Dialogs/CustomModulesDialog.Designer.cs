@@ -22,9 +22,9 @@
  */
 using System.Drawing;
 using System.Windows.Forms;
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
-    partial class frmCustomModules
+    partial class CustomModulesDialog
     {
         /// <summary>
         /// Required designer variable.
@@ -56,7 +56,7 @@ namespace SuiteCRMAddIn
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmCustomModules));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CustomModulesDialog));
             this.lstViewAvailableModules = new System.Windows.Forms.ListView();
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -114,7 +114,7 @@ namespace SuiteCRMAddIn
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
-            // frmCustomModules
+            // CustomModulesDialog
             // 
             this.AcceptButton = this.btnSave;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -131,7 +131,7 @@ namespace SuiteCRMAddIn
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(331, 321);
-            this.Name = "frmCustomModules";
+            this.Name = "CustomModulesDialog";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SuiteCRM Custom Modules";

@@ -32,8 +32,9 @@ namespace SuiteCRMAddIn
     using System.Text;
     using System.Collections.Generic;
     using log4net.Repository;
+    using System.Windows.Forms;
 
-    public class Log4NetLogger: SuiteCRMClient.Logging.ILogger
+    public class Log4NetLogger: SuiteCRMClient.Logging.AbstractLogger
     {
         private readonly ILog log;
 
@@ -45,7 +46,7 @@ namespace SuiteCRMAddIn
         /// <summary>
         /// Expose the logging level.
         /// </summary>
-        public LogEntryType Level
+        public override LogEntryType Level
         {
             get
             {
@@ -145,7 +146,7 @@ namespace SuiteCRMAddIn
             return new Log4NetLogger(area);
         }
 
-        public void AddEntry(string message, LogEntryType type)
+        public override void AddEntry(string message, LogEntryType type)
         {
             switch (type)
             {
@@ -189,7 +190,7 @@ namespace SuiteCRMAddIn
         /// <summary>
         /// Make sure the last items logged get output.
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
             this.FlushBuffers();
         }

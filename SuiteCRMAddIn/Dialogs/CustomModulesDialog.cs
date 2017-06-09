@@ -31,15 +31,14 @@ using SuiteCRMClient.RESTObjects;
 using System.Collections.Specialized;
 using SuiteCRMAddIn.BusinessLogic;
 
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
-    public partial class frmCustomModules : Form
+    public partial class CustomModulesDialog : Form
     {
-        private clsSettings settings = Globals.ThisAddIn.Settings;
         private List<string> IgnoreModules = new List<string>();
         private TextBox txtDisplay;
 
-        public frmCustomModules()
+        public CustomModulesDialog()
         {
             InitializeComponent();
             this.txtDisplay = new TextBox();
@@ -234,7 +233,8 @@ namespace SuiteCRMAddIn
         /// <returns>True if this module is a currently selected custom module.</returns>
         private bool IsSelectedCustomModule(module_data module)
         {
-            return this.settings.CustomModules.Where(i => i.StartsWith($"{module.module_key}|")).Count() > 0;
+            return Properties.Settings.Default.CustomModules != null &&
+                Properties.Settings.Default.CustomModules.Where(i => i.StartsWith($"{module.module_key}|")).Count() > 0;
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -242,12 +242,12 @@ namespace SuiteCRMAddIn
             try
             {
                 bool flag = true;
-                this.settings.CustomModules.Clear();
+                Properties.Settings.Default.CustomModules = new List<string>();
                 foreach (ListViewItem item in this.lstViewAvailableModules.CheckedItems)
                 {
                     if (item.SubItems[1].Text != string.Empty)
                     {
-                        this.settings.CustomModules.Add(item.Text + "|" + item.SubItems[1].Text);
+                        Properties.Settings.Default.CustomModules.Add(item.Text + "|" + item.SubItems[1].Text);
                     }
                     else
                     {
@@ -256,8 +256,8 @@ namespace SuiteCRMAddIn
                 }
                 if (flag)
                 {
-                    this.settings.Save();
-                    this.settings.Reload();
+                    Properties.Settings.Default.Save();
+                    Properties.Settings.Default.Reload();
                     base.Close();
                 }
                 else

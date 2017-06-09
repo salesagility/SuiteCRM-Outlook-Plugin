@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
@@ -29,7 +29,7 @@ namespace SuiteCRMAddIn
     using System.Windows.Forms;
 
     /// <summary>
-    /// Both frmCustomModules and frmArchive user a custom modules selector, which each was building
+    /// Both CustomModulesDialog and ArchiveDialog use a custom modules selector, which each was building
     /// in a different way and each was building badly. This is a common superclass for both forms,
     /// providing a single simple populator for this control.
     /// </summary>
@@ -40,11 +40,11 @@ namespace SuiteCRMAddIn
             foreach (module_data module in clsSuiteCRMHelper.GetModules().items.OrderBy(i => i.module_key))
             {
                 string moduleKey = module.module_key;
-                if (!ignoreModules.Contains(moduleKey))
+                if (!ignoreModules.Contains(moduleKey) && Properties.Settings.Default.CustomModules != null)
                 {
                     ListViewItem item = new ListViewItem
                     {
-                        Checked = Globals.ThisAddIn.Settings.CustomModules.Select(i => i == moduleKey).Count() > 0,
+                        Checked = Properties.Settings.Default.CustomModules.Select(i => i == moduleKey).Count() > 0,
                         Text = moduleKey,
                         Tag = moduleKey,
                         SubItems = { module.module_label }
@@ -56,6 +56,20 @@ namespace SuiteCRMAddIn
                     }
                 }
             }
+        }
+
+        private void InitializeComponent()
+        {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(WithCustomModulesSelectorForm));
+            this.SuspendLayout();
+            // 
+            // WithCustomModulesSelectorForm
+            // 
+            this.ClientSize = new System.Drawing.Size(284, 262);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Name = "WithCustomModulesSelectorForm";
+            this.ResumeLayout(false);
+
         }
     }
 }

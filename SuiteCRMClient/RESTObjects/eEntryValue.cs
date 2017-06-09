@@ -26,6 +26,7 @@ namespace SuiteCRMClient.RESTObjects
     using Newtonsoft.Json.Linq;
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
 
     public class eEntryValue
@@ -90,6 +91,43 @@ namespace SuiteCRMClient.RESTObjects
         {
             object value = this.GetValue(key);
             return value == null ? string.Empty : value.ToString();
+        }
+
+        /// <summary>
+        /// Get the value of the stated key, presumed to be a date/time string, as a date time object
+        /// in UTC.
+        /// </summary>
+        /// <param name="key">The key to seek</param>
+        /// <returns>The date/time value in UTC, if it was a date/time value; otherwise, DateTime.MinValue.</returns>
+        public DateTime GetValueAsUTC(string key)
+        {
+            string stringValue = this.GetValueAsString(key);
+            DateTime result = DateTime.MinValue;
+
+            if (!string.IsNullOrEmpty(stringValue))
+            {
+                if (!DateTime.TryParseExact(stringValue, "yyyy-MM-dd HH:mm:ss", null, DateTimeStyles.None, out result))
+                {
+                    DateTime.TryParse(stringValue, out result);
+                }
+            }
+
+            /* correct for offset from UTC */
+            return result;
+        }
+
+        /// <summary>
+        /// Get the value of the stated key, presumed to be a date/time string, as a date time object
+        /// in local time (the time is delivered by CRM in UTC).
+        /// </summary>
+        /// <param name="key">The key to seek</param>
+        /// <returns>The date/time value in local time, if it was a date/time value; otherwise, DateTime.MinValue.</returns>
+        public DateTime GetValueAsDateTime(string key)
+        {
+            var asUTC = this.GetValueAsUTC(key);
+
+            /* if result is valid, correct for offset from UTC */
+            return asUTC == DateTime.MinValue ? asUTC : asUTC.Add(new DateTimeOffset(DateTime.Now).Offset);
         }
     }
 }

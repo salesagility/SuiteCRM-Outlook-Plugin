@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     partial class ReconfigureOrDisableDialog
     {
@@ -61,7 +61,7 @@ namespace SuiteCRMAddIn
             // 
             // icon
             // 
-            this.icon.Image = global::SuiteCRMAddIn.Properties.Resources.SuiteCRM1;
+            this.icon.Image = global::SuiteCRMAddIn.Properties.Resources.SuiteCRMLogo;
             this.icon.Location = new System.Drawing.Point(12, 12);
             this.icon.Name = "icon";
             this.icon.Size = new System.Drawing.Size(37, 37);

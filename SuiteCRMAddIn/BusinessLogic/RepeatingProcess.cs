@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -29,7 +29,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Do something repeatedly.
+    /// An agent which does something repeatedly.
     /// </summary>
     public abstract class RepeatingProcess
     {
@@ -64,6 +64,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         private RunState state = RunState.Stopped;
 
         /// <summary>
+        /// A mechanism to cancel delays during shutdown.
+        /// </summary>
+        private CancellationTokenSource interrupter = new CancellationTokenSource();
+
+
+        /// <summary>
         /// The name by which I am known.
         /// </summary>
         public readonly string Name;
@@ -72,7 +78,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// When my last run ccompleted.
         /// </summary>
         /// <remarks>
-        /// Initialised to 'max value', so that at startup we won't mistakenly 
+        /// Initialised to 'max value', so that at startup we won't mistakenly
         /// believe that things have happened after it.
         /// </remarks>
         private DateTime lastIterationCompleted = DateTime.MaxValue;
@@ -93,9 +99,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// True if I should be running, else false.
+        /// True if I should be active, else false.
         /// </summary>
-        private Boolean Running
+        private Boolean IsActive
         {
             get { return this.state == RunState.Running || this.state == RunState.Waiting; }
         }
@@ -140,17 +146,25 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 if (this.state == RunState.Running)
                 {
-                    lock (processLock)
+                    try
                     {
-                        this.state = RunState.Waiting;
+                        lock (processLock)
+                        {
+                            this.state = RunState.Waiting;
+                        }
+                        await Task.Delay(this.SyncPeriod, interrupter.Token);
                     }
-                    await Task.Delay(this.SyncPeriod);
+                    catch (TaskCanceledException)
+                    {
+                        // that's OK, that's what's supposed to happen.
+                    }
                 }
             }
-            while (this.Running);
+            while (this.IsActive);
 
             lock (processLock)
             {
+                Log.Debug($"Stopping thread {this.Name} immediately.");
                 this.state = RunState.Stopped;
                 this.process = null;
             }
@@ -192,7 +206,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Put me into a mode where I finish all the work I have to do quickly.
         /// </summary>
-        /// <returns>Zero if I may be stopped immediately (this is the default); 
+        /// <returns>Zero if I may be stopped immediately (this is the default);
         /// otherwise an integer indicating the number of work units to complete
         /// before I can be stopped.</returns>
         public virtual int PrepareShutdown()
@@ -206,7 +220,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal abstract void PerformIteration();
 
         /// <summary>
-        /// Stop me at the end of my current iteration; does not force an immediate 
+        /// Stop me at the end of my current iteration; does not force an immediate
         /// stop unless no work is currently active.
         /// </summary>
         /// <returns>true if I am now stopped.</returns>
@@ -214,16 +228,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             lock (processLock)
             {
-                if (this.state == RunState.Running)
+                if (this.IsActive)
                 {
                     this.state = RunState.Stopping;
+                    interrupter.Cancel();
                     Log.Debug($"Stopping thread {this.Name} at end of current iteration.");
-                }
-                else
-                {
-                    this.state = RunState.Stopped;
-                    this.process = null;
-                    Log.Debug($"Stopping thread {this.Name} immediately.");
                 }
             }
 
