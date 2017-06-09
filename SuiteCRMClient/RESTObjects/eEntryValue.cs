@@ -101,12 +101,15 @@ namespace SuiteCRMClient.RESTObjects
         /// <returns>The date/time value in UTC, if it was a date/time value; otherwise, DateTime.MinValue.</returns>
         public DateTime GetValueAsUTC(string key)
         {
-            var stringValue = this.GetValueAsString(key);
+            string stringValue = this.GetValueAsString(key);
             DateTime result = DateTime.MinValue;
 
-            if (!DateTime.TryParseExact(stringValue, "yyyy-MM-dd HH:mm:ss", null, DateTimeStyles.None, out result))
+            if (!string.IsNullOrEmpty(stringValue))
             {
-                DateTime.TryParse(stringValue, out result);
+                if (!DateTime.TryParseExact(stringValue, "yyyy-MM-dd HH:mm:ss", null, DateTimeStyles.None, out result))
+                {
+                    DateTime.TryParse(stringValue, out result);
+                }
             }
 
             /* correct for offset from UTC */

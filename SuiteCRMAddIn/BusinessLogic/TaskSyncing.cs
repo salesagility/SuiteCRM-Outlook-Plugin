@@ -172,53 +172,36 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (clsSuiteCRMHelper.GetUserId() == crmItem.GetValueAsString("assigned_user_id"))
             {
-                DateTime? date_start = null;
-                DateTime? date_due = null;
-
-                string time_start = "--:--", time_due = "--:--";
-
-                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
-                {
-                    Log.Warn("\tSET date_start = dResult.date_start");
-                    date_start = crmItem.GetValueAsDateTime("date_start");
-                    time_start =
-                        TimeSpan.FromHours(date_start.Value.Hour)
-                            .Add(TimeSpan.FromMinutes(date_start.Value.Minute))
+                DateTime date_start = crmItem.GetValueAsDateTime("date_start");
+                DateTime date_due = crmItem.GetValueAsDateTime("date_due");
+                string time_start =
+                        TimeSpan.FromHours(date_start.Hour)
+                            .Add(TimeSpan.FromMinutes(date_start.Minute))
                             .ToString(@"hh\:mm");
-                }
-
-                if (date_start != null && date_start >= GetStartDate())
-                {
-                    if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_due")))
-                    {
-                        date_due = crmItem.GetValueAsDateTime("date_due");
-                        time_due =
-                            TimeSpan.FromHours(date_due.Value.Hour)
-                                .Add(TimeSpan.FromMinutes(date_due.Value.Minute))
+                string time_due = TimeSpan.FromHours(date_due.Hour)
+                                .Add(TimeSpan.FromMinutes(date_due.Minute))
                                 .ToString(@"hh\:mm");
-                    }
 
-                    var syncState = this.GetExistingSyncState(crmItem);
+                var syncState = this.GetExistingSyncState(crmItem);
 
-                    if (syncState == null)
+                if (syncState == null)
+                {
+                    /* check for howlaround */
+                    var matches = this.FindMatches(crmItem);
+
+                    if (matches.Count == 0)
                     {
-                        /* check for howlaround */
-                        var matches = this.FindMatches(crmItem);
-
-                        if (matches.Count == 0)
-                        {
-                            /* didn't find it, so add it to Outlook */
-                            result = AddNewItemFromCrmToOutlook(tasksFolder, crmItem, date_start, date_due, time_start, time_due);
-                        }
-                        else
-                        {
-                            this.Log.Warn($"Howlaround detected? Task '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
-                        }
+                        /* didn't find it, so add it to Outlook */
+                        result = AddNewItemFromCrmToOutlook(tasksFolder, crmItem, date_start, date_due, time_start, time_due);
                     }
                     else
                     {
-                        result = UpdateExistingOutlookItemFromCrm(crmItem, date_start, date_due, time_start, time_due, syncState);
+                        this.Log.Warn($"Howlaround detected? Task '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
                     }
+                }
+                else
+                {
+                    result = UpdateExistingOutlookItemFromCrm(crmItem, date_start, date_due, time_start, time_due, syncState);
                 }
             }
 
