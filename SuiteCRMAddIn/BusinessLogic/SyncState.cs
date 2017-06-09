@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -27,6 +27,9 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
+    /// <summary>
+    /// Superclass for SyncState<T>, q.v..
+    /// </summary>
     public abstract class SyncState
     {
         private bool _wasDeleted = false;

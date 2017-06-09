@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using System;
     using System.Windows.Forms;

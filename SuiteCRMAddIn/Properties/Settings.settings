@@ -2,8 +2,83 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="SuiteCRMAddIn.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
+    <Setting Name="AutoArchiveFolders" Type="System.Collections.Generic.List&lt;System.String&gt;" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="AccountsToArchiveInbound" Type="System.Collections.Generic.List&lt;System.String&gt;" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="AccountsToArchiveOutbound" Type="System.Collections.Generic.List&lt;System.String&gt;" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="CustomModules" Type="System.Collections.Generic.List&lt;System.String&gt;" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ExcludedEmails" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
     <Setting Name="PublicKey" Type="System.String" Scope="User">
       <Value Profile="(Default)">b8794235718652747b82fd713deac078</Value>
+    </Setting>
+    <Setting Name="Username" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="Password" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="Host" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ArchiveAttachments" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="AutomaticSearch" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="EmailCategories" Type="SuiteCRMAddIn.BusinessLogic.EmailCategoriesCollection" Scope="User">
+      <Value Profile="(Default)"></Value>
+    </Setting>
+    <Setting Name="ShowCustomModules" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="SyncMaxRecords" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">1000</Value>
+    </Setting>
+    <Setting Name="SelectedSearchModules" Type="System.String" Scope="User">
+      <Value Profile="(Default)">"1,2,3"</Value>
+    </Setting>
+    <Setting Name="PopulateContextLookupList" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="AutoArchive" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="SyncCalendar" Type="SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="SyncContacts" Type="SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="IsLDAPAuthentication" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="LDAPKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ShowConfirmationMessageArchive" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="LogLevel" Type="SuiteCRMClient.Logging.LogEntryType" Scope="User">
+      <Value Profile="(Default)">Error</Value>
+    </Setting>
+    <Setting Name="DaysOldEmailToAutoArchive" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="LicenceKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="RestTimeout" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">300000</Value>
     </Setting>
   </Settings>
 </SettingsFile>

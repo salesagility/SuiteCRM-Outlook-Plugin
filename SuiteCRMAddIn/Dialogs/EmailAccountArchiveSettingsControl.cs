@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using BusinessLogic;
     using SuiteCRMClient.Logging;
@@ -35,7 +35,7 @@ namespace SuiteCRMAddIn
 
         public EmailAccountsArchiveSettings SaveSettings()
         {
-            var result = new EmailAccountsArchiveSettings().Clear();
+            var result = new EmailAccountsArchiveSettings();
             if (_outlookStoreId != null)
             {
                 GetCheckedFoldersHelper(tsResults.Nodes, result.SelectedFolderEntryIds);

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -29,7 +29,7 @@ namespace SuiteCRMAddIn.Daemon
     using System.Threading;
 
     /// <summary>
-    /// A thing which maintains a queue of tasks and executes them in turn. Explicitly 
+    /// A thing which maintains a queue of tasks (instances of DaemonAction) and executes them in turn. Explicitly
     /// a singleton.
     /// </summary>
     public class DaemonWorker : RepeatingProcess
