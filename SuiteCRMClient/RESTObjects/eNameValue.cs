@@ -24,6 +24,7 @@ namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
     using System;
+    using System.Globalization;
     using System.Web;
 
     public class eNameValue
@@ -57,6 +58,23 @@ namespace SuiteCRMClient.RESTObjects
             {
                 v = value;
             }
+        }
+
+        /// <summary>
+        /// Return the value of this object as a DateTime, if it can be represented as such, otherwise DateTime.MinValue
+        /// </summary>
+        /// <returns>the value of this object as a DateTime, if it can be represented as such, otherwise DateTime.MinValue</returns>
+        public DateTime AsDateTime()
+        {
+            var stringValue = this.value.ToString();
+            DateTime result = DateTime.MinValue;
+
+            if (!DateTime.TryParseExact(stringValue, "yyyy-MM-dd HH:mm:ss", null, DateTimeStyles.None, out result))
+            {
+                DateTime.TryParse(stringValue, out result);
+            }
+
+            return result;
         }
     }
 

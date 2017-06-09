@@ -1,6 +1,6 @@
 ﻿using System.Windows.Forms;
 
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     partial class EmailAccountArchiveSettingsControl
     {

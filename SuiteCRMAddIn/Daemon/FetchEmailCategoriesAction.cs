@@ -37,21 +37,15 @@ namespace SuiteCRMAddIn.Daemon
     /// </summary>
     public class FetchEmailCategoriesAction : AbstractDaemonAction
     {
-
-        private clsSettings settings;
-
         /// <summary>
         /// Construct a new instance of the FetchEmailCategoriesAction class.
         /// </summary>
-        /// <param name="settings">The settings on which I operate</param>
-        public FetchEmailCategoriesAction(clsSettings settings) : base(5)
+        public FetchEmailCategoriesAction() : base(5)
         {
-            if (settings.EmailCategories == null)
+            if (Properties.Settings.Default.EmailCategories == null)
             {
-                settings.EmailCategories = new EmailCategoriesCollection();
+                Properties.Settings.Default.EmailCategories = new EmailCategoriesCollection();
             }
-
-            this.settings = settings;
         }
 
         /// <summary>
@@ -64,17 +58,17 @@ namespace SuiteCRMAddIn.Daemon
 
             if (field != null)
             {
-                settings.EmailCategories.IsImplemented = true;
-                settings.EmailCategories.Clear();
-                settings.EmailCategories.AddRange(field.Options.Keys.OrderBy(x => x));
+                Properties.Settings.Default.EmailCategories.IsImplemented = true;
+                Properties.Settings.Default.EmailCategories.Clear();
+                Properties.Settings.Default.EmailCategories.AddRange(field.Options.Keys.OrderBy(x => x));
             }
             else
             {
                 /* the CRM instance does not have the category_id field in its emails module */
-                settings.EmailCategories.IsImplemented = false;
+                Properties.Settings.Default.EmailCategories.IsImplemented = false;
             }
 
-            settings.Save();
+            Properties.Settings.Default.Save();
         }
     }
 }

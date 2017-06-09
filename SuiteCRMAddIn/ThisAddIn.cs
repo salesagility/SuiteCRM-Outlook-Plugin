@@ -44,11 +44,10 @@ namespace SuiteCRMAddIn
 
     public partial class ThisAddIn
     {
-        private const string ProgId = "SuiteCRMAddIn";
+        public const string ProgId = "SuiteCRMAddIn";
         public static readonly string AddInTitle, AddInVersion;
 
         public SuiteCRMClient.UserSession SuiteCRMUserSession;
-        private clsSettings settings;
         private Outlook.Explorer objExplorer;
         public Office.CommandBarPopup objSuiteCRMMenuBar2007;
         public Office.CommandBarButton btnArchive;
@@ -79,18 +78,6 @@ namespace SuiteCRMAddIn
         }
 
         /// <summary>
-        /// Property to allow other classes to get the settings object, but not
-        /// replace it with a new settings object.
-        /// </summary>
-        public clsSettings Settings
-        {
-            get
-            {
-                return this.settings;
-            }
-        }
-
-        /// <summary>
         /// I'm guessing this method is called once when the add-in is added in.
         /// </summary>
         static ThisAddIn()
@@ -109,7 +96,7 @@ namespace SuiteCRMAddIn
             bool result = false;
             try
             {
-                result = new LicenceValidationHelper(this.Log, Properties.Settings.Default.PublicKey, this.settings.LicenceKey).Validate();
+                result = new LicenceValidationHelper(this.Log, Properties.Settings.Default.PublicKey, Properties.Settings.Default.LicenceKey).Validate();
             } catch (System.Configuration.SettingsPropertyNotFoundException ex)
             {
                 this.log.Error("Licence key was not yet set up", ex);
@@ -146,10 +133,9 @@ namespace SuiteCRMAddIn
             var outlookApp = this.Application;
             OutlookVersion = (OutlookMajorVersion)Convert.ToInt32(outlookApp.Version.Split('.')[0]);
 
-            this.settings = new clsSettings();
-            StartLogging(settings);
+            StartLogging();
 
-            synchronisationContext = new SyncContext(outlookApp, settings);
+            synchronisationContext = new SyncContext(outlookApp);
             contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
             taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
             appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
@@ -190,7 +176,7 @@ namespace SuiteCRMAddIn
             this.btnArchive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
             this.btnArchive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
             this.btnArchive.Caption = "Archive";
-            this.btnArchive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+            this.btnArchive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRMLogo);
             this.btnArchive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
             this.btnArchive.Visible = true;
             this.btnArchive.BeginGroup = true;
@@ -247,7 +233,7 @@ namespace SuiteCRMAddIn
             {
                 log.Info("Starting normal operations.");
 
-                DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction(this.settings));
+                DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction());
                 StartSynchronisationProcesses();
                 this.IsLicensed = true;
             }
@@ -321,28 +307,28 @@ namespace SuiteCRMAddIn
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
             "\\SuiteCRMOutlookAddIn\\Logs\\";
 
-        private void StartLogging(clsSettings settings)
+        private void StartLogging()
         {
-            log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log", () => GetLogHeader(settings), settings.LogLevel);
+            log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log", () => GetLogHeader(), Properties.Settings.Default.LogLevel);
             clsSuiteCRMHelper.SetLog(log);
         }
 
-        private void LogKeySettings(clsSettings settings)
+        private void LogKeySettings()
         {
-            foreach (var s in GetKeySettings(settings))
+            foreach (var s in GetKeySettings())
             {
                 log.Error(s);
             }
         }
 
-        private IEnumerable<string> GetLogHeader(clsSettings settings)
+        private IEnumerable<string> GetLogHeader()
         {
             List<string> result = new List<string>();
 
             try
             {
                 result.Add($"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}");
-                result.AddRange(GetKeySettings(settings));
+                result.AddRange(GetKeySettings());
             }
             catch (Exception any)
             {
@@ -352,10 +338,10 @@ namespace SuiteCRMAddIn
             return result;
         }
 
-        private IEnumerable<string> GetKeySettings(clsSettings settings)
+        private IEnumerable<string> GetKeySettings()
         {
-            yield return "Auto-archiving: " + (settings.AutoArchive ? "ON" : "off");
-            yield return $"Logging level: {settings.LogLevel}";
+            yield return "Auto-archiving: " + (Properties.Settings.Default.AutoArchive ? "ON" : "off");
+            yield return $"Logging level: {Properties.Settings.Default.LogLevel}";
         }
 
         void objExplorer_FolderSwitch()
@@ -403,8 +389,8 @@ namespace SuiteCRMAddIn
 
         public void ShowSettingsForm()
         {
-            var settingsForm = new frmSettings();
-            settingsForm.SettingsChanged += (sender, args) => this.LogKeySettings(settings);
+            var settingsForm = new SettingsDialog();
+            settingsForm.SettingsChanged += (sender, args) => this.LogKeySettings();
             settingsForm.ShowDialog();
         }
 
@@ -491,6 +477,10 @@ namespace SuiteCRMAddIn
                 {
                     SuiteCRMUserSession.LogOut();
                 }
+
+                DisposeOf(appointmentSynchroniser);
+                DisposeOf(contactSynchroniser);
+                DisposeOf(taskSynchroniser);
             }
             catch (Exception ex)
             {
@@ -526,15 +516,9 @@ namespace SuiteCRMAddIn
             {
                 log.Error("ThisAddIn.UnregisterEvents", ex);
             }
-            try
-            {
-                Log.Info("ThisAddIn.UnregisterEvents: Removing archive button click event handler");
-                this.btnArchive.Click -= new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
-            }
-            catch (Exception ex)
-            {
-                log.Error("ThisAddIn.UnregisterEvents", ex);
-            }
+
+            UnregisterButtonClickHandler(this.btnArchive, this.cbtnArchive_Click);
+            UnregisterButtonClickHandler(this.btnSettings, this.cbtnSettings_Click);
 
             try
             {
@@ -561,10 +545,22 @@ namespace SuiteCRMAddIn
             {
                 log.Error("ThisAddIn.UnregisterEvents", ex);
             }
+        }
 
-            DisposeOf(appointmentSynchroniser);
-            DisposeOf(contactSynchroniser);
-            DisposeOf(taskSynchroniser);
+        private void UnregisterButtonClickHandler(CommandBarButton button, _CommandBarButtonEvents_ClickEventHandler clickHandler)
+        {
+            if (button != null)
+            {
+                try
+                {
+                    Log.Info("ThisAddIn.UnregisterEvents: Removing archive button click event handler");
+                    button.Click -= new Office._CommandBarButtonEvents_ClickEventHandler(clickHandler);
+                }
+                catch (Exception ex)
+                {
+                    log.Error("ThisAddIn.UnregisterEvents", ex);
+                }
+            }
         }
 
         /// <summary>
@@ -577,17 +573,17 @@ namespace SuiteCRMAddIn
             {
                 try
                 {
-                    Log.Debug($"ThisAddIn.UnregisterEvents: Disposing of {toDispose.GetType().Name}");
+                    Log.Debug($"ThisAddIn.DisposeOf: Disposing of {toDispose.GetType().Name}");
                     toDispose.Dispose();
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"DisposeOfSynchroniser: Failed to dispose of instance of {toDispose.GetType().Name}", ex);
+                    log.Error($"ThisAddIn.DisposeOf: Failed to dispose of instance of {toDispose.GetType().Name}", ex);
                 }
             }
             else
             {
-                log.Error("Attempt to dispose of null reference?");
+                log.Error("ThisAddIn.DisposeOf: Attempt to dispose of null reference?");
             }
         }
 
@@ -615,7 +611,7 @@ namespace SuiteCRMAddIn
                 Office.CommandBarButton objMainMenu = (Office.CommandBarButton)CommandBar.Controls.Add(Microsoft.Office.Core.MsoControlType.msoControlButton, this.missing, this.missing, this.missing, this.missing);
                 objMainMenu.Caption = "SuiteCRM Archive";
                 objMainMenu.Visible = true;
-                objMainMenu.Picture = RibbonImageHelper.Convert(Resources.SuiteCRM1);
+                objMainMenu.Picture = RibbonImageHelper.Convert(Resources.SuiteCRMLogo);
                 objMainMenu.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.contextMenuArchiveButton_Click);
             }
             catch (Exception)
@@ -641,7 +637,7 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook ItemSend: email sent event");
             try
             {
-                if (this.IsLicensed && settings.AutoArchive)
+                if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
                 {
                     ProcessNewMailItem(EmailArchiveType.Sent, item as Outlook.MailItem);
                 }
@@ -657,7 +653,7 @@ namespace SuiteCRMAddIn
             log.Debug("Outlook NewMail: email received event");
             try
             {
-                if (this.IsLicensed && settings.AutoArchive)
+                if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
                 {
                     ProcessNewMailItem(
                         EmailArchiveType.Inbound,
@@ -710,20 +706,21 @@ namespace SuiteCRMAddIn
             bool result = false;
             try
             {
-                if (settings.host != String.Empty)
+                if (Properties.Settings.Default.Host != String.Empty)
                 {
                     SuiteCRMUserSession = 
                         new SuiteCRMClient.UserSession(
-                            settings.host,
-                            settings.username,
-                            settings.password, 
-                            settings.LDAPKey, 
-                            log, 
-                            Settings.RestTimeout);
+                            Properties.Settings.Default.Host,
+                            Properties.Settings.Default.Username,
+                            Properties.Settings.Default.Password, 
+                            Properties.Settings.Default.LDAPKey, 
+                            ThisAddIn.AddInTitle,
+                            log,
+                            Properties.Settings.Default.RestTimeout);
                     SuiteCRMUserSession.AwaitingAuthentication = true;
                     try
                     {
-                        if (settings.IsLDAPAuthentication)
+                        if (Properties.Settings.Default.IsLDAPAuthentication)
                         {
                             SuiteCRMUserSession.AuthenticateLDAP();
                         }
@@ -751,8 +748,9 @@ namespace SuiteCRMAddIn
                             String.Empty, 
                             String.Empty, 
                             String.Empty, 
-                            log, 
-                            Settings.RestTimeout);
+                            ThisAddIn.AddInTitle,
+                            log,
+                            Properties.Settings.Default.RestTimeout);
                 }
 
                 SuiteCRMUserSession.AwaitingAuthentication = false;

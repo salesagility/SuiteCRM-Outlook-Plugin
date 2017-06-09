@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using Microsoft.Office.Interop.Outlook;
     using SuiteCRMAddIn.BusinessLogic;
@@ -32,7 +32,6 @@ namespace SuiteCRMAddIn
 
     public partial class frmAddressBook : Form
     {
-        private clsSettings settings = Globals.ThisAddIn.Settings;
         public frmAddressBook()
         {
             this.InitializeComponent();

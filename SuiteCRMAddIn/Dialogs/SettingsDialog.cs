@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Dialogs
 {
     using BusinessLogic;
     using Microsoft.Office.Interop.Outlook;
@@ -33,11 +33,11 @@ namespace SuiteCRMAddIn
     using System.Windows.Forms;
     using Exception = System.Exception;
 
-    public partial class frmSettings : Form
+    public partial class SettingsDialog : Form
     {
         public EventHandler SettingsChanged;
 
-        public frmSettings()
+        public SettingsDialog()
         {
             InitializeComponent();
         }
@@ -95,7 +95,7 @@ namespace SuiteCRMAddIn
                     {
                         Globals.ThisAddIn.SuiteCRMUserSession =
                             new SuiteCRMClient.UserSession(
-                                string.Empty, string.Empty, string.Empty, string.Empty, Log, Globals.ThisAddIn.Settings.RestTimeout);
+                                string.Empty, string.Empty, string.Empty, string.Empty, ThisAddIn.AddInTitle, Log, Properties.Settings.Default.RestTimeout);
                     }
 
                     Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
@@ -112,27 +112,27 @@ namespace SuiteCRMAddIn
 
         private void LoadSettings()
         {
-            if (Globals.ThisAddIn.Settings.host != string.Empty)
+            if (Properties.Settings.Default.Host != string.Empty)
             {
-                txtURL.Text = Globals.ThisAddIn.Settings.host;
-                txtUsername.Text = Globals.ThisAddIn.Settings.username;
-                txtPassword.Text = Globals.ThisAddIn.Settings.password;
-                licenceText.Text = Globals.ThisAddIn.Settings.LicenceKey;
+                txtURL.Text = Properties.Settings.Default.Host;
+                txtUsername.Text = Properties.Settings.Default.Username;
+                txtPassword.Text = Properties.Settings.Default.Password;
+                licenceText.Text = Properties.Settings.Default.LicenceKey;
             }
-            this.chkEnableLDAPAuthentication.Checked = Globals.ThisAddIn.Settings.IsLDAPAuthentication;
-            this.txtLDAPAuthenticationKey.Text = Globals.ThisAddIn.Settings.LDAPKey;
+            this.chkEnableLDAPAuthentication.Checked = Properties.Settings.Default.IsLDAPAuthentication;
+            this.txtLDAPAuthenticationKey.Text = Properties.Settings.Default.LDAPKey;
 
-            this.cbEmailAttachments.Checked = Globals.ThisAddIn.Settings.ArchiveAttachments;
-            this.checkBoxAutomaticSearch.Checked = Globals.ThisAddIn.Settings.AutomaticSearch;
-            this.cbShowCustomModules.Checked = Globals.ThisAddIn.Settings.ShowCustomModules;
-            this.txtSyncMaxRecords.Text = Globals.ThisAddIn.Settings.SyncMaxRecords.ToString();
-            this.checkBoxShowRightClick.Checked = Globals.ThisAddIn.Settings.PopulateContextLookupList;
+            this.cbEmailAttachments.Checked = Properties.Settings.Default.ArchiveAttachments;
+            this.checkBoxAutomaticSearch.Checked = Properties.Settings.Default.AutomaticSearch;
+            this.cbShowCustomModules.Checked = Properties.Settings.Default.ShowCustomModules;
+            this.txtSyncMaxRecords.Text = Properties.Settings.Default.SyncMaxRecords.ToString();
+            this.checkBoxShowRightClick.Checked = Properties.Settings.Default.PopulateContextLookupList;
             GetAccountAutoArchivingSettings();
 
-            txtAutoSync.Text = Globals.ThisAddIn.Settings.ExcludedEmails;
+            txtAutoSync.Text = Properties.Settings.Default.ExcludedEmails;
 
-            dtpAutoArchiveFrom.Value = DateTime.Now.AddDays(0 - Globals.ThisAddIn.Settings.DaysOldEmailToAutoArchive);
-            chkShowConfirmationMessageArchive.Checked = Globals.ThisAddIn.Settings.ShowConfirmationMessageArchive;
+            dtpAutoArchiveFrom.Value = DateTime.Now.AddDays(0 - Properties.Settings.Default.DaysOldEmailToAutoArchive);
+            chkShowConfirmationMessageArchive.Checked = Properties.Settings.Default.ShowConfirmationMessageArchive;
 
             if (chkEnableLDAPAuthentication.Checked)
             {
@@ -152,13 +152,13 @@ namespace SuiteCRMAddIn
                 .ToList();
             logLevelSelector.DisplayMember = "Value";
             logLevelSelector.ValueMember = "Key";
-            logLevelSelector.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.LogLevel);
+            logLevelSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.LogLevel);
 
             this.PopulateDirectionsMenu(syncCalendarMenu);
             this.PopulateDirectionsMenu(syncContactsMenu);
 
-            this.syncCalendarMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncCalendar);
-            this.syncContactsMenu.SelectedValue = Convert.ToInt32(Globals.ThisAddIn.Settings.SyncContacts);
+            this.syncCalendarMenu.SelectedValue = Convert.ToInt32(Properties.Settings.Default.SyncCalendar);
+            this.syncContactsMenu.SelectedValue = Convert.ToInt32(Properties.Settings.Default.SyncContacts);
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace SuiteCRMAddIn
         private void GetAccountAutoArchivingSettings()
         {
             var settings = new EmailAccountsArchiveSettings();
-            settings.Load(Globals.ThisAddIn.Settings);
+            settings.Load();
             EmailArchiveAccountTabs.TabPages.Clear();
             var outlookSession = Application.Session;
             if (Globals.ThisAddIn.OutlookVersion >= OutlookMajorVersion.Outlook2013)
@@ -218,8 +218,8 @@ namespace SuiteCRMAddIn
                 .ToList();
 
             var conbinedSettings = EmailAccountsArchiveSettings.Combine(allSettings);
-            conbinedSettings.Save(Globals.ThisAddIn.Settings);
-            Globals.ThisAddIn.Settings.AutoArchive = conbinedSettings.HasAny;
+            conbinedSettings.Save();
+            Properties.Settings.Default.AutoArchive = conbinedSettings.HasAny;
         }
 
         private void frmSettings_FormClosing(object sender, FormClosingEventArgs e)
@@ -250,8 +250,9 @@ namespace SuiteCRMAddIn
                             txtUsername.Text.Trim(), 
                             txtPassword.Text.Trim(), 
                             txtLDAPAuthenticationKey.Text.Trim(), 
+                            ThisAddIn.AddInTitle,
                             Log, 
-                            Globals.ThisAddIn.Settings.RestTimeout);
+                            Properties.Settings.Default.RestTimeout);
 
                     if (chkEnableLDAPAuthentication.Checked && txtLDAPAuthenticationKey.Text.Trim().Length != 0)
                     {
@@ -270,9 +271,9 @@ namespace SuiteCRMAddIn
                     {
                         MessageBox.Show("Login Successful!!!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     }
-                    Globals.ThisAddIn.Settings.host = txtURL.Text.Trim();
-                    Globals.ThisAddIn.Settings.username = txtUsername.Text.Trim();
-                    Globals.ThisAddIn.Settings.password = txtPassword.Text.Trim();
+                    Properties.Settings.Default.Host = txtURL.Text.Trim();
+                    Properties.Settings.Default.Username = txtUsername.Text.Trim();
+                    Properties.Settings.Default.Password = txtPassword.Text.Trim();
                 }
                 catch (Exception ex)
                 {
@@ -285,7 +286,7 @@ namespace SuiteCRMAddIn
         {
             if (cbShowCustomModules.Checked)
             {
-                frmCustomModules objfrmCustomModules = new frmCustomModules();
+                CustomModulesDialog objfrmCustomModules = new CustomModulesDialog();
                 objfrmCustomModules.ShowDialog();
             }
         }
@@ -296,7 +297,7 @@ namespace SuiteCRMAddIn
             {
                 labelKey.Enabled = true;
                 txtLDAPAuthenticationKey.Enabled = true;
-                txtLDAPAuthenticationKey.Text = Globals.ThisAddIn.Settings.LDAPKey;
+                txtLDAPAuthenticationKey.Text = Properties.Settings.Default.LDAPKey;
             }
             else
             {
@@ -310,7 +311,7 @@ namespace SuiteCRMAddIn
         {
             if (cbShowCustomModules.Checked)
             {
-                frmCustomModules objfrmCustomModules = new frmCustomModules();
+                CustomModulesDialog objfrmCustomModules = new CustomModulesDialog();
                 objfrmCustomModules.ShowDialog();
             }
         }
@@ -342,8 +343,9 @@ namespace SuiteCRMAddIn
                         txtUsername.Text.Trim(),
                         txtPassword.Text.Trim(),
                         txtLDAPAuthenticationKey.Text.Trim(),
+                        ThisAddIn.AddInTitle,
                         Log,
-                        Globals.ThisAddIn.Settings.RestTimeout);
+                        Properties.Settings.Default.RestTimeout);
                 Globals.ThisAddIn.SuiteCRMUserSession.Login();
                 if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                 {
@@ -352,9 +354,9 @@ namespace SuiteCRMAddIn
                     this.DialogResult = DialogResult.None;
                     return;
                 }
-                Globals.ThisAddIn.Settings.host = txtURL.Text.Trim();
-                Globals.ThisAddIn.Settings.username = txtUsername.Text.Trim();
-                Globals.ThisAddIn.Settings.password = txtPassword.Text.Trim();
+                Properties.Settings.Default.Host = txtURL.Text.Trim();
+                Properties.Settings.Default.Username = txtUsername.Text.Trim();
+                Properties.Settings.Default.Password = txtPassword.Text.Trim();
             }
             catch (Exception ex)
             {
@@ -365,43 +367,43 @@ namespace SuiteCRMAddIn
                 return;
             }
 
-            Globals.ThisAddIn.Settings.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked;
-            Globals.ThisAddIn.Settings.LDAPKey = txtLDAPAuthenticationKey.Text.Trim();
+            Properties.Settings.Default.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked;
+            Properties.Settings.Default.LDAPKey = txtLDAPAuthenticationKey.Text.Trim();
 
-            Globals.ThisAddIn.Settings.LicenceKey = licenceText.Text.Trim();
+            Properties.Settings.Default.LicenceKey = licenceText.Text.Trim();
 
-            Globals.ThisAddIn.Settings.ArchiveAttachments = this.cbEmailAttachments.Checked;
-            Globals.ThisAddIn.Settings.AutomaticSearch = this.checkBoxAutomaticSearch.Checked;
-            Globals.ThisAddIn.Settings.ShowCustomModules = this.cbShowCustomModules.Checked;
-            Globals.ThisAddIn.Settings.PopulateContextLookupList = this.checkBoxShowRightClick.Checked;
+            Properties.Settings.Default.ArchiveAttachments = this.cbEmailAttachments.Checked;
+            Properties.Settings.Default.AutomaticSearch = this.checkBoxAutomaticSearch.Checked;
+            Properties.Settings.Default.ShowCustomModules = this.cbShowCustomModules.Checked;
+            Properties.Settings.Default.PopulateContextLookupList = this.checkBoxShowRightClick.Checked;
 
-            Globals.ThisAddIn.Settings.ExcludedEmails = this.txtAutoSync.Text.Trim();
+            Properties.Settings.Default.ExcludedEmails = this.txtAutoSync.Text.Trim();
 
-            Globals.ThisAddIn.Settings.AutoArchiveFolders = new List<string>();
+            Properties.Settings.Default.AutoArchiveFolders = new List<string>();
 
             SaveAccountAutoArchivingSettings();
 
-            Globals.ThisAddIn.Settings.SyncCalendar = (SyncDirection.Direction)this.syncCalendarMenu.SelectedValue;
-            Globals.ThisAddIn.Settings.SyncContacts = (SyncDirection.Direction)this.syncContactsMenu.SelectedValue;
+            Properties.Settings.Default.SyncCalendar = (SyncDirection.Direction)this.syncCalendarMenu.SelectedValue;
+            Properties.Settings.Default.SyncContacts = (SyncDirection.Direction)this.syncContactsMenu.SelectedValue;
 
-            Globals.ThisAddIn.Settings.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked;
+            Properties.Settings.Default.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked;
             if (this.txtSyncMaxRecords.Text != string.Empty)
             {
-                Globals.ThisAddIn.Settings.SyncMaxRecords = Convert.ToInt32(this.txtSyncMaxRecords.Text);
+                Properties.Settings.Default.SyncMaxRecords = Convert.ToInt32(this.txtSyncMaxRecords.Text);
             }
             else
             {
-                Globals.ThisAddIn.Settings.SyncMaxRecords = 0;
+                Properties.Settings.Default.SyncMaxRecords = 0;
             }
 
-            Globals.ThisAddIn.Settings.LogLevel = (LogEntryType)logLevelSelector.SelectedValue;
-            Globals.ThisAddIn.Log.Level = Globals.ThisAddIn.Settings.LogLevel;
+            Properties.Settings.Default.LogLevel = (LogEntryType)logLevelSelector.SelectedValue;
+            Globals.ThisAddIn.Log.Level = Properties.Settings.Default.LogLevel;
 
-            Globals.ThisAddIn.Settings.DaysOldEmailToAutoArchive =
+            Properties.Settings.Default.DaysOldEmailToAutoArchive =
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 
-            Globals.ThisAddIn.Settings.Save();
-            Globals.ThisAddIn.Settings.Reload();
+            Properties.Settings.Default.Save();
+            Properties.Settings.Default.Reload();
 
             clsSuiteCRMHelper.FlushUserIdCache();
 

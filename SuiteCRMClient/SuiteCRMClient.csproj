@@ -42,8 +42,8 @@
       <HintPath>..\packages\log4net.2.0.7\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -65,17 +65,21 @@
     <Compile Include="clsAddValue.cs" />
     <Compile Include="CrmRestServer.cs" />
     <Compile Include="CrmServerErrorException.cs" />
+    <Compile Include="Documentation.cs" />
     <Compile Include="Email\ArchiveResult.cs" />
     <Compile Include="Email\clsEmailArchive.cs" />
     <Compile Include="Email\clsEmailAttachments.cs" />
     <Compile Include="CrmEntity.cs" />
+    <Compile Include="Email\Documentation.cs" />
     <Compile Include="Email\EmailArchiveType.cs" />
     <Compile Include="Exceptions\CrmSaveDataException.cs" />
     <Compile Include="LDAPAuthenticationHelper.cs" />
+    <Compile Include="Logging\AbstractLogger.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\LogEntryType.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />
     <Compile Include="Objective.cs" />
+    <Compile Include="RESTObjects\Documentation.cs" />
     <Compile Include="RESTObjects\eContactDetail.cs" />
     <Compile Include="RESTObjects\eDocumentRevision.cs" />
     <Compile Include="RESTObjects\eEntryValue.cs" />
