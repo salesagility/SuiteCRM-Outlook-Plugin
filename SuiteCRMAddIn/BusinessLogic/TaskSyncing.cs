@@ -163,6 +163,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        // TODO: this is very horrible and should be reworked.
         protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, string crmType, eEntryValue crmItem)
         {
             SyncState<Outlook.TaskItem> result = null;
@@ -179,9 +180,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
                 {
                     Log.Warn("\tSET date_start = dResult.date_start");
-                    date_start = DateTime.ParseExact(crmItem.GetValueAsString("date_start"), "yyyy-MM-dd HH:mm:ss", null);
-
-                    date_start = date_start.Value.Add(new DateTimeOffset(DateTime.Now).Offset);
+                    date_start = crmItem.GetValueAsDateTime("date_start");
                     time_start =
                         TimeSpan.FromHours(date_start.Value.Hour)
                             .Add(TimeSpan.FromMinutes(date_start.Value.Minute))
@@ -192,18 +191,29 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_due")))
                     {
-                        date_due = DateTime.ParseExact(crmItem.GetValueAsString("date_due"), "yyyy-MM-dd HH:mm:ss", null);
-                        date_due = date_due.Value.Add(new DateTimeOffset(DateTime.Now).Offset);
+                        date_due = crmItem.GetValueAsDateTime("date_due");
                         time_due =
-                            TimeSpan.FromHours(date_due.Value.Hour).Add(TimeSpan.FromMinutes(date_due.Value.Minute)).ToString(@"hh\:mm");
-                        ;
+                            TimeSpan.FromHours(date_due.Value.Hour)
+                                .Add(TimeSpan.FromMinutes(date_due.Value.Minute))
+                                .ToString(@"hh\:mm");
                     }
 
                     var syncState = this.GetExistingSyncState(crmItem);
 
                     if (syncState == null)
                     {
-                        result = AddNewItemFromCrmToOutlook(tasksFolder, crmItem, date_start, date_due, time_start, time_due);
+                        /* check for howlaround */
+                        var matches = this.FindMatches(crmItem);
+
+                        if (matches.Count == 0)
+                        {
+                            /* didn't find it, so add it to Outlook */
+                            result = AddNewItemFromCrmToOutlook(tasksFolder, crmItem, date_start, date_due, time_start, time_due);
+                        }
+                        else
+                        {
+                            this.Log.Warn($"Howlaround detected? '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
+                        }
                     }
                     else
                     {
