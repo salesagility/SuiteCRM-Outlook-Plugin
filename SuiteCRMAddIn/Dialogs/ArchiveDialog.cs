@@ -47,7 +47,6 @@ namespace SuiteCRMAddIn.Dialogs
             InitializeComponent();
         }
 
-        private clsSettings settings = Globals.ThisAddIn.Settings;
         public string type;
 
         private ILogger Log => Globals.ThisAddIn.Log;
@@ -57,10 +56,10 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void AddCustomModules()
         {
-            if (this.settings.CustomModules != null)
+            if (Properties.Settings.Default.CustomModules != null)
             {
                //  StringEnumerator enumerator = .GetEnumerator();
-                foreach (string key in this.settings.CustomModules)
+                foreach (string key in Properties.Settings.Default.CustomModules)
                 {
                     string[] strArray = key.Split(new char[] { '|' });
                     ListViewItem item = new ListViewItem
@@ -105,7 +104,7 @@ namespace SuiteCRMAddIn.Dialogs
                 this.AddActionHandlers();
                 this.PopulateUIComponents();
 
-                if (this.settings.AutomaticSearch)
+                if (Properties.Settings.Default.AutomaticSearch)
                 {
                     this.btnSearch_Click(null, null);
                 }
@@ -118,9 +117,9 @@ namespace SuiteCRMAddIn.Dialogs
         private void PopulateUIComponents()
         {
             this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
-            if (this.settings.EmailCategories != null && this.settings.EmailCategories.IsImplemented)
+            if (Properties.Settings.Default.EmailCategories != null && Properties.Settings.Default.EmailCategories.IsImplemented)
             {
-                this.categoryInput.DataSource = this.settings.EmailCategories;
+                this.categoryInput.DataSource = Properties.Settings.Default.EmailCategories;
             }
             else
             {
@@ -131,13 +130,13 @@ namespace SuiteCRMAddIn.Dialogs
 
             this.AddStandardModules();
 
-            if (Globals.ThisAddIn.Settings.ShowCustomModules)
+            if (Properties.Settings.Default.ShowCustomModules)
             {
                 this.AddCustomModules();
             }
             try
             {
-                foreach (string str in this.settings.SelectedSearchModules.Split(new char[] { ',' }))
+                foreach (string str in Properties.Settings.Default.SelectedSearchModules.Split(new char[] { ',' }))
                 {
                     int num = Convert.ToInt32(str);
                     this.lstViewSearchModules.Items[num].Checked = true;
@@ -342,7 +341,7 @@ namespace SuiteCRMAddIn.Dialogs
             string queryText = ConstructQueryTextForModuleName(searchText, moduleName, fieldsToSeek);
             try
             {
-                queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+                queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
             }
             catch (System.Exception any)
             {
@@ -351,7 +350,7 @@ namespace SuiteCRMAddIn.Dialogs
                 queryText = queryText.Replace("%", string.Empty);
                 try
                 {
-                    queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, settings.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+                    queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
                 }
                 catch (Exception secondFail)
                 {
@@ -510,14 +509,17 @@ namespace SuiteCRMAddIn.Dialogs
 
                 foreach (string fieldName in clsSuiteCRMHelper.GetCharacterFields(moduleName))
                 {
-                    if (!String.IsNullOrWhiteSpace(queryBuilder.ToString()))
+                    switch (fieldName)
                     {
-                        queryBuilder.Append("OR ");
+                        case "name":
+                        case "first_name":
+                        case "last_name":
+                            queryBuilder.Append($"{tableName}.{fieldName} LIKE '%{escapedSearchText}%' OR ");
+                            break;
                     }
-                    queryBuilder.Append($"{tableName}.{fieldName} LIKE '%{escapedSearchText}%' ");
                 }
 
-                queryBuilder.Append($"OR {tableName}.id in (select eabr.bean_id from email_addr_bean_rel eabr ")
+                queryBuilder.Append($"{tableName}.id in (select eabr.bean_id from email_addr_bean_rel eabr ")
                     .Append("INNER JOIN email_addresses ea on eabr.email_address_id = ea.id ")
                     .Append($"where eabr.bean_module = '{moduleName}' ")
                     .Append($" and ea.email_address LIKE '{escapedSearchText}')");
@@ -658,9 +660,8 @@ namespace SuiteCRMAddIn.Dialogs
                     }
                 }
                 string str2 = str.Remove(str.Length - 1, 1);
-                this.settings.SelectedSearchModules = str2;
-                this.settings.Save();
-                bool flag1 = this.settings.ParticipateInCeip;
+                Properties.Settings.Default.SelectedSearchModules = str2;
+                Properties.Settings.Default.Save();
             }
             catch (System.Exception)
             {
@@ -779,7 +780,7 @@ namespace SuiteCRMAddIn.Dialogs
             var fullSuccess = failCount == 0;
             if (fullSuccess)
             {
-                if (settings.ShowConfirmationMessageArchive)
+                if (Properties.Settings.Default.ShowConfirmationMessageArchive)
                 {
                     MessageBox.Show(
                         $"{successCount} email(s) have been successfully archived",

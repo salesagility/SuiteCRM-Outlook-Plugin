@@ -26,31 +26,54 @@ namespace SuiteCRMAddIn.Daemon
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using System.Collections.Generic;
+
+    /// <summary>
+    /// An action which archives one email.
+    /// </summary>
     public class ArchiveEmailAction : AbstractDaemonAction
     {
+        /// <summary>
+        /// The type of archive action (i.e. is this a manual, inbound or outbound action).
+        /// </summary>
         private EmailArchiveType achiveType;
-        private clsEmailArchive emailToArchive;
+        /// <summary>
+        /// The single mail to be archived.
+        /// </summary>
+        private clsEmailArchive mail;
+        /// <summary>
+        /// The session in which it should be archived.
+        /// </summary>
         private UserSession session;
-        private List<string> contactIds = new List<string>();
+        /// <summary>
+        /// Contact ids of contacts to which this mail should be linked.
+        /// </summary>
+        private List<string> contacts = new List<string>();
 
+        /// <summary>
+        /// Create a new instance of an ArchiveEmailAction.
+        /// </summary>
+        /// <param name="session">The session in which this mail should be archived.</param>
+        /// <param name="mail">The single mail to be archived.</param>
+        /// <param name="archiveType">The type of archive action (i.e. is this a manual, inbound or outbound action).</param>
+        /// <param name="contacts">Contact ids of contacts to which this mail should be linked.</param>
         public ArchiveEmailAction(
             UserSession session, 
-            clsEmailArchive emailToArchive, 
+            clsEmailArchive mail, 
             EmailArchiveType archiveType, 
-            List<string> contactIds) : base(5)
+            List<string> contacts) : base(5)
         {
             this.session = session;
-            this.emailToArchive = emailToArchive;
+            this.mail = mail;
             this.achiveType = archiveType;
-            this.contactIds.AddRange(contactIds);
+            this.contacts.AddRange(contacts);
         }
 
         public override void Perform()
         {
             if (session.IsLoggedIn)
             {
-                this.emailToArchive.SuiteCRMUserSession = session;
-                this.emailToArchive.Save(this.contactIds);
+                this.mail.SuiteCRMUserSession = session;
+                this.mail.Save(this.contacts);
             }
         }
     }

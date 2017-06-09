@@ -1,4 +1,4 @@
-﻿/**
+/**
 * Outlook integration for SuiteCRM.
 * @package Outlook integration for SuiteCRM
 * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -27,9 +27,18 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System;
 
     /// <summary>
-    /// The sync state of an item of the specified type. Contrary to appearances this 
-    /// file is not a backup or a mistake but is vital to the working of the system!
+    /// The sync state of an item of the specified type.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Contrary to appearances this file is not a backup or a mistake but is vital to
+    /// the working of the system!
+    /// </para>
+    /// <para>
+    /// The SyncState object is essentially a handle that a Synchroniser holds on an
+    /// Outlook item, on which it hangs information to track the state of synchronisation
+    /// of that item.
+    /// </param>
     /// <typeparam name="ItemType">The type of the item to be/being synced.</typeparam>
     public abstract class SyncState<ItemType> : SyncState
     {
@@ -61,8 +70,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         private object txStateLock = new object();
 
         /// <remarks>
-        /// Legacy code. Neither Andrew Forrest nor I (Simon Brooke) really understand what this 
-        /// is about; its values are small integers and probably ought to be an enum, but we don't 
+        /// Legacy code. Neither Andrew Forrest nor I (Simon Brooke) really understand what this
+        /// is about; its values are small integers and probably ought to be an enum, but we don't
         /// know what the values mean.
         /// </remarks>
         internal TransmissionState TxState { get; private set; } = TransmissionState.New;
@@ -78,11 +87,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         public abstract void DeleteItem();
 
         /// <summary>
-        /// Return true if 
+        /// Return true if
         /// <list type="ordered">
         /// <item>We don't have a cached version of the related CRM item, or</item>
         /// <item>The outlook item is different from our cached version.</item>
-        /// </list> 
+        /// </list>
         /// </summary>
         /// <returns>True if the object has changed.</returns>
         protected virtual bool ReallyChanged()
@@ -127,10 +136,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// has really changed.
         /// </summary>
         /// <remarks>
-        /// The timing logic here is legacy, and neither Andrew Forrest nor I (Simon Brooke) 
+        /// The timing logic here is legacy, and neither Andrew Forrest nor I (Simon Brooke)
         /// understand what it's intended to do; but although we've refactored it, we've left it in.
         /// </remarks>
-        /// <returns>True if this item should be synced with CRM, there has been a real change, 
+        /// <returns>True if this item should be synced with CRM, there has been a real change,
         /// and some time has elapsed.</returns>
         internal bool ShouldPerformSyncNow()
         {
@@ -239,12 +248,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             /// </summary>
             New,
             /// <summary>
-            /// A change has been registered on this SyncState object but it has 
+            /// A change has been registered on this SyncState object but it has
             /// not been transmitted.
             /// </summary>
             Pending,
             /// <summary>
-            /// This SyncState has been queued for transmission but has not yet been 
+            /// This SyncState has been queued for transmission but has not yet been
             /// transmitted.
             /// </summary>
             Queued,

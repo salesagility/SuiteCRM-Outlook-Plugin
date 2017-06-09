@@ -191,7 +191,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(481, 404);
             this.Name = "ArchiveDialog";
-            this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Archive to SuiteCRM";
