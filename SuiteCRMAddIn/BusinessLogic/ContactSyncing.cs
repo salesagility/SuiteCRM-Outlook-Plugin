@@ -144,7 +144,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     else
                     {
-                        this.Log.Warn($"Howlaround detected? Appointment '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
+                        this.Log.Warn($"Howlaround detected? Contact '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
                     }
                 }
                 else

@@ -212,7 +212,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                         else
                         {
-                            this.Log.Warn($"Howlaround detected? '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
+                            this.Log.Warn($"Howlaround detected? Task '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
                         }
                     }
                     else
