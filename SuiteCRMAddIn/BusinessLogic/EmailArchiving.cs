@@ -34,6 +34,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Runtime.InteropServices;
     using System.Threading;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using SuiteCRMAddIn.Extensions;
 
     /// <summary>
     /// The agent which handles the automatic and manual archiving of emails.
@@ -204,17 +205,26 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// This duplicates the functionality of ConstructCRMItem
+        /// </remarks>
+        /// <param name="olItem"></param>
+        /// <param name="archiveType"></param>
+        /// <returns></returns>
         private clsEmailArchive SerialiseEmailObject(Outlook.MailItem olItem, EmailArchiveType archiveType)
         {
             clsEmailArchive mailArchive = new clsEmailArchive(SuiteCRMUserSession, Log);
-            mailArchive.From = ExtractSmtpAddressForSender(olItem);
+            mailArchive.From = olItem.GetSenderSMTPAddress();
             mailArchive.To = string.Empty;
 
             Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
 
-            foreach (Outlook.Recipient objRecepient in olItem.Recipients)
+            foreach (Outlook.Recipient recipient in olItem.Recipients)
             {
-                string address = GetSmtpAddress(objRecepient);
+                string address = recipient.GetSmtpAddress();
 
                 if (mailArchive.To == string.Empty)
                 {
@@ -248,87 +258,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        /// <summary>
-        /// From this email recipient, extract the SMTP address (if that's possible).
-        /// </summary>
-        /// <param name="recipient">A recipient object</param>
-        /// <returns>The SMTP address for that object, if it can be recovered, else an empty string.</returns>
-        private string GetSmtpAddress(Outlook.Recipient recipient)
-        {
-            string result = string.Empty;
-
-            switch (recipient.AddressEntry.Type)
-            {
-                case "SMTP":
-                    result = recipient.Address;
-                    break;
-                case "EX": /* an Exchange address */
-                    var exchangeUser = recipient.AddressEntry.GetExchangeUser();
-                    if (exchangeUser != null)
-                    {
-                        result = exchangeUser.PrimarySmtpAddress;
-                    }
-                    break;
-                default:
-                    this.Log.Warn($"{this.GetType().Name}.ExtractSmtpAddressForSender: unknown email type {recipient.AddressEntry.Type}");
-                    break;
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// From this mail item, extract the SMTP sender address if any, else the
-        /// empty string.
-        /// </summary>
-        /// <remarks>
-        /// If the sender is using Exchange (which if they're using Outlook they almost
-        /// certainly are) the 'sender email address' won't be an email address, it will
-        /// be a bizarre LDAP query which CRM will barf on. However, the Sender property
-        /// may well be null, so allow for that too.
-        /// </remarks>
-        /// <param name="olItem">The mail item</param>
-        /// <returns>An SMTP address or an empty string.</returns>
-        private string ExtractSmtpAddressForSender(Outlook.MailItem olItem)
-        {
-            string result = string.Empty;
-
-            try
-            {
-                switch (olItem.SenderEmailType)
-                {
-                    case "SMTP":
-                        result = olItem.SenderEmailAddress;
-                        break;
-                    case "EX": /* an Exchange address */
-                        var sender = olItem.Sender;
-                        if (sender != null)
-                        {
-                            var exchangeUser = sender.GetExchangeUser();
-                            if (exchangeUser != null)
-                            {
-                                result = exchangeUser.PrimarySmtpAddress;
-                            }
-                        }
-
-                        if (string.IsNullOrEmpty(result))
-                        {
-                            var currentUser = Globals.ThisAddIn.Application.ActiveExplorer().Session.CurrentUser.PropertyAccessor;
-                            result = currentUser.GetProperty(PR_SMTP_ADDRESS).ToString();
-                        }
-                        break;
-                    default:
-                        this.Log.Warn($"{this.GetType().Name}.ExtractSmtpAddressForSender: unknown email type {olItem.SenderEmailType}");
-                        break;
-                }
-            }
-            catch (Exception any)
-            {
-                this.Log.Error($"{this.GetType().Name}.ExtractSmtpAddressForSender: unexpected error", any);
-            }
-
-            return result;
-        }
 
         private void ArchiveEmailThread(clsEmailArchive crmItem, EmailArchiveType archiveType, string strExcludedEmails = "")
         {
@@ -639,7 +568,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             data[3] = clsSuiteCRMHelper.SetNameValuePair("status", "archived");
             data[4] = clsSuiteCRMHelper.SetNameValuePair("description", olItem.Body ?? string.Empty);
             data[5] = clsSuiteCRMHelper.SetNameValuePair("description_html", olItem.HTMLBody ?? string.Empty);
-            data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", clsGlobals.GetSenderAddress(olItem, type));
+            data[6] = clsSuiteCRMHelper.SetNameValuePair("from_addr", olItem.GetSenderSMTPAddress());
             data[7] = clsSuiteCRMHelper.SetNameValuePair("to_addrs", olItem.To);
             data[8] = clsSuiteCRMHelper.SetNameValuePair("cc_addrs", olItem.CC);
             data[9] = clsSuiteCRMHelper.SetNameValuePair("bcc_addrs", olItem.BCC);
