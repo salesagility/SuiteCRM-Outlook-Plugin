@@ -23,7 +23,7 @@
 
  namespace SuiteCRMClient.Email
 {
-    public class clsEmailAttachments
+    public class ArchiveableAttachment
     {
         public string DisplayName { get; set; }
         public byte[] FileContentInBase64String { get; set; }

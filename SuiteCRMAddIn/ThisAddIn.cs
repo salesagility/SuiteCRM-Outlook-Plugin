@@ -639,7 +639,7 @@ namespace SuiteCRMAddIn
             {
                 if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
                 {
-                    ProcessNewMailItem(EmailArchiveType.Sent, item as Outlook.MailItem);
+                    ProcessNewMailItem(EmailArchiveReason.Sent, item as Outlook.MailItem);
                 }
             }
             catch (Exception ex)
@@ -656,7 +656,7 @@ namespace SuiteCRMAddIn
                 if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
                 {
                     ProcessNewMailItem(
-                        EmailArchiveType.Inbound,
+                        EmailArchiveReason.Inbound,
                         Application.Session.GetItemFromID(EntryID) as Outlook.MailItem);
                 }
             }
@@ -666,7 +666,7 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void ProcessNewMailItem(EmailArchiveType archiveType, Outlook.MailItem mailItem)
+        private void ProcessNewMailItem(EmailArchiveReason archiveType, Outlook.MailItem mailItem)
         {
             if (mailItem == null)
             {

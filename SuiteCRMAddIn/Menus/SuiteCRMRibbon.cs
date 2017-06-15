@@ -27,6 +27,7 @@ using SuiteCRMAddIn.Properties;
 using SuiteCRMClient;
 using SuiteCRMClient.Email;
 using SuiteCRMClient.Logging;
+using SuiteCRMAddIn.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -176,7 +177,7 @@ namespace SuiteCRMAddIn
                     {
                         try
                         {
-                            Globals.ThisAddIn.EmailArchiver.ArchiveNewMailItem(currentItem, EmailArchiveType.Sent);
+                            currentItem.Archive(EmailArchiveReason.Sent);
                         }
                         catch (Exception failedToArchve)
                         {

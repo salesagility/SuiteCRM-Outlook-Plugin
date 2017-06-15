@@ -404,7 +404,7 @@ namespace SuiteCRMClient
         }
 
 
-        public static void UploadAttachment(clsEmailAttachments objAttachment, string email_id)
+        public static void UploadAttachment(ArchiveableAttachment objAttachment, string email_id)
         {
             EnsureLoggedIn();
 

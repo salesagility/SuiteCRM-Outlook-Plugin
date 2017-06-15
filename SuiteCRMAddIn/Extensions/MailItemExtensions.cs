@@ -1,11 +1,11 @@
 ﻿
 namespace SuiteCRMAddIn.Extensions
 {
+    using SuiteCRMClient;
+    using SuiteCRMClient.Email;
+    using SuiteCRMClient.Logging;
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
+    using System.Runtime.InteropServices;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -17,6 +17,28 @@ namespace SuiteCRMAddIn.Extensions
         /// Magic property tag to get the email address from an Outlook Recipient object.
         /// </summary>
         const string PR_SMTP_ADDRESS = "http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
+
+        /// <summary>
+        /// Shorthand to refer to the global user session.
+        /// </summary>
+        public static UserSession SuiteCRMUserSession
+        {
+            get
+            {
+                return Globals.ThisAddIn.SuiteCRMUserSession;
+            }
+        }
+
+        /// <summary>
+        /// Shorthand to refer to the global log.
+        /// </summary>
+        public static ILogger Log
+        {
+            get
+            {
+                return Globals.ThisAddIn.Log;
+            }
+        }
 
         /// <summary>
         /// From this mail item, extract the SMTP sender address if any, else the
@@ -64,15 +86,14 @@ namespace SuiteCRMAddIn.Extensions
                         /* happens, is coped with in the final clause, don't worry about it */
                         break;
                     default:
-                        Globals.ThisAddIn.Log.AddEntry($"Unknown email type {olItem.SenderEmailType}", SuiteCRMClient.Logging.LogEntryType.Warning);
+                        Log.Warn($"Unknown email type {olItem.SenderEmailType}");
                         break;
                 }
             }
             catch (Exception any)
             {
-                Globals.ThisAddIn.Log.AddEntry(
-                    $"MailItemExtensions.GetSenderSMTPAddress: unexpected error {any.GetType().Name} '{any.Message}'", 
-                    SuiteCRMClient.Logging.LogEntryType.Error);
+                Log.Error(
+                    $"MailItemExtensions.GetSenderSMTPAddress: unexpected error {any.GetType().Name} '{any.Message}'", any);
             }
 
             try
@@ -85,12 +106,195 @@ namespace SuiteCRMAddIn.Extensions
             }
             catch (Exception any)
             {
-                Globals.ThisAddIn.Log.AddEntry(
+                Log.Error(
                     $"MailItemExtensions.GetSenderSMTPAddress: failed to get email address of current user: {any.GetType().Name} '{any.Message}'",
-                    SuiteCRMClient.Logging.LogEntryType.Error);
+                    any);
             }
 
             return result;
-        } 
+        }
+
+
+        /// <summary>
+        /// Constuct an achiveable email object represtenting me.
+        /// </summary>
+        /// <param name="olItem">Me.</param>
+        /// <param name="reason">The reason I should be archived.</param>
+        /// <returns>An achiveable email object represtenting me.</returns>
+        public static ArchiveableEmail AsArchiveable(this Outlook.MailItem olItem, EmailArchiveReason reason)
+        {
+            ArchiveableEmail mailArchive = new ArchiveableEmail(MailItemExtensions.SuiteCRMUserSession, MailItemExtensions.Log);
+            mailArchive.From = olItem.GetSenderSMTPAddress();
+            mailArchive.To = string.Empty;
+
+            Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
+
+            foreach (Outlook.Recipient recipient in olItem.Recipients)
+            {
+                string address = recipient.GetSmtpAddress();
+
+                if (mailArchive.To == string.Empty)
+                {
+                    mailArchive.To = address;
+                }
+                else
+                {
+                    mailArchive.To += ";" + address;
+                }
+            }
+
+            mailArchive.OutlookId = olItem.EntryID;
+            mailArchive.Subject = olItem.Subject;
+            mailArchive.Sent = olItem.ArchiveTime(reason);
+            mailArchive.Body = olItem.Body;
+            mailArchive.HTMLBody = olItem.HTMLBody;
+            mailArchive.Reason = reason;
+
+            if (Properties.Settings.Default.ArchiveAttachments)
+            {
+                foreach (Outlook.Attachment attachment in olItem.Attachments)
+                {
+                    mailArchive.Attachments.Add(new ArchiveableAttachment
+                    {
+                        DisplayName = attachment.DisplayName,
+                        FileContentInBase64String = olItem.GetAttachmentAsBytes(attachment)
+                    });
+                }
+            }
+
+            return mailArchive;
+        }
+
+
+        /// <summary>
+        /// Get this attachment of mine as an array of bytes.
+        /// </summary>
+        /// <param name="olItem">Me</param>
+        /// <param name="attachment">The attachment to serialise.</param>
+        /// <returns>An array of bytes representing the attachment.</returns>
+        public static byte[] GetAttachmentAsBytes(this Outlook.MailItem olItem, Outlook.Attachment attachment)
+        {
+            byte[] result = null;
+
+            Log.Info($"EmailArchiving.GetAttachmentBytes: serialising attachment '{attachment.FileName}' of email '{olItem.Subject}'.");
+
+            if (attachment != null)
+            {
+                var tempPath = System.IO.Path.GetTempPath();
+                string uid = Guid.NewGuid().ToString();
+                var temporaryAttachmentPath = $"{tempPath}\\Attachments_{uid}";
+
+                if (!System.IO.Directory.Exists(temporaryAttachmentPath))
+                {
+                    System.IO.Directory.CreateDirectory(temporaryAttachmentPath);
+                }
+                try
+                {
+                    var attachmentFilePath = temporaryAttachmentPath + "\\" + attachment.FileName;
+                    attachment.SaveAsFile(attachmentFilePath);
+                    result = System.IO.File.ReadAllBytes(attachmentFilePath);
+                }
+                catch (COMException ex)
+                {
+                    try
+                    {
+                        Log.Warn("Failed to get attachment bytes for " + attachment.DisplayName, ex);
+                        // Swallow exception(!)
+
+                        string strName = temporaryAttachmentPath + "\\" + DateTime.Now.ToString("MMddyyyyHHmmssfff") + ".html";
+                        olItem.SaveAs(strName, Microsoft.Office.Interop.Outlook.OlSaveAsType.olHTML);
+                        foreach (string strFileName in System.IO.Directory.GetFiles(strName.Replace(".html", "_files")))
+                        {
+                            if (strFileName.EndsWith("\\" + attachment.DisplayName))
+                            {
+                                result = System.IO.File.ReadAllBytes(strFileName);
+                                break;
+                            }
+                        }
+                    }
+                    catch (Exception ex1)
+                    {
+                        Log.Error("EmailArchiving.GetAttachmentBytes", ex1);
+                    }
+                }
+                finally
+                {
+                    if (System.IO.Directory.Exists(temporaryAttachmentPath))
+                    {
+                        System.IO.Directory.Delete(temporaryAttachmentPath, true);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// What date/time should be assigned to the archived email?
+        /// </summary>
+        /// <param name="olItem">The email to be archived.</param>
+        /// <param name="reason">The reason the email is being archived.</param>
+        /// <returns>An appropriate date time.</returns>
+        public static DateTime ArchiveTime(this Outlook.MailItem olItem, EmailArchiveReason reason)
+        {
+            DateTime result;
+            var now = DateTime.UtcNow;
+
+            switch (reason)
+            {
+                case EmailArchiveReason.Sent:
+                case EmailArchiveReason.SentArchived:
+                    result = olItem.CreationTime;
+                    if (result > now)
+                    {
+                        /* if the actual date hasn't yet been set, Outlook will
+                         * nonchalantly return 1st January 4501 */
+                        result = now;
+                    }
+                    break;
+                case EmailArchiveReason.Inbound:
+                default:
+                    result = olItem.SentOn;
+                    break;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Archive this email item to CRM.
+        /// </summary>
+        /// <param name="olItem">The email item to archive.</param>
+        /// <param name="reason">The reason it is being archived.</param>
+        /// <returns>A result object indicating success or failure.</returns>
+        public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, string excludedEmails = "")
+        {
+            ArchiveResult result;
+
+            result = olItem.AsArchiveable(reason).Save(excludedEmails);
+            olItem.EnsureProperty("SuiteCRM", result.IsSuccess.ToString());
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Ensure that I have a user property with this name and this value.
+        /// </summary>
+        /// <param name="olItem">Me</param>
+        /// <param name="propertyName">The name of the property I should have.</param>
+        /// <param name="propertyValue">The value of the property I should have.</param>
+        private static void EnsureProperty(this Outlook.MailItem olItem, string propertyName, string propertyValue)
+        {
+            Outlook.UserProperty olProperty = olItem.UserProperties[propertyName];
+            if (olProperty == null)
+            {
+                olProperty = olItem.UserProperties.Add(propertyName, Outlook.OlUserPropertyType.olText);
+            }
+            olProperty.Value = propertyValue;
+            olItem.Save();
+        }
     }
 }

@@ -222,6 +222,8 @@
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="Exceptions\Documentation.cs" />
+    <Compile Include="Extensions\MailItemExtensions.cs" />
+    <Compile Include="Extensions\RecipientExtensions.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
