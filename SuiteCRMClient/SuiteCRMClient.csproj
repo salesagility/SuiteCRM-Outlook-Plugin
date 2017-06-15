@@ -68,7 +68,7 @@
     <Compile Include="Documentation.cs" />
     <Compile Include="Email\ArchiveResult.cs" />
     <Compile Include="Email\ArchiveableEmail.cs" />
-    <Compile Include="Email\clsEmailAttachments.cs" />
+    <Compile Include="Email\ArchiveableAttachment.cs" />
     <Compile Include="CrmEntity.cs" />
     <Compile Include="Email\Documentation.cs" />
     <Compile Include="Email\EmailArchiveReason.cs" />
