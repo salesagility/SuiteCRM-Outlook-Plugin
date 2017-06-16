@@ -20,25 +20,24 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
-using System.Collections.Generic;
-using System.Collections;
-using SuiteCRMClient.Logging;
-
 namespace SuiteCRMClient.Email
 {
-    /// <remarks>
-    /// This class is truly horrid, and most of it is duplicated by better code in BusinessLogic/EmailArchiving.
-    /// TODO: Refactor. See issue #125
-    /// </remarks>
-    public class clsEmailArchive
+    using System;
+    using System.Collections.Generic;
+    using System.Collections;
+    using SuiteCRMClient.Logging;
+
+    /// <summary>
+    /// A representation of an email which may be archived to CRM.
+    /// </summary>
+    public class ArchiveableEmail
     {
         /// <summary>
         /// Canonical format to use when saving date/times to CRM; essentially, ISO8601 without the 'T'.
         /// </summary>
         public const string EmailDateFormat = "yyyy-MM-dd HH:mm:ss";
 
-        private readonly ILogger _log;
+        private readonly ILogger log;
 
         public string From { get; set; }
         public string To { get; set; }
@@ -52,8 +51,8 @@ namespace SuiteCRMClient.Email
         /// </summary>
         public DateTime Sent { get; set; } = DateTime.UtcNow;
 
-        public List<clsEmailAttachments> Attachments { get; set; } = new List<clsEmailAttachments>();
-        public EmailArchiveType ArchiveType { get; set; }
+        public List<ArchiveableAttachment> Attachments { get; set; } = new List<ArchiveableAttachment>();
+        public EmailArchiveReason Reason { get; set; }
 
         /// <summary>
         /// The outlook item id of the item.
@@ -64,14 +63,10 @@ namespace SuiteCRMClient.Email
 
         public UserSession SuiteCRMUserSession;
 
-        public clsEmailArchive(UserSession SuiteCRMUserSession, ILogger log)
+        public ArchiveableEmail(UserSession SuiteCRMUserSession, ILogger log)
         {
-            _log = log;
+            this.log = log;
             this.SuiteCRMUserSession = SuiteCRMUserSession;
-        }
-
-        public clsEmailArchive()
-        {
         }
 
         /// <summary>
@@ -102,7 +97,7 @@ namespace SuiteCRMClient.Email
 
             try
             {
-                foreach (string address in ConstructAddressList($"{From};{To};{CC}"))
+                foreach (string address in ConstructAddressList($"{this.From};{this.To};{this.CC}"))
                 {
                     if (!checkedAddresses.Contains(address) && !excludedAddresses.Contains(address.ToUpper()))
                     {
@@ -119,7 +114,7 @@ namespace SuiteCRMClient.Email
             }
             catch (Exception ex)
             {
-                _log.Warn("GetValidContactIDs error", ex);
+                log.Warn("GetValidContactIDs error", ex);
                 throw;
             }
 
@@ -161,54 +156,121 @@ namespace SuiteCRMClient.Email
             return "contacts.id in (SELECT eabr.bean_id FROM email_addr_bean_rel eabr JOIN email_addresses ea ON (ea.id = eabr.email_address_id) WHERE eabr.deleted=0 and ea.email_address = '" + strEmail + "')";
         }
 
-        /// <remarks>
-        /// This is horrid. See See BusinessLogic.EmailArchiving.ConstructCrmItem; these need to be refactored together.
-        /// TODO: Refactor. See issue #125
-        /// </remarks>
-        public void Save(string strExcludedEmails = "")
+        /// <summary>
+        /// Save my email to CRM, if it relates to any valid contacts.
+        /// </summary>
+        /// <param name="excludedEmails">Emails of contacts with which it should not be related.</param>
+        public ArchiveResult Save(string excludedEmails = "")
         {
-            try
-            {
-                Save(GetValidContactIDs(strExcludedEmails));
-            }
-            catch (Exception ex)
-            {
-                _log.Error("clsEmailArchive.Save", ex);
-                throw;
-            }
+            return Save(GetValidContactIDs(excludedEmails));
         }
+
 
         /// <summary>
         /// Save my email to CRM, and link it to these contact ids.
         /// </summary>
+        /// <remarks>
+        /// In the original code there were two entirely different ways of archiving emails; one did the trick of 
+        /// trying first with the HTML body, and if that failed trying again with it empty. The other did not. 
+        /// I have no idea whether there is a benefit of this two-attempt strategy.
+        /// </remarks>
         /// <param name="crmContactIds">The contact ids to link with.</param>
-        public void Save(List<string> crmContactIds)
+        public ArchiveResult Save(List<string> crmContactIds)
         {
-            var restServer = SuiteCRMUserSession.RestServer;
-            try
+            ArchiveResult result;
+
+            if (crmContactIds.Count > 0)
             {
-                if (crmContactIds.Count > 0)
+                try
                 {
-                    var emailResult = restServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry",
-                        ConstructEmailPacket());
+                    result = TrySave(crmContactIds, this.HTMLBody, null);
+                }
+                catch (Exception firstFail)
+                {
+                    log.Warn($"ArchiveableEmail.Save: failed to save '{this.Subject}' with HTML body", firstFail);
 
-                    foreach (string contactId in crmContactIds)
+                    try
                     {
-                        restServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship",
-                            ConstructContactRelationshipPacket(emailResult.id, contactId));
+                        result = TrySave(crmContactIds, string.Empty, new[] { firstFail });
                     }
-
-                    foreach (clsEmailAttachments attachment in Attachments)
+                    catch (Exception secondFail)
                     {
-                        BindAttachmentInCRM(emailResult.id,
-                            TransmitAttachmentPacket(ConstructAttachmentPacket(attachment)).id);
+                        log.Error($"ArchiveableEmail.Save: failed to save '{this.Subject}' at all", secondFail);
+                        result = ArchiveResult.Failure(new[] { firstFail, secondFail });
                     }
                 }
             }
-            catch (Exception ex)
+            else
             {
-                _log.Error("clsEmailArchive.Save", ex);
-                throw;
+                result = ArchiveResult.Failure(null);
+            }
+            
+            return result;
+        }
+
+
+        /// <summary>
+        /// Attempt to save me given these contact Ids and this HTML body, taking note of these previous failures.
+        /// </summary>
+        /// <param name="contactIds">CRM ids of contacts to which I should be related.</param>
+        /// <param name="htmlBody">The HTML body with which I should be saved.</param>
+        /// <param name="fails">Any previous failures in attempting to save me.</param>
+        /// <returns>An archive result object describing the outcome of this attempt.</returns>
+        private ArchiveResult TrySave(List<string> contactIds, string htmlBody, Exception[] fails)
+        {
+            var restServer = SuiteCRMUserSession.RestServer;
+            var emailResult = restServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry",
+               ConstructPacket(htmlBody));
+            ArchiveResult result = ArchiveResult.Success(emailResult.id, fails);
+
+            SaveContacts(contactIds, emailResult);
+
+            SaveAttachments(emailResult);
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Save my attachments to CRM, and relate them to this emailResult. 
+        /// </summary>
+        /// <param name="emailResult">A result object obtained by archiving me to CRM.</param>
+        private void SaveAttachments(RESTObjects.eNewSetEntryResult emailResult)
+        {
+            foreach (ArchiveableAttachment attachment in Attachments)
+            {
+                try
+                {
+                    BindAttachmentInCRM(emailResult.id,
+                        TransmitAttachmentPacket(ConstructAttachmentPacket(attachment)).id);
+                }
+                catch (Exception any)
+                {
+                    log.Error($"Failed to bind attachment '{attachment.DisplayName}' to email '{emailResult.id}' in CRM", any);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Relate this email result (presumed to represent me) in CRM to these contact ids.
+        /// </summary>
+        /// <param name="crmContactIds">The contact ids which should be related to my email result.</param>
+        /// <param name="emailResult">An email result (presumed to represent me).</param>
+        private void SaveContacts(List<string> crmContactIds, RESTObjects.eNewSetEntryResult emailResult)
+        {
+            var restServer = SuiteCRMUserSession.RestServer;
+
+            foreach (string contactId in crmContactIds)
+            {
+                try
+                {
+                    restServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship",
+                        ConstructContactRelationshipPacket(emailResult.id, contactId));
+                }
+                catch (Exception any)
+                {
+                    log.Error($"Failed to bind contact '{contactId}' to email '{emailResult.id}' in CRM", any);
+                }
             }
         }
 
@@ -216,7 +278,7 @@ namespace SuiteCRMClient.Email
         /// Construct a packet representing my email.
         /// </summary>
         /// <returns>A packet which, when transmitted to CRM, will instantiate my email.</returns>
-        private object ConstructEmailPacket()
+        private object ConstructPacket(string htmlBody)
         {
             List<RESTObjects.eNameValue> emailData = new List<RESTObjects.eNameValue>();
             emailData.Add(new RESTObjects.eNameValue() { name = "from_addr", value = From });
@@ -224,7 +286,7 @@ namespace SuiteCRMClient.Email
             emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject });
             emailData.Add(new RESTObjects.eNameValue() { name = "date_sent", value = Sent.ToString(EmailDateFormat) });
             emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body });
-            emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = HTMLBody });
+            emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = htmlBody });
             emailData.Add(new RESTObjects.eNameValue() { name = "assigned_user_id", value = clsSuiteCRMHelper.GetUserId() });
             emailData.Add(new RESTObjects.eNameValue() { name = "status", value = "archived" });
             object contactData = new
@@ -289,6 +351,11 @@ namespace SuiteCRMClient.Email
             };
         }
 
+        /// <summary>
+        /// Transmit this attachment packet to CRM.
+        /// </summary>
+        /// <param name="attachmentPacket">The attachment packet to transmit</param>
+        /// <returns>A result object indicating success or failure.</returns>
         private RESTObjects.eNewSetEntryResult TransmitAttachmentPacket(object attachmentPacket)
         {
             return SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_note_attachment", attachmentPacket);
@@ -302,7 +369,7 @@ namespace SuiteCRMClient.Email
         /// </remarks>
         /// <param name="attachment">The attachment to represent.</param>
         /// <returns>A packet which, when transmitted to CRM, will instantiate this attachment.</returns>
-        private object ConstructAttachmentPacket(clsEmailAttachments attachment)
+        private object ConstructAttachmentPacket(ArchiveableAttachment attachment)
         {
             List<RESTObjects.eNameValue> initNoteData = new List<RESTObjects.eNameValue>();
             initNoteData.Add(new RESTObjects.eNameValue() { name = "name", value = attachment.DisplayName });

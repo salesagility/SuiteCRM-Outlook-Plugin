@@ -20,12 +20,19 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-
- namespace SuiteCRMClient.Email
+namespace SuiteCRMAddIn.Exceptions
 {
-    public class clsEmailAttachments
+    using Microsoft.Office.Interop.Outlook;
+
+    /// <summary>
+    /// An exception which is not directly thrown but returned in an ArchiveResult object 
+    /// when an attempt is made to archive an email which has already been archived.
+    /// </summary>
+    internal class AlreadyArchivedException : System.Exception
     {
-        public string DisplayName { get; set; }
-        public byte[] FileContentInBase64String { get; set; }
+
+        public AlreadyArchivedException(MailItem olItem) : base($"Not archiving email '{olItem.Subject}' because it is already marked as archived")
+        {
+        }
     }
 }

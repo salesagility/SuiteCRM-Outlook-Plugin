@@ -25,19 +25,32 @@ namespace SuiteCRMClient.Email
     /// <summary>
     /// An enumeration of reasons why an email may be archived.
     /// </summary>
-    public enum EmailArchiveType
+    public enum EmailArchiveReason
     {
         /// <summary>
         /// It's archived because the user specifically requested it (by right clicking and selecting the option).
         /// </summary>
+        /// <see cref="SuiteCRMAddIn.Dialogs.ArchiveDialog"/>
         Manual = 1,
+
         /// <summary>
         /// It's archived because it's an inbound (received) email which matches the current criteria for archiving inbound emails.
         /// </summary>
+        /// <see cref="SuiteCRMAddIn.Dialogs.EmailAccountArchiveSettingsControl.ArchiveInboundCheckbox"/> 
+        /// <see cref="SuiteCRMAddIn.BusinessLogic.EmailAccountsArchiveSettings"/> 
         Inbound = 2,
+
         /// <summary>
         /// It's archived because it's an outbound (sent) email which matches the current criteria for archiving outbound emails.
         /// </summary>
-        Sent = 3,
+        /// <see cref="SuiteCRMAddIn.Dialogs.EmailAccountArchiveSettingsControl.ArchiveOutboundCheckbox"/> 
+        /// <see cref="SuiteCRMAddIn.BusinessLogic.EmailAccountsArchiveSettings"/> 
+        Outbound = 3,
+
+        /// <summary>
+        /// It's archived because the user has specifically selected 'Send and Archive'
+        /// </summary>
+        /// <see cref="SuiteCRMAddIn.Menus.SuiteCRMRibbon.btnSendAndArchive_Action"/> 
+        SendAndArchive = 4
     }
 }

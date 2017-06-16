@@ -761,7 +761,7 @@ namespace SuiteCRMAddIn.Dialogs
                 var archiver = Globals.ThisAddIn.EmailArchiver;
                 this.ReportOnEmailArchiveSuccess(
                     Globals.ThisAddIn.SelectedEmails.Select(mailItem =>
-                            archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.type))
+                            archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, EmailArchiveReason.Manual))
                         .ToList());
 
                 Close();
