@@ -221,6 +221,7 @@
     <Compile Include="Dialogs\ShuttingDownDialog.Designer.cs">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Exceptions\AlreadyArchivedException.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
     <Compile Include="Extensions\MailItemExtensions.cs" />
     <Compile Include="Extensions\RecipientExtensions.cs" />

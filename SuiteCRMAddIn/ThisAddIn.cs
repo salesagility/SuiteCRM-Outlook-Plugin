@@ -639,7 +639,10 @@ namespace SuiteCRMAddIn
             {
                 if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
                 {
-                    ProcessNewMailItem(EmailArchiveReason.Sent, item as Outlook.MailItem);
+                    ProcessNewMailItem(
+                        EmailArchiveReason.Outbound, 
+                        item as Outlook.MailItem,
+                        Properties.Settings.Default.ExcludedEmails);
                 }
             }
             catch (Exception ex)
@@ -657,7 +660,8 @@ namespace SuiteCRMAddIn
                 {
                     ProcessNewMailItem(
                         EmailArchiveReason.Inbound,
-                        Application.Session.GetItemFromID(EntryID) as Outlook.MailItem);
+                        Application.Session.GetItemFromID(EntryID) as Outlook.MailItem,
+                        Properties.Settings.Default.ExcludedEmails);
                 }
             }
             catch (Exception ex)
@@ -666,7 +670,7 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void ProcessNewMailItem(EmailArchiveReason archiveType, Outlook.MailItem mailItem)
+        private void ProcessNewMailItem(EmailArchiveReason archiveType, Outlook.MailItem mailItem, string excludedEmails = "")
         {
             if (mailItem == null)
             {
@@ -675,7 +679,7 @@ namespace SuiteCRMAddIn
             }
             else
             {
-                this.EmailArchiver.ProcessEligibleNewMailItem(mailItem, archiveType);
+                this.EmailArchiver.ProcessEligibleNewMailItem(mailItem, archiveType, excludedEmails);
             }
         }
 

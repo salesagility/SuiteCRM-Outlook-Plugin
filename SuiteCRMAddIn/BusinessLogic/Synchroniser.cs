@@ -56,6 +56,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The name of the CRM ID synchronisation property.
         /// </summary>
+        /// <see cref="SuiteCRMAddIn.Extensions.MailItemExtensions.CrmIdPropertyName"/> 
         public const string CrmIdPropertyName = "SEntryID";
 
         private readonly SyncContext context;
@@ -107,7 +108,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Add the magis 'SuiteCRM' category to the Outlook mapi namespace, if it does not
+        /// Add the magic 'SuiteCRM' category to the Outlook mapi namespace, if it does not
         /// already exist.
         /// </summary>
         private void AddSuiteCrmOutlookCategory()

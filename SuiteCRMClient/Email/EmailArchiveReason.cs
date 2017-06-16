@@ -45,12 +45,12 @@ namespace SuiteCRMClient.Email
         /// </summary>
         /// <see cref="SuiteCRMAddIn.Dialogs.EmailAccountArchiveSettingsControl.ArchiveOutboundCheckbox"/> 
         /// <see cref="SuiteCRMAddIn.BusinessLogic.EmailAccountsArchiveSettings"/> 
-        Sent = 3,
+        Outbound = 3,
 
         /// <summary>
         /// It's archived because the user has specifically selected 'Send and Archive'
         /// </summary>
         /// <see cref="SuiteCRMAddIn.Menus.SuiteCRMRibbon.btnSendAndArchive_Action"/> 
-        SentArchived = 4
+        SendAndArchive = 4
     }
 }

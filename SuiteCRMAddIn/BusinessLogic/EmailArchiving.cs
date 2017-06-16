@@ -123,7 +123,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public void ProcessEligibleNewMailItem(Outlook.MailItem olItem, EmailArchiveReason reason)
+        public void ProcessEligibleNewMailItem(Outlook.MailItem olItem, EmailArchiveReason reason, string excludedEmails = "")
         {
             var parentFolder = olItem.Parent as Outlook.Folder;
             if (parentFolder == null)
@@ -134,7 +134,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (EmailShouldBeArchived(reason, parentFolder.Store))
             {
-                olItem.Archive(reason);
+                olItem.Archive(reason, excludedEmails);
             }
             else
             {
@@ -152,7 +152,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     result = Properties.Settings.Default.AccountsToArchiveInbound != null &&
                         Properties.Settings.Default.AccountsToArchiveInbound.Contains(storeId);
                     break;
-                case EmailArchiveReason.Sent:
+                case EmailArchiveReason.Outbound:
                     result = Properties.Settings.Default.AccountsToArchiveOutbound != null &&
                         Properties.Settings.Default.AccountsToArchiveOutbound.Contains(storeId);
                     break;
@@ -242,7 +242,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private void SaveMailItemIfNecessary(Outlook.MailItem olItem, EmailArchiveReason reason)
         {
-            if (reason == EmailArchiveReason.SentArchived)
+            if (reason == EmailArchiveReason.SendAndArchive)
             {
                 olItem.Save();
             }

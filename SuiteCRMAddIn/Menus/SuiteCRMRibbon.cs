@@ -166,10 +166,10 @@ namespace SuiteCRMAddIn
         /// <param name="control">The ribbon which caused this action to be raised.</param>
         public void btnSendAndArchive_Action(IRibbonControl control)
         {
-            Outlook.MailItem currentItem = 
+            Outlook.MailItem olItem = 
                 (Globals.ThisAddIn.Application.ActiveInspector().CurrentItem as Outlook.MailItem);
 
-            if (currentItem != null)
+            if (olItem != null)
             {
                 if (Globals.ThisAddIn.HasCrmUserSession)
                 {
@@ -177,7 +177,7 @@ namespace SuiteCRMAddIn
                     {
                         try
                         {
-                            currentItem.Archive(EmailArchiveReason.Sent);
+                            olItem.Archive(EmailArchiveReason.SendAndArchive);
                         }
                         catch (Exception failedToArchve)
                         {
@@ -187,7 +187,7 @@ namespace SuiteCRMAddIn
                                 "Failed to archive");
                         }
 
-                        currentItem.Send();
+                        olItem.Send();
                     }
                     catch (Exception failedToSend)
                     {

@@ -1,6 +1,7 @@
 ﻿
 namespace SuiteCRMAddIn.Extensions
 {
+    using Exceptions;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
@@ -17,6 +18,17 @@ namespace SuiteCRMAddIn.Extensions
         /// Magic property tag to get the email address from an Outlook Recipient object.
         /// </summary>
         const string PR_SMTP_ADDRESS = "http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
+
+        /// <summary>
+        /// The name of the magic category we set when a mail is successfully archived.
+        /// </summary>
+        public const string SuiteCRMCategoryName = "SuiteCRM";
+
+        /// <summary>
+        /// The name of the CRM ID synchronisation property.
+        /// </summary>
+        /// <see cref="SuiteCRMAddIn.BusinessLogic.Synchroniser{OutlookItemType}.CrmIdPropertyName"/> 
+        public const string CrmIdPropertyName = "SEntryID";
 
         /// <summary>
         /// Shorthand to refer to the global user session.
@@ -143,7 +155,7 @@ namespace SuiteCRMAddIn.Extensions
                 }
             }
 
-            mailArchive.OutlookId = olItem.EntryID;
+            mailArchive.OutlookId = olItem.EnsureEntryID();
             mailArchive.Subject = olItem.Subject;
             mailArchive.Sent = olItem.ArchiveTime(reason);
             mailArchive.Body = olItem.Body;
@@ -163,6 +175,22 @@ namespace SuiteCRMAddIn.Extensions
             }
 
             return mailArchive;
+        }
+
+
+        /// <summary>
+        /// An Outlook item doesn't get its entry ID until the first time it's saved; if I don't have one, save me.
+        /// </summary>
+        /// <param name="olItem">Me</param>
+        /// <returns>My entry id.</returns>
+        public static string EnsureEntryID(this Outlook.MailItem olItem)
+        {
+            if (olItem.EntryID == null)
+            {
+                olItem.Save(); /*  */
+            }
+
+            return olItem.EntryID;
         }
 
 
@@ -243,8 +271,8 @@ namespace SuiteCRMAddIn.Extensions
 
             switch (reason)
             {
-                case EmailArchiveReason.Sent:
-                case EmailArchiveReason.SentArchived:
+                case EmailArchiveReason.Outbound:
+                case EmailArchiveReason.SendAndArchive:
                     result = olItem.CreationTime;
                     if (result > now)
                     {
@@ -272,9 +300,24 @@ namespace SuiteCRMAddIn.Extensions
         public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, string excludedEmails = "")
         {
             ArchiveResult result;
+            Outlook.UserProperty olProperty = olItem.UserProperties[CrmIdPropertyName];
 
-            result = olItem.AsArchiveable(reason).Save(excludedEmails);
-            olItem.EnsureProperty("SuiteCRM", result.IsSuccess.ToString());
+            if (olProperty == null)
+            {
+                result = olItem.AsArchiveable(reason).Save(excludedEmails);
+                
+                if (result.IsSuccess)
+                {
+                    olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
+                        SuiteCRMCategoryName :
+                        $"{olItem.Categories},{SuiteCRMCategoryName}";
+                    olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
+                }
+            }
+            else
+            {
+                result = ArchiveResult.Success(olProperty.Value, new[] { new AlreadyArchivedException(olItem) });
+            }
 
             return result;
         }
