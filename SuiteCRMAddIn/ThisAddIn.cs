@@ -41,6 +41,7 @@ namespace SuiteCRMAddIn
     using System.Windows.Forms;
     using Office = Microsoft.Office.Core;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using NGettext;
 
     public partial class ThisAddIn
     {
@@ -58,6 +59,11 @@ namespace SuiteCRMAddIn
         private ContactSyncing contactSynchroniser;
         private TaskSyncing taskSynchroniser;
         private AppointmentSyncing appointmentSynchroniser;
+
+        /// <summary>
+        /// Internationalisation (118n) strings dictionary
+        /// </summary>
+        public ICatalog catalogue = new Catalog(ProgId, "./Locale");
 
         public Office.IRibbonUI RibbonUI { get; set; }
         public EmailArchiving EmailArchiver
@@ -99,7 +105,7 @@ namespace SuiteCRMAddIn
                 result = new LicenceValidationHelper(this.Log, Properties.Settings.Default.PublicKey, Properties.Settings.Default.LicenceKey).Validate();
             } catch (System.Configuration.SettingsPropertyNotFoundException ex)
             {
-                this.log.Error("Licence key was not yet set up", ex);
+                this.log.Error(catalogue.GetString("Licence key was not yet set up"), ex);
             }
             return result;
         }
@@ -175,20 +181,20 @@ namespace SuiteCRMAddIn
             objSuiteCRMMenuBar2007.Caption = "SuiteCRM";
             this.btnArchive = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
             this.btnArchive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
-            this.btnArchive.Caption = "Archive";
+            this.btnArchive.Caption = catalogue.GetString("Archive");
             this.btnArchive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRMLogo);
             this.btnArchive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
             this.btnArchive.Visible = true;
             this.btnArchive.BeginGroup = true;
-            this.btnArchive.TooltipText = "Archive selected emails to SuiteCRM";
+            this.btnArchive.TooltipText = catalogue.GetString("Archive selected emails to SuiteCRM");
             this.btnArchive.Enabled = true;
             this.btnSettings = (Office.CommandBarButton)this.objSuiteCRMMenuBar2007.Controls.Add(Office.MsoControlType.msoControlButton, System.Type.Missing, System.Type.Missing, System.Type.Missing, true);
             this.btnSettings.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
-            this.btnSettings.Caption = "Settings";
+            this.btnSettings.Caption = catalogue.GetString("Settings");
             this.btnSettings.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnSettings_Click);
             this.btnSettings.Visible = true;
             this.btnSettings.BeginGroup = true;
-            this.btnSettings.TooltipText = "SuiteCRM Settings";
+            this.btnSettings.TooltipText = catalogue.GetString("SuiteCRM Settings");
             this.btnSettings.Enabled = true;
             this.btnSettings.Picture = RibbonImageHelper.Convert(Resources.Settings);
 
@@ -208,30 +214,30 @@ namespace SuiteCRMAddIn
 
                 if (success)
                 {
-                    log.Info("Licence verified...");
+                    log.Info(catalogue.GetString("Licence verified..."));
 
                     success = this.SuiteCRMAuthenticate();
 
                     if (success)
                     {
-                        log.Info("Authentication succeeded...");
+                        log.Info(catalogue.GetString("Authentication succeeded..."));
                     }
                     else
                     {
-                        disable = this.ShowReconfigureOrDisable("Login to CRM failed");
-                        Log.Info("User chose to disable add-in after licence check succeeded but login to CRM failed.");
+                        disable = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed"));
+                        Log.Info(catalogue.GetString("User chose to disable add-in after licence check succeeded but login to CRM failed."));
                     }
                 }
                 else
                 {
-                    disable = this.ShowReconfigureOrDisable("Licence check failed");
-                    Log.Info("User chose to disable add-in after licence check failed.");
+                    disable = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed"));
+                    Log.Info(catalogue.GetString("User chose to disable add-in after licence check failed."));
                 }
             }
 
             if (success && !disable)
             {
-                log.Info("Starting normal operations.");
+                log.Info(catalogue.GetString("Starting normal operations."));
 
                 DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction());
                 StartSynchronisationProcesses();
@@ -239,33 +245,40 @@ namespace SuiteCRMAddIn
             }
             else if (disable)
             {
-                log.Info("Disabling addin at user request");
+                log.Info(catalogue.GetString("Disabling addin at user request"));
                 this.Disable();
             }
             else
             {
                 /* it's possible for both success AND disable to be true (if login to CRM fails); 
-                 * but logically if success is false disabel must be true, so this branch should
+                 * but logically if success is false disable must be true, so this branch should
                  * never be reached. */
-                log.Error($"In ThisAddIn.Run: success is {success}; disable is {disable}; impossible state, disabling.");
+                log.Error(
+                    catalogue.GetString(
+                        "In {0}: success is {1}; disable is {2}; impossible state, disabling.",
+                        "ThisAddIn.Run",
+                        success, 
+                        disable));
+                this.Disable();
             }
         }
 
         private void Disable()
         {
-            Log.Warn("Disabling add-in");
+            const string methodName = "ThisAddIn.Disable";
+            Log.Warn(catalogue.GetString("Disabling add-in"));
             int i = 0;
 
             foreach (COMAddIn addin in Application.COMAddIns)
             {
                 if (ProgId.Equals(addin.ProgId))
                 {
-                    Log.Debug($"ThisAddIn.Disable: Disabling instance {++i} of addin {ProgId}");
+                    Log.Debug(catalogue.GetString("{0}: Disabling instance {1} of addin {2}", methodName, ++i, ProgId));
                     addin.Connect = false;
                 }
                 else
                 {
-                    Log.Debug($"ThisAddIn.Disable: Ignoring addin {addin.ProgId}");
+                    Log.Debug(catalogue.GetString("{0}: Ignoring addin {1}", methodName, addin.ProgId));
                 }
             }
 
@@ -286,16 +299,16 @@ namespace SuiteCRMAddIn
                 case DialogResult.OK:
                     /* if licence key does not validate, show the settings form to allow the user to enter
                      * a (new) key, and retry. */
-                    Log.Info("User chose to reconfigure add-in");
+                    Log.Info(catalogue.GetString("User chose to reconfigure add-in"));
                     this.ShowSettingsForm();
                     result = false;
                     break;
                 case DialogResult.Cancel:
-                    Log.Info("User chose to disable add-in");
+                    Log.Info(catalogue.GetString("User chose to disable add-in"));
                     result = true;
                     break;
                 default:
-                    log.Warn("Unexpected response from ReconfigureOrDisableDialog");
+                    log.Warn(catalogue.GetString("Unexpected response from ReconfigureOrDisableDialog"));
                     result = true;
                     break;
             }
@@ -327,12 +340,12 @@ namespace SuiteCRMAddIn
 
             try
             {
-                result.Add($"{AddInTitle} v{AddInVersion} in Outlook version {this.Application.Version}");
+                result.Add(catalogue.GetString("{0} v{1} in Outlook version {2}", AddInTitle, AddInVersion, this.Application.Version));
                 result.AddRange(GetKeySettings());
             }
             catch (Exception any)
             {
-                result.Add($"Exception {any.GetType().Name} '{any.Message}' while printing log header");
+                result.Add(catalogue.GetString("Exception {0} '{1}' while printing log header", any.GetType().Name, any.Message));
             }
 
             return result;
@@ -340,8 +353,9 @@ namespace SuiteCRMAddIn
 
         private IEnumerable<string> GetKeySettings()
         {
-            yield return "Auto-archiving: " + (Properties.Settings.Default.AutoArchive ? "ON" : "off");
-            yield return $"Logging level: {Properties.Settings.Default.LogLevel}";
+            yield return catalogue.GetString("Auto-archiving: ") + 
+                (Settings.Default.AutoArchive ? catalogue.GetString("ON") : catalogue.GetString("off"));
+            yield return catalogue.GetString("Logging level: {0}", Settings.Default.LogLevel);
         }
 
         void objExplorer_FolderSwitch()
@@ -358,10 +372,10 @@ namespace SuiteCRMAddIn
 
         public void StartSynchronisationProcesses()
         {
-            DoOrLogError(() => this.appointmentSynchroniser.Start(), "Starting appointments synchroniser");
-            DoOrLogError(() => this.contactSynchroniser.Start(), "Starting contacts synchroniser");
-            DoOrLogError(() => this.taskSynchroniser.Start(), "Starting tasks synchroniser");
-            DoOrLogError(() => this.EmailArchiver.Start(), "Starting email archiver");
+            DoOrLogError(() => this.appointmentSynchroniser.Start(), catalogue.GetString("Starting appointments synchroniser"));
+            DoOrLogError(() => this.contactSynchroniser.Start(), catalogue.GetString("Starting contacts synchroniser"));
+            DoOrLogError(() => this.taskSynchroniser.Start(), catalogue.GetString("Starting tasks synchroniser"));
+            DoOrLogError(() => this.EmailArchiver.Start(), catalogue.GetString("Starting email archiver"));
         }
 
         private void cbtnArchive_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
@@ -416,14 +430,14 @@ namespace SuiteCRMAddIn
         {
             if (!HasCrmUserSession)
             {
-                if (this.ShowReconfigureOrDisable("Login to CRM failed"))
+                if (this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed")))
                 {
                     this.Disable();
                 }
             }
             else if (!IsLicensed)
             {
-                if (this.ShowReconfigureOrDisable("Licence check failed"))
+                if (this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed")))
                 {
                     this.Disable();
                 }
@@ -435,11 +449,13 @@ namespace SuiteCRMAddIn
         /// </summary>
         private void ThisAddIn_Quit()
         {
-            Log.Info("ThisAddIn_Quit: signalled to quit");
+            const string methodName = "ThisAddIn_Quit";
+
+            Log.Info(catalogue.GetString("{0}: signalled to quit.", methodName));
 
             this.ShutdownAll();
 
-            log.Info("ThisAddIn_Quit: shutdown complete.");
+            log.Info(catalogue.GetString("{0}: shutdown complete.", methodName));
         }
 
         /// <summary>
@@ -450,11 +466,12 @@ namespace SuiteCRMAddIn
         /// <param name="e"></param>
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
-            Log.Info("ThisAddIn_Shutdown: shutting down normally");
+            const string methodName = "ThisAddIn_Shutdown";
+            Log.Info(catalogue.GetString("{0}: shutting down normally.", methodName));
 
             ShutdownAll();
 
-            log.Info("ThisAddIn_Shutdown: shutdown complete.");
+            log.Info(catalogue.GetString("{0}: shutdown complete.", methodName));
         }
 
         /// <summary>
@@ -466,7 +483,7 @@ namespace SuiteCRMAddIn
             {
                 if (this.CommandBarExists("SuiteCRM"))
                 {
-                    Log.Info("ThisAddIn_Shutdown: Removing SuiteCRM command bar");
+                    Log.Info(catalogue.GetString("{0}: Removing SuiteCRM command bar", "ThisAddIn_ShutdownAll"));
                     this.objSuiteCRMMenuBar2007.Delete();
                 }
 
@@ -502,19 +519,21 @@ namespace SuiteCRMAddIn
                 new ShuttingDownDialog(stillToDo, this.log).ShowDialog();
             }
 
-            log.Debug("ShutdownProcesses: complete");
+            log.Debug(catalogue.GetString("ShutdownProcesses: complete"));
         }
 
         private void UnregisterEvents()
         {
+            const string methodName = "ThisAddIn.UnregisterEvents";
             try
             {
-                Log.Info("ThisAddIn.UnregisterEvents: Removing context menu display event handler");
-                this.Application.ItemContextMenuDisplay -= new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
+                Log.Info(catalogue.GetString("{0}: Removing context menu display event handler", methodName));
+                this.Application.ItemContextMenuDisplay -= 
+                    new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.UnregisterEvents", ex);
+                log.Error(methodName, ex);
             }
 
             UnregisterButtonClickHandler(this.btnArchive, this.cbtnArchive_Click);
@@ -522,9 +541,10 @@ namespace SuiteCRMAddIn
 
             try
             {
-                Log.Info("ThisAddIn.UnregisterEvents: Removing new mail event handler");
+                Log.Info(catalogue.GetString("{0}: Removing new mail event handler", methodName));
 
-                Outlook.ApplicationEvents_11_NewMailExEventHandler handler = new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
+                Outlook.ApplicationEvents_11_NewMailExEventHandler handler = 
+                    new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
 
                 if (handler != null)
                 {
@@ -533,32 +553,33 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.UnregisterEvents", ex);
+                log.Error(methodName, ex);
             }
 
             try
             {
-                Log.Info("ThisAddIn.UnregisterEvents: Removing archive item send event handler");
+                Log.Info(catalogue.GetString("{0}: Removing archive item send event handler", methodName));
                 this.objExplorer.Application.ItemSend -= new Outlook.ApplicationEvents_11_ItemSendEventHandler(this.Application_ItemSend);
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.UnregisterEvents", ex);
+                log.Error(methodName, ex);
             }
         }
 
         private void UnregisterButtonClickHandler(CommandBarButton button, _CommandBarButtonEvents_ClickEventHandler clickHandler)
         {
+            string methodName = "ThisAddIn.UnregisterButtonClickHandler";
             if (button != null)
             {
                 try
                 {
-                    Log.Info("ThisAddIn.UnregisterEvents: Removing archive button click event handler");
+                    Log.Info(catalogue.GetString("{0}: Removing archive button click event handler", methodName));
                     button.Click -= new Office._CommandBarButtonEvents_ClickEventHandler(clickHandler);
                 }
                 catch (Exception ex)
                 {
-                    log.Error("ThisAddIn.UnregisterEvents", ex);
+                    log.Error(methodName, ex);
                 }
             }
         }
@@ -569,21 +590,23 @@ namespace SuiteCRMAddIn
         /// <param name="toDispose">The object of which to dispose.</param>
         private void DisposeOf(IDisposable toDispose)
         {
+            string methodName = "ThisAddIn.DisposeOf";
+
             if (toDispose != null)
             {
                 try
                 {
-                    Log.Debug($"ThisAddIn.DisposeOf: Disposing of {toDispose.GetType().Name}");
+                    Log.Debug(catalogue.GetString("{0}: Disposing of {1}", methodName, toDispose.GetType().Name));
                     toDispose.Dispose();
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"ThisAddIn.DisposeOf: Failed to dispose of instance of {toDispose.GetType().Name}", ex);
+                    log.Error(catalogue.GetString("{0}: Failed to dispose of instance of {1}", methodName, toDispose.GetType().Name), ex);
                 }
             }
             else
             {
-                log.Error("ThisAddIn.DisposeOf: Attempt to dispose of null reference?");
+                log.Error(catalogue.GetString("{0}: Attempt to dispose of null reference?", methodName));
             }
         }
 
@@ -609,7 +632,7 @@ namespace SuiteCRMAddIn
                 Outlook.Selection selection = Selection;
                 Outlook.MailItem item1 = (Outlook.MailItem)selection[1];
                 Office.CommandBarButton objMainMenu = (Office.CommandBarButton)CommandBar.Controls.Add(Microsoft.Office.Core.MsoControlType.msoControlButton, this.missing, this.missing, this.missing, this.missing);
-                objMainMenu.Caption = "SuiteCRM Archive";
+                objMainMenu.Caption = catalogue.GetString("SuiteCRM Archive");
                 objMainMenu.Visible = true;
                 objMainMenu.Picture = RibbonImageHelper.Convert(Resources.SuiteCRMLogo);
                 objMainMenu.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.contextMenuArchiveButton_Click);
@@ -634,7 +657,7 @@ namespace SuiteCRMAddIn
 
         private void Application_ItemSend(object item, ref bool target)
         {
-            log.Debug("Outlook ItemSend: email sent event");
+            log.Debug(catalogue.GetString("Outlook ItemSend: email sent event"));
             try
             {
                 if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
@@ -647,13 +670,13 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.Application_ItemSend", ex);
+                log.Error(catalogue.GetString("ThisAddIn.Application_ItemSend"), ex);
             }
         }
 
         private void Application_NewMail(string EntryID)
         {
-            log.Debug("Outlook NewMail: email received event");
+            log.Debug(catalogue.GetString("Outlook NewMail: email received event"));
             try
             {
                 if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
@@ -666,7 +689,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.Application_NewMail", ex);
+                log.Error(catalogue.GetString("ThisAddIn.Application_NewMail"), ex);
             }
         }
 
@@ -674,7 +697,7 @@ namespace SuiteCRMAddIn
         {
             if (mailItem == null)
             {
-                log.Info("New 'mail item' was null");
+                log.Info(catalogue.GetString("New 'mail item' was null"));
                 return;
             }
             else
@@ -740,7 +763,10 @@ namespace SuiteCRMAddIn
                     }
                     catch (Exception any)
                     {
-                        ShowAndLogError(any, "Failure while trying to authenticate to CRM", "Login failure");
+                        ShowAndLogError(
+                            any, 
+                            catalogue.GetString("Failure while trying to authenticate to CRM"), 
+                            catalogue.GetString("Login failure"));
                     }
                 }
                 else
