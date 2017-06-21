@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.Dialogs
 {
     using BusinessLogic;
     using Exceptions;
+    using Extensions;
     using Microsoft.Office.Interop.Outlook;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
@@ -838,11 +839,11 @@ namespace SuiteCRMAddIn.Dialogs
         {
             foreach (MailItem mail in Globals.ThisAddIn.SelectedEmails)
             {
-                if (mail.UserProperties[EmailArchiving.CRMCategoryPropertyName] == null)
+                if (mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName] == null)
                 {
-                    mail.UserProperties.Add(EmailArchiving.CRMCategoryPropertyName, OlUserPropertyType.olText);
+                    mail.UserProperties.Add(MailItemExtensions.CRMCategoryPropertyName, OlUserPropertyType.olText);
                 }
-                mail.UserProperties[EmailArchiving.CRMCategoryPropertyName].Value = categoryInput.SelectedItem.ToString();
+                mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName].Value = categoryInput.SelectedItem.ToString();
             }
         }
     }

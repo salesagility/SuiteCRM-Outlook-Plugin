@@ -52,6 +52,12 @@ namespace SuiteCRMAddIn.Extensions
         public const string CrmIdPropertyName = "SEntryID";
 
         /// <summary>
+        /// The name of the Outlook user property on which we will store the CRM Category associated
+        /// with an email, of any.
+        /// </summary>
+        public const string CRMCategoryPropertyName = "SuiteCRMCategory";
+
+        /// <summary>
         /// Shorthand to refer to the global user session.
         /// </summary>
         public static UserSession SuiteCRMUserSession
@@ -182,6 +188,9 @@ namespace SuiteCRMAddIn.Extensions
             mailArchive.Body = olItem.Body;
             mailArchive.HTMLBody = olItem.HTMLBody;
             mailArchive.Reason = reason;
+            mailArchive.Category = olItem.UserProperties[CRMCategoryPropertyName] != null ?
+                olItem.UserProperties[CRMCategoryPropertyName].Value :
+                string.Empty;
 
             if (Properties.Settings.Default.ArchiveAttachments)
             {
