@@ -223,6 +223,7 @@
     </Compile>
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
+    <Compile Include="Extensions\Documentation.cs" />
     <Compile Include="Extensions\MailItemExtensions.cs" />
     <Compile Include="Extensions\RecipientExtensions.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
