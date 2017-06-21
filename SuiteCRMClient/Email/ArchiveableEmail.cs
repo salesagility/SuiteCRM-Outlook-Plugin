@@ -46,6 +46,8 @@ namespace SuiteCRMClient.Email
         public string HTMLBody { get; set; }
         public string CC { get; set; }
 
+        public string Category { get; set; }
+
         /// <summary>
         /// Date/Time sent, if known, else now.
         /// </summary>
@@ -281,14 +283,16 @@ namespace SuiteCRMClient.Email
         private object ConstructPacket(string htmlBody)
         {
             List<RESTObjects.eNameValue> emailData = new List<RESTObjects.eNameValue>();
-            emailData.Add(new RESTObjects.eNameValue() { name = "from_addr", value = From });
-            emailData.Add(new RESTObjects.eNameValue() { name = "to_addrs", value = To.Replace("\n", "") });
-            emailData.Add(new RESTObjects.eNameValue() { name = "name", value = Subject });
-            emailData.Add(new RESTObjects.eNameValue() { name = "date_sent", value = Sent.ToString(EmailDateFormat) });
-            emailData.Add(new RESTObjects.eNameValue() { name = "description", value = Body });
+            emailData.Add(new RESTObjects.eNameValue() { name = "from_addr", value = this.From });
+            emailData.Add(new RESTObjects.eNameValue() { name = "to_addrs", value = this.To.Replace("\n", "") });
+            emailData.Add(new RESTObjects.eNameValue() { name = "name", value = this.Subject });
+            emailData.Add(new RESTObjects.eNameValue() { name = "date_sent", value = this.Sent.ToString(EmailDateFormat) });
+            emailData.Add(new RESTObjects.eNameValue() { name = "description", value = this.Body });
             emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = htmlBody });
             emailData.Add(new RESTObjects.eNameValue() { name = "assigned_user_id", value = clsSuiteCRMHelper.GetUserId() });
             emailData.Add(new RESTObjects.eNameValue() { name = "status", value = "archived" });
+            emailData.Add(new RESTObjects.eNameValue() { name = "category_id", value = this.Category });
+
             object contactData = new
             {
                 @session = SuiteCRMUserSession.id,

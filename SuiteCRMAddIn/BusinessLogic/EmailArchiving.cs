@@ -45,23 +45,15 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </remarks>
     public class EmailArchiving : RepeatingProcess
     {
-        private UserSession SuiteCRMUserSession => Globals.ThisAddIn.SuiteCRMUserSession;
-
         /// <summary>
-        /// Magic property tag to get the email address from an Outlook Recipient object.
+        /// Convenience property to get a handle on the global user session.
         /// </summary>
-        const string PR_SMTP_ADDRESS = "http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
+        private UserSession SuiteCRMUserSession => Globals.ThisAddIn.SuiteCRMUserSession;
 
         /// <summary>
         /// Canonical format to use when saving date/times to CRM; essentially, ISO8601 without the 'T'.
         /// </summary>
         public const string EmailDateFormat = "yyyy-MM-dd HH:mm:ss";
-
-        /// <summary>
-        /// The name of the Outlook user property on which we will store the CRM Category associated
-        /// with an email, of any.
-        /// </summary>
-        public const string CRMCategoryPropertyName = "SuiteCRMCategory";
 
         public EmailArchiving(string name, ILogger log) : base(name, log)
         {
