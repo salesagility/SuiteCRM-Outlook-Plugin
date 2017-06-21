@@ -20,30 +20,12 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.RESTObjects
+
+ namespace SuiteCRMClient.Email
 {
-    using System.Collections.Generic;
-
-	/// <summary>
-	/// A collection of names and values, implemented as a list of name/value objects.
-	/// </summary>
-	/// <see cref="eNameValue"/> 
-    public class NameValueCollection : List<eNameValue>
+    public class ArchiveableAttachment
     {
-        /// <summary>
-        /// Return my names/values as a dictionary.
-        /// </summary>
-        /// <returns>my names/values as a dictionary</returns>
-        public Dictionary<string, object> AsDictionary()
-        {
-            Dictionary<string, object> result = new Dictionary<string, object>();
-
-            foreach (eNameValue entry in this)
-            {
-                result[entry.name] = entry.value;
-            }
-
-            return result;
-        }
+        public string DisplayName { get; set; }
+        public byte[] FileContentInBase64String { get; set; }
     }
 }

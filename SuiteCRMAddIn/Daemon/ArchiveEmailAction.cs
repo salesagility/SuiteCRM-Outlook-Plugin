@@ -35,15 +35,18 @@ namespace SuiteCRMAddIn.Daemon
         /// <summary>
         /// The type of archive action (i.e. is this a manual, inbound or outbound action).
         /// </summary>
-        private EmailArchiveType achiveType;
+        private EmailArchiveReason achiveType;
+
         /// <summary>
         /// The single mail to be archived.
         /// </summary>
-        private clsEmailArchive mail;
+        private ArchiveableEmail mail;
+
         /// <summary>
         /// The session in which it should be archived.
         /// </summary>
         private UserSession session;
+
         /// <summary>
         /// Contact ids of contacts to which this mail should be linked.
         /// </summary>
@@ -58,8 +61,8 @@ namespace SuiteCRMAddIn.Daemon
         /// <param name="contacts">Contact ids of contacts to which this mail should be linked.</param>
         public ArchiveEmailAction(
             UserSession session, 
-            clsEmailArchive mail, 
-            EmailArchiveType archiveType, 
+            ArchiveableEmail mail, 
+            EmailArchiveReason archiveType, 
             List<string> contacts) : base(5)
         {
             this.session = session;
@@ -68,11 +71,16 @@ namespace SuiteCRMAddIn.Daemon
             this.contacts.AddRange(contacts);
         }
 
+
+        /// <summary>
+        /// Perform this action.
+        /// </summary>
         public override void Perform()
         {
             if (session.IsLoggedIn)
             {
                 this.mail.SuiteCRMUserSession = session;
+                
                 this.mail.Save(this.contacts);
             }
         }
