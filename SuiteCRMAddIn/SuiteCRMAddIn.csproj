@@ -334,6 +334,13 @@
       <DependentUpon>ReconfigureOrDisableDialog.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
+    <None Include="Locale\en_GB\LC_MESSAGES\SuiteCRMAddIn.mo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Locale\fr_FR\LC_MESSAGES\SuiteCRMAddIn.mo">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Locale\fr_FR\LC_MESSAGES\SuiteCRMAddIn.po" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
