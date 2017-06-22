@@ -22,15 +22,18 @@
  */
 namespace SuiteCRMClient.RESTObjects
 {
+    using System.Collections.Generic;
     using Newtonsoft.Json;
 
-    public class eNoteAttachment
+    public class Contacts
     {
-       [JsonProperty("file")]
-       public string file { get; set; }
-       [JsonProperty("filename")]
-       public string filename { get; set; }
-       [JsonProperty("id")]
-       public string id { get; set; }
+        [JsonProperty("entry_list")]
+        public List<Entry> entry_list { get; set; }
+    }
+
+    public class Entry
+    {
+        [JsonProperty("id")]
+        public string id { get; set; }
     }
 }

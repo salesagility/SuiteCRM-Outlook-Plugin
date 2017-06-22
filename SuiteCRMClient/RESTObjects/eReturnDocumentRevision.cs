@@ -27,8 +27,8 @@ namespace SuiteCRMClient.RESTObjects
     public class eReturnDocumentRevision
     {
        [JsonProperty("document_revision")]
-       public SuiteCRMClient.RESTObjects.eDocumentRevision document_revision { get; set; }
+       public SuiteCRMClient.RESTObjects.DocumentRevision document_revision { get; set; }
        [JsonProperty("error")]
-       public eErrorValue error { get; set; }
+       public ErrorValue error { get; set; }
     }
 }

@@ -29,7 +29,7 @@ namespace SuiteCRMClient.RESTObjects
        [JsonProperty("created")]
        public int created { get; set; }
        [JsonProperty("error")]
-       public eErrorValue error { get; set; }
+       public ErrorValue error { get; set; }
        [JsonProperty("failed")]
        public int failed { get; set; }
     }

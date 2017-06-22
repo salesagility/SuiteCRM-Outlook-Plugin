@@ -370,7 +370,7 @@ namespace SuiteCRMAddIn.Dialogs
                 return;
             }
 
-            clsSuiteCRMHelper.FlushUserIdCache();
+            RestAPIWrapper.FlushUserIdCache();
 
             base.Close();
 

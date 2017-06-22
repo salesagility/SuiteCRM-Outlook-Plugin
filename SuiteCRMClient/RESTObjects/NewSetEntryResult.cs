@@ -22,15 +22,8 @@
  */
 namespace SuiteCRMClient.RESTObjects
 {
-    using Newtonsoft.Json;
-
-    public class eNewNoteAttachment
-    {
-        [JsonProperty("id")]
-        public string ID { get; set; }
-        [JsonProperty("filename")]
-        public string FileName { get; set; }
-        [JsonProperty("file")]
-        public byte[] FileCotent { get; set; }
-    }
+    //public class NewSetEntryResult
+    //{
+    //    public string id { get; set; }
+    //}
 }

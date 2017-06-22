@@ -32,6 +32,7 @@ namespace SuiteCRMAddIn
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -321,7 +322,7 @@ namespace SuiteCRMAddIn
         private void StartLogging()
         {
             log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log", () => GetLogHeader(), Properties.Settings.Default.LogLevel);
-            clsSuiteCRMHelper.SetLog(log);
+            RestAPIWrapper.SetLog(log);
         }
 
         private void LogKeySettings()
@@ -746,6 +747,8 @@ namespace SuiteCRMAddIn
 
                         if (SuiteCRMUserSession.IsLoggedIn)
                         {
+                            LogServerVersion();
+
                             result = true;
                         }
                     }
@@ -776,6 +779,19 @@ namespace SuiteCRMAddIn
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Obtain the server version from the server, if specified, and write it to the log.
+        /// </summary>
+        private void LogServerVersion()
+        {
+            ServerInfo info = RestAPIWrapper.GetServerInfo();
+
+            if (!string.IsNullOrWhiteSpace(info.SuiteCRMVersion))
+            {
+                log.Info($"Connected to an instance of SuiteCRM version {info.SuiteCRMVersion}.");
+            }
         }
 
         public int SelectedEmailCount => Application.ActiveExplorer()?.Selection.Count ?? 0;

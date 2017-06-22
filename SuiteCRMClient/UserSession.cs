@@ -109,7 +109,7 @@ namespace SuiteCRMClient
             {
                 _log.Error("Login error", ex);
                 id = String.Empty;
-                SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+                SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = null;
                 throw;
             }
 
@@ -135,7 +135,7 @@ namespace SuiteCRMClient
                 loginReturn = AuthenticateCRM(username, hashedPass);
 
                 id = loginReturn.SessionID;
-                SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = this;
                 result = loginReturn.PollingInterval;
             }
             catch (CrmServerErrorException)
@@ -145,14 +145,14 @@ namespace SuiteCRMClient
                     loginReturn = AuthenticateCRM(username, password);
 
                     id = loginReturn.SessionID;
-                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                    SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = this;
                     result = loginReturn.PollingInterval;
 
                 }
                 catch (CrmServerErrorException)
                 {
                     id = String.Empty;
-                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+                    SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = null;
                     throw;
                 }
             }
@@ -193,18 +193,18 @@ namespace SuiteCRMClient
                 if (String.IsNullOrWhiteSpace(this.id))
                 {
                     this.id = String.Empty; // normalise away nulls
-                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+                    SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = null;
                 }
                 else
                 {
-                    SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = this;
+                    SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = this;
                     this.AwaitingAuthentication = false;
                 }
             }
             catch (Exception)
             {
                 id = String.Empty;
-                SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+                SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = null;
                 throw;
             }
         }
@@ -248,7 +248,7 @@ namespace SuiteCRMClient
             }
 
             this.id = String.Empty;
-            SuiteCRMClient.clsSuiteCRMHelper.SuiteCRMUserSession = null;
+            SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = null;
         }
 
         public static string GetMD5Hash(string PlainText)

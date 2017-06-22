@@ -87,15 +87,15 @@ namespace SuiteCRMClient
         /// <exception cref="CrmServerErrorException">if the response was recognised as an error.</exception>
         private void CheckForCrmError(string jsonResponse)
         {
-            eErrorValue error;
+            ErrorValue error;
             try
             {
-                error = DeserializeJson<eErrorValue>(jsonResponse);
+                error = DeserializeJson<ErrorValue>(jsonResponse);
             }
             catch (JsonSerializationException)
             {
                 // it wasn't recognisable as an error. That's fine!
-                error = new eErrorValue();
+                error = new ErrorValue();
             }
 
             if (error != null && error.IsPopulated())

@@ -27,7 +27,7 @@ namespace SuiteCRMClient.RESTObjects
     public class eSetEntriesResult
     {
        [JsonProperty("error")]
-       public eErrorValue error { get; set; }
+       public ErrorValue error { get; set; }
        [JsonProperty("ids")]
        public string[] ids { get; set; }
     }

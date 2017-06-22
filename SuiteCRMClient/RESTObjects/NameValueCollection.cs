@@ -27,8 +27,8 @@ namespace SuiteCRMClient.RESTObjects
 	/// <summary>
 	/// A collection of names and values, implemented as a list of name/value objects.
 	/// </summary>
-	/// <see cref="eNameValue"/> 
-    public class NameValueCollection : List<eNameValue>
+	/// <see cref="NameValue"/> 
+    public class NameValueCollection : List<NameValue>
     {
         /// <summary>
         /// Return my names/values as a dictionary.
@@ -38,7 +38,7 @@ namespace SuiteCRMClient.RESTObjects
         {
             Dictionary<string, object> result = new Dictionary<string, object>();
 
-            foreach (eNameValue entry in this)
+            foreach (NameValue entry in this)
             {
                 result[entry.name] = entry.value;
             }

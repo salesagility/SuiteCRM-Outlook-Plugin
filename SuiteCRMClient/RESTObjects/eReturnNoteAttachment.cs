@@ -27,9 +27,9 @@ namespace SuiteCRMClient.RESTObjects
     public class eReturnNoteAttachment
     {
        [JsonProperty("error")]
-       public eErrorValue error { get; set; }
+       public ErrorValue error { get; set; }
        [JsonProperty("note_attachment")]
-       public SuiteCRMClient.RESTObjects.eNoteAttachment note_attachment { get; set; }
+       public SuiteCRMClient.RESTObjects.NoteAttachment note_attachment { get; set; }
 
     }
 }

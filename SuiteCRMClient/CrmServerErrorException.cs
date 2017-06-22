@@ -10,9 +10,9 @@ namespace SuiteCRMClient
     [Serializable]
     internal class CrmServerErrorException : Exception
     {
-        public readonly eErrorValue Error;
+        public readonly ErrorValue Error;
 
-        public CrmServerErrorException(eErrorValue error) : base($"CRM Server error {error.number} ({error.name}): {error.description}")
+        public CrmServerErrorException(ErrorValue error) : base($"CRM Server error {error.number} ({error.name}): {error.description}")
         {
             this.Error = error;
         }

@@ -43,7 +43,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NGettext, Version=0.6.1.0, Culture=neutral, PublicKeyToken=08d3d1c89dfd2985, processorArchitecture=MSIL">
+      <HintPath>..\packages\NGettext.0.6.2\lib\net45\NGettext.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -80,32 +84,25 @@
     <Compile Include="Logging\LoggerExtensions.cs" />
     <Compile Include="Objective.cs" />
     <Compile Include="RESTObjects\Documentation.cs" />
-    <Compile Include="RESTObjects\eContactDetail.cs" />
-    <Compile Include="RESTObjects\eDocumentRevision.cs" />
-    <Compile Include="RESTObjects\eEntryValue.cs" />
-    <Compile Include="RESTObjects\eErrorValue.cs" />
-    <Compile Include="RESTObjects\eField.cs" />
-    <Compile Include="RESTObjects\eGetEntriesCountResult.cs" />
-    <Compile Include="RESTObjects\eGetEntryListResultEncoded.cs" />
-    <Compile Include="RESTObjects\eGetEntryResult.cs" />
-    <Compile Include="RESTObjects\eGetMailmergeDocumentResult.cs" />
-    <Compile Include="RESTObjects\eGetRelationshipResult.cs" />
-    <Compile Include="RESTObjects\eGetRelationshipsResult.cs" />
-    <Compile Include="RESTObjects\eGetSyncResultEncoded.cs" />
-    <Compile Include="RESTObjects\eIdMod.cs" />
-    <Compile Include="RESTObjects\eModuleFields.cs" />
-    <Compile Include="RESTObjects\eModuleList.cs" />
-    <Compile Include="RESTObjects\eNameValue.cs" />
-    <Compile Include="RESTObjects\eNewNoteAttachment.cs" />
-    <Compile Include="RESTObjects\eContacts.cs" />
-    <Compile Include="RESTObjects\eGetEntryListResult.cs" />
-    <Compile Include="RESTObjects\eLogin.cs" />
-    <Compile Include="RESTObjects\eNewSetEntryResult.cs" />
+    <Compile Include="RESTObjects\ContactDetail.cs" />
+    <Compile Include="RESTObjects\DocumentRevision.cs" />
+    <Compile Include="RESTObjects\EntryValue.cs" />
+    <Compile Include="RESTObjects\ErrorValue.cs" />
+    <Compile Include="RESTObjects\Field.cs" />
+    <Compile Include="RESTObjects\Relationships.cs" />
+    <Compile Include="RESTObjects\ModuleFields.cs" />
+    <Compile Include="RESTObjects\AvailableModules.cs" />
+    <Compile Include="RESTObjects\NameValue.cs" />
+    <Compile Include="RESTObjects\NewNoteAttachment.cs" />
+    <Compile Include="RESTObjects\Contacts.cs" />
+    <Compile Include="RESTObjects\EntryList.cs" />
+    <Compile Include="RESTObjects\Login.cs" />
+    <Compile Include="RESTObjects\NewSetEntryResult.cs" />
     <Compile Include="RESTObjects\eNewSetRelationshipListResult.cs" />
-    <Compile Include="RESTObjects\eNoteAttachment.cs" />
+    <Compile Include="RESTObjects\NoteAttachment.cs" />
     <Compile Include="RESTObjects\eReturnDocumentRevision.cs" />
     <Compile Include="RESTObjects\eReturnNoteAttachment.cs" />
-    <Compile Include="RESTObjects\eSetEntriesDetailResult.cs" />
+    <Compile Include="RESTObjects\SetEntriesDetailResult.cs" />
     <Compile Include="RESTObjects\eSetEntriesResult.cs" />
     <Compile Include="RESTObjects\eSetEntryResult.cs" />
     <Compile Include="RESTObjects\eSetRelationshipListResult.cs" />
@@ -114,6 +111,7 @@
     <Compile Include="RESTObjects\eUserDetail.cs" />
     <Compile Include="clsSuiteCRMHelper.cs" />
     <Compile Include="RESTObjects\NameValueCollection.cs" />
+    <Compile Include="RESTObjects\ServerInfo.cs" />
     <Compile Include="UserSession.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>

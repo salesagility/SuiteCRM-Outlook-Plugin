@@ -174,7 +174,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     this.log.Debug($"Permissions cache miss for {moduleName}/{permission}");
                     try
                     {
-                        eModuleList oList = clsSuiteCRMHelper.GetModules();
+                        AvailableModules oList = RestAPIWrapper.GetModules();
                         bool canExport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
                             ?.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)
                             ?.access ?? false;

@@ -24,17 +24,11 @@ namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    public class eGetEntryListResult
+    public class SetEntriesDetailResult
     {
-        [JsonProperty("entry_list")]
-        public eEntryValue[] entry_list { get; set; }
-        [JsonProperty("error")]
-        public eErrorValue error { get; set; }
-        [JsonProperty("field_list")]
-        public eField[] field_list { get; set; }
-        [JsonProperty("next_offset")]
-        public int next_offset { get; set; }
-        [JsonProperty("result_count")]
-        public int result_count { get; set; }
+       [JsonProperty("error")]
+       public ErrorValue error { get; set; }
+       [JsonProperty("name_value_lists")]
+       public NameValue[][] name_value_lists { get; set; }
     }
 }

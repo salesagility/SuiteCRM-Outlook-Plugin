@@ -27,7 +27,7 @@ namespace SuiteCRMClient.RESTObjects
     using System.Globalization;
     using System.Web;
 
-    public class eNameValue
+    public class NameValue
     {
         private object v;
 

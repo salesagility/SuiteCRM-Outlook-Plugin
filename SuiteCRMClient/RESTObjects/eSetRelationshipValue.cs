@@ -24,7 +24,7 @@ namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    public class eSetRelationshipValue
+    public class SetRelationshipParams
     {
         [JsonProperty("module1_id")]
         public string module1_id { get; set; }

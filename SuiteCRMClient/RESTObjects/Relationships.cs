@@ -20,18 +20,16 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
 namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    public class eGetEntriesCountResult
+    public class Relationships
     {
-        [JsonProperty("error")]
-        public eErrorValue error { get; set; }
-        [JsonProperty("result_count")]
-        public int result_count { get; set; }
-
-      
-
+        [JsonProperty("entry_list")]
+        public EntryValue[] entry_list { get; set; }
+        [JsonProperty("relationship_list")]
+        public EntryValue[] relationship_list { get; set; }
     }
 }

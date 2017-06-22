@@ -25,7 +25,7 @@ namespace SuiteCRMClient.RESTObjects
     using Newtonsoft.Json;
     using System;
 
-    public class eErrorValue
+    public class ErrorValue
     {
         [JsonProperty("name")]
         public string name { get; set; }

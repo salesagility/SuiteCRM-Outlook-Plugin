@@ -243,8 +243,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public void CreateEmailRelationshipOrFail(string emailId, CrmEntity entity)
         {
-            var success = clsSuiteCRMHelper.TrySetRelationship(
-                new eSetRelationshipValue
+            var success = RestAPIWrapper.TrySetRelationship(
+                new SetRelationshipParams
                 {
                     module2 = "emails",
                     module2_id = emailId,

@@ -92,7 +92,7 @@ namespace SuiteCRMClient.Email
         /// <returns>A list of strings representing CRM contact ids.</returns>
         private List<string> GetValidContactIds(List<string> excludedAddresses)
         {
-            clsSuiteCRMHelper.EnsureLoggedIn(SuiteCRMUserSession);
+            RestAPIWrapper.EnsureLoggedIn(SuiteCRMUserSession);
 
             List<string> result = new List<string>();
             List<string> checkedAddresses = new List<string>();
@@ -103,7 +103,7 @@ namespace SuiteCRMClient.Email
                 {
                     if (!checkedAddresses.Contains(address) && !excludedAddresses.Contains(address.ToUpper()))
                     {
-                        var contactReturn = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eContacts>("get_entry_list",
+                        var contactReturn = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.Contacts>("get_entry_list",
                             ConstructGetContactIdByAddressPacket(address));
 
                         if (contactReturn.entry_list != null && contactReturn.entry_list.Count > 0)
@@ -221,7 +221,7 @@ namespace SuiteCRMClient.Email
         private ArchiveResult TrySave(List<string> contactIds, string htmlBody, Exception[] fails)
         {
             var restServer = SuiteCRMUserSession.RestServer;
-            var emailResult = restServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry",
+            var emailResult = restServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry",
                ConstructPacket(htmlBody));
             ArchiveResult result = ArchiveResult.Success(emailResult.id, fails);
 
@@ -237,7 +237,7 @@ namespace SuiteCRMClient.Email
         /// Save my attachments to CRM, and relate them to this emailResult. 
         /// </summary>
         /// <param name="emailResult">A result object obtained by archiving me to CRM.</param>
-        private void SaveAttachments(RESTObjects.eNewSetEntryResult emailResult)
+        private void SaveAttachments(RESTObjects.SetEntryResult emailResult)
         {
             foreach (ArchiveableAttachment attachment in Attachments)
             {
@@ -258,7 +258,7 @@ namespace SuiteCRMClient.Email
         /// </summary>
         /// <param name="crmContactIds">The contact ids which should be related to my email result.</param>
         /// <param name="emailResult">An email result (presumed to represent me).</param>
-        private void SaveContacts(List<string> crmContactIds, RESTObjects.eNewSetEntryResult emailResult)
+        private void SaveContacts(List<string> crmContactIds, RESTObjects.SetEntryResult emailResult)
         {
             var restServer = SuiteCRMUserSession.RestServer;
 
@@ -282,16 +282,16 @@ namespace SuiteCRMClient.Email
         /// <returns>A packet which, when transmitted to CRM, will instantiate my email.</returns>
         private object ConstructPacket(string htmlBody)
         {
-            List<RESTObjects.eNameValue> emailData = new List<RESTObjects.eNameValue>();
-            emailData.Add(new RESTObjects.eNameValue() { name = "from_addr", value = this.From });
-            emailData.Add(new RESTObjects.eNameValue() { name = "to_addrs", value = this.To.Replace("\n", "") });
-            emailData.Add(new RESTObjects.eNameValue() { name = "name", value = this.Subject });
-            emailData.Add(new RESTObjects.eNameValue() { name = "date_sent", value = this.Sent.ToString(EmailDateFormat) });
-            emailData.Add(new RESTObjects.eNameValue() { name = "description", value = this.Body });
-            emailData.Add(new RESTObjects.eNameValue() { name = "description_html", value = htmlBody });
-            emailData.Add(new RESTObjects.eNameValue() { name = "assigned_user_id", value = clsSuiteCRMHelper.GetUserId() });
-            emailData.Add(new RESTObjects.eNameValue() { name = "status", value = "archived" });
-            emailData.Add(new RESTObjects.eNameValue() { name = "category_id", value = this.Category });
+            List<RESTObjects.NameValue> emailData = new List<RESTObjects.NameValue>();
+            emailData.Add(new RESTObjects.NameValue() { name = "from_addr", value = this.From });
+            emailData.Add(new RESTObjects.NameValue() { name = "to_addrs", value = this.To.Replace("\n", "") });
+            emailData.Add(new RESTObjects.NameValue() { name = "name", value = this.Subject });
+            emailData.Add(new RESTObjects.NameValue() { name = "date_sent", value = this.Sent.ToString(EmailDateFormat) });
+            emailData.Add(new RESTObjects.NameValue() { name = "description", value = this.Body });
+            emailData.Add(new RESTObjects.NameValue() { name = "description_html", value = htmlBody });
+            emailData.Add(new RESTObjects.NameValue() { name = "assigned_user_id", value = RestAPIWrapper.GetUserId() });
+            emailData.Add(new RESTObjects.NameValue() { name = "status", value = "archived" });
+            emailData.Add(new RESTObjects.NameValue() { name = "category_id", value = this.Category });
 
             object contactData = new
             {
@@ -360,9 +360,9 @@ namespace SuiteCRMClient.Email
         /// </summary>
         /// <param name="attachmentPacket">The attachment packet to transmit</param>
         /// <returns>A result object indicating success or failure.</returns>
-        private RESTObjects.eNewSetEntryResult TransmitAttachmentPacket(object attachmentPacket)
+        private RESTObjects.SetEntryResult TransmitAttachmentPacket(object attachmentPacket)
         {
-            return SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_note_attachment", attachmentPacket);
+            return SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_note_attachment", attachmentPacket);
         }
 
         /// <summary>
@@ -375,8 +375,8 @@ namespace SuiteCRMClient.Email
         /// <returns>A packet which, when transmitted to CRM, will instantiate this attachment.</returns>
         private object ConstructAttachmentPacket(ArchiveableAttachment attachment)
         {
-            List<RESTObjects.eNameValue> initNoteData = new List<RESTObjects.eNameValue>();
-            initNoteData.Add(new RESTObjects.eNameValue() { name = "name", value = attachment.DisplayName });
+            List<RESTObjects.NameValue> initNoteData = new List<RESTObjects.NameValue>();
+            initNoteData.Add(new RESTObjects.NameValue() { name = "name", value = attachment.DisplayName });
 
             object initNoteDataWebFormat = new
             {
@@ -384,9 +384,9 @@ namespace SuiteCRMClient.Email
                 @module_name = "Notes",
                 @name_value_list = initNoteData
             };
-            var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", initNoteDataWebFormat);
+            var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry", initNoteDataWebFormat);
 
-            RESTObjects.eNewNoteAttachment note = new RESTObjects.eNewNoteAttachment();
+            RESTObjects.NewNoteAttachment note = new RESTObjects.NewNoteAttachment();
             note.ID = res.id;
             note.FileName = attachment.DisplayName;
             note.FileCotent = attachment.FileContentInBase64String;

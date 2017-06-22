@@ -54,7 +54,7 @@ namespace SuiteCRMAddIn.Daemon
         /// </summary>
         public override void Perform()
         {
-            eField field = clsSuiteCRMHelper.GetFieldsForModule("Emails").moduleFields.FirstOrDefault(x => x.name == "category_id");
+            Field field = RestAPIWrapper.GetFieldsForModule("Emails").moduleFields.FirstOrDefault(x => x.name == "category_id");
 
             if (field != null)
             {

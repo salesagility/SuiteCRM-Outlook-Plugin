@@ -24,11 +24,27 @@ namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    public class eGetSyncResultEncoded
+    /// <summary>
+    /// An object returned by the get_server_info call.
+    /// </summary>
+    public class ServerInfo
     {
-       [JsonProperty("error")]
-       public eErrorValue error { get; set; }
-       [JsonProperty("result")]
-       public string result { get; set; }
+        /// <summary>
+        /// Field returned in the get_server_info packet, but I don yet know what it means.
+        /// </summary>
+        [JsonProperty("flavor")]
+        public string Flavor { get; set; }
+
+        /// <summary>
+        /// Version of SugarCRM on which this version of SuiteCRM is based.
+        /// </summary>
+        [JsonProperty("version")]
+        public string SugarVersion { get; set; }
+
+        /// <summary>
+        /// Version of SuiteCRM. Note: this field is not present before SuiteCRM version 7.8.5.
+        /// </summary>
+        [JsonProperty("suitecrm_version")]
+        public string SuiteCRMVersion { get; set; }
     }
 }

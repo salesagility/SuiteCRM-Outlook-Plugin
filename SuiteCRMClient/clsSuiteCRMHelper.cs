@@ -32,7 +32,11 @@ namespace SuiteCRMClient
     using Logging;
     using Email;
 
-    public static class clsSuiteCRMHelper
+    /// <summary>
+    /// A class which comprises wrappers for calls in the REST API, which return objects
+    /// generally from the RESTObjects package.
+    /// </summary>
+    public static class RestAPIWrapper
     {
         private static ILogger Log;
 
@@ -40,7 +44,7 @@ namespace SuiteCRMClient
         /// The list of the modules and their permissions change extremely rarely; 
         /// they may safely be cached for a session.
         /// </summary>
-        private static eModuleList modulesCache = null;
+        private static AvailableModules modulesCache = null;
 
         /// <summary>
         /// A map that maps module names to the list of fields in the named module.
@@ -48,7 +52,7 @@ namespace SuiteCRMClient
         /// <remarks>
         /// Module fields change equally rarely. Cache em, too!
         /// </remarks>
-        private static Dictionary<string, eModuleFields> moduleFieldsCache = new Dictionary<string, eModuleFields>();
+        private static Dictionary<string, ModuleFields> moduleFieldsCache = new Dictionary<string, ModuleFields>();
 
         public static UserSession SuiteCRMUserSession;
 
@@ -71,7 +75,7 @@ namespace SuiteCRMClient
         /// <remarks>This data changes only rarely, and is consequently cached for the session.
         /// </remarks>
         /// <returns>the list of modules installed in the connected CRM instance.</returns>
-        public static eModuleList GetModules()
+        public static AvailableModules GetModules()
         {
             if (modulesCache == null)
             {
@@ -80,7 +84,7 @@ namespace SuiteCRMClient
                 {
                     @session = SuiteCRMUserSession.id
                 };
-                modulesCache = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);
+                modulesCache = SuiteCRMUserSession.RestServer.GetCrmResponse<AvailableModules>("get_available_modules", data);
             }
             return modulesCache;             
         }
@@ -124,11 +128,11 @@ namespace SuiteCRMClient
             bool result = false; 
             if (userSession != null)
             {
-                string userId = clsSuiteCRMHelper.GetRealUserId();
+                string userId = RestAPIWrapper.GetRealUserId();
                 if (string.IsNullOrEmpty(userId))
                 {
                     userSession.Login();
-                    result = clsSuiteCRMHelper.GetRealUserId() != null;
+                    result = RestAPIWrapper.GetRealUserId() != null;
                 }
                 else
                 {
@@ -199,7 +203,7 @@ namespace SuiteCRMClient
         /// <param name="data"></param>
         /// <param name="moduleName"></param>
         /// <returns>the CRM id of the object created or modified.</returns>
-        public static string SetEntryUnsafe(eNameValue[] data, string moduleName = "Emails")
+        public static string SetEntryUnsafe(NameValue[] data, string moduleName = "Emails")
         {
             try
             {
@@ -227,7 +231,7 @@ namespace SuiteCRMClient
         }
 
 
-        public static string SetEntry(eNameValue[] values, string moduleName)
+        public static string SetEntry(NameValue[] values, string moduleName)
         {
             EnsureLoggedIn();
             object data = new
@@ -236,13 +240,13 @@ namespace SuiteCRMClient
                 @module_name = moduleName,
                 @name_value_list = values
             };
-            eSetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
+            SetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<SetEntryResult>("set_entry", data);
             return _result.id == null ?
                 string.Empty :
                 _result.id.ToString();
         }
 
-        public static string getRelationship(string MainModule, string ID, string ModuleToFind)
+        public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
         {
             try
             {
@@ -258,7 +262,7 @@ namespace SuiteCRMClient
                     @query = ""
                     //@limit = 1*/
                 };
-                eGetRelationshipResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eGetRelationshipResult>("get_relationships", data);
+                Relationships _result = SuiteCRMUserSession.RestServer.GetCrmResponse<Relationships>("get_relationships", data);
                 if (_result.entry_list.Length > 0)
                     return _result.entry_list[0].id;
                 return "";
@@ -270,7 +274,7 @@ namespace SuiteCRMClient
             }
         }
 
-        public static eEntryValue[] getRelationships(string MainModule, string ID, string ModuleToFind, string[] fields)
+        public static EntryValue[] GetRelationships(string MainModule, string ID, string ModuleToFind, string[] fields)
         {
             try
             {
@@ -286,7 +290,7 @@ namespace SuiteCRMClient
                     @query = ""
                     //@limit = 1*/
                 };
-                eGetRelationshipResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eGetRelationshipResult>("get_relationships", data);
+                Relationships _result = SuiteCRMUserSession.RestServer.GetCrmResponse<Relationships>("get_relationships", data);
                 if (_result.entry_list.Length > 0)
                     return _result.entry_list;
                 return null;
@@ -303,13 +307,14 @@ namespace SuiteCRMClient
         /// callers ignore the result. Call 'SetRelationship' instead, which throws an
         /// exception on failure.
         /// </summary>
-        public static bool SetRelationshipUnsafe(eSetRelationshipValue info)
+        /// <param name="relationship">The relationship to set.</param>
+        public static bool SetRelationshipUnsafe(SetRelationshipParams relationship)
         {
             bool result;
 
             try
             {
-                result = TrySetRelationship(info, Objective.Meeting);
+                result = TrySetRelationship(relationship, Objective.Meeting);
 
                 if (!result)
                 {
@@ -332,7 +337,7 @@ namespace SuiteCRMClient
         /// </summary>
         /// <param name="relationship">The relationship to set.</param>
         /// <returns>True if the relationship was created, else false.</returns>
-        public static bool TrySetRelationship(eSetRelationshipValue relationship, Objective objective)
+        public static bool TrySetRelationship(SetRelationshipParams relationship, Objective objective)
         {
             return TrySetRelationship(relationship, $"{relationship.module2}") ||
                 TrySetRelationship(relationship, $"{relationship.module2}_{relationship.module1}") ||
@@ -349,11 +354,11 @@ namespace SuiteCRMClient
         /// <param name="relationship">The relationship we're trying to make.</param>
         /// <param name="candidateFields">Fields through which the relationship might be made.</param>
         /// <returns>True if the relationship was made.</returns>
-        private static bool TrySetRelationship(eSetRelationshipValue relationship, IEnumerable<eField> candidateFields)
+        private static bool TrySetRelationship(SetRelationshipParams relationship, IEnumerable<Field> candidateFields)
         {
             bool result = false;
 
-            foreach (eField field in candidateFields)
+            foreach (Field field in candidateFields)
             {
                 result |= TrySetRelationship(relationship, field.name.ToLower());
 
@@ -370,7 +375,7 @@ namespace SuiteCRMClient
         /// <param name="relationship">The relationship to set.</param>
         /// <param name="linkFieldName">The link field name to try.</param>
         /// <returns>True if the relationship was created, else false.</returns>
-        public static bool TrySetRelationship(eSetRelationshipValue info, string linkFieldName)
+        public static bool TrySetRelationship(SetRelationshipParams relationship, string linkFieldName)
         {
             bool result;
 
@@ -379,12 +384,12 @@ namespace SuiteCRMClient
                 object data = new
                 {
                     @session = SuiteCRMUserSession.id,
-                    @module_name = info.module1,
-                    @module_id = info.module1_id,
+                    @module_name = relationship.module1,
+                    @module_id = relationship.module1_id,
                     @link_field_name = linkFieldName,
-                    @related_ids = new string[] { info.module2_id },
-                    @name_value_list = new eNameValue[] { },
-                    @delete = info.delete
+                    @related_ids = new string[] { relationship.module2_id },
+                    @name_value_list = new NameValue[] { },
+                    @delete = relationship.delete
                 };
                 var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
 
@@ -404,81 +409,29 @@ namespace SuiteCRMClient
         }
 
 
-        public static void UploadAttachment(ArchiveableAttachment objAttachment, string email_id)
+        public static NameValue SetNameValuePair(string name, object value)
         {
-            EnsureLoggedIn();
-
-            object initNoteDataWebFormat = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = "Notes",
-                @name_value_list = new List<RESTObjects.eNameValue>
-                {
-                    new RESTObjects.eNameValue() {name = "name", value = objAttachment.DisplayName}
-                }
-            };
-            var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_entry", initNoteDataWebFormat);
-
-            //upload the attachment  
-            RESTObjects.eNewNoteAttachment attachment = new RESTObjects.eNewNoteAttachment();
-            attachment.ID = res.id;
-            attachment.FileName = objAttachment.DisplayName;
-            attachment.FileCotent = objAttachment.FileContentInBase64String;
-
-            object attachmentDataWebFormat = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @note = attachment
-            };
-
-            var attachmentResult = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetEntryResult>("set_note_attachment", attachmentDataWebFormat);
-
-            //Relate the email and the attachment
-            object contacRelationshipData = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = "Emails",
-                @module_id = email_id,
-                @link_field_name = "notes",
-                @related_ids = new string[] { attachmentResult.id }
-            };
-            var rel = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", contacRelationshipData);
-
-            if (rel.Created == 0)
-            {
-                throw new CrmSaveDataException("Cannot upload email attachment ('set_relationship failed')");
-            }
-        }
-
-        public static eNameValue SetNameValuePair(string name, object value)
-        {
-            return new eNameValue { name = name, value = value };
+            return new NameValue { name = name, value = value };
         }       
 
-        public static string GetAttendeeList(string id)
+        /// <summary>
+        /// Perform a get_server_info call, and return the result.
+        /// </summary>
+        /// <returns>the result of the get_server_info call.</returns>
+        public static RESTObjects.ServerInfo GetServerInfo()
         {
-            EnsureLoggedIn();
-            string _result = "";
             object data = new
             {
-                @session = SuiteCRMUserSession.id,
-                @module_name = "Meetings",
-                @module_id = id,
-                @link_field_name = "contacts",
-                @related_fields = new string[] { "email1" }
-                /*,
-                @related_module_link_name_to_fields_array = new object[] {new object[]{
-                    new {@name = "employees", @value=new string[]{"email1"}}
-                } }*/
+                @session = SuiteCRMUserSession.id
             };
-            _result = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_relationships", data);                
-            return _result;
+
+            return SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.ServerInfo>("get_server_info", data);
         }
         
-        public static eGetEntryListResult GetEntryList(string module, string query, int limit, string order_by, int offset, bool GetDeleted, string[] fields)
+        public static EntryList GetEntryList(string module, string query, int limit, string order_by, int offset, bool GetDeleted, string[] fields)
         {
             EnsureLoggedIn();
-            eGetEntryListResult _result = new eGetEntryListResult();
+            EntryList result = new EntryList();
             object data = new
             {
                 @session = SuiteCRMUserSession.id,
@@ -490,49 +443,50 @@ namespace SuiteCRMClient
                 @max_results = limit,
                 @deleted = Convert.ToInt32(GetDeleted)
             };
-            _result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eGetEntryListResult>("get_entry_list", data);                
-            if (_result.error != null)
+            result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.EntryList>("get_entry_list", data);                
+            if (result.error != null)
             {
-                throw new Exception(_result.error.description);                    
+                throw new Exception(result.error.description);                    
             }
 
-            if (_result.entry_list != null)
+            if (result.entry_list != null)
             {
                 try
                 {
                     Hashtable hashtable = new Hashtable();
                     int index = 0;
-                    foreach (eEntryValue _value in _result.entry_list)
+                    foreach (EntryValue _value in result.entry_list)
                     {
                         if (!hashtable.Contains(_value.id))
                         {
                             hashtable.Add(_value.id, _value);
                         }
-                        _result.entry_list[index] = null;
+                        result.entry_list[index] = null;
                         index++;
                     }
                     int num2 = 0;
-                    _result.entry_list = null;
-                    _result.entry_list = new eEntryValue[hashtable.Count];
-                    _result.result_count = hashtable.Count;
+                    result.entry_list = null;
+                    result.entry_list = new EntryValue[hashtable.Count];
+                    result.result_count = hashtable.Count;
                     foreach (DictionaryEntry entry in hashtable)
                     {
-                        _result.entry_list[num2] = (eEntryValue)entry.Value;
+                        result.entry_list[num2] = (EntryValue)entry.Value;
                         num2++;
                     }
                 }
                 catch (System.Exception)
                 {
-                    _result.result_count = 0;
+                    result.result_count = 0;
                 }
             }
 
-            return _result;
+            return result;
         }
-        public static string GetValueByKey(eEntryValue entry, string key)
+
+        public static string GetValueByKey(EntryValue entry, string key)
         {
             string str = string.Empty;
-            foreach (eNameValue _value in entry.name_value_list1)
+            foreach (NameValue _value in entry.name_value_list1)
             {
                 if (_value.name == key)
                 {
@@ -547,13 +501,13 @@ namespace SuiteCRMClient
         /// </summary>
         /// <param name="module">the name of the module to query.</param>
         /// <returns>A structure of module's fields data.</returns>
-        public static eModuleFields GetFieldsForModule(string module)
+        public static ModuleFields GetFieldsForModule(string module)
         {
-            eModuleFields result;
+            ModuleFields result;
 
-            if (clsSuiteCRMHelper.moduleFieldsCache.ContainsKey(module))
+            if (RestAPIWrapper.moduleFieldsCache.ContainsKey(module))
             {
-                result = clsSuiteCRMHelper.moduleFieldsCache[module];
+                result = RestAPIWrapper.moduleFieldsCache[module];
             }
             else
             {
@@ -566,12 +520,12 @@ namespace SuiteCRMClient
                         @module_name = module
                     };
 
-                    result = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleFields>("get_module_fields", data);
-                    clsSuiteCRMHelper.moduleFieldsCache[module] = result;
+                    result = SuiteCRMUserSession.RestServer.GetCrmResponse<ModuleFields>("get_module_fields", data);
+                    RestAPIWrapper.moduleFieldsCache[module] = result;
                 }
                 else
                 {
-                    result = new eModuleFields();
+                    result = new ModuleFields();
                 }
             }
 
@@ -582,7 +536,7 @@ namespace SuiteCRMClient
         {
             List<string> list = new List<string>();
 
-            foreach (eField field in GetFieldsForModule(module).moduleFields)
+            foreach (Field field in GetFieldsForModule(module).moduleFields)
             {
                 list.Add(field.name);
             }
@@ -598,7 +552,7 @@ namespace SuiteCRMClient
         {
             List<string> list = new List<string>();
 
-            foreach (eField field in GetFieldsForModule(module).moduleFields)
+            foreach (Field field in GetFieldsForModule(module).moduleFields)
             {
                 if (!field.name.EndsWith("_c"))
                 {
@@ -649,11 +603,11 @@ namespace SuiteCRMClient
         /// <param name="module">The name of the module to examine.</param>
         /// <param name="objective">The objective we're seeking in the relationship.</param>
         /// <returns>Its activities link fields.</returns>
-        public static IEnumerable<eField> GetActivitiesLinks(string module, Objective objective)
+        public static IEnumerable<Field> GetActivitiesLinks(string module, Objective objective)
         {
             var linkFields = GetFieldsForModule(module).linkFields;
             var objectiveName = objective.ToString().ToLower();
-            IEnumerable<eField> result = GetSubstringsLinks(linkFields, new List<string>() { "_activities_", objectiveName });
+            IEnumerable<Field> result = GetSubstringsLinks(linkFields, new List<string>() { "_activities_", objectiveName });
 
             if (result.Count() == 0)
             {
@@ -670,7 +624,7 @@ namespace SuiteCRMClient
         /// <param name="linkFields">The link fields to filter.</param>
         /// <param name="substrings">The strings to filter them by.</param>
         /// <returns>The fields whose relationship names contain all of these substrings.</returns>
-        private static IEnumerable<eField> GetSubstringsLinks(IEnumerable<eField> linkFields, IEnumerable<string> substrings)
+        private static IEnumerable<Field> GetSubstringsLinks(IEnumerable<Field> linkFields, IEnumerable<string> substrings)
         {
             return linkFields.Where(l => l.type.Equals("link") && StringContainsAll(l.relationship, substrings));
         }
@@ -718,52 +672,6 @@ namespace SuiteCRMClient
                 return new string[] { "id", "name", "description", "date_start", "date_end", "date_modified", "duration_minutes", "duration_hours" };
             }
             return strArray;
-        }
-
-        public static eSetEntryResult SetAccountsEntry(eNameValue[] Data)
-        {
-            EnsureLoggedIn();
-            object data = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = "Accounts",
-                @name_value_list = Data
-            };
-            eSetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
-            return _result;
-      
-        }
-        public static eSetEntryResult SetOpportunitiesEntry(eNameValue[] Data)
-        {
-            EnsureLoggedIn();
-            object data = new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = "Opportunities",
-                @name_value_list = Data
-            };
-            eSetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<eSetEntryResult>("set_entry", data);
-            return _result;
-
-        }
-
-        public static Hashtable FindAccounts(string val)
-        {
-            Hashtable hashtable = new Hashtable();
-            string query = "accounts.name LIKE '" + val + "%'";
-            eGetEntryListResult _result = GetEntryList("Accounts", query, 200, "date_entered DESC", 0, false, new string[] { "name", "id" });
-            if (_result.result_count > 0)
-            {
-                foreach (eEntryValue _value in _result.entry_list)
-                {
-                    string valueByKey = string.Empty;
-                    string key = string.Empty;
-                    valueByKey = GetValueByKey(_value, "name");
-                    key = GetValueByKey(_value, "id");
-                    hashtable.Add(key, valueByKey);
-                }
-            }
-            return hashtable;
         }
     }
 }
