@@ -131,6 +131,17 @@ namespace SuiteCRMAddIn
         private void Prepare()
         {
             var outlookApp = this.Application;
+
+            /* Attempt to fix 'settings getting wiped' bug 187;
+             * see https://stackoverflow.com/questions/2201819/why-are-persisted-user-settings-not-loaded
+             */ 
+            if (Settings.Default.NeedsUpgrade)
+            {
+                Settings.Default.Upgrade();
+                Settings.Default.NeedsUpgrade = false;
+                Settings.Default.Save();
+            }
+
             OutlookVersion = (OutlookMajorVersion)Convert.ToInt32(outlookApp.Version.Split('.')[0]);
 
             StartLogging();
@@ -247,7 +258,7 @@ namespace SuiteCRMAddIn
                 /* it's possible for both success AND disable to be true (if login to CRM fails); 
                  * but logically if success is false disabel must be true, so this branch should
                  * never be reached. */
-                log.Error($"In ThisAddIn.Run: success is {success}; disable is {disable}; impossible state, disabling.");
+            log.Error($"In ThisAddIn.Run: success is {success}; disable is {disable}; impossible state, disabling.");
             }
         }
 

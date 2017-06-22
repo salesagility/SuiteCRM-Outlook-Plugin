@@ -36,7 +36,7 @@
       <Value Profile="(Default)">False</Value>
     </Setting>
     <Setting Name="EmailCategories" Type="SuiteCRMAddIn.BusinessLogic.EmailCategoriesCollection" Scope="User">
-      <Value Profile="(Default)"></Value>
+      <Value Profile="(Default)" />
     </Setting>
     <Setting Name="ShowCustomModules" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
@@ -79,6 +79,9 @@
     </Setting>
     <Setting Name="RestTimeout" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">300000</Value>
+    </Setting>
+    <Setting Name="NeedsUpgrade" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>
 </SettingsFile>
