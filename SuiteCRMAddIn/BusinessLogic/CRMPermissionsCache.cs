@@ -51,7 +51,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// A cache, by module name, of whether we have import to CRM, export from CRM,
         /// of both permissions for the given module.
         /// </summary>
-        private Dictionary<string, SyncDirection.Direction> crmImportExportPermissionsCache =
+        private Dictionary<string, SyncDirection.Direction> cache =
             new Dictionary<string, SyncDirection.Direction>();
 
         /// <summary>
@@ -64,6 +64,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         private ILogger log;
 
+        /// <summary>
+        /// A lock for cache access.
+        /// </summary>
+        /// <see cref="CRMPermissionsCache{OutlookItemType}.HasAccess(string, string)"/>
+        /// <see cref="CRMPermissionsCache{OutlookItemType}.PerformIteration"/> 
+        private object cacheLock = new object();
 
         /// <summary>
         /// Construct a new instance of a permissions cache for this syncrhoniser using this log.
@@ -137,47 +143,68 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Check whether my synchroniser is allowed access to the specified CRM module, with the specified permission.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// Note that, surprisingly, although CRM will report what permissions we have, it will not 
         /// enforce them, so we have to do the honourable thing and not cheat.
+        /// </para>
+        /// <para>
+        /// Note also that the cache is locked here, not in lower level functions. The only other
+        /// place the cache is locked is in PerformIteration, where the cache is flushed.
+        /// </para>
         /// </remarks>
         /// <param name="moduleName">The name of the CRM module being queried.</param>
         /// <param name="permission">The permission sought.</param>
         /// <returns>true if my synchroniser is allowed access to the specified CRM module, with the specified permission.</returns>
+        /// <see cref="CRMPermissionsCache{OutlookItemType}.PerformIteration"/> 
         public bool HasAccess(string moduleName, string permission)
         {
             bool result = false;
-            bool? cached = HasCachedAccess(moduleName, permission);
 
-            if (cached != null)
+            lock (this.cacheLock)
             {
-                result = (bool)cached;
-                this.log.Debug("Permissions cache hit");
-            }
-            else
-            {
-                this.log.Debug("Permissions cache miss");
-                try
+                bool? cached = HasCachedAccess(moduleName, permission);
+
+                if (cached != null)
                 {
-                    eModuleList oList = clsSuiteCRMHelper.GetModules();
-                    bool canExport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
-                        ?.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)
-                        ?.access ?? false;
-                    bool canImport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
-                        ?.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)
-                        ?.access ?? false;
-                        
-                    CacheAccessPermission(moduleName, ExportPermissionToken, canExport);
-                    CacheAccessPermission(moduleName, ImportPermissionToken, canImport);
-
-                    Log.Debug($"Cached {this.crmImportExportPermissionsCache[moduleName]} permission for {moduleName}");
-
-                    result = (permission == ImportPermissionToken && canImport) ||
-                        (permission == ExportPermissionToken && canExport);
+                    result = (bool)cached;
+                    this.log.Debug($"Permissions cache hit for {moduleName}/{permission}");
                 }
-                catch (Exception)
+                else
                 {
-                    Log.Warn($"Cannot detect access {moduleName}/{permission}");
-                    result = false;
+                    this.log.Debug($"Permissions cache miss for {moduleName}/{permission}");
+                    try
+                    {
+                        eModuleList oList = clsSuiteCRMHelper.GetModules();
+                        bool canExport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
+                            ?.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)
+                            ?.access ?? false;
+                        bool canImport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
+                            ?.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)
+                            ?.access ?? false;
+
+                        CacheAccessPermission(moduleName, ExportPermissionToken, canExport);
+                        CacheAccessPermission(moduleName, ImportPermissionToken, canImport);
+
+                        Log.Debug($"Cached {this.cache[moduleName]} permission for {moduleName}");
+
+                        cached = HasCachedAccess(moduleName, permission);
+
+                        if (cached == null)
+                        {
+                            /* really shouldn't happen - we've just set it! */
+                            Log.Warn($"Cannot detect access {moduleName}/{permission} despite having just set it");
+                            /* not really satisfactory, but unlikely to happen */
+                            result = false;
+                        }
+                        else
+                        {
+                            result = (bool)cached;
+                        }
+                    }
+                    catch (Exception fetchFailed)
+                    {
+                        Log.Error($"Cannot detect access {moduleName}/{permission} because {fetchFailed.Message}", fetchFailed);
+                    }
                 }
             }
 
@@ -197,9 +224,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="allowed">The access that should be granted.</param>
         private void CacheAccessPermission(string moduleName, string direction, bool allowed)
         {
-            if (this.crmImportExportPermissionsCache.ContainsKey(moduleName))
+            if (this.cache.ContainsKey(moduleName))
             {
-                switch (this.crmImportExportPermissionsCache[moduleName])
+                switch (this.cache[moduleName])
                 {
                     case SyncDirection.Direction.Neither:
                         /* shouldn't happen as it would be unwise to cache 'neither' unless 
@@ -211,7 +238,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             /* if we already had export permission and now we have import permission, we have
                              * both. */
-                            this.crmImportExportPermissionsCache[moduleName] = SyncDirection.Direction.BiDirectional;
+                            this.cache[moduleName] = SyncDirection.Direction.BiDirectional;
                         }
                         break;
                     case SyncDirection.Direction.Import:
@@ -219,7 +246,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             /* if we already had import permission and now we have export permission, we have
                              * both. */
-                            this.crmImportExportPermissionsCache[moduleName] = SyncDirection.Direction.BiDirectional;
+                            this.cache[moduleName] = SyncDirection.Direction.BiDirectional;
                         }
                         break;
                 }
@@ -245,7 +272,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (allowed)
             {
-                this.crmImportExportPermissionsCache[moduleName] = direction == ImportPermissionToken ?
+                this.cache[moduleName] = direction == ImportPermissionToken ?
                     SyncDirection.Direction.Import : SyncDirection.Direction.Export;
             }
         }
@@ -262,9 +289,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             bool? result = null;
 
-            if (this.crmImportExportPermissionsCache.ContainsKey(moduleName))
+            if (this.cache.ContainsKey(moduleName))
             {
-                SyncDirection.Direction cachedValue = this.crmImportExportPermissionsCache[moduleName];
+                SyncDirection.Direction cachedValue = this.cache[moduleName];
                 result = (direction == ImportPermissionToken && SyncDirection.AllowOutbound(cachedValue)) ||
                     (direction == ExportPermissionToken && SyncDirection.AllowInbound(cachedValue));
             }
@@ -276,10 +303,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Periodically flush the cache.
         /// </summary>
+        /// <remarks>
+        /// Note that the cache is also locked in HasAccess.
+        /// </remarks>
+        /// <see cref="CRMPermissionsCache{OutlookItemType}.HasAccess(string, string)"/> 
         internal override void PerformIteration()
         {
             Log.Info("Flushing permissions cache");
-            crmImportExportPermissionsCache = new Dictionary<string, SyncDirection.Direction>();
+            lock (this.cacheLock)
+            {
+                cache = new Dictionary<string, SyncDirection.Direction>();
+            }
         }
     }
 }
