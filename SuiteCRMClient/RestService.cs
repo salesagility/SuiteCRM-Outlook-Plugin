@@ -20,7 +20,6 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-
 namespace SuiteCRMClient
 {
     using Newtonsoft.Json;

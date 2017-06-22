@@ -20,16 +20,21 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMClient
 {
-    using Newtonsoft.Json;
-
-    public class eReturnNoteAttachment
+    public class CrmEntity
     {
-       [JsonProperty("error")]
-       public ErrorValue error { get; set; }
-       [JsonProperty("note_attachment")]
-       public SuiteCRMClient.RESTObjects.NoteAttachment note_attachment { get; set; }
+        private readonly string _moduleName;
+        private readonly string _entityId;
 
+        public CrmEntity(string moduleName, string entityId)
+        {
+            _moduleName = moduleName;
+            _entityId = entityId;
+        }
+
+        public string ModuleName { get { return _moduleName; } }
+
+        public string EntityId { get { return _entityId; } }
     }
 }

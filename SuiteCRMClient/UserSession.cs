@@ -29,6 +29,7 @@ namespace SuiteCRMClient
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System.Runtime.CompilerServices;
+    using Exceptions;
 
     public class UserSession
     {
