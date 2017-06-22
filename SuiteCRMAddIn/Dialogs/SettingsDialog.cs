@@ -337,6 +337,12 @@ namespace SuiteCRMAddIn.Dialogs
                 {
                     txtLDAPAuthenticationKey.Text = null;
                 }
+
+                /* save settings before, and regardless of, test that login succeeds. 
+                 * Otherwise in cases where login is impossible (e.g. network failure) 
+                 * settings get lost. See bug #187 */
+                this.SaveSettings();
+
                 Globals.ThisAddIn.SuiteCRMUserSession =
                     new SuiteCRMClient.UserSession(
                         txtURL.Text.Trim(),
@@ -354,9 +360,6 @@ namespace SuiteCRMAddIn.Dialogs
                     this.DialogResult = DialogResult.None;
                     return;
                 }
-                Properties.Settings.Default.Host = txtURL.Text.Trim();
-                Properties.Settings.Default.Username = txtUsername.Text.Trim();
-                Properties.Settings.Default.Password = txtPassword.Text.Trim();
             }
             catch (Exception ex)
             {
@@ -367,6 +370,21 @@ namespace SuiteCRMAddIn.Dialogs
                 return;
             }
 
+            clsSuiteCRMHelper.FlushUserIdCache();
+
+            base.Close();
+
+            this.SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Save all settings from their current values in the dialog.
+        /// </summary>
+        private void SaveSettings()
+        {
+            Properties.Settings.Default.Host = txtURL.Text.Trim();
+            Properties.Settings.Default.Username = txtUsername.Text.Trim();
+            Properties.Settings.Default.Password = txtPassword.Text.Trim();
             Properties.Settings.Default.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked;
             Properties.Settings.Default.LDAPKey = txtLDAPAuthenticationKey.Text.Trim();
 
@@ -403,17 +421,11 @@ namespace SuiteCRMAddIn.Dialogs
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 
             Properties.Settings.Default.Save();
-            Properties.Settings.Default.Reload();
-
-            clsSuiteCRMHelper.FlushUserIdCache();
-
-            base.Close();
-
-            this.SettingsChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            Properties.Settings.Default.Reload();
             base.Close();
         }
 
