@@ -26,7 +26,6 @@ namespace SuiteCRMAddIn.Daemon
     using BusinessLogic;
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
-    using System.Collections.Generic;
     using System.Linq;
 
     /// <summary>

@@ -28,9 +28,7 @@ namespace SuiteCRMClient
     using RESTObjects;
     using System.Collections;
     using System.Linq;
-    using Exceptions;
     using Logging;
-    using Email;
 
     /// <summary>
     /// A class which comprises wrappers for calls in the REST API, which return objects

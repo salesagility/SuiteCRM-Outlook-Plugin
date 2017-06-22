@@ -1,10 +1,8 @@
 ﻿
 namespace SuiteCRMAddIn.ProtoItems
-{ 
+{
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
-    using System;
-    using System.Collections.Generic;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>

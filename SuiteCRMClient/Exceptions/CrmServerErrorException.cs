@@ -23,7 +23,6 @@
 namespace SuiteCRMClient.Exceptions
 {
     using System;
-    using System.Runtime.Serialization;
     using SuiteCRMClient.RESTObjects;
 
     /// <summary>

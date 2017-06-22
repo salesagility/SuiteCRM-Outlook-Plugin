@@ -51,7 +51,7 @@ namespace SuiteCRMAddIn.ProtoItems
 
             if (oItem.Body != null)
             {
-                body = oItem.Body.ToString();
+                body = oItem.Body;
                 var times = this.ParseTimesFromTaskBody(body);
                 if (times != null)
                 {

@@ -22,7 +22,6 @@
  */
 namespace SuiteCRMClient
 {
-    using Logging;
     using RESTObjects;
     using System;
     using System.Globalization;

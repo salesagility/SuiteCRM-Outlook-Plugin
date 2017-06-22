@@ -28,7 +28,6 @@ using System.Windows.Forms;
 using SuiteCRMClient;
 using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
-using System.Collections.Specialized;
 using SuiteCRMAddIn.BusinessLogic;
 
 namespace SuiteCRMAddIn.Dialogs

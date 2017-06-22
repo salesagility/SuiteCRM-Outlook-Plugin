@@ -28,7 +28,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System;
-    using System.Linq;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Text;

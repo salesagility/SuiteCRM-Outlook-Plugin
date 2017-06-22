@@ -22,7 +22,6 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using System;
     using SuiteCRMAddIn.ProtoItems;
     using Outlook = Microsoft.Office.Interop.Outlook;
 

@@ -22,7 +22,6 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using Daemon;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Exceptions;
@@ -31,8 +30,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Runtime.InteropServices;
-    using System.Threading;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using SuiteCRMAddIn.Extensions;
 

@@ -32,7 +32,6 @@ namespace SuiteCRMAddIn.Dialogs
     using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
-    using System.Collections.Specialized;
     using System.Data;
     using System.Linq;
     using System.Text;

@@ -24,7 +24,6 @@ namespace SuiteCRMClient.Email
 {
     using System;
     using System.Collections.Generic;
-    using System.Collections;
     using SuiteCRMClient.Logging;
 
     /// <summary>
