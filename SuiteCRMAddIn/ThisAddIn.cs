@@ -28,11 +28,10 @@ namespace SuiteCRMAddIn
     using Daemon;
     using Dialogs;
     using Microsoft.Office.Core;
+    using NGettext;
     using SuiteCRMAddIn.Properties;
-    using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
-    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -42,7 +41,6 @@ namespace SuiteCRMAddIn
     using System.Windows.Forms;
     using Office = Microsoft.Office.Core;
     using Outlook = Microsoft.Office.Interop.Outlook;
-    using NGettext;
 
     public partial class ThisAddIn
     {
