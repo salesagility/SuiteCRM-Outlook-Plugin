@@ -100,10 +100,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         public Synchroniser(string threadName, SyncContext context) : base(threadName, context.Log)
         {
             this.context = context;
-            InstallEventHandlers();
+            this.InstallEventHandlers();
             this.AddSuiteCrmOutlookCategory();
             this.permissionsCache = new CRMPermissionsCache<OutlookItemType>(this, context.Log);
-            GetOutlookItems(this.GetDefaultFolder());
+            this.GetOutlookItems(this.GetDefaultFolder());
         }
 
 
@@ -251,8 +251,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmModule">The type of items to resolve.</param>
         protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve, string crmModule)
         {
-            var toDeleteFromOutlook = itemsToResolve.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
-            var toCreateOnCrmServer = itemsToResolve.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
+            List<SyncState<OutlookItemType>> itemsCopy = new List<SyncState<OutlookItemType>>();
+            itemsCopy.AddRange(itemsToResolve);
+
+            var toDeleteFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
+            var toCreateOnCrmServer = itemsCopy.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
 
             foreach (var syncState in toDeleteFromOutlook)
             {
@@ -403,10 +406,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
 
-                        if (syncState != null)
-                        {
-                            syncState.SetTransmitted();
-                        }
+                        syncState.SetTransmitted();
 
                         result = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
                         if (!string.IsNullOrEmpty(result))

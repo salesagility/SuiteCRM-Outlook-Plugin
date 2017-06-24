@@ -605,15 +605,13 @@ namespace SuiteCRMClient
         {
             var linkFields = GetFieldsForModule(module).linkFields;
             var objectiveName = objective.ToString().ToLower();
-            IEnumerable<Field> result = GetSubstringsLinks(linkFields, new List<string>() { "_activities_", objectiveName });
 
-            if (result.Count() == 0)
-            {
-                /* failed to find a relationship with both _activities_ and the objective */
-                result = GetSubstringsLinks(linkFields, new List<string>() { objectiveName });
-            }
+            List<Field> activitiesFields = new List<Field>();
+            activitiesFields.AddRange(GetSubstringsLinks(linkFields, new List<string>() { "_activities_", objectiveName }));
 
-            return result;
+            return activitiesFields.Any() ? 
+                activitiesFields : 
+                GetSubstringsLinks(linkFields, new List<string>() { objectiveName });
         }
 
         /// <summary>
@@ -635,9 +633,9 @@ namespace SuiteCRMClient
         /// <returns>true if this target contains all these substrings.</returns>
         private static bool StringContainsAll(string target, IEnumerable<string> substrings)
         {
-            return string.IsNullOrEmpty(target) ?
-                false :
-                substrings.Where(s => target.Contains(s)).Count() == substrings.Count();
+            List<string> subs = new List<string>();
+            subs.AddRange(substrings);
+            return !string.IsNullOrEmpty(target) && subs.Count(s => target.Contains(s)) == subs.Count();
         }
 
         /// <remarks>

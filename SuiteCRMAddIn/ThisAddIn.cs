@@ -30,8 +30,10 @@ namespace SuiteCRMAddIn
     using Microsoft.Office.Core;
     using NGettext;
     using SuiteCRMAddIn.Properties;
+    using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
     using System.Linq;

@@ -309,9 +309,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <see cref="CRMPermissionsCache{OutlookItemType}.HasAccess(string, string)"/> 
         internal override void PerformIteration()
         {
-            Log.Info("Flushing permissions cache");
             lock (this.cacheLock)
             {
+                Log.Info("Flushing permissions cache");
                 cache = new Dictionary<string, SyncDirection.Direction>();
             }
         }

@@ -57,7 +57,6 @@
     <Compile Include="BusinessLogic\LicenceValidationHelperTests.cs" />
     <Compile Include="BusinessLogic\SyncDirectionTests.cs" />
     <Compile Include="AbstractWithCrmConnectionTest.cs" />
-    <Compile Include="Daemon\FetchEmailCategoriesActionTests.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -86,6 +85,9 @@
       <Generator>PublicSettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Daemon\" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

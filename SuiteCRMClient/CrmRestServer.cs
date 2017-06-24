@@ -20,6 +20,9 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using System.Diagnostics;
+
 namespace SuiteCRMClient
 {
     using Exceptions;
@@ -177,21 +180,25 @@ namespace SuiteCRMClient
         {
             using (var response = request.GetResponse() as HttpWebResponse)
             {
+                Debug.Assert(response != null, "response != null");
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
                     throw new Exception($"{response.StatusCode} {response.StatusDescription} from {response.Method} {response.ResponseUri}");
                 }
 
-               return GetStringFromWebResponse(response);
+                return GetStringFromWebResponse(response);
             }
         }
 
         private string GetStringFromWebResponse(HttpWebResponse response)
         {
             using (var input = response.GetResponseStream())
-            using (var reader = new StreamReader(input))
             {
-                return reader.ReadToEnd();
+                Debug.Assert(input != null, "input != null");
+                using (var reader = new StreamReader(input))
+                {
+                    return reader.ReadToEnd();
+                }
             }
         }
 

@@ -63,10 +63,13 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public static EmailAccountsArchiveSettings Combine(IEnumerable<EmailAccountsArchiveSettings> accountSettings)
         {
+            List<EmailAccountsArchiveSettings> settingsCopy = new List<EmailAccountsArchiveSettings>();
+            settingsCopy.AddRange(accountSettings);
+
             var result = new EmailAccountsArchiveSettings();
-            result.AccountsToArchiveInbound = new HashSet<string>(accountSettings.SelectMany(s => s.AccountsToArchiveInbound));
-            result.AccountsToArchiveOutbound = new HashSet<string>(accountSettings.SelectMany(s => s.AccountsToArchiveOutbound));
-            result.SelectedFolderEntryIds = new HashSet<string>(accountSettings.SelectMany(s => s.SelectedFolderEntryIds));
+            result.AccountsToArchiveInbound = new HashSet<string>(settingsCopy.SelectMany(s => s.AccountsToArchiveInbound));
+            result.AccountsToArchiveOutbound = new HashSet<string>(settingsCopy.SelectMany(s => s.AccountsToArchiveOutbound));
+            result.SelectedFolderEntryIds = new HashSet<string>(settingsCopy.SelectMany(s => s.SelectedFolderEntryIds));
             return result;
         }
     }

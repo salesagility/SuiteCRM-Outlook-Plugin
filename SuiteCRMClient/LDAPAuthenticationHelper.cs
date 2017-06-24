@@ -43,9 +43,9 @@ namespace SuiteCRMClient
         /// Construct a new instance of LDAPAuthenticationHelper with these credentials.
         /// </summary>
         /// <param name="username">The username to identify as.</param>
-        /// <param name="password">The password to identify with.</param>
-        /// <param name="key">The ?key?</param>
-        /// <param name="iv">The ?ldapIV? (in practice always "password").</param>
+        /// <param name="password">The pass to identify with.</param>
+        /// <param name="key">The ?ldapKey?</param>
+        /// <param name="iv">The ?ldapIV? (in practice always "pass").</param>
         /// <param name="service">The REST service exposed by the CRM instance.</param>
         public LDAPAuthenticationHelper( string username, string password, string key, string iv, RestService service)
         {
@@ -80,12 +80,12 @@ namespace SuiteCRMClient
         /// <summary>
         /// Construct an encryption algorithm using this key and this ?iv?.
         /// </summary>
-        /// <param name="key">The LDAP key to use.</param>
-        /// <param name="iv">The ?iv? to use (in practice, always "password").</param>
+        /// <param name="ldapKey">The LDAP key to use.</param>
+        /// <param name="pass">The ?iv? to use (in practice, always "pass").</param>
         /// <returns></returns>
-        private SymmetricAlgorithm ConstructEncryptionAlgorithm(string key, string iv)
+        private SymmetricAlgorithm ConstructEncryptionAlgorithm(string ldapKey, string pass)
         {
-            byte[] ldapKeyBuffer = new MD5CryptoServiceProvider().ComputeHash(Encoding.UTF8.GetBytes(key));
+            byte[] ldapKeyBuffer = new MD5CryptoServiceProvider().ComputeHash(Encoding.UTF8.GetBytes(ldapKey));
             StringBuilder ldapKeyBuilder = new StringBuilder();
             foreach (byte b in ldapKeyBuffer)
             {
@@ -95,23 +95,23 @@ namespace SuiteCRMClient
             {
                 Mode = CipherMode.CBC,
                 Key = Encoding.UTF8.GetBytes(ldapKeyBuilder.ToString(0, 0x18)),
-                IV = Encoding.UTF8.GetBytes(iv),
+                IV = Encoding.UTF8.GetBytes(pass),
                 Padding = PaddingMode.Zeros
             };
             return edes;
         }
 
         /// <summary>
-        /// Encrypt this password with this algorithm.
+        /// Encrypt this pass with this algorithm.
         /// </summary>
-        /// <param name="password">The password to encrypt.</param>
+        /// <param name="pass">The password to encrypt.</param>
         /// <param name="algie">The algorithm to encrypt it with.</param>
-        /// <returns>The encrypted password.</returns>
-        private string EncryptPassword(string password, SymmetricAlgorithm algie)
+        /// <returns>The encrypted pass.</returns>
+        private string EncryptPassword(string pass, SymmetricAlgorithm algie)
         {
             byte[] passwordBuffer = algie.CreateEncryptor().TransformFinalBlock(
-                Encoding.UTF8.GetBytes(password), 0,
-                Encoding.UTF8.GetByteCount(password));
+                Encoding.UTF8.GetBytes(pass), 0,
+                Encoding.UTF8.GetByteCount(pass));
             StringBuilder passwordBuilder = new StringBuilder();
 
             foreach (byte b in passwordBuffer)
