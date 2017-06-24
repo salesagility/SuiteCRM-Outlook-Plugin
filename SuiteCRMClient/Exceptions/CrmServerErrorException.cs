@@ -20,17 +20,29 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMClient.Exceptions
 {
-    using Newtonsoft.Json;
+    using System;
+    using SuiteCRMClient.RESTObjects;
 
-    public class eNoteAttachment
+    /// <summary>
+    /// An exception which wraps an ErrorValue object.
+    /// </summary>
+    [Serializable]
+    internal class CrmServerErrorException : Exception
     {
-       [JsonProperty("file")]
-       public string file { get; set; }
-       [JsonProperty("filename")]
-       public string filename { get; set; }
-       [JsonProperty("id")]
-       public string id { get; set; }
+        /// <summary>
+        /// The error as returned by CRM over the JSON link.
+        /// </summary>
+        public readonly ErrorValue Error;
+
+        /// <summary>
+        /// Construct a new instance of CrmServerErrorException.
+        /// </summary>
+        /// <param name="error">The CRM error to wrap.</param>
+        public CrmServerErrorException(ErrorValue error) : base($"CRM Server error {error.number} ({error.name}): {error.description}")
+        {
+            this.Error = error;
+        }
     }
 }

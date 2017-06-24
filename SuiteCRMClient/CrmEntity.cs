@@ -20,25 +20,21 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMClient
 {
-    using Newtonsoft.Json;
-
-    public class eContactDetail
+    public class CrmEntity
     {
-       [JsonProperty("association")]
-       public string association { get; set; }
-       [JsonProperty("email_address")]
-       public string email_address { get; set; }
-       [JsonProperty("id")]
-       public string id { get; set; }
-       [JsonProperty("msi_id")]
-       public string msi_id { get; set; }
-       [JsonProperty("name1")]
-       public string name1 { get; set; }
-       [JsonProperty("name2")]
-       public string name2 { get; set; }
-       [JsonProperty("type")]
-       public string type { get; set; }
+        private readonly string _moduleName;
+        private readonly string _entityId;
+
+        public CrmEntity(string moduleName, string entityId)
+        {
+            _moduleName = moduleName;
+            _entityId = entityId;
+        }
+
+        public string ModuleName { get { return _moduleName; } }
+
+        public string EntityId { get { return _entityId; } }
     }
 }

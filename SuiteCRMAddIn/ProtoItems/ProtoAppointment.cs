@@ -5,7 +5,6 @@ namespace SuiteCRMAddIn.ProtoItems
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
     using System;
-    using System.Collections.Generic;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -34,7 +33,7 @@ namespace SuiteCRMAddIn.ProtoItems
 
             if (organiserProperty == null || string.IsNullOrWhiteSpace(organiserProperty.Value))
             {
-                 this.Organiser = clsSuiteCRMHelper.GetUserId();
+                 this.Organiser = RestAPIWrapper.GetUserId();
             }
             else
             {
@@ -46,18 +45,18 @@ namespace SuiteCRMAddIn.ProtoItems
         {
             NameValueCollection data = new NameValueCollection();
 
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("name", this.Subject));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("description", this.Body));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("location", this.Location));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("date_start", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.Start.ToUniversalTime())));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("date_end", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.End.ToUniversalTime())));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("duration_minutes", (this.Duration % 60).ToString()));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("duration_hours", (this.Duration / 60).ToString()));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", this.Organiser));
+            data.Add(RestAPIWrapper.SetNameValuePair("name", this.Subject));
+            data.Add(RestAPIWrapper.SetNameValuePair("description", this.Body));
+            data.Add(RestAPIWrapper.SetNameValuePair("location", this.Location));
+            data.Add(RestAPIWrapper.SetNameValuePair("date_start", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.Start.ToUniversalTime())));
+            data.Add(RestAPIWrapper.SetNameValuePair("date_end", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.End.ToUniversalTime())));
+            data.Add(RestAPIWrapper.SetNameValuePair("duration_minutes", (this.Duration % 60).ToString()));
+            data.Add(RestAPIWrapper.SetNameValuePair("duration_hours", (this.Duration / 60).ToString()));
+            data.Add(RestAPIWrapper.SetNameValuePair("assigned_user_id", this.Organiser));
 
             if (!string.IsNullOrEmpty(entryId))
             {
-                data.Add(clsSuiteCRMHelper.SetNameValuePair("id", entryId));
+                data.Add(RestAPIWrapper.SetNameValuePair("id", entryId));
             }
 
             return data;

@@ -1,7 +1,5 @@
 ﻿namespace SuiteCRMAddIn.ProtoItems
 {
-    using SuiteCRMClient.RESTObjects;
-
     /// <summary>
     /// A C# proxy for a CRM object.
     /// </summary>

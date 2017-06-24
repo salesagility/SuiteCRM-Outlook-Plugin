@@ -29,7 +29,7 @@ namespace SuiteCRMClient.RESTObjects
     using System.Globalization;
     using System.Linq;
 
-    public class eEntryValue
+    public class EntryValue
     {
         /// <summary>
         /// A map of my names/values.
@@ -64,7 +64,7 @@ namespace SuiteCRMClient.RESTObjects
                 {
                     string strFieldString = objField.ToString();
                     strFieldString = strFieldString.Remove(0, strFieldString.IndexOf('{'));
-                    eNameValue objActualField = JsonConvert.DeserializeObject<eNameValue>(strFieldString, deserialiseSettings);
+                    NameValue objActualField = JsonConvert.DeserializeObject<NameValue>(strFieldString, deserialiseSettings);
                     this.name_value_list1.Add(objActualField);
                     this.map[objActualField.name] = objActualField.value;
                 }

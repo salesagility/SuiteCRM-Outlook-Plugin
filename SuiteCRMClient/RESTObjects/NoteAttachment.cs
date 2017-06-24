@@ -24,17 +24,17 @@ namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    public class eGetEntryListResult
+    /// <remarks>
+    /// I'm deeply suspicious of these pairs of classes, e.g. NoteAttachment and NewNoteAttachment.
+    /// TODO: investigate and, if possible, merge.
+    /// </remarks>
+    public class NoteAttachment
     {
-        [JsonProperty("entry_list")]
-        public eEntryValue[] entry_list { get; set; }
-        [JsonProperty("error")]
-        public eErrorValue error { get; set; }
-        [JsonProperty("field_list")]
-        public eField[] field_list { get; set; }
-        [JsonProperty("next_offset")]
-        public int next_offset { get; set; }
-        [JsonProperty("result_count")]
-        public int result_count { get; set; }
+       [JsonProperty("file")]
+       public string file { get; set; }
+       [JsonProperty("filename")]
+       public string filename { get; set; }
+       [JsonProperty("id")]
+       public string id { get; set; }
     }
 }

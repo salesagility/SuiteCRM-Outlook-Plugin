@@ -32,6 +32,7 @@ namespace SuiteCRMAddIn
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -131,6 +132,17 @@ namespace SuiteCRMAddIn
         private void Prepare()
         {
             var outlookApp = this.Application;
+
+            /* Attempt to fix 'settings getting wiped' bug 187;
+             * see https://stackoverflow.com/questions/2201819/why-are-persisted-user-settings-not-loaded
+             */ 
+            if (Settings.Default.NeedsUpgrade)
+            {
+                Settings.Default.Upgrade();
+                Settings.Default.NeedsUpgrade = false;
+                Settings.Default.Save();
+            }
+
             OutlookVersion = (OutlookMajorVersion)Convert.ToInt32(outlookApp.Version.Split('.')[0]);
 
             StartLogging();
@@ -247,7 +259,7 @@ namespace SuiteCRMAddIn
                 /* it's possible for both success AND disable to be true (if login to CRM fails); 
                  * but logically if success is false disabel must be true, so this branch should
                  * never be reached. */
-                log.Error($"In ThisAddIn.Run: success is {success}; disable is {disable}; impossible state, disabling.");
+            log.Error($"In ThisAddIn.Run: success is {success}; disable is {disable}; impossible state, disabling.");
             }
         }
 
@@ -310,7 +322,7 @@ namespace SuiteCRMAddIn
         private void StartLogging()
         {
             log = Log4NetLogger.FromFilePath("add-in", LogDirPath + "suitecrmoutlook.log", () => GetLogHeader(), Properties.Settings.Default.LogLevel);
-            clsSuiteCRMHelper.SetLog(log);
+            RestAPIWrapper.SetLog(log);
         }
 
         private void LogKeySettings()
@@ -735,6 +747,8 @@ namespace SuiteCRMAddIn
 
                         if (SuiteCRMUserSession.IsLoggedIn)
                         {
+                            LogServerVersion();
+
                             result = true;
                         }
                     }
@@ -765,6 +779,19 @@ namespace SuiteCRMAddIn
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Obtain the server version from the server, if specified, and write it to the log.
+        /// </summary>
+        private void LogServerVersion()
+        {
+            ServerInfo info = RestAPIWrapper.GetServerInfo();
+
+            if (!string.IsNullOrWhiteSpace(info.SuiteCRMVersion))
+            {
+                log.Info($"Connected to an instance of SuiteCRM version {info.SuiteCRMVersion}.");
+            }
         }
 
         public int SelectedEmailCount => Application.ActiveExplorer()?.Selection.Count ?? 0;

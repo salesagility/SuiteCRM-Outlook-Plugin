@@ -27,17 +27,15 @@ namespace SuiteCRMClient.RESTObjects
     using System.Collections.Generic;
     using System.Linq;
 
-    public class eModuleList
+    public class ModuleFields
     {
         [JsonProperty("error")]
-        public eErrorValue error { get; set; }
+        public ErrorValue error { get; set; }
 
-        //[JsonProperty("modules")]
-        public List<module_data> items { get; set; }
+        private JObject module_fieldsField;
+        [JsonProperty("module_fields")]
 
-        private List<JObject> module_fieldsField;
-        [JsonProperty("modules")]
-        public List<JObject> module_fields_object
+        public JObject module_fields_object
         {
             get
             {
@@ -46,54 +44,56 @@ namespace SuiteCRMClient.RESTObjects
             set
             {
                 this.module_fieldsField = value;
-                this.items = new List<module_data>();
+                this.moduleFields = new List<Field>();               
                 foreach (object objField in value.ToArray<object>())
                 {
-                    string strFieldString = objField.ToString();
-                    module_data objActualField = JsonConvert.DeserializeObject<module_data>(strFieldString);
-                    this.items.Add(objActualField);
+                    string fieldSpecification = objField.ToString();
+                    fieldSpecification = fieldSpecification.Remove(0, fieldSpecification.IndexOfAny(new char[] { '{', '[' }));
+                    Field field = JsonConvert.DeserializeObject<Field>(fieldSpecification);
+                    this.moduleFields.Add(field);
                 }
             }
         }
 
-        private List<eField> modules { get; set; }
+        public List<Field> moduleFields { get; set; }
 
-    }
+        private JObject link_fieldsField;
+        [JsonProperty("link_fields")]
 
-    public class module_data
-    {
-        [JsonProperty("module_key")]
-        public string module_key { get; set; }
-        [JsonProperty("module_label")]
-        public string module_label { get; set; }
-
-        public List<module_access> module_acls1 { get; set; }
-
-        private List<JObject> _module_acls;
-        [JsonProperty("acls")]
-        public List<JObject> module_acls
+        public JObject link_fields_object
         {
             get
             {
-                return this._module_acls;
+                return this.link_fieldsField;
             }
             set
             {
-                this._module_acls = value;
-                this.module_acls1 = new List<module_access>();
+                this.link_fieldsField = value;
+                this.linkFields = new List<Field>();
                 foreach (object objField in value.ToArray<object>())
                 {
-                    string strFieldString = objField.ToString();
-                    module_access objActualField = JsonConvert.DeserializeObject<module_access>(strFieldString);
-                    this.module_acls1.Add(objActualField);
+                    string fieldSpecification = objField.ToString();
+                    fieldSpecification = fieldSpecification.Remove(0, fieldSpecification.IndexOf('{'));
+                    Field field = JsonConvert.DeserializeObject<Field>(fieldSpecification);
+                    this.linkFields.Add(field);
                 }
             }
         }
-    }
 
-    public class module_access
-    {
-        public string action { get; set; }
-        public bool access { get; set; }
+        public List<Field> linkFields { get; set; }
+
+        public List<Field> fields
+        {
+            get
+            {
+                List<Field> result = new List<Field>();
+                result.AddRange(this.moduleFields);
+                result.AddRange(this.linkFields);
+                return result;
+            }
+        }
+
+        [JsonProperty("module_name")]
+        public string module_name { get; set; }
     }
 }

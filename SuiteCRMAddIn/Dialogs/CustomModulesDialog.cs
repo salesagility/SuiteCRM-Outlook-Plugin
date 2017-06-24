@@ -28,7 +28,6 @@ using System.Windows.Forms;
 using SuiteCRMClient;
 using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
-using System.Collections.Specialized;
 using SuiteCRMAddIn.BusinessLogic;
 
 namespace SuiteCRMAddIn.Dialogs
@@ -180,7 +179,7 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 try
                 {
-                    clsSuiteCRMHelper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
+                    RestAPIWrapper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
 
                     if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                     {
@@ -208,7 +207,7 @@ namespace SuiteCRMAddIn.Dialogs
         protected void PopulateCustomModulesListView(ListView view, List<string> toIgnore)
         {
             foreach (module_data module in 
-                clsSuiteCRMHelper.GetModulesHavingEmailRelationships()
+                RestAPIWrapper.GetModulesHavingEmailRelationships()
                 .OrderBy(i => i.module_key))
             {
                 if (!toIgnore.Contains(module.module_key))

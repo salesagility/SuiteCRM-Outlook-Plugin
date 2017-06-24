@@ -22,7 +22,6 @@
  */
 namespace SuiteCRMClient
 {
-    using Logging;
     using RESTObjects;
     using System;
     using System.Globalization;
@@ -75,7 +74,7 @@ namespace SuiteCRMClient
                 }
             };
 
-            return service.GetResponse<eSetEntryResult>("login", loginData).id;
+            return service.GetResponse<SetEntryResult>("login", loginData).id;
         }
 
         /// <summary>

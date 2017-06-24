@@ -1,10 +1,8 @@
 ﻿
 namespace SuiteCRMAddIn.ProtoItems
-{ 
+{
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
-    using System;
-    using System.Collections.Generic;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -55,26 +53,26 @@ namespace SuiteCRMAddIn.ProtoItems
         {
             var data = new NameValueCollection();
 
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("email1", Email1Address));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("title", JobTitle));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("phone_work", BusinessTelephoneNumber));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("phone_home", HomeTelephoneNumber));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("phone_mobile", MobileTelephoneNumber));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("phone_fax", BusinessFaxNumber));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("department", Department));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_city", BusinessAddressCity));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_state", BusinessAddressState));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_postalcode", BusinessAddressPostalCode));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_country", BusinessAddressCountry));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("primary_address_street", BusinessAddressStreet));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("description", Body));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("last_name", LastName));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("first_name", FirstName));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("account_name", CompanyName));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("salutation", Title));
+            data.Add(RestAPIWrapper.SetNameValuePair("email1", Email1Address));
+            data.Add(RestAPIWrapper.SetNameValuePair("title", JobTitle));
+            data.Add(RestAPIWrapper.SetNameValuePair("phone_work", BusinessTelephoneNumber));
+            data.Add(RestAPIWrapper.SetNameValuePair("phone_home", HomeTelephoneNumber));
+            data.Add(RestAPIWrapper.SetNameValuePair("phone_mobile", MobileTelephoneNumber));
+            data.Add(RestAPIWrapper.SetNameValuePair("phone_fax", BusinessFaxNumber));
+            data.Add(RestAPIWrapper.SetNameValuePair("department", Department));
+            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_city", BusinessAddressCity));
+            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_state", BusinessAddressState));
+            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_postalcode", BusinessAddressPostalCode));
+            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_country", BusinessAddressCountry));
+            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_street", BusinessAddressStreet));
+            data.Add(RestAPIWrapper.SetNameValuePair("description", Body));
+            data.Add(RestAPIWrapper.SetNameValuePair("last_name", LastName));
+            data.Add(RestAPIWrapper.SetNameValuePair("first_name", FirstName));
+            data.Add(RestAPIWrapper.SetNameValuePair("account_name", CompanyName));
+            data.Add(RestAPIWrapper.SetNameValuePair("salutation", Title));
             data.Add(string.IsNullOrEmpty(entryId) ?
-                clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId()) :
-                clsSuiteCRMHelper.SetNameValuePair("id", entryId));
+                RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()) :
+                RestAPIWrapper.SetNameValuePair("id", entryId));
 
             return data;
         }

@@ -51,7 +51,7 @@ namespace SuiteCRMAddIn.ProtoItems
 
             if (oItem.Body != null)
             {
-                body = oItem.Body.ToString();
+                body = oItem.Body;
                 var times = this.ParseTimesFromTaskBody(body);
                 if (times != null)
                 {
@@ -174,16 +174,16 @@ namespace SuiteCRMAddIn.ProtoItems
         public override NameValueCollection AsNameValues(string entryId)
         {
             var data = new NameValueCollection();
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("name", this.subject));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("description", this.description));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("status", this.status));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("date_due", this.dateDue));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("date_start", this.dateStart));
-            data.Add(clsSuiteCRMHelper.SetNameValuePair("priority", this.priority));
+            data.Add(RestAPIWrapper.SetNameValuePair("name", this.subject));
+            data.Add(RestAPIWrapper.SetNameValuePair("description", this.description));
+            data.Add(RestAPIWrapper.SetNameValuePair("status", this.status));
+            data.Add(RestAPIWrapper.SetNameValuePair("date_due", this.dateDue));
+            data.Add(RestAPIWrapper.SetNameValuePair("date_start", this.dateStart));
+            data.Add(RestAPIWrapper.SetNameValuePair("priority", this.priority));
 
             data.Add(String.IsNullOrEmpty(entryId) ?
-                clsSuiteCRMHelper.SetNameValuePair("assigned_user_id", clsSuiteCRMHelper.GetUserId()) :
-                clsSuiteCRMHelper.SetNameValuePair("id", entryId));
+                RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()) :
+                RestAPIWrapper.SetNameValuePair("id", entryId));
             return data;
         }
 

@@ -22,15 +22,9 @@
  */
 namespace SuiteCRMAddIn.Daemon.Tests
 {
-    using BusinessLogic;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using SuiteCRMAddIn.Daemon;
     using SuiteCRMAddIn.Tests;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Test that FetchEmailCategoriesAction actually fetches some categories.
