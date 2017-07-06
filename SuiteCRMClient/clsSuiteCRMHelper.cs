@@ -80,7 +80,17 @@ namespace SuiteCRMClient
                 {
                     @session = SuiteCRMUserSession.id
                 };
-                modulesCache = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);
+                try
+                {
+                    Log.Debug("Calling get_available_modules...");
+                    modulesCache = SuiteCRMUserSession.RestServer.GetCrmResponse<eModuleList>("get_available_modules", data);
+                    Log.Debug("Successfully called get_available_modules.");
+                }
+                catch (Exception any)
+                {
+                    Log.Error($"Call to get_available_modules failed: {any.Message}");
+                    throw;
+                }
             }
             return modulesCache;             
         }
