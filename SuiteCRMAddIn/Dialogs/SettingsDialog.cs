@@ -190,12 +190,8 @@ namespace SuiteCRMAddIn.Dialogs
                 // Needs work to make it work on Outlook 2010 and below.
                 foreach (Account account in outlookSession.Accounts)
                 {
-                    var name = account.DisplayName;
-                    var store = account.DeliveryStore;
-                    var rootFolder = store.GetRootFolder();
-
-                    var pageControl = AddTabPage(account);
-                    pageControl.LoadSettings(account, settings);
+                    this.Log.Debug($"SettingsDialog: Added email archiving tab for account {account.DisplayName}");
+                    AddTabPage(account).LoadSettings(account, settings);
                 }
             }
         }
