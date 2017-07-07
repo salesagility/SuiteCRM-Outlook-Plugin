@@ -22,13 +22,18 @@
  */
 namespace SuiteCRMClient.RESTObjects
 {
+    using System.Collections.Generic;
     using Newtonsoft.Json;
 
-    public class eSetEntriesDetailResult
+    public class Contacts
     {
-       [JsonProperty("error")]
-       public eErrorValue error { get; set; }
-       [JsonProperty("name_value_lists")]
-       public eNameValue[][] name_value_lists { get; set; }
+        [JsonProperty("entry_list")]
+        public List<Entry> entry_list { get; set; }
+    }
+
+    public class Entry
+    {
+        [JsonProperty("id")]
+        public string id { get; set; }
     }
 }

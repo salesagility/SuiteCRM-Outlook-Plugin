@@ -44,10 +44,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public const string ImportPermissionToken = "import";
 
+
         /// <summary>
         /// The token used by CRM to indicate export permissions.
         /// </summary>
         public const string ExportPermissionToken = "export";
+
 
         /// <summary>
         /// A cache, by module name, of whether we have import to CRM, export from CRM,
@@ -59,6 +61,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </remarks>
         private static Dictionary<string, SyncDirection.Direction> cache =
             new Dictionary<string, SyncDirection.Direction>();
+
+
+        /// <summary>
+        /// The logger I log to.
+        /// </summary>
+        private ILogger log;
 
         /// <summary>
         /// A lock for cache access.
@@ -75,6 +83,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="log">The logger I shall log to.</param>
         public CRMPermissionsCache(string name, ILogger log) : base(name, log)
         {
+            this.log = log;
             this.SyncPeriod = TimeSpan.FromHours(1);
         }
 
@@ -148,7 +157,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                     this.Log.Debug($"Permissions cache miss for {moduleName}/{permission}");
                     try
                     {
-                        eModuleList oList = clsSuiteCRMHelper.GetModules();
+                        AvailableModules oList = RestAPIWrapper.GetModules();
+                        bool canExport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
+                            ?.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)
+                            ?.access ?? false;
+                        bool canImport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
+                            ?.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)
+                            ?.access ?? false;
 
                         this.Log.Debug("Note: we deliberately cache permissions for all named modules whether we're interested in them or not - it's quicker than filtering them");
 

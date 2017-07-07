@@ -20,25 +20,16 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
 namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    public class eSetRelationshipValue
+    public class Relationships
     {
-        [JsonProperty("module1_id")]
-        public string module1_id { get; set; }
-        [JsonProperty("module1")]
-        public string module1 { get; set; }
-        [JsonProperty("module2_id")]
-        public string module2_id { get; set; }
-        [JsonProperty("module2")]
-        public string module2 { get; set; }
-
-        /// <summary>
-        /// Only required if you want to delete a relationsip, in which case set it to 1.
-        /// </summary>
-        [JsonProperty("delete")]
-        public int delete { get; set; } = 0;
+        [JsonProperty("entry_list")]
+        public EntryValue[] entry_list { get; set; }
+        [JsonProperty("relationship_list")]
+        public EntryValue[] relationship_list { get; set; }
     }
 }

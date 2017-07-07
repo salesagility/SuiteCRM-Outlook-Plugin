@@ -22,15 +22,20 @@
  */
 namespace SuiteCRMClient
 {
-    using System;
-    using System.Text;
-    using System.Net;
-    using System.IO;
+    using Exceptions;
     using Newtonsoft.Json;
-    using SuiteCRMClient.Logging;
-    using System.Web;
     using RESTObjects;
+    using SuiteCRMClient.Logging;
+    using System;
+    using System.IO;
+    using System.Net;
+    using System.Text;
+    using System.Web;
 
+    /// <summary>
+    /// Low level communication with the REST server.
+    /// </summary>
+    /// <see cref="RestAPIWrapper"/> 
     public class CrmRestServer
     {
         private readonly JsonSerializer serialiser;
@@ -87,15 +92,15 @@ namespace SuiteCRMClient
         /// <exception cref="CrmServerErrorException">if the response was recognised as an error.</exception>
         private void CheckForCrmError(string jsonResponse)
         {
-            eErrorValue error;
+            ErrorValue error;
             try
             {
-                error = DeserializeJson<eErrorValue>(jsonResponse);
+                error = DeserializeJson<ErrorValue>(jsonResponse);
             }
             catch (JsonSerializationException)
             {
                 // it wasn't recognisable as an error. That's fine!
-                error = new eErrorValue();
+                error = new ErrorValue();
             }
 
             if (error != null && error.IsPopulated())

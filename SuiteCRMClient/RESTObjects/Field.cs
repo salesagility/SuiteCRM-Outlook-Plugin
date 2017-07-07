@@ -20,19 +20,14 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    public class eField
+    public class Field
     {
         [JsonProperty("default_value")]
         public string default_value { get; set; }
@@ -64,12 +59,12 @@ namespace SuiteCRMClient.RESTObjects
                 {
                     foreach (KeyValuePair<string, JToken> entry in ((JObject)value))
                     {
-                        this.Options[entry.Key] = entry.Value.ToObject<eNameValue>();
+                        this.Options[entry.Key] = entry.Value.ToObject<NameValue>();
                     }
                 }
             }
         }
-        public Dictionary<string,RESTObjects.eNameValue> Options = new Dictionary<string, eNameValue>();
+        public Dictionary<string,RESTObjects.NameValue> Options = new Dictionary<string, NameValue>();
 
         [JsonProperty("required")]
         public int required { get; set; }

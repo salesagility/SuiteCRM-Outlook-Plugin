@@ -22,7 +22,6 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using Daemon;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Exceptions;
@@ -31,8 +30,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Runtime.InteropServices;
-    using System.Threading;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using SuiteCRMAddIn.Extensions;
 
@@ -243,8 +240,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public void CreateEmailRelationshipOrFail(string emailId, CrmEntity entity)
         {
-            var success = clsSuiteCRMHelper.TrySetRelationship(
-                new eSetRelationshipValue
+            var success = RestAPIWrapper.TrySetRelationship(
+                new SetRelationshipParams
                 {
                     module2 = "emails",
                     module2_id = emailId,

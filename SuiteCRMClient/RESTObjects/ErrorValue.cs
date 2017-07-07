@@ -23,18 +23,20 @@
 namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
+    using System;
 
-    public class eDocumentRevision
+    public class ErrorValue
     {
-       [JsonProperty("document_name")]
-       public string document_name{ get; set; }
-       [JsonProperty("file")]
-       public string file{ get; set; }
-       [JsonProperty("filename")]
-       public string filename{ get; set; }
-       [JsonProperty("id")]
-       public string id{ get; set; }
-       [JsonProperty("revision")]
-       public string revision{ get; set; }
+        [JsonProperty("name")]
+        public string name { get; set; }
+        [JsonProperty("number")]
+        public string number { get; set; }
+        [JsonProperty("description")]
+        public string description { get; set; }
+
+        public bool IsPopulated()
+        {
+            return !String.IsNullOrEmpty(name) && !String.IsNullOrEmpty(number) && !String.IsNullOrEmpty(description);
+        }
     }
 }

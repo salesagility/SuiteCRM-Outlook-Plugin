@@ -32,7 +32,6 @@ namespace SuiteCRMAddIn
     using System.Text;
     using System.Collections.Generic;
     using log4net.Repository;
-    using System.Windows.Forms;
 
     public class Log4NetLogger: SuiteCRMClient.Logging.AbstractLogger
     {

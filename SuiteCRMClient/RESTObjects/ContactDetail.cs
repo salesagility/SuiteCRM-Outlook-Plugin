@@ -23,20 +23,22 @@
 namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
-    using System;
 
-    public class eErrorValue
+    public class ContactDetail
     {
-        [JsonProperty("name")]
-        public string name { get; set; }
-        [JsonProperty("number")]
-        public string number { get; set; }
-        [JsonProperty("description")]
-        public string description { get; set; }
-
-        public bool IsPopulated()
-        {
-            return !String.IsNullOrEmpty(name) && !String.IsNullOrEmpty(number) && !String.IsNullOrEmpty(description);
-        }
+       [JsonProperty("association")]
+       public string association { get; set; }
+       [JsonProperty("email_address")]
+       public string email_address { get; set; }
+       [JsonProperty("id")]
+       public string id { get; set; }
+       [JsonProperty("msi_id")]
+       public string msi_id { get; set; }
+       [JsonProperty("name1")]
+       public string name1 { get; set; }
+       [JsonProperty("name2")]
+       public string name2 { get; set; }
+       [JsonProperty("type")]
+       public string type { get; set; }
     }
 }

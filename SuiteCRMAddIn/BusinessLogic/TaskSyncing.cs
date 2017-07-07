@@ -164,13 +164,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         // TODO: this is very horrible and should be reworked.
-        protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, string crmType, eEntryValue crmItem)
+        protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, string crmType, EntryValue crmItem)
         {
             SyncState<Outlook.TaskItem> result = null;
 
-            Log.Debug($"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {clsSuiteCRMHelper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
+            Log.Debug($"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {RestAPIWrapper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
 
-            if (clsSuiteCRMHelper.GetUserId() == crmItem.GetValueAsString("assigned_user_id"))
+            if (RestAPIWrapper.GetUserId() == crmItem.GetValueAsString("assigned_user_id"))
             {
                 DateTime date_start = crmItem.GetValueAsDateTime("date_start");
                 DateTime date_due = crmItem.GetValueAsDateTime("date_due");
@@ -208,7 +208,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        private SyncState<Outlook.TaskItem> UpdateExistingOutlookItemFromCrm(eEntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due, SyncState<Outlook.TaskItem> syncStateForItem)
+        private SyncState<Outlook.TaskItem> UpdateExistingOutlookItemFromCrm(EntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due, SyncState<Outlook.TaskItem> syncStateForItem)
         {
             if (!syncStateForItem.IsDeletedInOutlook)
             {
@@ -224,7 +224,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return syncStateForItem;
         }
 
-        private void SetOutlookItemPropertiesFromCrmItem(eEntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due, Outlook.TaskItem olItem)
+        private void SetOutlookItemPropertiesFromCrmItem(EntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due, Outlook.TaskItem olItem)
         {
             try
             {
@@ -270,7 +270,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private SyncState<Outlook.TaskItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, eEntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due)
+        private SyncState<Outlook.TaskItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, EntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due)
         {
             Outlook.TaskItem olItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
             TaskSyncState newState = null;
@@ -306,7 +306,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem, string crmType, string entryId)
         {
-            return clsSuiteCRMHelper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), crmType);
+            return RestAPIWrapper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), crmType);
         }
 
 
@@ -405,7 +405,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.Sensitivity;
         }
 
-        protected override bool IsMatch(Outlook.TaskItem olItem, eEntryValue crmItem)
+        protected override bool IsMatch(Outlook.TaskItem olItem, EntryValue crmItem)
         {
             return olItem.Subject == crmItem.GetValueAsString("name") &&
                 olItem.StartDate.ToUniversalTime() == crmItem.GetValueAsDateTime("date_start").ToUniversalTime();

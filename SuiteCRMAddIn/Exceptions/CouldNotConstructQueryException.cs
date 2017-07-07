@@ -23,7 +23,6 @@
 namespace SuiteCRMAddIn.Exceptions
 {
     using System;
-    using System.Runtime.Serialization;
 
     /// <summary>
     /// An exception thrown if a search query could not be constructed.

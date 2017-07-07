@@ -24,11 +24,11 @@ namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    public class eGetRelationshipsResult
+    public class SetEntryResult
     {
        [JsonProperty("error")]
-       public eErrorValue error { get; set; }
-       [JsonProperty("ids")]
-       public eIdMod[] ids { get; set; }
+       public ErrorValue error { get; set; }
+       [JsonProperty("id")]
+       public string id { get; set; }
     }
 }

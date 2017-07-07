@@ -20,16 +20,21 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-
 namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    public class eGetRelationshipResult
+    /// <remarks>
+    /// I'm deeply suspicious of these pairs of classes, e.g. NoteAttachment and NewNoteAttachment.
+    /// TODO: investigate and, if possible, merge.
+    /// </remarks>
+    public class NewNoteAttachment
     {
-        [JsonProperty("entry_list")]
-        public eEntryValue[] entry_list { get; set; }
-        [JsonProperty("relationship_list")]
-        public eEntryValue[] relationship_list { get; set; }
+        [JsonProperty("id")]
+        public string ID { get; set; }
+        [JsonProperty("filename")]
+        public string FileName { get; set; }
+        [JsonProperty("file")]
+        public byte[] FileCotent { get; set; }
     }
 }
