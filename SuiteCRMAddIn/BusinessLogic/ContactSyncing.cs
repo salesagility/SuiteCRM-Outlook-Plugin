@@ -374,7 +374,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 

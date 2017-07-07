@@ -206,7 +206,7 @@ namespace SuiteCRMAddIn.Dialogs
         /// <param name="toIgnore">Keys of modules to ignore.</param>
         protected void PopulateCustomModulesListView(ListView view, List<string> toIgnore)
         {
-            foreach (module_data module in 
+            foreach (AvailableModule module in 
                 RestAPIWrapper.GetModulesHavingEmailRelationships()
                 .OrderBy(i => i.module_key))
             {
@@ -230,7 +230,7 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         /// <param name="module">The module.</param>
         /// <returns>True if this module is a currently selected custom module.</returns>
-        private bool IsSelectedCustomModule(module_data module)
+        private bool IsSelectedCustomModule(AvailableModule module)
         {
             return Properties.Settings.Default.CustomModules != null &&
                 Properties.Settings.Default.CustomModules.Where(i => i.StartsWith($"{module.module_key}|")).Count() > 0;

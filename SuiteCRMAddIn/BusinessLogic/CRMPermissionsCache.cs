@@ -100,16 +100,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Check whether my synchroniser is allowed export access for its default CRM module.
-        /// </summary>
-        /// <returns>true if my synchroniser is allowed export access for its default CRM module.</returns>
-        public bool HasExportAccess()
-        {
-            return this.HasExportAccess(this.synchroniser.DefaultCrmModule);
-        }
-
-
-        /// <summary>
         /// Check whether my synchroniser is allowed export access for the specified CRM module.
         /// </summary>
         /// <param name="crmModule">The name of the CRM module to check.</param>
@@ -117,16 +107,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         public bool HasExportAccess(string crmModule)
         {
             return this.HasAccess(crmModule, ExportPermissionToken);
-        }
-
-
-        /// <summary>
-        /// Check whether my synchroniser is allowed both import and export access for its default CRM module.
-        /// </summary>
-        /// <returns>true if my synchroniser is allowed both import and export access for its default CRM module.</returns>
-        public bool HasImportExportAccess()
-        {
-            return this.HasImportExportAccess(this.synchroniser.DefaultCrmModule);
         }
 
 
@@ -177,17 +157,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                     this.Log.Debug($"Permissions cache miss for {moduleName}/{permission}");
                     try
                     {
-                        AvailableModules oList = RestAPIWrapper.GetModules();
-                        bool canExport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
-                            ?.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)
-                            ?.access ?? false;
-                        bool canImport = oList.items.FirstOrDefault(a => a.module_label == moduleName)
-                            ?.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)
-                            ?.access ?? false;
-
                         this.Log.Debug("Note: we deliberately cache permissions for all named modules whether we're interested in them or not - it's quicker than filtering them");
 
-                        foreach (module_data item in oList.items)
+                        foreach (AvailableModule item in RestAPIWrapper.GetModules().items)
                         {
                             if (!string.IsNullOrWhiteSpace(item.module_label))
                             {
@@ -361,6 +333,16 @@ namespace SuiteCRMAddIn.BusinessLogic
             base($"PC Permissions cache ${synchroniser.GetType().Name}", log)
         {
             this.synchroniser = synchroniser;
+        }
+
+
+        /// <summary>
+        /// Check whether my synchroniser is allowed import access for its default CRM module.
+        /// </summary>
+        /// <returns>true if my synchroniser is allowed import access for its default CRM module.</returns>
+        public bool HasImportAccess()
+        {
+            return this.HasImportAccess(this.synchroniser.DefaultCrmModule);
         }
 
 

@@ -33,7 +33,7 @@ namespace SuiteCRMClient.RESTObjects
         public ErrorValue error { get; set; }
 
         //[JsonProperty("modules")]
-        public List<module_data> items { get; set; }
+        public List<AvailableModule> items { get; set; }
 
         private List<JObject> module_fieldsField;
         [JsonProperty("modules")]
@@ -46,11 +46,11 @@ namespace SuiteCRMClient.RESTObjects
             set
             {
                 this.module_fieldsField = value;
-                this.items = new List<module_data>();
+                this.items = new List<AvailableModule>();
                 foreach (object objField in value.ToArray<object>())
                 {
                     string strFieldString = objField.ToString();
-                    module_data objActualField = JsonConvert.DeserializeObject<module_data>(strFieldString);
+                    AvailableModule objActualField = JsonConvert.DeserializeObject<AvailableModule>(strFieldString);
                     this.items.Add(objActualField);
                 }
             }
@@ -60,7 +60,7 @@ namespace SuiteCRMClient.RESTObjects
 
     }
 
-    public class module_data
+    public class AvailableModule
     {
         [JsonProperty("module_key")]
         public string module_key { get; set; }

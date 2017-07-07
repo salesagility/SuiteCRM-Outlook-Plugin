@@ -241,7 +241,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 };
 
                 ItemsSyncState.Add(newState);
-                olItem.Save();
+                this.SaveItem(olItem);
 
                 LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
                 if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
@@ -257,8 +257,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
-                LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook, saved item");
+                this.SaveItem(olItem);
             }
 
             return newState;
@@ -316,7 +315,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 
@@ -419,7 +418,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 
@@ -799,7 +798,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 
@@ -911,7 +910,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     finally
                     {
-                        olItem.Save();
+                        this.SaveItem(olItem);
                     }
                 }
                 Log.Warn((string)("Not default dResult.date_modified= " + crmItem.GetValueAsString("date_modified")));
@@ -957,7 +956,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 

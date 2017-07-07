@@ -242,7 +242,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 
@@ -294,8 +294,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
-                LogItemAction(olItem, "TaskSyncing.AddNewItemFromCrmToOutlook, saved item");
+                this.SaveItem(olItem);
             }
 
             return newState;

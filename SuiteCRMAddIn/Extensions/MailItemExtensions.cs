@@ -217,7 +217,7 @@ namespace SuiteCRMAddIn.Extensions
         {
             if (olItem.EntryID == null)
             {
-                olItem.Save(); /*  */
+                olItem.Save(); 
             }
 
             return olItem.EntryID;
@@ -361,13 +361,19 @@ namespace SuiteCRMAddIn.Extensions
         /// <param name="propertyValue">The value of the property I should have.</param>
         private static void EnsureProperty(this Outlook.MailItem olItem, string propertyName, string propertyValue)
         {
-            Outlook.UserProperty olProperty = olItem.UserProperties[propertyName];
-            if (olProperty == null)
+            try
             {
-                olProperty = olItem.UserProperties.Add(propertyName, Outlook.OlUserPropertyType.olText);
+                Outlook.UserProperty olProperty = olItem.UserProperties[propertyName];
+                if (olProperty == null)
+                {
+                    olProperty = olItem.UserProperties.Add(propertyName, Outlook.OlUserPropertyType.olText);
+                }
+                olProperty.Value = propertyValue;
             }
-            olProperty.Value = propertyValue;
-            olItem.Save();
+            finally
+            {
+                olItem.Save();
+            }
         }
     }
 }

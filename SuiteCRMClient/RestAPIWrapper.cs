@@ -101,10 +101,10 @@ namespace SuiteCRMClient
         /// Return only those modules which have relationships to the email module.
         /// </summary>
         /// <returns>A list of only those modules which have relationships to the email module.</returns>
-        public static List<module_data> GetModulesHavingEmailRelationships()
+        public static List<AvailableModule> GetModulesHavingEmailRelationships()
         {
-            List<module_data> modules = new List<module_data>();
-            foreach(module_data module in GetModules().items)
+            List<AvailableModule> modules = new List<AvailableModule>();
+            foreach(AvailableModule module in GetModules().items)
             {
                 try
                 {
@@ -615,13 +615,15 @@ namespace SuiteCRMClient
         {
             var linkFields = GetFieldsForModule(module).linkFields;
             var objectiveName = objective.ToString().ToLower();
+            IEnumerable<Field> result = GetSubstringsLinks(linkFields, new List<string>() { "_activities_", objectiveName });
 
-            List<Field> activitiesFields = new List<Field>();
-            activitiesFields.AddRange(GetSubstringsLinks(linkFields, new List<string>() { "_activities_", objectiveName }));
+            if (result.Count() == 0)
+            {
+                /* failed to find a relationship with both _activities_ and the objective */
+                result = GetSubstringsLinks(linkFields, new List<string>() { objectiveName });
+            }
 
-            return activitiesFields.Any() ? 
-                activitiesFields : 
-                GetSubstringsLinks(linkFields, new List<string>() { objectiveName });
+            return result;
         }
 
         /// <summary>
@@ -643,9 +645,9 @@ namespace SuiteCRMClient
         /// <returns>true if this target contains all these substrings.</returns>
         private static bool StringContainsAll(string target, IEnumerable<string> substrings)
         {
-            List<string> subs = new List<string>();
-            subs.AddRange(substrings);
-            return !string.IsNullOrEmpty(target) && subs.Count(s => target.Contains(s)) == subs.Count();
+            return string.IsNullOrEmpty(target) ?
+                false :
+                substrings.Where(s => target.Contains(s)).Count() == substrings.Count();
         }
 
         /// <remarks>
