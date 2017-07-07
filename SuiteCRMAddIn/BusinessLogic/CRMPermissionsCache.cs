@@ -100,6 +100,16 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
+        /// Check whether my synchroniser is allowed export access for its default CRM module.
+        /// </summary>
+        /// <returns>true if my synchroniser is allowed export access for its default CRM module.</returns>
+        public bool HasExportAccess()
+        {
+            return this.HasExportAccess(this.synchroniser.DefaultCrmModule);
+        }
+
+
+        /// <summary>
         /// Check whether my synchroniser is allowed export access for the specified CRM module.
         /// </summary>
         /// <param name="crmModule">The name of the CRM module to check.</param>
@@ -107,6 +117,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         public bool HasExportAccess(string crmModule)
         {
             return this.HasAccess(crmModule, ExportPermissionToken);
+        }
+
+
+        /// <summary>
+        /// Check whether my synchroniser is allowed both import and export access for its default CRM module.
+        /// </summary>
+        /// <returns>true if my synchroniser is allowed both import and export access for its default CRM module.</returns>
+        public bool HasImportExportAccess()
+        {
+            return this.HasImportExportAccess(this.synchroniser.DefaultCrmModule);
         }
 
 

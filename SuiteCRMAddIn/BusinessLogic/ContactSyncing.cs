@@ -452,7 +452,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
         /// <returns>The id of the entry added o</returns>
-        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.ContactItem> syncState, string crmType, string entryId = null)
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.ContactItem> syncState, string crmType, string entryId = "")
         {
             string result = entryId;
             var olItem = syncState.OutlookItem;

@@ -60,12 +60,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                return this.underlying[index];
+                lock (this.padlock)
+                {
+                    return this.underlying[index];
+                }
             }
 
             set
             {
-                this.underlying[index] = value;
+                lock (this.padlock)
+                {
+                    this.underlying[index] = value;
+                }
             }
         }
 
@@ -73,17 +79,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                return this.underlying.Count;
+                lock (this.padlock)
+                {
+                    return this.underlying.Count;
+                }
             }
         }
 
-        public bool IsReadOnly
-        {
-            get
-            {
-                return false;
-            }
-        }
+        public bool IsReadOnly => false;
 
         public void Add(T item)
         {
@@ -176,7 +179,10 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public void RemoveAt(int index)
         {
-            this.underlying.RemoveAt(index);
+            lock (this.padlock)
+            {
+                this.underlying.RemoveAt(index);
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()

@@ -21,6 +21,8 @@
  * @author SalesAgility <info@salesagility.com>
  */
 
+using System.Diagnostics;
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using ProtoItems;
@@ -296,14 +298,17 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         preferredVersion = outlookVersion;
                     }
-                    else if (olPropertyModified != null &&
-                        ParseDateTimeFromUserProperty(olPropertyModified.Value.ToString()) > crmItem.GetValueAsDateTime("date_modified"))
-                    {
-                        preferredVersion = outlookVersion;
-                    }
                     else
                     {
-                        preferredVersion = crmVersion;
+                        if (olPropertyModified != null &&
+                            ParseDateTimeFromUserProperty(olPropertyModified.Value.ToString()) > crmItem.GetValueAsDateTime("date_modified"))
+                        {
+                            preferredVersion = outlookVersion;
+                        }
+                        else
+                        {
+                            preferredVersion = crmVersion;
+                        }
                     }
 
                     olItem.Body = $"{preferredVersion}\n\n{this.AcceptDeclineLinks(crmItem)}";
@@ -618,7 +623,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="folder">The folder to synchronise into.</param>
         /// <param name="crmType">The CRM type of the candidate item.</param>
-        /// <param name="candidateItem">The candidate item from CRM.</param>
+        /// <param name="crmItem">The candidate item from CRM.</param>
         /// <returns>The synchronisation state of the item updated (if it was updated).</returns>
         protected override SyncState<Outlook.AppointmentItem> AddOrUpdateItemFromCrmToOutlook(
             Outlook.MAPIFolder folder,
@@ -653,7 +658,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, syncState);
                 }
 
-                result.OutlookItem.Save();
+                result?.OutlookItem.Save();
             }
 
             return result;
@@ -939,9 +944,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olItem.Location = crmItem.GetValueAsString("location");
                     olItem.End = olItem.Start;
                     if (hours > 0)
+                    {
                         olItem.End.AddHours(hours);
+                    }
                     if (minutes > 0)
+                    {
                         olItem.End.AddMinutes(minutes);
+                    }
                     SetRecipients(olItem, crmItem.GetValueAsString("id"), crmType);
                 }
                 olItem.Duration = minutes + hours * 60;

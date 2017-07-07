@@ -242,7 +242,7 @@ namespace SuiteCRMClient.Email
             {
                 try
                 {
-                    BindAttachmentInCRM(emailResult.id,
+                    BindAttachmentInCrm(emailResult.id,
                         TransmitAttachmentPacket(ConstructAttachmentPacket(attachment)).id);
                 }
                 catch (Exception any)
@@ -281,27 +281,28 @@ namespace SuiteCRMClient.Email
         /// <returns>A packet which, when transmitted to CRM, will instantiate my email.</returns>
         private object ConstructPacket(string htmlBody)
         {
-            List<RESTObjects.NameValue> emailData = new List<RESTObjects.NameValue>();
-            emailData.Add(new RESTObjects.NameValue() { name = "from_addr", value = this.From });
-            emailData.Add(new RESTObjects.NameValue() { name = "to_addrs", value = this.To.Replace("\n", "") });
-            emailData.Add(new RESTObjects.NameValue() { name = "name", value = this.Subject });
-            emailData.Add(new RESTObjects.NameValue() { name = "date_sent", value = this.Sent.ToString(EmailDateFormat) });
-            emailData.Add(new RESTObjects.NameValue() { name = "description", value = this.Body });
-            emailData.Add(new RESTObjects.NameValue() { name = "description_html", value = htmlBody });
-            emailData.Add(new RESTObjects.NameValue() { name = "assigned_user_id", value = RestAPIWrapper.GetUserId() });
-            emailData.Add(new RESTObjects.NameValue() { name = "status", value = "archived" });
-            emailData.Add(new RESTObjects.NameValue() { name = "category_id", value = this.Category });
+            List<RESTObjects.NameValue> emailData = new List<RESTObjects.NameValue>
+            {
+                new RESTObjects.NameValue() {name = "from_addr", value = this.From},
+                new RESTObjects.NameValue() {name = "to_addrs", value = this.To.Replace("\n", "")},
+                new RESTObjects.NameValue() {name = "name", value = this.Subject},
+                new RESTObjects.NameValue() {name = "date_sent", value = this.Sent.ToString(EmailDateFormat)},
+                new RESTObjects.NameValue() {name = "description", value = this.Body},
+                new RESTObjects.NameValue() {name = "description_html", value = htmlBody},
+                new RESTObjects.NameValue() {name = "assigned_user_id", value = RestAPIWrapper.GetUserId()},
+                new RESTObjects.NameValue() {name = "status", value = "archived"},
+                new RESTObjects.NameValue() {name = "category_id", value = this.Category}
+            };
 
-            object contactData = new
+            return new
             {
                 @session = SuiteCRMUserSession.id,
                 @module_name = "Emails",
                 @name_value_list = emailData
             };
-            return contactData;
         }
 
-        private void BindAttachmentInCRM(string emailId, string attachmentId)
+        private void BindAttachmentInCrm(string emailId, string attachmentId)
         {
             //Relate the email and the attachment
             SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship",

@@ -1,0 +1,273 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2017-06-21 11:12+0100\n"
+"PO-Revision-Date: 2017-06-21 11:24+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.0.2\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:108
+#, fuzzy
+msgid "Licence key was not yet set up"
+msgstr "Clé de licence n’est pas encore configuré"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:184
+#, fuzzy
+msgid "Archive"
+msgstr "Archive"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:189
+#, fuzzy
+msgid "Archive selected emails to SuiteCRM"
+msgstr "Archiver les emails sélectionnés pour SuiteCRM"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:193
+#, fuzzy
+msgid "Settings"
+msgstr "Paramètres"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:197
+#, fuzzy
+msgid "SuiteCRM Settings"
+msgstr "Paramètres de SuiteCRM"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:217
+#, fuzzy
+msgid "Licence verified..."
+msgstr "Licence vérifié..."
+
+#: SuiteCRMAddIn/ThisAddIn.cs:223
+#, fuzzy
+msgid "Authentication succeeded..."
+msgstr "L’authentification a réussi..."
+
+#: SuiteCRMAddIn/ThisAddIn.cs:227 SuiteCRMAddIn/ThisAddIn.cs:433
+#, fuzzy
+msgid "Login to CRM failed"
+msgstr "Échec de la connexion à CRM"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:228
+#, fuzzy
+msgid ""
+"User chose to disable add-in after licence check succeeded but login to CRM "
+"failed."
+msgstr ""
+"L’utilisateur a choisi de désactiver le composant logiciel enfichable après "
+"vérification de licence a réussi, mais échec de la connexion à CRM."
+
+#: SuiteCRMAddIn/ThisAddIn.cs:233 SuiteCRMAddIn/ThisAddIn.cs:440
+#, fuzzy
+msgid "Licence check failed"
+msgstr "Échec de la vérification !"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:234
+#, fuzzy
+msgid "User chose to disable add-in after licence check failed."
+msgstr ""
+"L’utilisateur a choisi de désactiver le composant logiciel enfichable après "
+"que vérification de la licence a échoué."
+
+#: SuiteCRMAddIn/ThisAddIn.cs:240
+#, fuzzy
+msgid "Starting normal operations."
+msgstr "Mise en service normal."
+
+#: SuiteCRMAddIn/ThisAddIn.cs:248
+#, fuzzy
+msgid "Disabling addin at user request"
+msgstr "Désactiver le complément à la demande de l’utilisateur"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:258
+#, fuzzy, csharp-format
+msgid "In {0}: success is {1}; disable is {2}; impossible state, disabling."
+msgstr ""
+"Dans {0} : le succès est {1} ; Disable est {2} ; État de l’impossible, la "
+"désactivation."
+
+#: SuiteCRMAddIn/ThisAddIn.cs:269
+#, fuzzy
+msgid "Disabling add-in"
+msgstr "Désactivation de composant logiciel enfichable"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:276
+#, fuzzy, csharp-format
+msgid "{0}: Disabling instance {1} of addin {2}"
+msgstr "{0} : désactivation d’instance {1} d’addin {2}"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:281
+#, fuzzy, csharp-format
+msgid "{0}: Ignoring addin {1}"
+msgstr "{0} : ignorant addin {1}"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:302
+#, fuzzy
+msgid "User chose to reconfigure add-in"
+msgstr "L’utilisateur a choisi de reconfigurer composant logiciel enfichable"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:307
+#, fuzzy
+msgid "User chose to disable add-in"
+msgstr "L’utilisateur a choisi de désactiver le composant logiciel enfichable"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:311
+#, fuzzy
+msgid "Unexpected response from ReconfigureOrDisableDialog"
+msgstr "Réponse inattendue de ReconfigureOrDisableDialog"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:343
+#, fuzzy, csharp-format
+msgid "{0} v{1} in Outlook version {2}"
+msgstr ""
+"version\n"
+" de {0} {1} dans Outlook version {2}"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:348
+#, fuzzy, csharp-format
+msgid "Exception {0} '{1}' while printing log header"
+msgstr "Exception {0} « {1} » tout en en-tête du journal d’impression"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:356
+#, fuzzy
+msgid "Auto-archiving: "
+msgstr "Archivage:"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:357
+#, fuzzy
+msgid "ON"
+msgstr "ACTIVE"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:357
+#, fuzzy
+msgid "off"
+msgstr "désactivé"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:358
+#, fuzzy, csharp-format
+msgid "Logging level: {0}"
+msgstr "Niveau de journalisation: {0}"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:375
+#, fuzzy
+msgid "Starting appointments synchroniser"
+msgstr "À partir de synchroniser des nominations"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:376
+#, fuzzy
+msgid "Starting contacts synchroniser"
+msgstr "À partir de synchroniser contacts"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:377
+#, fuzzy
+msgid "Starting tasks synchroniser"
+msgstr "À partir de synchroniser des tâches"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:378
+#, fuzzy
+msgid "Starting email archiver"
+msgstr "Archiveur de courrier départ"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:454
+#, fuzzy, csharp-format
+msgid "{0}: signalled to quit."
+msgstr "{0} : signalée d’arrêter."
+
+#: SuiteCRMAddIn/ThisAddIn.cs:458 SuiteCRMAddIn/ThisAddIn.cs:474
+#, fuzzy, csharp-format
+msgid "{0}: shutdown complete."
+msgstr "{0} : arrêt complet."
+
+#: SuiteCRMAddIn/ThisAddIn.cs:470
+#, fuzzy, csharp-format
+msgid "{0}: shutting down normally."
+msgstr "{0} : fermer normalement."
+
+#: SuiteCRMAddIn/ThisAddIn.cs:486
+#, fuzzy, csharp-format
+msgid "{0}: Removing SuiteCRM command bar"
+msgstr "{0} : enlever la barre de commandes de SuiteCRM"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:522
+#, fuzzy
+msgid "ShutdownProcesses: complete"
+msgstr "ShutdownProcesses : complet"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:530
+#, fuzzy, csharp-format
+msgid "{0}: Removing context menu display event handler"
+msgstr "{0} : suppression contexte menu Affichage événement gestionnaire"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:544
+#, fuzzy, csharp-format
+msgid "{0}: Removing new mail event handler"
+msgstr "{0} : suppression nouveau gestionnaire d’événements courrier"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:561
+#, fuzzy, csharp-format
+msgid "{0}: Removing archive item send event handler"
+msgstr ""
+"{0} : suppression d’élément archive envoyer le gestionnaire d’événements"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:577
+#, fuzzy, csharp-format
+msgid "{0}: Removing archive button click event handler"
+msgstr "{0} : enlever le bouton archive de gestionnaire d’événements click"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:599
+#, fuzzy, csharp-format
+msgid "{0}: Disposing of {1}"
+msgstr "{0} : élimination de {1}"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:604
+#, fuzzy, csharp-format
+msgid "{0}: Failed to dispose of instance of {1}"
+msgstr "{0} : impossible de supprimer l’instance de {1}"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:609
+#, fuzzy, csharp-format
+msgid "{0}: Attempt to dispose of null reference?"
+msgstr "{0} : tenter d’éliminer des référence null ?"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:635
+#, fuzzy
+msgid "SuiteCRM Archive"
+msgstr "SuiteCRM Archive"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:660
+#, fuzzy
+msgid "Outlook ItemSend: email sent event"
+msgstr "ItemSend Outlook : événement e-mail envoyé"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:673
+msgid "ThisAddIn.Application_ItemSend"
+msgstr ""
+
+#: SuiteCRMAddIn/ThisAddIn.cs:679
+#, fuzzy
+msgid "Outlook NewMail: email received event"
+msgstr "Outlook NewMail : événement reçu de courrier électronique"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:692
+msgid "ThisAddIn.Application_NewMail"
+msgstr ""
+
+#: SuiteCRMAddIn/ThisAddIn.cs:700
+#, fuzzy
+msgid "New 'mail item' was null"
+msgstr "Nouveau « envoi postal » avait la valeur null"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:768
+#, fuzzy
+msgid "Failure while trying to authenticate to CRM"
+msgstr "Échec en essayant de s’authentifier sur le CRM"
+
+#: SuiteCRMAddIn/ThisAddIn.cs:769
+#, fuzzy
+msgid "Login failure"
+msgstr "Échec de connexion - {0}"

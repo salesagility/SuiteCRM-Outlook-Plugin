@@ -58,24 +58,29 @@ namespace SuiteCRMAddIn.ProtoItems
                     DateTime utcStart = new DateTime();
                     DateTime utcDue = new DateTime();
                     utcStart = oItem.StartDate.ToUniversalTime();
-                    if (oItem.DueDate != null)
+                    if (oItem.DueDate.ToUniversalTime() > DateTime.MinValue && 
+                        oItem.DueDate.ToUniversalTime() < DateTime.MaxValue)
+                    {
                         utcDue = oItem.DueDate.ToUniversalTime();
+                    }
                     utcDue = utcDue.Add(times[1]);
 
                     //check max date, date must has value !
                     if (utcStart.ToUniversalTime().Year < 4000)
+                    {
                         dateStart = string.Format("{0:yyyy-MM-dd HH:mm:ss}", utcStart.ToUniversalTime());
+                    }
                     if (utcDue.ToUniversalTime().Year < 4000)
                         dateDue = string.Format("{0:yyyy-MM-dd HH:mm:ss}", utcDue.ToUniversalTime());
                 }
                 else
                 {
-                    TakePeriodFromOutlookItem(oItem);
+                    this.TakePeriodFromOutlookItem();
                 }
             }
             else
             {
-                TakePeriodFromOutlookItem(oItem);
+                this.TakePeriodFromOutlookItem();
             }
 
             if (!string.IsNullOrEmpty(body))
@@ -128,10 +133,10 @@ namespace SuiteCRMAddIn.ProtoItems
 
         }
 
-        private void TakePeriodFromOutlookItem(Outlook.TaskItem oItem)
+        private void TakePeriodFromOutlookItem()
         {
-            dateStart = oItem.StartDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
-            dateDue = oItem.DueDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
+            dateStart = this.oItem.StartDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
+            dateDue = this.oItem.DueDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
         }
 
         /// <summary>
@@ -142,10 +147,12 @@ namespace SuiteCRMAddIn.ProtoItems
         public override bool Equals(object other)
         {
             bool result = false;
-            if (other is ProtoTask)
+            var task = other as ProtoTask;
+
+            if (task != null)
             {
                 Dictionary<string, object> myContents = this.AsNameValues(string.Empty).AsDictionary();
-                Dictionary<string, object> theirContents = ((ProtoTask)other).AsNameValues(string.Empty).AsDictionary();
+                Dictionary<string, object> theirContents = task.AsNameValues(string.Empty).AsDictionary();
 
                 result = myContents.Keys.Count == theirContents.Keys.Count;
                 foreach (string key in myContents.Keys)
@@ -187,36 +194,42 @@ namespace SuiteCRMAddIn.ProtoItems
             return data;
         }
 
-        private TimeSpan[] ParseTimesFromTaskBody(string body)
+        private TimeSpan[] ParseTimesFromTaskBody(string taskBody)
         {
+            TimeSpan[] result;
+
             try
             {
-                if (string.IsNullOrEmpty(body))
-                    return null;
-                TimeSpan[] result = new TimeSpan[2];
-                List<int> hhmm = new List<int>(4);
-
-                string times = body.Substring(body.LastIndexOf("#<")).Substring(2);
-                char[] sep = { '<', '#', ':' };
-                int parsed = 0;
-                foreach (var fragment in times.Split(sep))
+                if (string.IsNullOrEmpty(taskBody))
                 {
-                    int.TryParse(fragment, out parsed);
-                    hhmm.Add(parsed);
-                    parsed = 0;
+                    result = null;
                 }
+                else
+                {
+                    // TODO: This still seems well dodgy and should be further refactored.
+                    result = new TimeSpan[2];
+                    List<int> hhmm = new List<int>(4);
 
-                TimeSpan start_time = TimeSpan.FromHours(hhmm[0]).Add(TimeSpan.FromMinutes(hhmm[1]));
-                TimeSpan due_time = TimeSpan.FromHours(hhmm[2]).Add(TimeSpan.FromMinutes(hhmm[3]));
-                result[0] = start_time;
-                result[1] = due_time;
-                return result;
+                    string times = taskBody.Substring(taskBody.LastIndexOf("#<")).Substring(2);
+                    char[] sep = {'<', '#', ':'};
+                    int parsed = 0;
+                    foreach (var fragment in times.Split(sep))
+                    {
+                        int.TryParse(fragment, out parsed);
+                        hhmm.Add(parsed);
+                        parsed = 0;
+                    }
+
+                    result[0] = TimeSpan.FromHours(hhmm[0]).Add(TimeSpan.FromMinutes(hhmm[1]));
+                    result[1] = TimeSpan.FromHours(hhmm[2]).Add(TimeSpan.FromMinutes(hhmm[3]));
+                }
             }
             catch
             {
                 // Log.Warn("Body doesn't have time string");
-                return null;
+                result = null;
             }
+            return result;
         }
     }
 }
