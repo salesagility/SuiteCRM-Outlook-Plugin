@@ -564,7 +564,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     Log.Error(
                         String.Format(
-                            "AppointmentSyncing.AddItemFromOutlookToCrm: Outlook Id {0} was not unique in this.ItemsSyncState?",
+                            "Synchroniser.GetExistingSyncState: Outlook Id {0} was not unique in this.ItemsSyncState?",
                             olItemEntryId),
                         notUnique);
 
