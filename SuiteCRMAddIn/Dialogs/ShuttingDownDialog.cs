@@ -84,7 +84,8 @@ namespace SuiteCRMAddIn.Dialogs
                 while (remaining > 0)
                 {
                     this.remaining = RepeatingProcess.PrepareShutdownAll(this.log);
-                    worker.ReportProgress(100 - 100 * remaining / tasks);
+                    double percentageRemaining = (100.0 * this.remaining) / this.tasks;
+                    worker.ReportProgress((int)(100.0 - percentageRemaining));
 
                     /* deal with any pending Windows messages, which we don't need to know about */
                     Application.DoEvents();
@@ -116,7 +117,7 @@ namespace SuiteCRMAddIn.Dialogs
             }
             else
             {
-                double percentageRemaining = 100 * (this.remaining / this.tasks);
+                double percentageRemaining = (100.0 * this.remaining) / this.tasks;
 
                 this.progress.Value = 100 - (int)percentageRemaining;
                 this.tasksRemainingLabel.Text = $"{this.remaining}/{this.tasks} tasks remaining";

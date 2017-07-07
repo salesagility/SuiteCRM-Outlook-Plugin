@@ -32,6 +32,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Globalization;
     using System.Linq;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Threading;
 
     /// <summary>
     /// Synchronise items of the class for which I am responsible.
@@ -180,7 +181,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected Outlook.Application Application => Context.Application;
 
-        private bool readyToExit = false;
+        /// <summary>
+        /// Getting this shutdown cleanly, while updating the shutting down dialog, is 
+        /// tricky; we need to track it.
+        /// </summary>
+        private ShutdownState shutdownState = ShutdownState.NotStarted;
 
         /// <summary>
         /// List of the synchronisation state of all items which may require synchronisation.
@@ -227,20 +232,48 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override int PrepareShutdown()
         {
-            if (!this.readyToExit)
-            {
-                /* remove event handlers when preparing shutdown, to prevent recursive issues */
-                this.RemoveEventHandlers();
+            int result;
 
+            var shutdownState = this.shutdownState;
+
+            switch (shutdownState)
+            {
+                case ShutdownState.NotStarted:
+                    this.shutdownState = ShutdownState.ShuttingDown;
+                    /* remove event handlers when preparing shutdown, to prevent recursive issues */
+                    this.RemoveEventHandlers();
+                    new Thread(BruteForceSaveAll).Start();
+                    result = 1;
+                    break;
+                case ShutdownState.ShuttingDown:
+                    result = 1;
+                    break;
+                default:
+                    result = base.PrepareShutdown();
+                    break;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// This is part of an attempt to stop the 'do you want to save' popups; save
+        /// everything we've touched, whether or not we've set anything on it.
+        /// </summary>
+        private void BruteForceSaveAll()
+        {
+            try
+            {
                 /* brute force save everything. Not happy about this... */
                 foreach (var syncState in this.ItemsSyncState)
                 {
                     this.SaveItem(syncState.OutlookItem);
                 }
-
-                this.readyToExit = true;
             }
-            return base.PrepareShutdown();
+            finally
+            {
+                this.shutdownState = ShutdownState.Completed;
+            }
         }
 
         /// <summary>
@@ -483,10 +516,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The sync state added.</returns>
         private SyncState<OutlookItemType> ConstructAndAddSyncState(OutlookItemType olItem)
         {
-            SyncState<OutlookItemType> newState = ConstructSyncState(olItem);
-            ItemsSyncState.Add(newState);
-            return newState;
+            try
+            {
+                SyncState<OutlookItemType> newState = ConstructSyncState(olItem);
+                ItemsSyncState.Add(newState);
+                return newState;
+            }
+            finally
+            {
+                this.SaveItem(olItem);
+            }
         }
+    
 
         /// <summary>
         /// Construct and return a new sync state representing this item.
@@ -714,11 +755,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 // Make a copy of the list to avoid mutation error while iterating:
                 var syncStatesCopy = new List<SyncState<OutlookItemType>>(ItemsSyncState);
-                foreach (var oItem in syncStatesCopy)
+                foreach (var syncState in syncStatesCopy)
                 {
-                    var shouldDeleteFromCrm = oItem.IsDeletedInOutlook || !oItem.ShouldSyncWithCrm;
-                    if (shouldDeleteFromCrm) RemoveFromCrm(oItem);
-                    if (oItem.IsDeletedInOutlook) ItemsSyncState.Remove(oItem);
+                    var shouldDeleteFromCrm = syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm;
+                    if (shouldDeleteFromCrm) RemoveFromCrm(syncState);
+                    if (syncState.IsDeletedInOutlook) ItemsSyncState.Remove(syncState);
                 }
             }
             else
@@ -807,7 +848,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 AddOrUpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
             }
             while (thisOffset != nextOffset);
-
         }
 
 
@@ -1096,5 +1136,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return (IsCurrentView && syncState.ShouldPerformSyncNow());
         }
+    }
+
+    enum ShutdownState
+    {
+        NotStarted = 0,
+        ShuttingDown = 1,
+        Completed = 2
     }
 }
