@@ -32,6 +32,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Linq;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using SuiteCRMAddIn.Extensions;
+    using System.Runtime.InteropServices;
+    using System.Windows.Forms;
 
     /// <summary>
     /// The agent which handles the automatic and manual archiving of emails.
@@ -180,11 +182,21 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     if (objFolder.Folders.Count > 0)
                     {
-                        result.Add(objFolder);
-                        GetMailFoldersHelper(objFolder.Folders, result);
+                        try
+                        {
+                            result.Add(objFolder);
+                            GetMailFoldersHelper(objFolder.Folders, result);
+                        }
+                        catch (COMException comx)
+                        {
+                            MessageBox.Show($"Failed to open mail folder {objFolder.Description} because {comx.Message}", "Failed to open mail folder", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            throw;
+                        }
                     }
                     else
+                    {
                         result.Add(objFolder);
+                    }
                 }
             }
             catch (Exception ex)
