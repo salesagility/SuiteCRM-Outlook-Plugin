@@ -143,61 +143,70 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             bool result = false;
 
-            lock (CRMPermissionsCache.cacheLock)
+            try
             {
-                bool? cached = HasCachedAccess(moduleName, permission);
+                lock (CRMPermissionsCache.cacheLock)
+                {
+                    bool? cached = HasCachedAccess(moduleName, permission);
 
-                if (cached != null)
-                {
-                    result = (bool)cached;
-                    this.Log.Debug($"Permissions cache hit for {moduleName}/{permission}");
-                }
-                else
-                {
-                    this.Log.Debug($"Permissions cache miss for {moduleName}/{permission}");
-                    try
+                    if (cached != null)
                     {
-                        this.Log.Debug("Note: we deliberately cache permissions for all named modules whether we're interested in them or not - it's quicker than filtering them");
-
-                        foreach (AvailableModule item in RestAPIWrapper.GetModules().items)
+                        result = (bool)cached;
+                        this.Log.Debug($"Permissions cache hit for {moduleName}/{permission}");
+                    }
+                    else
+                    {
+                        this.Log.Debug($"Permissions cache miss for {moduleName}/{permission}");
+                        try
                         {
-                            if (!string.IsNullOrWhiteSpace(item.module_label))
-                            {
-                                CacheAccessPermission(
-                                    item.module_label,
-                                    ImportPermissionToken,
-                                    item.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)?.access ?? false);
-                                CacheAccessPermission(
-                                    item.module_label,
-                                    ExportPermissionToken,
-                                    item.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)?.access ?? false);
+                            this.Log.Debug("Note: we deliberately cache permissions for all named modules whether we're interested in them or not - it's quicker than filtering them");
 
-                                Log.Debug($"Cached {CRMPermissionsCache.cache[item.module_label]} permission for {item.module_label}");
+                            foreach (AvailableModule item in RestAPIWrapper.GetModules().items)
+                            {
+                                if (!string.IsNullOrWhiteSpace(item.module_label))
+                                {
+                                    CacheAccessPermission(
+                                        item.module_label,
+                                        ImportPermissionToken,
+                                        item.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)?.access ?? false);
+                                    CacheAccessPermission(
+                                        item.module_label,
+                                        ExportPermissionToken,
+                                        item.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)?.access ?? false);
+
+                                    Log.Debug($"Cached {CRMPermissionsCache.cache[item.module_label]} permission for {item.module_label}");
+                                }
+                            }
+
+                            cached = HasCachedAccess(moduleName, permission);
+
+                            if (cached == null)
+                            {
+                                /* really shouldn't happen - we've just set it! */
+                                Log.Warn($"Cannot detect access {moduleName}/{permission} despite having just set it");
+                                /* not really satisfactory, but unlikely to happen */
+                                result = false;
+                            }
+                            else
+                            {
+                                result = (bool)cached;
                             }
                         }
-
-                        cached = HasCachedAccess(moduleName, permission);
-
-                        if (cached == null)
+                        catch (Exception fetchFailed)
                         {
-                            /* really shouldn't happen - we've just set it! */
-                            Log.Warn($"Cannot detect access {moduleName}/{permission} despite having just set it");
-                            /* not really satisfactory, but unlikely to happen */
-                            result = false;
+                            Log.Error($"Cannot detect access {moduleName}/{permission} because {fetchFailed.Message}", fetchFailed);
                         }
-                        else
-                        {
-                            result = (bool)cached;
-                        }
-                    }
-                    catch (Exception fetchFailed)
-                    {
-                        Log.Error($"Cannot detect access {moduleName}/{permission} because {fetchFailed.Message}", fetchFailed);
                     }
                 }
-            }
 
-            return result;
+                return result;
+            }
+            catch (KeyNotFoundException knf)
+            {
+                // OK, this is impossible. But it IS happening... why?
+                Log.Error($"Key not found exception while seeking '{moduleName}'", knf);
+                return result;
+            }
         }
 
 
@@ -205,8 +214,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Cache an access permission received from CRM, so we don't have to repeatedly request it.
         /// </summary>
         /// <remarks>
-        /// The cache is modified additively. It we already know we have one permission, and find we have the
-        /// other, then we assume both. There isn't presently any mechanism to remove permissions from the cache. 
+        /// <para>The cache is modified additively. It we already know we have one permission, and find we have the
+        /// other, then we assume both. There isn't presently any mechanism to remove permissions from the cache. </para>
+        /// <para>Should never throw a KeyNotFoundException.</para>
         /// </remarks>
         /// <param name="moduleName">The module to which access may be granted.</param>
         /// <param name="direction">The direction in which access may be granted.</param>
@@ -270,6 +280,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Does the currently cached value allow access to this module name in this direction?
         /// </summary>
+        /// <remarks>
+        /// Should never throw a KeyNotFoundException.
+        /// </remarks>
         /// <param name="moduleName"></param>
         /// <param name="direction"></param>
         /// <returns>True if access is permitted, false if it's denied, null if there's no 
