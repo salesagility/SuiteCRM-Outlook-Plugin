@@ -184,7 +184,10 @@ namespace SuiteCRMAddIn.Dialogs
             settings.Load();
             EmailArchiveAccountTabs.TabPages.Clear();
             var outlookSession = Application.Session;
-            if (Globals.ThisAddIn.OutlookVersion >= OutlookMajorVersion.Outlook2013)
+
+            this.Log.Debug($"SettingsDialog: Setting up account archiving widget. Outlook version is {Globals.ThisAddIn.OutlookVersion}; there are {outlookSession.Accounts.Count} accounts");
+
+            if (Globals.ThisAddIn.OutlookVersion >= OutlookMajorVersion.Outlook2010)
             {
                 // Uses a Outlook 2013 APIs on Account object: DeliveryStore and GetRootFolder()
                 // Needs work to make it work on Outlook 2010 and below.
@@ -196,6 +199,13 @@ namespace SuiteCRMAddIn.Dialogs
             }
         }
 
+
+        /// <summary>
+        /// Create a tab containing a EmailAccountArchiveSettingsControl widget representing this outlook 
+        /// account and add it to the tabs of the EmailAccountsArchiveSettings page.
+        /// </summary>
+        /// <param name="outlookAccount">The Outlook account to wrap.</param>
+        /// <returns>The EmailAccountArchiveSettingsControl widget created</returns>
         private EmailAccountArchiveSettingsControl AddTabPage(Account outlookAccount)
         {
             var newPage = new TabPage();
