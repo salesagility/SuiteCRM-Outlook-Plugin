@@ -173,7 +173,7 @@ namespace SuiteCRMAddIn.Dialogs
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(12, 252);
+            this.label7.Location = new System.Drawing.Point(8, 266);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(267, 13);
             this.label7.TabIndex = 14;
@@ -182,10 +182,10 @@ namespace SuiteCRMAddIn.Dialogs
             // txtAutoSync
             // 
             this.txtAutoSync.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtAutoSync.Location = new System.Drawing.Point(15, 269);
+            this.txtAutoSync.Location = new System.Drawing.Point(15, 282);
             this.txtAutoSync.Multiline = true;
             this.txtAutoSync.Name = "txtAutoSync";
-            this.txtAutoSync.Size = new System.Drawing.Size(332, 65);
+            this.txtAutoSync.Size = new System.Drawing.Size(332, 52);
             this.txtAutoSync.TabIndex = 21;
             // 
             // tabPage2
