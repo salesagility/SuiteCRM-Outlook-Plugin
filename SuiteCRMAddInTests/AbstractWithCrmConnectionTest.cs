@@ -24,10 +24,6 @@ namespace SuiteCRMAddIn.Tests
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMAddInTests.Properties;
