@@ -32,6 +32,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Globalization;
     using System.Linq;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Threading;
 
     /// <summary>
     /// Synchronise items of the class for which I am responsible.
@@ -56,6 +57,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The name of the CRM ID synchronisation property.
         /// </summary>
+        /// <see cref="SuiteCRMAddIn.Extensions.MailItemExtensions.CrmIdPropertyName"/> 
         public const string CrmIdPropertyName = "SEntryID";
 
         private readonly SyncContext context;
@@ -99,15 +101,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         public Synchroniser(string threadName, SyncContext context) : base(threadName, context.Log)
         {
             this.context = context;
-            InstallEventHandlers();
+            this.InstallEventHandlers();
             this.AddSuiteCrmOutlookCategory();
             this.permissionsCache = new CRMPermissionsCache<OutlookItemType>(this, context.Log);
-            GetOutlookItems(this.GetDefaultFolder());
+            this.GetOutlookItems(this.GetDefaultFolder());
         }
 
 
         /// <summary>
-        /// Add the magis 'SuiteCRM' category to the Outlook mapi namespace, if it does not
+        /// Add the magic 'SuiteCRM' category to the Outlook mapi namespace, if it does not
         /// already exist.
         /// </summary>
         private void AddSuiteCrmOutlookCategory()
@@ -179,7 +181,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected Outlook.Application Application => Context.Application;
 
-        private bool readyToExit = false;
+        /// <summary>
+        /// Getting this shutdown cleanly, while updating the shutting down dialog, is 
+        /// tricky; we need to track it.
+        /// </summary>
+        private ShutdownState shutdownState = ShutdownState.NotStarted;
 
         /// <summary>
         /// List of the synchronisation state of all items which may require synchronisation.
@@ -226,20 +232,48 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override int PrepareShutdown()
         {
-            if (!this.readyToExit)
-            {
-                /* remove event handlers when preparing shutdown, to prevent recursive issues */
-                this.RemoveEventHandlers();
+            int result;
 
+            var shutdownState = this.shutdownState;
+
+            switch (shutdownState)
+            {
+                case ShutdownState.NotStarted:
+                    this.shutdownState = ShutdownState.ShuttingDown;
+                    /* remove event handlers when preparing shutdown, to prevent recursive issues */
+                    this.RemoveEventHandlers();
+                    new Thread(BruteForceSaveAll).Start();
+                    result = 1;
+                    break;
+                case ShutdownState.ShuttingDown:
+                    result = 1;
+                    break;
+                default:
+                    result = base.PrepareShutdown();
+                    break;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// This is part of an attempt to stop the 'do you want to save' popups; save
+        /// everything we've touched, whether or not we've set anything on it.
+        /// </summary>
+        private void BruteForceSaveAll()
+        {
+            try
+            {
                 /* brute force save everything. Not happy about this... */
                 foreach (var syncState in this.ItemsSyncState)
                 {
                     this.SaveItem(syncState.OutlookItem);
                 }
-
-                this.readyToExit = true;
             }
-            return base.PrepareShutdown();
+            finally
+            {
+                this.shutdownState = ShutdownState.Completed;
+            }
         }
 
         /// <summary>
@@ -250,8 +284,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmModule">The type of items to resolve.</param>
         protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve, string crmModule)
         {
-            var toDeleteFromOutlook = itemsToResolve.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
-            var toCreateOnCrmServer = itemsToResolve.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
+            List<SyncState<OutlookItemType>> itemsCopy = new List<SyncState<OutlookItemType>>();
+            itemsCopy.AddRange(itemsToResolve);
+
+            var toDeleteFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
+            var toCreateOnCrmServer = itemsCopy.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
 
             foreach (var syncState in toDeleteFromOutlook)
             {
@@ -402,10 +439,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
 
-                        if (syncState != null)
-                        {
-                            syncState.SetTransmitted();
-                        }
+                        syncState.SetTransmitted();
 
                         result = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
                         if (!string.IsNullOrEmpty(result))
@@ -482,10 +516,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The sync state added.</returns>
         private SyncState<OutlookItemType> ConstructAndAddSyncState(OutlookItemType olItem)
         {
-            SyncState<OutlookItemType> newState = ConstructSyncState(olItem);
-            ItemsSyncState.Add(newState);
-            return newState;
+            try
+            {
+                SyncState<OutlookItemType> newState = ConstructSyncState(olItem);
+                ItemsSyncState.Add(newState);
+                return newState;
+            }
+            finally
+            {
+                this.SaveItem(olItem);
+            }
         }
+    
 
         /// <summary>
         /// Construct and return a new sync state representing this item.
@@ -522,7 +564,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     Log.Error(
                         String.Format(
-                            "AppointmentSyncing.AddItemFromOutlookToCrm: Outlook Id {0} was not unique in this.ItemsSyncState?",
+                            "Synchroniser.GetExistingSyncState: Outlook Id {0} was not unique in this.ItemsSyncState?",
                             olItemEntryId),
                         notUnique);
 
@@ -542,7 +584,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="crmItem">The item</param>
         /// <returns>the existing sync state representing this item, if it exists, else null.</returns>
-        protected SyncState<OutlookItemType> GetExistingSyncState(eEntryValue crmItem)
+        protected SyncState<OutlookItemType> GetExistingSyncState(EntryValue crmItem)
         {
             return crmItem == null ?
                 null :
@@ -643,7 +685,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmItem">The CRM item.</param>
-        protected virtual void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, eEntryValue crmItem)
+        protected virtual void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, EntryValue crmItem)
         {
             this.EnsureSynchronisationPropertiesForOutlookItem(
                 olItem,
@@ -657,7 +699,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmItem">The CRM item.</param>
         /// <param name="type">The value for the SType property (CRM module name).</param>
-        protected virtual void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, eEntryValue crmItem, string type)
+        protected virtual void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, EntryValue crmItem, string type)
         {
             this.EnsureSynchronisationPropertiesForOutlookItem(
                 olItem,
@@ -713,11 +755,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 // Make a copy of the list to avoid mutation error while iterating:
                 var syncStatesCopy = new List<SyncState<OutlookItemType>>(ItemsSyncState);
-                foreach (var oItem in syncStatesCopy)
+                foreach (var syncState in syncStatesCopy)
                 {
-                    var shouldDeleteFromCrm = oItem.IsDeletedInOutlook || !oItem.ShouldSyncWithCrm;
-                    if (shouldDeleteFromCrm) RemoveFromCrm(oItem);
-                    if (oItem.IsDeletedInOutlook) ItemsSyncState.Remove(oItem);
+                    var shouldDeleteFromCrm = syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm;
+                    if (shouldDeleteFromCrm) RemoveFromCrm(syncState);
+                    if (syncState.IsDeletedInOutlook) ItemsSyncState.Remove(syncState);
                 }
             }
             else
@@ -742,10 +784,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var crmEntryId = state.CrmEntryId;
                 if (state.ExistedInCrm && this.permissionsCache.HasImportAccess(state.CrmType))
                 {
-                    eNameValue[] data = new eNameValue[2];
-                    data[0] = clsSuiteCRMHelper.SetNameValuePair("id", crmEntryId);
-                    data[1] = clsSuiteCRMHelper.SetNameValuePair("deleted", "1");
-                    clsSuiteCRMHelper.SetEntryUnsafe(data, state.CrmType);
+                    NameValue[] data = new NameValue[2];
+                    data[0] = RestAPIWrapper.SetNameValuePair("id", crmEntryId);
+                    data[1] = RestAPIWrapper.SetNameValuePair("deleted", "1");
+                    RestAPIWrapper.SetEntryUnsafe(data, state.CrmType);
                 }
 
                 state.RemoveCrmLink();
@@ -793,10 +835,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 thisOffset = nextOffset;
 
                 /* fetch the page of entries starting at thisOffset */
-                eGetEntryListResult entriesPage = clsSuiteCRMHelper.GetEntryList(crmModule,
-                    String.Format(fetchQueryPrefix, clsSuiteCRMHelper.GetUserId()),
+                EntryList entriesPage = RestAPIWrapper.GetEntryList(crmModule,
+                    String.Format(fetchQueryPrefix, RestAPIWrapper.GetUserId()),
                     0, "date_start DESC", thisOffset, false,
-                    clsSuiteCRMHelper.GetSugarFields(crmModule));
+                    RestAPIWrapper.GetSugarFields(crmModule));
 
                 /* get the offset of the next page */
                 nextOffset = entriesPage.next_offset;
@@ -806,7 +848,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 AddOrUpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
             }
             while (thisOffset != nextOffset);
-
         }
 
 
@@ -820,7 +861,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// by the action of this method.</param>
         /// <param name="crmType">The CRM record type ('module') to be fetched.</param>
         protected virtual void AddOrUpdateItemsFromCrmToOutlook(
-            eEntryValue[] crmItems,
+            EntryValue[] crmItems,
             Outlook.MAPIFolder folder,
             HashSet<SyncState<OutlookItemType>> untouched,
             string crmType)
@@ -853,14 +894,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmType">The CRM type of the candidate item.</param>
         /// <param name="crmItem">The candidate item from CRM.</param>
         /// <returns>The synchronisation state of the item updated (if it was updated).</returns>
-        protected abstract SyncState<OutlookItemType> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, eEntryValue crmItem);
+        protected abstract SyncState<OutlookItemType> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem);
 
         /// <summary>
         /// Find any existing Outlook items which appear to be identical to this CRM item.
         /// </summary>
         /// <param name="crmItem">The CRM item to match.</param>
         /// <returns>A list of matching Outlook items.</returns>
-        protected List<SyncState<OutlookItemType>> FindMatches(eEntryValue crmItem)
+        protected List<SyncState<OutlookItemType>> FindMatches(EntryValue crmItem)
         {
             List<SyncState<OutlookItemType>> result;
 
@@ -887,7 +928,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmItem">The CRM item.</param>
         /// <returns>true if this Outlook item appears to represent the same item as this CRM item.</returns>
-        protected abstract bool IsMatch(OutlookItemType olItem, eEntryValue crmItem);
+        protected abstract bool IsMatch(OutlookItemType olItem, EntryValue crmItem);
 
         /// <summary>
         /// Log a message regarding this Outlook item, with detail of the item.
@@ -1095,5 +1136,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return (IsCurrentView && syncState.ShouldPerformSyncNow());
         }
+    }
+
+    enum ShutdownState
+    {
+        NotStarted = 0,
+        ShuttingDown = 1,
+        Completed = 2
     }
 }

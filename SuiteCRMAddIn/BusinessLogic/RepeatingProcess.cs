@@ -206,6 +206,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Put me into a mode where I finish all the work I have to do quickly.
         /// </summary>
+        /// <remarks>
+        /// This method will be called repeatedly; overrides should be written with this in mind.
+        /// </remarks>
         /// <returns>Zero if I may be stopped immediately (this is the default);
         /// otherwise an integer indicating the number of work units to complete
         /// before I can be stopped.</returns>

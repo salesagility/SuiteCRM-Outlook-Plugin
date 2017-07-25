@@ -48,21 +48,21 @@ namespace SuiteCRMAddIn.Dialogs
 
         private bool ValidateDetails()
         {
-            if (txtURL.Text.Trim().Length == 0)
+            if (SafelyGetText(txtURL) == string.Empty)
             {
                 MessageBox.Show("Please enter a valid SuiteCRM URL");
                 txtURL.Focus();
                 return false;
             }
 
-            if (txtUsername.Text.Trim().Length == 0)
+            if (SafelyGetText(txtUsername) == string.Empty)
             {
                 MessageBox.Show("Please enter a valid SuiteCRM Username");
                 txtUsername.Focus();
                 return false;
             }
 
-            if (txtPassword.Text.Trim().Length == 0)
+            if (SafelyGetText(txtPassword) == string.Empty)
             {
                 MessageBox.Show("Please enter a valid SuiteCRM Password");
                 txtPassword.Focus();
@@ -71,7 +71,7 @@ namespace SuiteCRMAddIn.Dialogs
 
             if (chkEnableLDAPAuthentication.Checked)
             {
-                if (txtLDAPAuthenticationKey.Text.Trim().Length == 0)
+                if (SafelyGetText(txtLDAPAuthenticationKey) == string.Empty)
                 {
                     MessageBox.Show("Please enter a valid LDAP authentication key");
                     txtLDAPAuthenticationKey.Focus();
@@ -184,22 +184,28 @@ namespace SuiteCRMAddIn.Dialogs
             settings.Load();
             EmailArchiveAccountTabs.TabPages.Clear();
             var outlookSession = Application.Session;
-            if (Globals.ThisAddIn.OutlookVersion >= OutlookMajorVersion.Outlook2013)
+
+            this.Log.Debug($"SettingsDialog: Setting up account archiving widget. Outlook version is {Globals.ThisAddIn.OutlookVersion}; there are {outlookSession.Accounts.Count} accounts");
+
+            if (Globals.ThisAddIn.OutlookVersion >= OutlookMajorVersion.Outlook2010)
             {
                 // Uses a Outlook 2013 APIs on Account object: DeliveryStore and GetRootFolder()
                 // Needs work to make it work on Outlook 2010 and below.
                 foreach (Account account in outlookSession.Accounts)
                 {
-                    var name = account.DisplayName;
-                    var store = account.DeliveryStore;
-                    var rootFolder = store.GetRootFolder();
-
-                    var pageControl = AddTabPage(account);
-                    pageControl.LoadSettings(account, settings);
+                    this.Log.Debug($"SettingsDialog: Added email archiving tab for account {account.DisplayName}");
+                    AddTabPage(account).LoadSettings(account, settings);
                 }
             }
         }
 
+
+        /// <summary>
+        /// Create a tab containing a EmailAccountArchiveSettingsControl widget representing this outlook 
+        /// account and add it to the tabs of the EmailAccountsArchiveSettings page.
+        /// </summary>
+        /// <param name="outlookAccount">The Outlook account to wrap.</param>
+        /// <returns>The EmailAccountArchiveSettingsControl widget created</returns>
         private EmailAccountArchiveSettingsControl AddTabPage(Account outlookAccount)
         {
             var newPage = new TabPage();
@@ -240,21 +246,21 @@ namespace SuiteCRMAddIn.Dialogs
                     {
                         txtURL.Text = txtURL.Text + "/";
                     }
-                    if (txtLDAPAuthenticationKey.Text.Trim() == string.Empty)
+                    if (SafelyGetText(txtLDAPAuthenticationKey) == string.Empty)
                     {
                         txtLDAPAuthenticationKey.Text = null;
                     }
                     Globals.ThisAddIn.SuiteCRMUserSession = 
                         new SuiteCRMClient.UserSession(
-                            txtURL.Text.Trim(), 
-                            txtUsername.Text.Trim(), 
-                            txtPassword.Text.Trim(), 
-                            txtLDAPAuthenticationKey.Text.Trim(), 
+                            SafelyGetText(txtURL), 
+                            SafelyGetText(txtUsername), 
+                            SafelyGetText(txtPassword), 
+                            SafelyGetText(txtLDAPAuthenticationKey), 
                             ThisAddIn.AddInTitle,
                             Log, 
                             Properties.Settings.Default.RestTimeout);
 
-                    if (chkEnableLDAPAuthentication.Checked && txtLDAPAuthenticationKey.Text.Trim().Length != 0)
+                    if (chkEnableLDAPAuthentication.Checked && SafelyGetText(txtLDAPAuthenticationKey).Length != 0)
                     {
                         Globals.ThisAddIn.SuiteCRMUserSession.AuthenticateLDAP();
                     }
@@ -271,9 +277,9 @@ namespace SuiteCRMAddIn.Dialogs
                     {
                         MessageBox.Show("Login Successful!!!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     }
-                    Properties.Settings.Default.Host = txtURL.Text.Trim();
-                    Properties.Settings.Default.Username = txtUsername.Text.Trim();
-                    Properties.Settings.Default.Password = txtPassword.Text.Trim();
+                    Properties.Settings.Default.Host = SafelyGetText(txtURL);
+                    Properties.Settings.Default.Username = SafelyGetText(txtUsername);
+                    Properties.Settings.Default.Password = SafelyGetText(txtPassword);
                 }
                 catch (Exception ex)
                 {
@@ -326,23 +332,28 @@ namespace SuiteCRMAddIn.Dialogs
 
             try
             {
-                if (txtURL.Text.EndsWith(@"/"))
+                if (!SafelyGetText(txtURL).EndsWith(@"/"))
                 {
+                    txtURL.Text = SafelyGetText(txtURL) + "/";
                 }
-                else
+
+				string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
+                if (LDAPAuthenticationKey== string.Empty)
                 {
-                    txtURL.Text = txtURL.Text + "/";
+					LDAPAuthenticationKey = null;
                 }
-                if (txtLDAPAuthenticationKey.Text.Trim() == string.Empty)
-                {
-                    txtLDAPAuthenticationKey.Text = null;
-                }
+
+                /* save settings before, and regardless of, test that login succeeds. 
+                 * Otherwise in cases where login is impossible (e.g. network failure) 
+                 * settings get lost. See bug #187 */
+                this.SaveSettings();
+
                 Globals.ThisAddIn.SuiteCRMUserSession =
                     new SuiteCRMClient.UserSession(
-                        txtURL.Text.Trim(),
-                        txtUsername.Text.Trim(),
-                        txtPassword.Text.Trim(),
-                        txtLDAPAuthenticationKey.Text.Trim(),
+                        SafelyGetText(txtURL),
+                        SafelyGetText(txtUsername),
+                        SafelyGetText(txtPassword),
+                        LDAPAuthenticationKey,
                         ThisAddIn.AddInTitle,
                         Log,
                         Properties.Settings.Default.RestTimeout);
@@ -354,9 +365,6 @@ namespace SuiteCRMAddIn.Dialogs
                     this.DialogResult = DialogResult.None;
                     return;
                 }
-                Properties.Settings.Default.Host = txtURL.Text.Trim();
-                Properties.Settings.Default.Username = txtUsername.Text.Trim();
-                Properties.Settings.Default.Password = txtPassword.Text.Trim();
             }
             catch (Exception ex)
             {
@@ -367,17 +375,53 @@ namespace SuiteCRMAddIn.Dialogs
                 return;
             }
 
-            Properties.Settings.Default.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked;
-            Properties.Settings.Default.LDAPKey = txtLDAPAuthenticationKey.Text.Trim();
+            RestAPIWrapper.FlushUserIdCache();
 
-            Properties.Settings.Default.LicenceKey = licenceText.Text.Trim();
+            base.Close();
+
+            this.SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Return trimmed text from this box, but on no account throw an exception.
+        /// </summary>
+        /// <param name="box">The text box presumed to contain text.</param>
+        /// <returns>The trimmed text</returns>
+        private string SafelyGetText(TextBox box)
+        {
+            string result;
+
+            try
+            {
+                result = box.Text == null ? String.Empty : box.Text.Trim();
+            }
+            catch (Exception)
+            {
+                result = string.Empty;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Save all settings from their current values in the dialog.
+        /// </summary>
+        private void SaveSettings()
+        {
+            Properties.Settings.Default.Host = SafelyGetText(txtURL);
+            Properties.Settings.Default.Username = SafelyGetText(txtUsername);
+            Properties.Settings.Default.Password = SafelyGetText(txtPassword);
+            Properties.Settings.Default.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked;
+            Properties.Settings.Default.LDAPKey = SafelyGetText(txtLDAPAuthenticationKey);
+
+            Properties.Settings.Default.LicenceKey = SafelyGetText(licenceText);
 
             Properties.Settings.Default.ArchiveAttachments = this.cbEmailAttachments.Checked;
             Properties.Settings.Default.AutomaticSearch = this.checkBoxAutomaticSearch.Checked;
             Properties.Settings.Default.ShowCustomModules = this.cbShowCustomModules.Checked;
             Properties.Settings.Default.PopulateContextLookupList = this.checkBoxShowRightClick.Checked;
 
-            Properties.Settings.Default.ExcludedEmails = this.txtAutoSync.Text.Trim();
+            Properties.Settings.Default.ExcludedEmails = this.SafelyGetText(txtAutoSync);
 
             Properties.Settings.Default.AutoArchiveFolders = new List<string>();
 
@@ -403,17 +447,11 @@ namespace SuiteCRMAddIn.Dialogs
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 
             Properties.Settings.Default.Save();
-            Properties.Settings.Default.Reload();
-
-            clsSuiteCRMHelper.FlushUserIdCache();
-
-            base.Close();
-
-            this.SettingsChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            Properties.Settings.Default.Reload();
             base.Close();
         }
 

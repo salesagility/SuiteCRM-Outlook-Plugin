@@ -26,7 +26,6 @@ namespace SuiteCRMAddIn.Daemon
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Concurrent;
-    using System.Threading;
 
     /// <summary>
     /// A thing which maintains a queue of tasks (instances of DaemonAction) and executes them in turn. Explicitly

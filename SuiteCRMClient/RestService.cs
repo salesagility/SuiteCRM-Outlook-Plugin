@@ -20,13 +20,11 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-
 namespace SuiteCRMClient
 {
     using Newtonsoft.Json;
     using SuiteCRMClient.Logging;
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.IO;
     using System.Net;

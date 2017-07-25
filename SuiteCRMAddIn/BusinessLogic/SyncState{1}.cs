@@ -106,9 +106,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 var older = this.Cache.AsNameValues(this.OutlookItemEntryId)
                     .AsDictionary();
+
                 var current = this.CreateProtoItem(this.OutlookItem)
-                        .AsNameValues(this.OutlookItemEntryId)
-                        .AsDictionary();
+                    .AsNameValues(this.OutlookItemEntryId)
+                    .AsDictionary();
                 unchanged = older.Keys.Count.Equals(current.Keys.Count);
 
                 if (unchanged)
@@ -116,7 +117,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     foreach (string key in older.Keys)
                     {
                         unchanged &= (older[key] == null && current[key] == null) ||
-                            older[key].Equals(current[key]);
+                                        older[key].Equals(current[key]);
                     }
                 }
             }

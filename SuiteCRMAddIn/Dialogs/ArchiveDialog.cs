@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.Dialogs
 {
     using BusinessLogic;
     using Exceptions;
+    using Extensions;
     using Microsoft.Office.Interop.Outlook;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
@@ -31,7 +32,6 @@ namespace SuiteCRMAddIn.Dialogs
     using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
-    using System.Collections.Specialized;
     using System.Data;
     using System.Linq;
     using System.Text;
@@ -78,7 +78,7 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void AddStandardModules()
         {
-            eModuleList allModules = clsSuiteCRMHelper.GetModules();
+            AvailableModules allModules = RestAPIWrapper.GetModules();
             foreach (string moduleKey in this.standardModules.OrderBy(x => x))
             {
                 var module = allModules.items.FirstOrDefault(x => x.module_key == moduleKey);
@@ -334,14 +334,14 @@ namespace SuiteCRMAddIn.Dialogs
             tree.CheckBoxes = false;
         }
 
-        private eGetEntryListResult TryQuery(string searchText, string moduleName, List<string> fieldsToSeek)
+        private EntryList TryQuery(string searchText, string moduleName, List<string> fieldsToSeek)
         {
-            eGetEntryListResult queryResult = null;
+            EntryList queryResult = null;
 
             string queryText = ConstructQueryTextForModuleName(searchText, moduleName, fieldsToSeek);
             try
             {
-                queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+                queryResult = RestAPIWrapper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
             }
             catch (System.Exception any)
             {
@@ -350,7 +350,7 @@ namespace SuiteCRMAddIn.Dialogs
                 queryText = queryText.Replace("%", string.Empty);
                 try
                 {
-                    queryResult = clsSuiteCRMHelper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+                    queryResult = RestAPIWrapper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
                 }
                 catch (Exception secondFail)
                 {
@@ -442,7 +442,7 @@ namespace SuiteCRMAddIn.Dialogs
                     AddFirstLastAndAccountNames(fields);
                     break;
                 default:
-                    List<string> fieldNames = clsSuiteCRMHelper.GetCharacterFields(moduleName);
+                    List<string> fieldNames = RestAPIWrapper.GetCharacterFields(moduleName);
 
                     if (fieldNames.Contains("first_name") && fieldNames.Contains("last_name"))
                     {
@@ -503,11 +503,11 @@ namespace SuiteCRMAddIn.Dialogs
         {
             StringBuilder queryBuilder = new StringBuilder();
 
-            if (clsSuiteCRMHelper.GetActivitiesLinks(moduleName, Objective.Email).Count() > 0)
+            if (RestAPIWrapper.GetActivitiesLinks(moduleName, Objective.Email).Count() > 0)
             {
                 string tableName = moduleName.ToLower();
 
-                foreach (string fieldName in clsSuiteCRMHelper.GetCharacterFields(moduleName))
+                foreach (string fieldName in RestAPIWrapper.GetCharacterFields(moduleName))
                 {
                     switch (fieldName)
                     {
@@ -545,7 +545,7 @@ namespace SuiteCRMAddIn.Dialogs
             string firstName, 
             string lastName)
         {
-            List<string> fieldNames = clsSuiteCRMHelper.GetCharacterFields(moduleName);
+            List<string> fieldNames = RestAPIWrapper.GetCharacterFields(moduleName);
             string result = string.Empty;
             string logicalOperator = firstName == lastName ? "OR" : "AND";
 
@@ -564,11 +564,11 @@ namespace SuiteCRMAddIn.Dialogs
         /// <param name="searchResult">A search result</param>
         /// <param name="module">The module in which the search was performed</param>
         /// <param name="parent">The parent node beneath which the new node should be added.</param>
-        private void PopulateTree(eGetEntryListResult searchResult, string module, TreeNode parent)
+        private void PopulateTree(EntryList searchResult, string module, TreeNode parent)
         {
-            foreach (eEntryValue entry in searchResult.entry_list)
+            foreach (EntryValue entry in searchResult.entry_list)
             {
-                string key = clsSuiteCRMHelper.GetValueByKey(entry, "id");
+                string key = RestAPIWrapper.GetValueByKey(entry, "id");
                 if (!parent.Nodes.ContainsKey(key))
                 {
                     TreeNode node = new TreeNode(ConstructNodeName(module, entry))
@@ -591,29 +591,29 @@ namespace SuiteCRMAddIn.Dialogs
         /// <param name="module">The name of the module.</param>
         /// <param name="entry">The value in the module.</param>
         /// <returns>A canonical tree node label.</returns>
-        private static string ConstructNodeName(string module, eEntryValue entry)
+        private static string ConstructNodeName(string module, EntryValue entry)
         {
             StringBuilder nodeNameBuilder = new StringBuilder();
             string keyValue = string.Empty;
-            nodeNameBuilder.Append(clsSuiteCRMHelper.GetValueByKey(entry, "first_name"))
+            nodeNameBuilder.Append(RestAPIWrapper.GetValueByKey(entry, "first_name"))
                 .Append(" ")
-                .Append(clsSuiteCRMHelper.GetValueByKey(entry, "last_name"));
+                .Append(RestAPIWrapper.GetValueByKey(entry, "last_name"));
 
             if (String.IsNullOrWhiteSpace(nodeNameBuilder.ToString()))
             {
-                nodeNameBuilder.Append(clsSuiteCRMHelper.GetValueByKey(entry, "name"));
+                nodeNameBuilder.Append(RestAPIWrapper.GetValueByKey(entry, "name"));
             }
 
             switch (module)
             {
                 case "Bugs":
-                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "bug_number");
+                    keyValue = RestAPIWrapper.GetValueByKey(entry, "bug_number");
                     break;
                 case "Cases":
-                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "case_number");
+                    keyValue = RestAPIWrapper.GetValueByKey(entry, "case_number");
                     break;
                 default:
-                    keyValue = clsSuiteCRMHelper.GetValueByKey(entry, "account_name");
+                    keyValue = RestAPIWrapper.GetValueByKey(entry, "account_name");
                     break;
             }
 
@@ -761,7 +761,7 @@ namespace SuiteCRMAddIn.Dialogs
                 var archiver = Globals.ThisAddIn.EmailArchiver;
                 this.ReportOnEmailArchiveSuccess(
                     Globals.ThisAddIn.SelectedEmails.Select(mailItem =>
-                            archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.type))
+                            archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, EmailArchiveReason.Manual))
                         .ToList());
 
                 Close();
@@ -838,11 +838,11 @@ namespace SuiteCRMAddIn.Dialogs
         {
             foreach (MailItem mail in Globals.ThisAddIn.SelectedEmails)
             {
-                if (mail.UserProperties[EmailArchiving.CRMCategoryPropertyName] == null)
+                if (mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName] == null)
                 {
-                    mail.UserProperties.Add(EmailArchiving.CRMCategoryPropertyName, OlUserPropertyType.olText);
+                    mail.UserProperties.Add(MailItemExtensions.CRMCategoryPropertyName, OlUserPropertyType.olText);
                 }
-                mail.UserProperties[EmailArchiving.CRMCategoryPropertyName].Value = categoryInput.SelectedItem.ToString();
+                mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName].Value = categoryInput.SelectedItem.ToString();
             }
         }
     }

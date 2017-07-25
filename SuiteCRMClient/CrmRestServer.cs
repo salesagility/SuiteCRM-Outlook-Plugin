@@ -20,17 +20,25 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using System.Diagnostics;
+
 namespace SuiteCRMClient
 {
-    using System;
-    using System.Text;
-    using System.Net;
-    using System.IO;
+    using Exceptions;
     using Newtonsoft.Json;
-    using SuiteCRMClient.Logging;
-    using System.Web;
     using RESTObjects;
+    using SuiteCRMClient.Logging;
+    using System;
+    using System.IO;
+    using System.Net;
+    using System.Text;
+    using System.Web;
 
+    /// <summary>
+    /// Low level communication with the REST server.
+    /// </summary>
+    /// <see cref="RestAPIWrapper"/> 
     public class CrmRestServer
     {
         private readonly JsonSerializer serialiser;
@@ -87,15 +95,15 @@ namespace SuiteCRMClient
         /// <exception cref="CrmServerErrorException">if the response was recognised as an error.</exception>
         private void CheckForCrmError(string jsonResponse)
         {
-            eErrorValue error;
+            ErrorValue error;
             try
             {
-                error = DeserializeJson<eErrorValue>(jsonResponse);
+                error = DeserializeJson<ErrorValue>(jsonResponse);
             }
             catch (JsonSerializationException)
             {
                 // it wasn't recognisable as an error. That's fine!
-                error = new eErrorValue();
+                error = new ErrorValue();
             }
 
             if (error != null && error.IsPopulated())
@@ -172,21 +180,25 @@ namespace SuiteCRMClient
         {
             using (var response = request.GetResponse() as HttpWebResponse)
             {
+                Debug.Assert(response != null, "response != null");
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
                     throw new Exception($"{response.StatusCode} {response.StatusDescription} from {response.Method} {response.ResponseUri}");
                 }
 
-               return GetStringFromWebResponse(response);
+                return GetStringFromWebResponse(response);
             }
         }
 
         private string GetStringFromWebResponse(HttpWebResponse response)
         {
             using (var input = response.GetResponseStream())
-            using (var reader = new StreamReader(input))
             {
-                return reader.ReadToEnd();
+                Debug.Assert(input != null, "input != null");
+                using (var reader = new StreamReader(input))
+                {
+                    return reader.ReadToEnd();
+                }
             }
         }
 
