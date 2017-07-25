@@ -291,7 +291,8 @@ namespace SuiteCRMClient.Email
                 new RESTObjects.NameValue() {name = "description_html", value = htmlBody},
                 new RESTObjects.NameValue() {name = "assigned_user_id", value = RestAPIWrapper.GetUserId()},
                 new RESTObjects.NameValue() {name = "status", value = "archived"},
-                new RESTObjects.NameValue() {name = "category_id", value = this.Category}
+                new RESTObjects.NameValue() {name = "category_id", value = this.Category},
+                new RESTObjects.NameValue() {name = "message_id", value = this.OutlookId }
             };
 
             return new
