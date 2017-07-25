@@ -185,7 +185,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.txtAutoSync.Location = new System.Drawing.Point(15, 269);
             this.txtAutoSync.Multiline = true;
             this.txtAutoSync.Name = "txtAutoSync";
-            this.txtAutoSync.Size = new System.Drawing.Size(336, 65);
+            this.txtAutoSync.Size = new System.Drawing.Size(332, 65);
             this.txtAutoSync.TabIndex = 21;
             // 
             // tabPage2

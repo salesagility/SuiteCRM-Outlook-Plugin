@@ -174,7 +174,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                                         ExportPermissionToken,
                                         item.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)?.access ?? false);
 
-                                    Log.Debug($"Cached {CRMPermissionsCache.cache[item.module_label]} permission for {item.module_label}");
+                                    try
+                                    {
+                                        Log.Debug($"Cached {CRMPermissionsCache.cache[item.module_label]} permission for {item.module_label}");
+                                    }
+                                    catch (KeyNotFoundException)
+                                    {
+                                        // ignore for now.
+                                    }
                                 }
                             }
 
@@ -194,7 +201,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                         catch (Exception fetchFailed)
                         {
-                            Log.Error($"Cannot detect access {moduleName}/{permission} because {fetchFailed.Message}", fetchFailed);
+                            Log.Error($"Cannot detect access {moduleName}/{permission} because {fetchFailed.GetType().Name}: {fetchFailed.Message}", fetchFailed);
+                            throw;
                         }
                     }
                 }
@@ -291,11 +299,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             bool? result = null;
 
-            if (CRMPermissionsCache.cache.ContainsKey(moduleName))
+            try
             {
-                SyncDirection.Direction cachedValue = CRMPermissionsCache.cache[moduleName];
-                result = (direction == ImportPermissionToken && SyncDirection.AllowOutbound(cachedValue)) ||
-                    (direction == ExportPermissionToken && SyncDirection.AllowInbound(cachedValue));
+                if (CRMPermissionsCache.cache.ContainsKey(moduleName))
+                {
+                    SyncDirection.Direction cachedValue = CRMPermissionsCache.cache[moduleName];
+                    result = (direction == ImportPermissionToken && SyncDirection.AllowOutbound(cachedValue)) ||
+                        (direction == ExportPermissionToken && SyncDirection.AllowInbound(cachedValue));
+                }
+            }
+            catch (Exception any)
+            {
+                Log.Error("Failed in HasCahedAccess", any);
             }
 
             return result;
