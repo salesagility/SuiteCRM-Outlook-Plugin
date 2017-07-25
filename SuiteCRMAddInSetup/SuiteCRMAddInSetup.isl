@@ -4400,7 +4400,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{6B454238-9E78-4258-B4FA-29D45B32D04F}</td><td/></row>
 		<row><td>ProductName</td><td>SuiteCRMAddIn</td><td/></row>
-		<row><td>ProductVersion</td><td>3.0.5.0</td><td/></row>
+		<row><td>ProductVersion</td><td>3.0.6.0</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
