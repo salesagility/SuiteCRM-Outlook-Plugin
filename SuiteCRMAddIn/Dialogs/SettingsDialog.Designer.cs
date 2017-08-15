@@ -320,9 +320,9 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             this.licenceGroup.Controls.Add(this.licenceText);
             this.licenceGroup.Controls.Add(this.licenceLabel);
-            this.licenceGroup.Location = new System.Drawing.Point(7, 225);
+            this.licenceGroup.Location = new System.Drawing.Point(6, 258);
             this.licenceGroup.Name = "licenceGroup";
-            this.licenceGroup.Size = new System.Drawing.Size(353, 48);
+            this.licenceGroup.Size = new System.Drawing.Size(353, 52);
             this.licenceGroup.TabIndex = 4;
             this.licenceGroup.TabStop = false;
             // 
@@ -347,9 +347,9 @@ namespace SuiteCRMAddIn.Dialogs
             this.gbLDAPAuthentication.Controls.Add(this.labelKey);
             this.gbLDAPAuthentication.Controls.Add(this.txtLDAPAuthenticationKey);
             this.gbLDAPAuthentication.Controls.Add(this.chkEnableLDAPAuthentication);
-            this.gbLDAPAuthentication.Location = new System.Drawing.Point(7, 150);
+            this.gbLDAPAuthentication.Location = new System.Drawing.Point(6, 149);
             this.gbLDAPAuthentication.Name = "gbLDAPAuthentication";
-            this.gbLDAPAuthentication.Size = new System.Drawing.Size(352, 69);
+            this.gbLDAPAuthentication.Size = new System.Drawing.Size(352, 103);
             this.gbLDAPAuthentication.TabIndex = 3;
             this.gbLDAPAuthentication.TabStop = false;
             // 
@@ -357,33 +357,28 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             this.labelKey.AutoSize = true;
             this.labelKey.Enabled = false;
-            this.labelKey.Location = new System.Drawing.Point(6, 43);
+            this.labelKey.Location = new System.Drawing.Point(6, 44);
             this.labelKey.Name = "labelKey";
-            this.labelKey.Size = new System.Drawing.Size(25, 13);
+            this.labelKey.Size = new System.Drawing.Size(127, 13);
             this.labelKey.TabIndex = 2;
-            this.labelKey.Text = "Key";
-            this.labelKey.Visible = false;
+            this.labelKey.Text = "Password Encryption Key";
             // 
             // txtLDAPAuthenticationKey
             // 
-            this.txtLDAPAuthenticationKey.Enabled = false;
-            this.txtLDAPAuthenticationKey.Location = new System.Drawing.Point(78, 40);
+            this.txtLDAPAuthenticationKey.Location = new System.Drawing.Point(78, 67);
             this.txtLDAPAuthenticationKey.Name = "txtLDAPAuthenticationKey";
             this.txtLDAPAuthenticationKey.Size = new System.Drawing.Size(207, 20);
             this.txtLDAPAuthenticationKey.TabIndex = 6;
-            this.txtLDAPAuthenticationKey.Visible = false;
             // 
             // chkEnableLDAPAuthentication
             // 
             this.chkEnableLDAPAuthentication.AutoSize = true;
-            this.chkEnableLDAPAuthentication.Enabled = false;
             this.chkEnableLDAPAuthentication.Location = new System.Drawing.Point(9, 16);
             this.chkEnableLDAPAuthentication.Name = "chkEnableLDAPAuthentication";
             this.chkEnableLDAPAuthentication.Size = new System.Drawing.Size(161, 17);
             this.chkEnableLDAPAuthentication.TabIndex = 5;
             this.chkEnableLDAPAuthentication.Text = "Enable LDAP Authentication";
             this.chkEnableLDAPAuthentication.UseVisualStyleBackColor = true;
-            this.chkEnableLDAPAuthentication.Visible = false;
             this.chkEnableLDAPAuthentication.CheckedChanged += new System.EventHandler(this.chkEnableLDAPAuthentication_CheckedChanged);
             // 
             // groupBox1
