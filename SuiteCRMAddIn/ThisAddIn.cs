@@ -29,7 +29,7 @@ namespace SuiteCRMAddIn
     using Dialogs;
     using Microsoft.Office.Core;
     using NGettext;
-    using SuiteCRMAddIn.Properties;
+    using Properties;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
@@ -139,15 +139,7 @@ namespace SuiteCRMAddIn
         {
             var outlookApp = this.Application;
 
-            /* Attempt to fix 'settings getting wiped' bug 187;
-             * see https://stackoverflow.com/questions/2201819/why-are-persisted-user-settings-not-loaded
-             */ 
-            if (Settings.Default.NeedsUpgrade)
-            {
-                Settings.Default.Upgrade();
-                Settings.Default.NeedsUpgrade = false;
-                Settings.Default.Save();
-            }
+            this.MaybeUpgradeSettings();
 
             OutlookVersion = (OutlookMajorVersion)Convert.ToInt32(outlookApp.Version.Split('.')[0]);
 
@@ -185,6 +177,44 @@ namespace SuiteCRMAddIn
                 //For Outlook version 2010 and greater
                 //var app = this.Application;
                 //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
+            }
+        }
+
+        /// <summary>
+        /// Check whether an upgrade of settings is required, and if so, do it.
+        /// </summary>
+        private void MaybeUpgradeSettings()
+        {
+            /* Attempt to fix 'settings getting wiped' bug #187;
+             * see https://stackoverflow.com/questions/2201819/why-are-persisted-user-settings-not-loaded
+             */
+            if (Settings.Default.NeedsUpgrade)
+            {
+                Settings.Default.Upgrade();
+                Settings.Default.NeedsUpgrade = false;
+                Settings.Default.Save();
+            }
+            /* The above doesn't always work; Settings.Default.NeedsUpgrade doesn't
+             * always fire when it should. I hypothesise that this is because we are
+             * an Add-in, not a first class application, and our settings directory
+             * actually tracks the Microsoft Office version. So check if a key setting
+             * is missing, and if it is, attempt upgrade.
+             */
+            else if (String.IsNullOrWhiteSpace(Settings.Default.LicenceKey))
+            {
+                try
+                {
+                    Log.Debug("No licence key? Trying upgrade...");
+                    Settings.Default.Upgrade();
+                    Settings.Default.Save();
+                    Log.Debug("Upgrade succeeded.");
+                }
+                catch (Exception any)
+                {
+                    /* This will fail in the case of a new installation, but that's OK. 
+                     * However, log it, in case it also fails at other times. */
+                    Log.Error($"Caught {any.GetType().Name} '{any.Message}' while attempting to upgrade settings.");
+                }
             }
         }
 
