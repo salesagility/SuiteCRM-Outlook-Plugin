@@ -50,3 +50,7 @@ packages/
 obj
 bin
 obj
+
+Documentation/html/
+
+Documentation/latex/
