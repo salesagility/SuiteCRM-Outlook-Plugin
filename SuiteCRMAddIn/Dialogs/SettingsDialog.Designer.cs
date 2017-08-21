@@ -181,6 +181,7 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // txtAutoSync
             // 
+            this.txtAutoSync.AcceptsReturn = true;
             this.txtAutoSync.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.txtAutoSync.Location = new System.Drawing.Point(15, 282);
             this.txtAutoSync.Multiline = true;

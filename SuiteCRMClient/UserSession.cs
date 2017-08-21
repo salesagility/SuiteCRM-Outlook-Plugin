@@ -218,8 +218,8 @@ namespace SuiteCRMClient
         /// <returns></returns>
         public string AuthenticateLDAP(string username, string password, string key, string iv)
         {
-            return new LDAPAuthenticationHelper(username, password, key, iv, 
-                new RestService(this.restServer.SuiteCRMURL.ToString(), this._log)).Authenticate();
+            return new LDAPAuthenticationHelper(username, password, key, iv, ApplicationName,
+                this.restServer).Authenticate();
         }
 
         /// <summary>

@@ -36,24 +36,32 @@ namespace SuiteCRMClient
         private string username;
         private string password;
         private string key;
+
+        /// <summary>
+        /// The 'initialisation vector'
+        /// </summary>
         private string iv;
-        private RestService service;
+
+        private CrmRestServer server;
+
+        private readonly string applicationName;
 
         /// <summary>
         /// Construct a new instance of LDAPAuthenticationHelper with these credentials.
         /// </summary>
         /// <param name="username">The username to identify as.</param>
         /// <param name="password">The pass to identify with.</param>
-        /// <param name="key">The ?ldapKey?</param>
-        /// <param name="iv">The ?ldapIV? (in practice always "pass").</param>
+        /// <param name="key">The encryption key</param>
+        /// <param name="iv">The initialization vector (in practice always "password").</param>
         /// <param name="service">The REST service exposed by the CRM instance.</param>
-        public LDAPAuthenticationHelper( string username, string password, string key, string iv, RestService service)
+        public LDAPAuthenticationHelper( string username, string password, string key, string iv, string applicationName, CrmRestServer server)
         {
             this.username = username;
             this.password = password;
             this.key = key;
             this.iv = iv;
-            this.service = service;
+            this.applicationName = applicationName;
+            this.server = server;
         }
 
         /// <summary>
@@ -66,24 +74,25 @@ namespace SuiteCRMClient
 
             object loginData = new
             {
-                @user_auth = new
+                user_auth = new
                 {
-                    @user_name = username,
-                    @password = EncryptPassword(this.password, 
-                    ConstructEncryptionAlgorithm(this.key, this.iv))
+                    user_name = username,
+                    password = EncryptPassword(this.password,
+                        ConstructEncryptionAlgorithm(this.key, this.iv)),
+                    application_name = this.applicationName
                 }
             };
 
-            return service.GetResponse<SetEntryResult>("login", loginData).id;
+            return server.GetCrmResponse<RESTObjects.Login>("login", loginData).SessionID;
         }
 
         /// <summary>
         /// Construct an encryption algorithm using this key and this ?iv?.
         /// </summary>
         /// <param name="ldapKey">The LDAP key to use.</param>
-        /// <param name="pass">The ?iv? to use (in practice, always "pass").</param>
+        /// <param name="iv">The initialization vector to use (in practice, always "password").</param>
         /// <returns></returns>
-        private SymmetricAlgorithm ConstructEncryptionAlgorithm(string ldapKey, string pass)
+        private SymmetricAlgorithm ConstructEncryptionAlgorithm(string ldapKey, string iv)
         {
             byte[] ldapKeyBuffer = new MD5CryptoServiceProvider().ComputeHash(Encoding.UTF8.GetBytes(ldapKey));
             StringBuilder ldapKeyBuilder = new StringBuilder();
@@ -95,7 +104,7 @@ namespace SuiteCRMClient
             {
                 Mode = CipherMode.CBC,
                 Key = Encoding.UTF8.GetBytes(ldapKeyBuilder.ToString(0, 0x18)),
-                IV = Encoding.UTF8.GetBytes(pass),
+                IV = Encoding.UTF8.GetBytes(iv),
                 Padding = PaddingMode.Zeros
             };
             return edes;
