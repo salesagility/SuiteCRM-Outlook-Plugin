@@ -430,4 +430,29 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
+  <PropertyGroup>
+    <DocDirectory>..\Documentation\</DocDirectory>
+	<Doxyfile>..\Doxyfile</Doxyfile>
+  </PropertyGroup>
+  <Target Name="Doxygen">
+    <MakeDir Directories="$(DocDirectory)" />
+    <Exec Command="doxygen.exe $(Doxyfile)" />
+  </Target>
+  <Target Name="DoxyClean">
+	<RemoveDir Directories="$(DocDirectory)\html" />
+	<RemoveDir Directories="$(DocDirectory)\latex" />
+	<Delete Files="$(DocDirectory)\*.tmp" />
+  </Target>
+  <PropertyGroup>  
+    <BuildDependsOn>  
+        $(BuildDependsOn);  
+        Doxygen  
+    </BuildDependsOn>  
+  </PropertyGroup> 
+  <PropertyGroup>  
+    <CleanDependsOn>  
+        $(CleanDependsOn);  
+        DoxyClean  
+    </CleanDependsOn>  
+  </PropertyGroup> 
 </Project>

@@ -58,3 +58,7 @@ Documentation/latex/
 licencekey\.txt
 
 *.orig
+
+SuiteCRMAddIn/Documentation/html/
+
+SuiteCRMAddIn/Documentation/latex/
