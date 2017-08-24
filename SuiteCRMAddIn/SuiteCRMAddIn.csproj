@@ -468,12 +468,15 @@
           {
             case "MAJOR":
               elements[0]++;
+              for (int i = 1; i < 4; i++) { elements[i] = 0; }
               break;
             case "MINOR":
               elements[1]++;
+              for (int i = 2; i < 4; i++) { elements[i] = 0; }
               break;
             case "PATCH":
               elements[2]++;
+              elements[3] = 0;
               break;
             default:
               elements[3]++;
