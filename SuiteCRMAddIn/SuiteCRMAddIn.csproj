@@ -430,29 +430,95 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
+  <UsingTask TaskName="BumpVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <ReleaseLevel ParameterType="System.String" Required="false" />
+      <TargetFileName ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Core" />
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          /*
+           * Read the version from the assembly file, increment it as directed, substitute it into the target file.
+           */
+          String assemblyFileName = "Properties\\AssemblyInfo.cs";
+          String oldVersion = new Regex(".*\\[assembly: AssemblyVersion\\(\"([0-9.]*)\"\\)\\].*")
+            .Replace(File.ReadAllText(assemblyFileName), m => m.ToString());
+
+          IEnumerator matches = new Regex("[0-9]+").Matches(oldVersion).GetEnumerator();
+          List<int> elements = new List<int>();
+
+          while (matches.MoveNext())
+          {
+            elements.Add(int.Parse(matches.Current.ToString()));
+          }
+
+          switch (releaseLevel)
+          {
+            case "MAJOR":
+              elements[0]++;
+              break;
+            case "MINOR":
+              elements[1]++;
+              break;
+            case "PATCH":
+              elements[2]++;
+              break;
+            default:
+              elements[3]++;
+              break;
+          }
+
+          string newVersion = $"{elements[0]}.{elements[1]}.{elements[2]}.{elements[3]}";
+          
+          File.WriteAllText(TargetFileName, 
+            Regex.Replace( File.ReadAllText(TargetFileName)),
+              oldVersion,
+              newVersion);
+          ]]>
+      </Code>
+    </Task>
+  </UsingTask>
   <PropertyGroup>
     <DocDirectory>..\Documentation\</DocDirectory>
-	<Doxyfile>..\Doxyfile</Doxyfile>
+    <Doxyfile>..\Doxyfile</Doxyfile>
+    <ReleaseLevel Condition=" '$(Configuration)' == 'Release' ">PATCH</ReleaseLevel>
   </PropertyGroup>
   <Target Name="Doxygen">
     <MakeDir Directories="$(DocDirectory)" />
     <Exec Command="doxygen.exe $(Doxyfile)" />
   </Target>
   <Target Name="DoxyClean">
-	<RemoveDir Directories="$(DocDirectory)\html" />
-	<RemoveDir Directories="$(DocDirectory)\latex" />
-	<Delete Files="$(DocDirectory)\*.tmp" />
+    <RemoveDir Directories="$(DocDirectory)\html" />
+    <RemoveDir Directories="$(DocDirectory)\latex" />
+    <Delete Files="$(DocDirectory)\*.tmp" />
+  </Target>
+  <Target Name="Bump">
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="..\SuiteCRMAddinSetup\SuiteCRMAddinSetup.isl"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="..SuiteCrmClient\Properties\AssemblyInfo.cs"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="Properties\AssemblyInfo.cs"/>
   </Target>
   <PropertyGroup>  
     <BuildDependsOn>  
-        $(BuildDependsOn);  
-        Doxygen  
+      $(BuildDependsOn);  
+      Doxygen  
     </BuildDependsOn>  
   </PropertyGroup> 
   <PropertyGroup>  
     <CleanDependsOn>  
-        $(CleanDependsOn);  
-        DoxyClean  
+      $(CleanDependsOn);  
+      DoxyClean  
     </CleanDependsOn>  
   </PropertyGroup> 
+
 </Project>
