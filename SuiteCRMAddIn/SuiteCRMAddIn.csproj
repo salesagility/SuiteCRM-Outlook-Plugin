@@ -449,18 +449,20 @@
           Console.WriteLine(String.Format("BumpVersion started: ReleaseLevel is '{0}'; Target is '{1}'", ReleaseLevel, TargetFileName));
           String assemblyFileName = "Properties\\AssemblyInfo.cs";
                     
-          string oldVersion = new Regex("\\[assembly: AssemblyVersion\\(\"[0-9.]*\"\\)\\]")
+          string assemblyVersionDeclaration = new Regex("\\[assembly: AssemblyVersion\\(\"[0-9.]*\"\\)\\]")
             .Match(File.ReadAllText(assemblyFileName)).ToString();
-            
-          Console.WriteLine(String.Format("\tOld version is {0}", oldVersion));
 
-          IEnumerator matches = new Regex("[0-9]+").Matches(oldVersion).GetEnumerator();
+          IEnumerator matches = new Regex("[0-9]+").Matches(assemblyVersionDeclaration).GetEnumerator();
           List<int> elements = new List<int>();
 
           while (matches.MoveNext())
           {
             elements.Add(int.Parse(matches.Current.ToString()));
           }
+          
+          string oldVersion = String.Format("{0}\\.{1}\\.{2}\\.{3}", elements[0], elements[1], elements[2], elements[3]);
+            
+          Console.WriteLine(String.Format("\tOld version is {0}", oldVersion));
 
           switch (ReleaseLevel)
           {
@@ -484,7 +486,7 @@
           
           File.WriteAllText(TargetFileName, 
             Regex.Replace( File.ReadAllText(TargetFileName),
-              oldVersion.Replace(".", "\\."),
+              oldVersion,
               newVersion));
           ]]>
       </Code>
