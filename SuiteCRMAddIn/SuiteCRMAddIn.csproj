@@ -519,7 +519,7 @@
   </Target>
   <PropertyGroup>  
     <BuildDependsOn>  
-      Bump
+      Bump;
       $(BuildDependsOn);  
       Doxygen  
     </BuildDependsOn>  
