@@ -126,16 +126,16 @@ namespace SuiteCRMAddIn.Dialogs
                         string str8 = query;
                         query = str8 + "AND " + str2.ToLower() + ".assigned_user_id = '" + Globals.ThisAddIn.SuiteCRMUserSession.id + "'";
                     }
-                    foreach (eEntryValue _value in clsSuiteCRMHelper.GetEntryList(str2, query, 0, "date_entered DESC", 0, false, new string[] { "first_name", "last_name", "email1" }).entry_list)
+                    foreach (EntryValue _value in RestAPIWrapper.GetEntryList(str2, query, 0, "date_entered DESC", 0, false, new string[] { "first_name", "last_name", "email1" }).entry_list)
                     {
                         string str4 = string.Empty;
                         string str5 = string.Empty;
                         string valueByKey = string.Empty;
                         string str7 = string.Empty;
-                        valueByKey = clsSuiteCRMHelper.GetValueByKey(_value, "first_name");
-                        str7 = clsSuiteCRMHelper.GetValueByKey(_value, "last_name");
-                        clsSuiteCRMHelper.GetValueByKey(_value, "id");
-                        str5 = clsSuiteCRMHelper.GetValueByKey(_value, "email1");
+                        valueByKey = RestAPIWrapper.GetValueByKey(_value, "first_name");
+                        str7 = RestAPIWrapper.GetValueByKey(_value, "last_name");
+                        RestAPIWrapper.GetValueByKey(_value, "id");
+                        str5 = RestAPIWrapper.GetValueByKey(_value, "email1");
                         str4 = valueByKey + " " + str7;
                         this.lstViewResults.Items.Add(new ListViewItem(new string[] { str4, str5, str2 }));
                     }

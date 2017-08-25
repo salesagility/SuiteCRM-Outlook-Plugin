@@ -164,22 +164,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         // TODO: this is very horrible and should be reworked.
-        protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, string crmType, eEntryValue crmItem)
+        protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, string crmType, EntryValue crmItem)
         {
             SyncState<Outlook.TaskItem> result = null;
 
-            Log.Debug($"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {clsSuiteCRMHelper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
+            Log.Debug($"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {RestAPIWrapper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
 
-            if (clsSuiteCRMHelper.GetUserId() == crmItem.GetValueAsString("assigned_user_id"))
+            if (RestAPIWrapper.GetUserId() == crmItem.GetValueAsString("assigned_user_id"))
             {
-                DateTime date_start = crmItem.GetValueAsDateTime("date_start");
-                DateTime date_due = crmItem.GetValueAsDateTime("date_due");
-                string time_start =
-                        TimeSpan.FromHours(date_start.Hour)
-                            .Add(TimeSpan.FromMinutes(date_start.Minute))
+                DateTime dateStart = crmItem.GetValueAsDateTime("newValue");
+                DateTime dateDue = crmItem.GetValueAsDateTime("dateDue");
+                string timeStart =
+                        TimeSpan.FromHours(dateStart.Hour)
+                            .Add(TimeSpan.FromMinutes(dateStart.Minute))
                             .ToString(@"hh\:mm");
-                string time_due = TimeSpan.FromHours(date_due.Hour)
-                                .Add(TimeSpan.FromMinutes(date_due.Minute))
+                string timeDue = TimeSpan.FromHours(dateDue.Hour)
+                                .Add(TimeSpan.FromMinutes(dateDue.Minute))
                                 .ToString(@"hh\:mm");
 
                 var syncState = this.GetExistingSyncState(crmItem);
@@ -192,7 +192,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     if (matches.Count == 0)
                     {
                         /* didn't find it, so add it to Outlook */
-                        result = AddNewItemFromCrmToOutlook(tasksFolder, crmItem, date_start, date_due, time_start, time_due);
+                        result = AddNewItemFromCrmToOutlook(tasksFolder, crmItem, dateStart, dateDue, timeStart, timeDue);
                     }
                     else
                     {
@@ -201,14 +201,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else
                 {
-                    result = UpdateExistingOutlookItemFromCrm(crmItem, date_start, date_due, time_start, time_due, syncState);
+                    result = UpdateExistingOutlookItemFromCrm(crmItem, dateStart, dateDue, timeStart, timeDue, syncState);
                 }
             }
 
             return result;
         }
 
-        private SyncState<Outlook.TaskItem> UpdateExistingOutlookItemFromCrm(eEntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due, SyncState<Outlook.TaskItem> syncStateForItem)
+        private SyncState<Outlook.TaskItem> UpdateExistingOutlookItemFromCrm(EntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due, SyncState<Outlook.TaskItem> syncStateForItem)
         {
             if (!syncStateForItem.IsDeletedInOutlook)
             {
@@ -224,53 +224,58 @@ namespace SuiteCRMAddIn.BusinessLogic
             return syncStateForItem;
         }
 
-        private void SetOutlookItemPropertiesFromCrmItem(eEntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due, Outlook.TaskItem olItem)
+        private void SetOutlookItemPropertiesFromCrmItem(EntryValue crmItem, DateTime? dateStart, DateTime? dateDue, string timeStart, string timeDue, Outlook.TaskItem olItem)
         {
             try
             {
                 olItem.Subject = crmItem.GetValueAsString("name");
 
-                try
-                {
-                    if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
-                    {
-                        Log.Warn("\ttItem.StartDate= " + olItem.StartDate + ", date_start=" + date_start);
-                        olItem.StartDate = date_start.Value;
-                    }
-                }
-                catch (Exception fail)
-                {
-                    /* you (sometimes? always?) can't set the start or due dates of tasks. Investigate. */
-                    Log.Error($"TaskSyncing.SetOutlookItemPropertiesFromCrmItem: Failed to set start date on task because {fail.Message}", fail);
+                olItem.StartDate = MaybeChangeDate(dateStart, olItem.StartDate, "olItem.StartDate");
 
-                }
-                try
-                {
-                    if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_due")))
-                    {
-                        olItem.DueDate = date_due.Value; // DateTime.Parse(dResult.date_due.value.ToString());
-                    }
-                }
-                catch (Exception fail)
-                {
-                    /* you (sometimes? always?) can't set the start or due dates of tasks. Investigate. */
-                    Log.Error($"TaskSyncing.SetOutlookItemPropertiesFromCrmItem: Failed to set due date on task because {fail.Message}", fail);
-
-                }
+                olItem.DueDate = MaybeChangeDate(dateDue, olItem.DueDate, "olItem.DueDate");
 
                 string body = crmItem.GetValueAsString("description");
-                olItem.Body = string.Concat(body, "#<", time_start, "#", time_due);
+                olItem.Body = string.Concat(body, "#<", timeStart, "#", timeDue);
                 olItem.Status = GetStatus(crmItem.GetValueAsString("status"));
                 olItem.Importance = GetImportance(crmItem.GetValueAsString("priority"));
                 EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.GetValueAsString("date_modified"), DefaultCrmModule, crmItem.id);
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 
-        private SyncState<Outlook.TaskItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, eEntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due)
+        /// <summary>
+        /// Return a DateTime which is this new value if the new value is valid, else this old value.
+        /// </summary>
+        /// <param name="newValue">A new value, which may be invalid (null or equal to DateTime.MinValue).</param>
+        /// <param name="oldValue">An old value.</param>
+        /// <param name="nameOfValue">The name of the value to be changed, for logging purposes.</param>
+        /// <returns>a DateTime which is this new value if the new value is valid, else this old value.</returns>
+        private DateTime MaybeChangeDate(DateTime? newValue, DateTime oldValue, string nameOfValue)
+        {
+            DateTime result = oldValue;
+            try
+            {
+                if (newValue.HasValue && newValue.Value > DateTime.MinValue)
+                {
+                    Log.Warn($"\tt{nameOfValue}= {oldValue}, newValue= {newValue.Value}");
+                    result = newValue.Value;
+                }
+            }
+            catch (Exception fail)
+            {
+                /* you (sometimes? always?) can't set the start or due dates of tasks. Investigate. */
+                Log.Error(
+                    $"TaskSyncing.SetOutlookItemPropertiesFromCrmItem: Failed to set {nameOfValue} on task because {fail.Message}",
+                    fail);
+            }
+
+            return result;
+        }
+
+        private SyncState<Outlook.TaskItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, EntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due)
         {
             Outlook.TaskItem olItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
             TaskSyncState newState = null;
@@ -289,8 +294,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
-                LogItemAction(olItem, "TaskSyncing.AddNewItemFromCrmToOutlook, saved item");
+                this.SaveItem(olItem);
             }
 
             return newState;
@@ -306,7 +310,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem, string crmType, string entryId)
         {
-            return clsSuiteCRMHelper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), crmType);
+            return RestAPIWrapper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), crmType);
         }
 
 
@@ -405,10 +409,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.Sensitivity;
         }
 
-        protected override bool IsMatch(Outlook.TaskItem olItem, eEntryValue crmItem)
+        protected override bool IsMatch(Outlook.TaskItem olItem, EntryValue crmItem)
         {
             return olItem.Subject == crmItem.GetValueAsString("name") &&
-                olItem.StartDate.ToUniversalTime() == crmItem.GetValueAsDateTime("date_start").ToUniversalTime();
+                olItem.StartDate.ToUniversalTime() == crmItem.GetValueAsDateTime("newValue").ToUniversalTime();
         }
     }
 }

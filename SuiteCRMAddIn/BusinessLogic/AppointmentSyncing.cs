@@ -21,6 +21,8 @@
  * @author SalesAgility <info@salesagility.com>
  */
 
+using System.Diagnostics;
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using ProtoItems;
@@ -28,7 +30,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System;
-    using System.Linq;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Text;
@@ -83,10 +84,10 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             string[] fields = new string[1];
             fields[0] = "id";
-            eGetEntryListResult _result = clsSuiteCRMHelper.GetEntryList(sModule, str5, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+            EntryList _result = RestAPIWrapper.GetEntryList(sModule, str5, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
             if (_result.result_count > 0)
             {
-                return clsSuiteCRMHelper.GetValueByKey(_result.entry_list[0], "id");
+                return RestAPIWrapper.GetValueByKey(_result.entry_list[0], "id");
             }
             return String.Empty;
         }
@@ -184,7 +185,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, adding current user");
 
-			SetCrmRelationshipFromOutlook(meetingId, "Users", clsSuiteCRMHelper.GetUserId());
+			SetCrmRelationshipFromOutlook(meetingId, "Users", RestAPIWrapper.GetUserId());
         }
 
         private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem olItem, string meetingId)
@@ -198,7 +199,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 if (sCID != String.Empty)
                 {
-                    string AccountID = clsSuiteCRMHelper.getRelationship(ContactSyncing.CrmModule, sCID, "accounts");
+                    string AccountID = RestAPIWrapper.GetRelationship(ContactSyncing.CrmModule, sCID, "accounts");
 
                     SetCrmRelationshipFromOutlook(meetingId, "Accounts", AccountID);
                 }
@@ -219,7 +220,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private SyncState<Outlook.AppointmentItem> AddNewItemFromCrmToOutlook(
             Outlook.MAPIFolder appointmentsFolder,
             string crmType,
-            eEntryValue crmItem,
+            EntryValue crmItem,
             DateTime date_start)
         {
             Outlook.AppointmentItem olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
@@ -240,7 +241,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 };
 
                 ItemsSyncState.Add(newState);
-                olItem.Save();
+                this.SaveItem(olItem);
 
                 LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
                 if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
@@ -256,8 +257,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
-                LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook, saved item");
+                this.SaveItem(olItem);
             }
 
             return newState;
@@ -279,7 +279,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmItem">The CRM version of the item</param>
         /// <param name="olItem">The Outlook version, assumed to be of the same item.</param>
         /// <param name="crmType">The CRM type of the item.</param>
-        private void MaybeAddAcceptDeclineLinks(eEntryValue crmItem, Outlook.AppointmentItem olItem, string crmType)
+        private void MaybeAddAcceptDeclineLinks(EntryValue crmItem, Outlook.AppointmentItem olItem, string crmType)
         {
             Outlook.UserProperty olPropertyModified = olItem.UserProperties[ModifiedDatePropertyName];
 
@@ -297,14 +297,17 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         preferredVersion = outlookVersion;
                     }
-                    else if (olPropertyModified != null &&
-                        ParseDateTimeFromUserProperty(olPropertyModified.Value.ToString()) > crmItem.GetValueAsDateTime("date_modified"))
-                    {
-                        preferredVersion = outlookVersion;
-                    }
                     else
                     {
-                        preferredVersion = crmVersion;
+                        if (olPropertyModified != null &&
+                            ParseDateTimeFromUserProperty(olPropertyModified.Value.ToString()) > crmItem.GetValueAsDateTime("date_modified"))
+                        {
+                            preferredVersion = outlookVersion;
+                        }
+                        else
+                        {
+                            preferredVersion = crmVersion;
+                        }
                     }
 
                     olItem.Body = $"{preferredVersion}\n\n{this.AcceptDeclineLinks(crmItem)}";
@@ -312,7 +315,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 
@@ -385,7 +388,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmType">The type of the CRM item.</param>
         /// <param name="crmItem">The CRM item.</param>
         /// <param name="olItem">The Outlook item.</param>
-        private void SetOutlookItemDuration(string crmType, eEntryValue crmItem, Outlook.AppointmentItem olItem)
+        private void SetOutlookItemDuration(string crmType, EntryValue crmItem, Outlook.AppointmentItem olItem)
         {
             int minutes = 0, hours = 0;
             try
@@ -415,7 +418,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 
@@ -425,7 +428,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="crmItem">The CRM item.</param>
         /// <param name="type">The value for the SType property (CRM module name).</param>
-        protected override void EnsureSynchronisationPropertiesForOutlookItem(Outlook.AppointmentItem olItem, eEntryValue crmItem, string type)
+        protected override void EnsureSynchronisationPropertiesForOutlookItem(Outlook.AppointmentItem olItem, EntryValue crmItem, string type)
         {
             base.EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, type);
             if (this.DefaultCrmModule.Equals(type))
@@ -515,7 +518,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override string ConstructAndDespatchCrmItem(Outlook.AppointmentItem olItem, string crmType, string entryId)
         {
-            return clsSuiteCRMHelper.SetEntryUnsafe(new ProtoAppointment(olItem).AsNameValues(entryId), crmType);
+            return RestAPIWrapper.SetEntryUnsafe(new ProtoAppointment(olItem).AsNameValues(entryId), crmType);
         }
 
 
@@ -619,12 +622,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="folder">The folder to synchronise into.</param>
         /// <param name="crmType">The CRM type of the candidate item.</param>
-        /// <param name="candidateItem">The candidate item from CRM.</param>
+        /// <param name="crmItem">The candidate item from CRM.</param>
         /// <returns>The synchronisation state of the item updated (if it was updated).</returns>
         protected override SyncState<Outlook.AppointmentItem> AddOrUpdateItemFromCrmToOutlook(
             Outlook.MAPIFolder folder,
             string crmType,
-            eEntryValue crmItem)
+            EntryValue crmItem)
         {
             SyncState<Outlook.AppointmentItem> result = null;
             DateTime dateStart = crmItem.GetValueAsDateTime("date_start");
@@ -654,13 +657,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                     result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, syncState);
                 }
 
-                result.OutlookItem.Save();
+                result?.OutlookItem.Save();
             }
 
             return result;
         }
 
-        protected override bool IsMatch(Outlook.AppointmentItem olItem, eEntryValue crmItem)
+        protected override bool IsMatch(Outlook.AppointmentItem olItem, EntryValue crmItem)
         {
             var crmItemStart = crmItem.GetValueAsDateTime("date_start");
             var crmItemName = crmItem.GetValueAsString("name");
@@ -743,14 +746,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (foreignId != String.Empty)
             {
-                eSetRelationshipValue info = new eSetRelationshipValue
+                SetRelationshipParams info = new SetRelationshipParams
                 {
                     module2 = AppointmentSyncing.CrmModule,
                     module2_id = meetingId,
                     module1 = foreignModule,
                     module1_id = foreignId
                 };
-                result = clsSuiteCRMHelper.SetRelationshipUnsafe(info);
+                result = RestAPIWrapper.SetRelationshipUnsafe(info);
             }
 
             return result;
@@ -773,7 +776,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 string[] invitee_categories = { "users", ContactSyncing.CrmModule, "leads" };
                 foreach (string invitee_category in invitee_categories)
                 {
-                    eEntryValue[] relationships = clsSuiteCRMHelper.getRelationships(sModule, sMeetingID, invitee_category, new string[] { "id", "email1", "phone_work" });
+                    EntryValue[] relationships = RestAPIWrapper.GetRelationships(sModule, sMeetingID, invitee_category, new string[] { "id", "email1", "phone_work" });
                     if (relationships != null)
                     {
 
@@ -795,7 +798,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 
@@ -844,9 +847,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var untouched = new HashSet<SyncState<Outlook.AppointmentItem>>(this.ItemsSyncState);
                 MergeRecordsFromCrm(folder, crmModule, untouched);
 
-                eEntryValue[] invited = clsSuiteCRMHelper.getRelationships("Users",
-                    clsSuiteCRMHelper.GetUserId(), crmModule.ToLower(),
-                    clsSuiteCRMHelper.GetSugarFields(crmModule));
+                EntryValue[] invited = RestAPIWrapper.GetRelationships("Users",
+                    RestAPIWrapper.GetUserId(), crmModule.ToLower(),
+                    RestAPIWrapper.GetSugarFields(crmModule));
                 if (invited != null)
                 {
                     AddOrUpdateItemsFromCrmToOutlook(invited, folder, untouched, crmModule);
@@ -878,7 +881,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state.</returns>
         private SyncState<Outlook.AppointmentItem> UpdateExistingOutlookItemFromCrm(
             string crmType, 
-            eEntryValue crmItem, 
+            EntryValue crmItem, 
             DateTime date_start, 
             SyncState<Outlook.AppointmentItem> syncState)
         {
@@ -907,7 +910,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     finally
                     {
-                        olItem.Save();
+                        this.SaveItem(olItem);
                     }
                 }
                 Log.Warn((string)("Not default dResult.date_modified= " + crmItem.GetValueAsString("date_modified")));
@@ -924,7 +927,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
         /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
         /// <param name="olItem">The outlook item assumed to correspond with the CRM item.</param>
-        private void UpdateOutlookStartAndDuration(string crmType, eEntryValue crmItem, DateTime date_start, Outlook.AppointmentItem olItem)
+        private void UpdateOutlookStartAndDuration(string crmType, EntryValue crmItem, DateTime date_start, Outlook.AppointmentItem olItem)
         {
             try
             {
@@ -940,16 +943,20 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olItem.Location = crmItem.GetValueAsString("location");
                     olItem.End = olItem.Start;
                     if (hours > 0)
+                    {
                         olItem.End.AddHours(hours);
+                    }
                     if (minutes > 0)
+                    {
                         olItem.End.AddMinutes(minutes);
+                    }
                     SetRecipients(olItem, crmItem.GetValueAsString("id"), crmType);
                 }
                 olItem.Duration = minutes + hours * 60;
             }
             finally
             {
-                olItem.Save();
+                this.SaveItem(olItem);
             }
         }
 
@@ -968,7 +975,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.EntryID;
         }
 
-        private string AcceptDeclineLinks(eEntryValue crmItem)
+        private string AcceptDeclineLinks(EntryValue crmItem)
         {
             StringBuilder bob = new StringBuilder(AcceptDeclineHeader);
             bob.Append(Environment.NewLine);
@@ -981,11 +988,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             return bob.ToString();
         }
 
-        private static string AcceptDeclineLink(eEntryValue crmItem, string acceptStatus)
+        private static string AcceptDeclineLink(EntryValue crmItem, string acceptStatus)
         {
             StringBuilder bob = new StringBuilder();
             bob.Append($"To {acceptStatus} this invitation: {Properties.Settings.Default.Host}/index.php?entryPoint=acceptDecline&module=Meetings")
-                .Append($"&user_id={clsSuiteCRMHelper.GetUserId()}")
+                .Append($"&user_id={RestAPIWrapper.GetUserId()}")
                 .Append($"&record={crmItem.id}")
                 .Append($"&accept_status={acceptStatus}")
                 .Append(Environment.NewLine);

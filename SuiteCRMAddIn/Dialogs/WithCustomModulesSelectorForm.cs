@@ -37,7 +37,7 @@ namespace SuiteCRMAddIn.Dialogs
     {
         protected void PopulateCustomModulesListView(ListView view, List<string> ignoreModules)
         {
-            foreach (module_data module in clsSuiteCRMHelper.GetModules().items.OrderBy(i => i.module_key))
+            foreach (AvailableModule module in RestAPIWrapper.GetModules().items.OrderBy(i => i.module_key))
             {
                 string moduleKey = module.module_key;
                 if (!ignoreModules.Contains(moduleKey) && Properties.Settings.Default.CustomModules != null)

@@ -22,11 +22,7 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// A list of the email categories known to the connected CRM instance, if that

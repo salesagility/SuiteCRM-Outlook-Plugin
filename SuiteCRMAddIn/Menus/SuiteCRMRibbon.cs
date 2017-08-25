@@ -22,18 +22,14 @@
  */
 using Microsoft.Office.Core;
 using stdole;
-using SuiteCRMAddIn.BusinessLogic;
 using SuiteCRMAddIn.Properties;
-using SuiteCRMClient;
 using SuiteCRMClient.Email;
 using SuiteCRMClient.Logging;
+using SuiteCRMAddIn.Extensions;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows.Forms;
 using Office = Microsoft.Office.Core;
 using Outlook = Microsoft.Office.Interop.Outlook;
@@ -165,10 +161,10 @@ namespace SuiteCRMAddIn
         /// <param name="control">The ribbon which caused this action to be raised.</param>
         public void btnSendAndArchive_Action(IRibbonControl control)
         {
-            Outlook.MailItem currentItem = 
+            Outlook.MailItem olItem = 
                 (Globals.ThisAddIn.Application.ActiveInspector().CurrentItem as Outlook.MailItem);
 
-            if (currentItem != null)
+            if (olItem != null)
             {
                 if (Globals.ThisAddIn.HasCrmUserSession)
                 {
@@ -176,7 +172,7 @@ namespace SuiteCRMAddIn
                     {
                         try
                         {
-                            Globals.ThisAddIn.EmailArchiver.ArchiveNewMailItem(currentItem, EmailArchiveType.Sent);
+                            olItem.Archive(EmailArchiveReason.SendAndArchive);
                         }
                         catch (Exception failedToArchve)
                         {
@@ -186,7 +182,7 @@ namespace SuiteCRMAddIn
                                 "Failed to archive");
                         }
 
-                        currentItem.Send();
+                        olItem.Send();
                     }
                     catch (Exception failedToSend)
                     {

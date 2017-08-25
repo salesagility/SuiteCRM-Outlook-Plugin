@@ -22,14 +22,12 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using Newtonsoft.Json;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-    using System.Net.Sockets;
     using System.Text;
 
     /// <summary>

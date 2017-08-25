@@ -28,7 +28,6 @@ using System.Windows.Forms;
 using SuiteCRMClient;
 using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
-using System.Collections.Specialized;
 using SuiteCRMAddIn.BusinessLogic;
 
 namespace SuiteCRMAddIn.Dialogs
@@ -180,7 +179,7 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 try
                 {
-                    clsSuiteCRMHelper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
+                    RestAPIWrapper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
 
                     if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                     {
@@ -207,8 +206,8 @@ namespace SuiteCRMAddIn.Dialogs
         /// <param name="toIgnore">Keys of modules to ignore.</param>
         protected void PopulateCustomModulesListView(ListView view, List<string> toIgnore)
         {
-            foreach (module_data module in 
-                clsSuiteCRMHelper.GetModulesHavingEmailRelationships()
+            foreach (AvailableModule module in 
+                RestAPIWrapper.GetModulesHavingEmailRelationships()
                 .OrderBy(i => i.module_key))
             {
                 if (!toIgnore.Contains(module.module_key))
@@ -231,7 +230,7 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         /// <param name="module">The module.</param>
         /// <returns>True if this module is a currently selected custom module.</returns>
-        private bool IsSelectedCustomModule(module_data module)
+        private bool IsSelectedCustomModule(AvailableModule module)
         {
             return Properties.Settings.Default.CustomModules != null &&
                 Properties.Settings.Default.CustomModules.Where(i => i.StartsWith($"{module.module_key}|")).Count() > 0;

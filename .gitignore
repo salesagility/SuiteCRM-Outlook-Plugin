@@ -49,12 +49,16 @@ packages/
 
 obj
 bin
-obj
 
-licencekey\.txt
 
 Documentation/html/
 
 Documentation/latex/
 
-*.gz
+licencekey\.txt
+
+*.orig
+
+SuiteCRMAddIn/Documentation/html/
+
+SuiteCRMAddIn/Documentation/latex/

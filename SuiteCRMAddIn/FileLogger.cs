@@ -22,7 +22,6 @@
  */
 namespace SuiteCRMAddIn
 {
-    using System;
     using System.IO;
     using SuiteCRMClient.Logging;
 
