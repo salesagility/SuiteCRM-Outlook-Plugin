@@ -38,9 +38,14 @@ namespace SuiteCRMClient
         private string key;
 
         /// <summary>
-        /// The 'initialisation vector'
+        /// The 'initialisation vector' - the encryption buffer gets initialised 
+        /// to this before the password is written into it; not sure why.
         /// </summary>
-        private string iv;
+        /// <remarks>
+        /// Note that the initialisation vector is hardcoded as 'password' in the server
+        /// side PHP code, so it probably isn't necessary to have it as a parameter here.
+        /// </remarks>
+        private string initialisationVector;
 
         private CrmRestServer server;
 
@@ -59,7 +64,7 @@ namespace SuiteCRMClient
             this.username = username;
             this.password = password;
             this.key = key;
-            this.iv = iv;
+            this.initialisationVector = iv;
             this.applicationName = applicationName;
             this.server = server;
         }
@@ -78,7 +83,7 @@ namespace SuiteCRMClient
                 {
                     user_name = username,
                     password = EncryptPassword(this.password,
-                        ConstructEncryptionAlgorithm(this.key, this.iv)),
+                        ConstructEncryptionAlgorithm(this.key, this.initialisationVector)),
                     application_name = this.applicationName
                 }
             };
