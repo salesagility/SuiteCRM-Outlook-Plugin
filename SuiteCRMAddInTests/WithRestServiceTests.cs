@@ -34,11 +34,11 @@ namespace SuiteCRMAddInTests
         /// <summary>
         /// A lot of the things we will want to test require access to a REST service.
         /// </summary>
-        protected RestService service;
+        protected CrmRestServer server;
 
         public WithRestServiceTests()
         {
-            this.service = new RestService(Settings.Default.host, this.Log);
+            this.server = new CrmRestServer(this.Log, 30000);
         }
     }
 }

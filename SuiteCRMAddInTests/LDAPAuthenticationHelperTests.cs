@@ -19,7 +19,7 @@
             try
             {
 
-                Assert.IsNotNull(new LDAPAuthenticationHelper(validUser, validPass, validKey, "password", service),
+                Assert.IsNotNull(new LDAPAuthenticationHelper(validUser, validPass, validKey, "password", "Unit Tests", server),
                     "Essentially all we need to test is that instantiation does not blow up");
             }
             catch (Exception)
@@ -33,19 +33,19 @@
         {
             Assert.IsFalse(
                 String.IsNullOrWhiteSpace(
-                    new LDAPAuthenticationHelper(validUser, validPass, validKey, "password", service).Authenticate()),
+                    new LDAPAuthenticationHelper(validUser, validPass, validKey, "password", "Unit Tests", server).Authenticate()),
                 "Good credentials, should validate.");
             Assert.IsTrue(
                 String.IsNullOrWhiteSpace(
-                    new LDAPAuthenticationHelper("invalid", validPass, validKey, "password", service).Authenticate()),
+                    new LDAPAuthenticationHelper("invalid", validPass, validKey, "password", "Unit Tests", server).Authenticate()),
                 "Bad username, should not validate");
             Assert.IsTrue(
                 String.IsNullOrWhiteSpace(
-                    new LDAPAuthenticationHelper(validUser, "invalid", validKey, "password", service).Authenticate()),
+                    new LDAPAuthenticationHelper(validUser, "invalid", validKey, "password", "Unit Tests", server).Authenticate()),
                 "Bad password, should not validate");
             Assert.IsTrue(
                 String.IsNullOrWhiteSpace(
-                    new LDAPAuthenticationHelper(validUser, validPass, "invalid", "password", service).Authenticate()),
+                    new LDAPAuthenticationHelper(validUser, validPass, "invalid", "password", "Unit Tests", server).Authenticate()),
                     "Bad key, should not validate");
         }
     }

@@ -430,4 +430,108 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
+  <UsingTask TaskName="BumpVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <ReleaseLevel ParameterType="System.String" Required="false" />
+      <TargetFileName ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Core" />
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          /*
+           * Read the version from the assembly file, increment it as directed, 
+           * substitute it into the target file.
+           */
+          Console.WriteLine(String.Format("BumpVersion started: ReleaseLevel is '{0}'; Target is '{1}'", ReleaseLevel, TargetFileName));
+          String assemblyFileName = "Properties\\AssemblyInfo.cs";
+                    
+          string assemblyVersionDeclaration = new Regex("\\[assembly: AssemblyVersion\\(\"[0-9.]*\"\\)\\]")
+            .Match(File.ReadAllText(assemblyFileName)).ToString();
+
+          IEnumerator matches = new Regex("[0-9]+").Matches(assemblyVersionDeclaration).GetEnumerator();
+          List<int> elements = new List<int>();
+
+          while (matches.MoveNext())
+          {
+            elements.Add(int.Parse(matches.Current.ToString()));
+          }
+          
+          string oldVersion = String.Format("{0}\\.{1}\\.{2}\\.{3}", elements[0], elements[1], elements[2], elements[3]);
+            
+          Console.WriteLine(String.Format("\tOld version is {0}", oldVersion));
+
+          switch (ReleaseLevel)
+          {
+            case "MAJOR":
+              elements[0]++;
+              for (int i = 1; i < 4; i++) { elements[i] = 0; }
+              break;
+            case "MINOR":
+              elements[1]++;
+              for (int i = 2; i < 4; i++) { elements[i] = 0; }
+              break;
+            case "PATCH":
+              elements[2]++;
+              elements[3] = 0;
+              break;
+            default:
+              elements[3]++;
+              break;
+          }
+
+          string newVersion = String.Format("{0}.{1}.{2}.{3}", elements[0], elements[1], elements[2], elements[3]);
+
+          Console.WriteLine(String.Format("\tNew version is {0}", newVersion));
+          
+          File.WriteAllText(TargetFileName, 
+            Regex.Replace( File.ReadAllText(TargetFileName),
+              oldVersion,
+              newVersion));
+          ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  <PropertyGroup>
+    <DocDirectory>..\Documentation\</DocDirectory>
+    <Doxyfile>..\Doxyfile</Doxyfile>
+    <ReleaseLevel Condition=" '$(Configuration)' == 'Release' ">PATCH</ReleaseLevel>
+  </PropertyGroup>
+  <Target Name="Doxygen">
+    <MakeDir Directories="$(DocDirectory)" />
+    <Exec Command="doxygen.exe $(Doxyfile)" />
+  </Target>
+  <Target Name="DoxyClean">
+    <RemoveDir Directories="$(DocDirectory)\html" />
+    <RemoveDir Directories="$(DocDirectory)\latex" />
+    <Delete Files="$(DocDirectory)\*.tmp" />
+  </Target>
+  <Target Name="Bump">
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="..\SuiteCRMAddinSetup\SuiteCRMAddinSetup.isl"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="..\SuiteCrmClient\Properties\AssemblyInfo.cs"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="Properties\AssemblyInfo.cs"/>
+  </Target>
+  <PropertyGroup>  
+    <BuildDependsOn>  
+      Bump;
+      $(BuildDependsOn);  
+      Doxygen  
+    </BuildDependsOn>  
+  </PropertyGroup> 
+  <PropertyGroup>  
+    <CleanDependsOn>  
+      $(CleanDependsOn);  
+      DoxyClean  
+    </CleanDependsOn>  
+  </PropertyGroup> 
+
 </Project>
