@@ -518,6 +518,12 @@
       TargetFileName="..\SuiteCrmClient\Properties\AssemblyInfo.cs"/>
     <BumpVersion 
       ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="$(Doxyfile)"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="..\README.md"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
       TargetFileName="Properties\AssemblyInfo.cs"/>
   </Target>
   <PropertyGroup>  
