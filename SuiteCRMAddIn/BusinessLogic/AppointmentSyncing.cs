@@ -487,6 +487,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             /* i.e. this was a new item saved to CRM for the first time */
                             AddCurrentUserAsOwner(olItem, result);
+                            olItem.Body += $"\n\n{this.AcceptDeclineLinks(result)}";
+                            this.SaveItem(olItem);
 
                             if (olItem.Recipients != null)
                             {
@@ -975,25 +977,41 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.EntryID;
         }
 
+
+        /// <summary>
+        /// Construct, and return as a string, a group of accept/decline links for this item.
+        /// </summary>
+        /// <param name="crmItem">The item for which links should be constructed.</param>
+        /// <returns>A block of text containing appropriate links.</returns>
         private string AcceptDeclineLinks(EntryValue crmItem)
+        {
+            return this.AcceptDeclineLinks(crmItem.id);
+        }
+
+        /// <summary>
+        /// Construct, and return as a string, a group of accept/decline links for this item.
+        /// </summary>
+        /// <param name="crmItemId">The id of the item for which links should be constructed.</param>
+        /// <returns>A block of text containing appropriate links.</returns>
+        private string AcceptDeclineLinks(string crmItemId)
         {
             StringBuilder bob = new StringBuilder(AcceptDeclineHeader);
             bob.Append(Environment.NewLine);
 
             foreach (string acceptStatus in new string[] { "Accept", "Tentative", "Decline" })
             {
-                bob.Append(AcceptDeclineLink(crmItem, acceptStatus));
+                bob.Append(AcceptDeclineLink(crmItemId, acceptStatus));
             }
 
             return bob.ToString();
         }
 
-        private static string AcceptDeclineLink(EntryValue crmItem, string acceptStatus)
+        private static string AcceptDeclineLink(string crmItemId, string acceptStatus)
         {
             StringBuilder bob = new StringBuilder();
             bob.Append($"To {acceptStatus} this invitation: {Properties.Settings.Default.Host}/index.php?entryPoint=acceptDecline&module=Meetings")
                 .Append($"&user_id={RestAPIWrapper.GetUserId()}")
-                .Append($"&record={crmItem.id}")
+                .Append($"&record={crmItemId}")
                 .Append($"&accept_status={acceptStatus}")
                 .Append(Environment.NewLine);
 
