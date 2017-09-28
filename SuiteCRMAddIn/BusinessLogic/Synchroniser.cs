@@ -488,7 +488,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The item to find.</param>
         /// <returns>the SyncState whose item is this item</returns>
-        protected SyncState<OutlookItemType> AddOrGetSyncState(OutlookItemType olItem)
+        public SyncState<OutlookItemType> AddOrGetSyncState(OutlookItemType olItem)
         {
             var existingState = GetExistingSyncState(olItem);
             if (existingState != null)

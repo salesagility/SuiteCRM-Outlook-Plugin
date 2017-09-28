@@ -81,6 +81,7 @@
             this.Controls.Add(this.tasksRemainingLabel);
             this.Controls.Add(this.progress);
             this.Controls.Add(this.infoLabel);
+            this.Cursor = System.Windows.Forms.Cursors.WaitCursor;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
