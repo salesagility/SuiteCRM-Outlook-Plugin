@@ -704,10 +704,14 @@ namespace SuiteCRMAddIn
             {
                 if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
                 {
-                    ProcessNewMailItem(
-                        EmailArchiveReason.Outbound, 
+                    if (!ProcessNewMailItem(
+                        EmailArchiveReason.Outbound,
                         item as Outlook.MailItem,
-                        Properties.Settings.Default.ExcludedEmails);
+                        Properties.Settings.Default.ExcludedEmails))
+                    {
+                        ProcessSentMeetingInvite(
+                            item as Outlook.MeetingItem);
+                    }
                 }
             }
             catch (Exception ex)
@@ -715,6 +719,31 @@ namespace SuiteCRMAddIn
                 log.Error(catalogue.GetString("ThisAddIn.Application_ItemSend"), ex);
             }
         }
+
+
+        /// <summary>
+        /// A meeting invitation is being sent; if we're going to sync it we should do so now and add the accept/decline links to the body before it actually is sent.
+        /// </summary>
+        /// <param name="meetingItem">The meeting whose invite(s) are being despatched.</param>
+        /// <returns>true if the item was not null.</returns>
+        private bool ProcessSentMeetingInvite(Outlook.MeetingItem meetingItem)
+        {
+            if (meetingItem != null)
+            {
+                Outlook.AppointmentItem appointment = meetingItem.GetAssociatedAppointment(false);
+                var syncState = this.appointmentSynchroniser.AddOrGetSyncState(appointment);
+                new SyncWaitDialog(
+                    this.appointmentSynchroniser,
+                    syncState,
+                    AppointmentSyncing.CrmModule,
+                    this.log)
+                    .ShowDialog();
+                meetingItem.Body += this.appointmentSynchroniser.AcceptDeclineLinks(syncState.CrmEntryId);
+            }
+
+            return true;
+        }
+
 
         private void Application_NewMail(string EntryID)
         {
@@ -735,17 +764,22 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void ProcessNewMailItem(EmailArchiveReason archiveType, Outlook.MailItem mailItem, string excludedEmails = "")
+        private bool ProcessNewMailItem(EmailArchiveReason archiveType, Outlook.MailItem mailItem, string excludedEmails = "")
         {
+            bool result;
+
             if (mailItem == null)
             {
                 log.Info(catalogue.GetString("New 'mail item' was null"));
-                return;
+                result = false;
             }
             else
             {
                 this.EmailArchiver.ProcessEligibleNewMailItem(mailItem, archiveType, excludedEmails);
+                result = true;
             }
+
+            return result;
         }
 
         /// <summary>
