@@ -993,7 +993,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="crmItemId">The id of the item for which links should be constructed.</param>
         /// <returns>A block of text containing appropriate links.</returns>
-        private string AcceptDeclineLinks(string crmItemId)
+        public string AcceptDeclineLinks(string crmItemId)
         {
             StringBuilder bob = new StringBuilder(AcceptDeclineHeader);
             bob.Append(Environment.NewLine);
