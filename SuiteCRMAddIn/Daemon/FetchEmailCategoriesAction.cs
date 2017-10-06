@@ -51,7 +51,7 @@ namespace SuiteCRMAddIn.Daemon
         /// Replace the items in my items list, which is the list passed in by the caller, with
         /// the options returned for the 'category_id' field of the 'email' module.
         /// </summary>
-        public override void Perform()
+        public override string Perform()
         {
             Field field = RestAPIWrapper.GetFieldsForModule("Emails").moduleFields.FirstOrDefault(x => x.name == "category_id");
 
@@ -68,6 +68,8 @@ namespace SuiteCRMAddIn.Daemon
             }
 
             Properties.Settings.Default.Save();
+
+            return string.Empty;
         }
     }
 }

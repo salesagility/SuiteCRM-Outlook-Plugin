@@ -185,7 +185,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, adding current user");
 
-			SetCrmRelationshipFromOutlook(meetingId, "Users", RestAPIWrapper.GetUserId());
+            SetRelationshipParams info = new SetRelationshipParams
+            {
+                module2 = AppointmentSyncing.CrmModule,
+                module2_id = meetingId,
+                module1 = "Users",
+                module1_id = RestAPIWrapper.GetUserId()
+            };
+            RestAPIWrapper.TrySetRelationship(info, "meetings_assigned_user");
+
+            SetCrmRelationshipFromOutlook(meetingId, "Users", RestAPIWrapper.GetUserId());
         }
 
         private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem olItem, string meetingId)
@@ -223,25 +232,36 @@ namespace SuiteCRMAddIn.BusinessLogic
             EntryValue crmItem,
             DateTime date_start)
         {
-            Outlook.AppointmentItem olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
             AppointmentSyncState newState = null;
+            Outlook.AppointmentItem olItem = null;
             try
             {
-                olItem.Subject = crmItem.GetValueAsString("name");
-                olItem.Body = crmItem.GetValueAsString("description");
-                /* set the SEntryID property quickly, create the sync state and save the item, to reduce howlaround */
-                EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
                 var crmId = crmItem.GetValueAsString("id");
 
-                newState = new AppointmentSyncState(crmType)
+                /*
+                 * There's a nasty little bug (#223) where Outlook offers us back in a different thread
+                 * the item we're creating, before we're able to set up the sync state which marks it
+                 * as already known. By locking on the enqueueing lock here, we should prevent that.
+                 */
+                lock (enqueueingLock)
                 {
-                    OutlookItem = olItem,
-                    OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
-                    CrmEntryId = crmId
-                };
+                    olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
 
-                ItemsSyncState.Add(newState);
-                this.SaveItem(olItem);
+                    newState = new AppointmentSyncState(crmType)
+                    {
+                        OutlookItem = olItem,
+                        OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
+                        CrmEntryId = crmId
+                    };
+
+                    ItemsSyncState.Add(newState);
+
+                    olItem.Subject = crmItem.GetValueAsString("name");
+                    olItem.Body = crmItem.GetValueAsString("description");
+                    /* set the SEntryID property quickly, create the sync state and save the item, to reduce howlaround */
+                    EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
+                    this.SaveItem(olItem);
+                }
 
                 LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
                 if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
@@ -257,10 +277,29 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
-                this.SaveItem(olItem);
+                if (olItem != null)
+                {
+                    this.SaveItem(olItem);
+                }
             }
 
             return newState;
+        }
+
+        /// <summary>
+        /// A meeting created in CRM cannot natively be accepted or declined in Outlook. Add links to allow
+        /// acceptance/decline to the body of the item, if they do not already exist.
+        /// </summary>
+        /// <param name="olItem">The Outlook item to modify.</param>
+        /// <param name="crmId">The id of that item in CRM.</param>
+        private void MaybeAddAcceptDeclineLinks(Outlook.AppointmentItem olItem, string crmId)
+        {
+            string preferredVersion = StripAndTruncate(olItem.Body, AcceptDeclineHeader);
+
+            if (!preferredVersion.Equals(olItem.Body))
+            {
+                olItem.Body = $"{preferredVersion}\n\n{this.AcceptDeclineLinks(crmId)}";
+            }
         }
 
         /// <summary>
@@ -310,7 +349,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                     }
 
-                    olItem.Body = $"{preferredVersion}\n\n{this.AcceptDeclineLinks(crmItem)}";
+                    string newBody = $"{preferredVersion}\n\n{this.AcceptDeclineLinks(crmItem)}";
+
+                    if (!newBody.Equals(olItem.Body))
+                    {
+                        olItem.Body = newBody;
+                    }
                 }
             }
             finally
@@ -487,7 +531,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             /* i.e. this was a new item saved to CRM for the first time */
                             AddCurrentUserAsOwner(olItem, result);
-                            olItem.Body += $"\n\n{this.AcceptDeclineLinks(result)}";
+
+                            this.MaybeAddAcceptDeclineLinks(olItem, result);
+
                             this.SaveItem(olItem);
 
                             if (olItem.Recipients != null)
