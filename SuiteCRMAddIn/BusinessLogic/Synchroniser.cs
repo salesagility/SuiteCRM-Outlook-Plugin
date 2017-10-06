@@ -67,7 +67,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// threads (unlikely, since it should always be in the VSTA_main thread,
         /// but let's be paranoid).
         /// </summary>
-        private object enqueueingLock = new object();
+        protected object enqueueingLock = new object();
 
         /// <summary>
         /// The prefix for the fetch query, used in FetchRecordsFromCrm, q.v.

@@ -63,9 +63,11 @@ namespace SuiteCRMAddIn.Daemon
         }
 
 
-        public override void Perform()
+        public override string Perform()
         {
             synchroniser.AddOrUpdateItemFromOutlookToCrm(state);
+
+            return "Synced.";
         }
     }
 }

@@ -95,8 +95,8 @@ namespace SuiteCRMAddIn.Daemon
 
                 try
                 {
-                    task.Perform();
-                    Log.Info($"{task.Description} completed.");
+                    string report = task.Perform();
+                    Log.Info($"{task.Description} completed: {report}");
                 }
                 catch (Exception any)
                 {

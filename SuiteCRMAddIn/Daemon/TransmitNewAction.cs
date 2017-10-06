@@ -23,10 +23,11 @@
 namespace SuiteCRMAddIn.Daemon
 {
     using SuiteCRMAddIn.BusinessLogic;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
     /// An action to transmit to the server an item which is a new item, and
-    /// does not already have a SyncState.
+    /// does not already have a valid CRM id.
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of item I transmit.</typeparam>
     public class TransmitNewAction<OutlookItemType> : AbstractDaemonAction
@@ -51,9 +52,19 @@ namespace SuiteCRMAddIn.Daemon
             }
         }
 
-        public override void Perform()
+        public override string Perform()
         {
-            this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType);
+            /* #223: ensure that the state has a crmId property, and that property 
+             * is null or empty.
+             * If not null or empty then this is not a new item: do nothing and exit. */
+            if (string.IsNullOrEmpty(syncState.CrmEntryId))
+            {
+                return $"synced new item as {this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType)}.";
+            }
+            else
+            {
+                return $"item was already synced as {syncState.CrmEntryId}; aborted.";
+            }
         }
     }
 }
