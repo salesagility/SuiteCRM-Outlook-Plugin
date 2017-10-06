@@ -185,7 +185,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, adding current user");
 
-			SetCrmRelationshipFromOutlook(meetingId, "Users", RestAPIWrapper.GetUserId());
+            SetRelationshipParams info = new SetRelationshipParams
+            {
+                module2 = AppointmentSyncing.CrmModule,
+                module2_id = meetingId,
+                module1 = "Users",
+                module1_id = RestAPIWrapper.GetUserId()
+            };
+            RestAPIWrapper.TrySetRelationship(info, "meetings_assigned_user");
+
+            SetCrmRelationshipFromOutlook(meetingId, "Users", RestAPIWrapper.GetUserId());
         }
 
         private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem olItem, string meetingId)
