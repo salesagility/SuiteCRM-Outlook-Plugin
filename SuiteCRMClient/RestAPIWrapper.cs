@@ -387,6 +387,8 @@ namespace SuiteCRMClient
         {
             bool result;
 
+            linkFieldName = linkFieldName.ToLower();
+
             if (EnsureLoggedIn())
             {
                 object data = new
@@ -399,14 +401,18 @@ namespace SuiteCRMClient
                     @name_value_list = new NameValue[] { },
                     @delete = relationship.delete
                 };
-                var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+                var value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
 
-                if (_value.Failed > 0)
+                if (value.Failed == 0)
+                {
+                    Log.Info($"SuiteCrmHelper.SetRelationship: successfully set relationship using link field name '{linkFieldName}'");
+                }
+                else
                 {
                     Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
                 }
 
-                result = (_value.Created != 0);
+                result = (value.Created != 0);
             }
             else
             {
