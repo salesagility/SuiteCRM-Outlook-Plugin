@@ -133,14 +133,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (SyncDirection.AllowInbound(this.Direction))
                 {
-                    Log.Debug($"{this.GetType().Name} SynchroniseAll starting");
                     this.SynchroniseAll();
-                    Log.Debug($"{this.GetType().Name} SynchroniseAll completed");
                 }
                 else
                 {
                     Log.Debug($"{this.GetType().Name}.SynchroniseAll not running because not enabled");
                 }
+
+                this.OtherIterationActions();
             }
             else
             {
@@ -148,11 +148,22 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+
+        /// <summary>
+        /// A hook to allow specialisations to do something additional to just syncing in their iterations.
+        /// </summary>
+        protected virtual void OtherIterationActions()
+        {
+            // by default do nothing
+        }
+
         /// <summary>
         /// Run a single iteration of the synchronisation process for the items for which I am responsible.
         /// </summary>
         public virtual void SynchroniseAll()
         {
+            Log.Debug($"{this.GetType().Name} SynchroniseAll starting");
+
             if (this.permissionsCache.HasExportAccess())
             {
                 Outlook.MAPIFolder folder = GetDefaultFolder();
@@ -163,6 +174,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Debug($"{this.GetType().Name}.SynchroniseAll not synchronising {this.DefaultCrmModule} because export access is denied");
             }
+
+            Log.Debug($"{this.GetType().Name} SynchroniseAll completed");
         }
 
         protected abstract void GetOutlookItems(Outlook.MAPIFolder folder);
