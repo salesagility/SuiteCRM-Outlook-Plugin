@@ -33,7 +33,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Text;
-    using System.Text.RegularExpressions;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -61,10 +60,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         public const string OrganiserPropertyName = "SOrganiser";
 
         /// <summary>
-        /// Header for a block of accept/decline links in a meeting invite body.
+        /// A cache of email addresses to CRM modules and identities
         /// </summary>
-        private const string AcceptDeclineHeader = "-- \nAccept/Decline links";
-
+        private Dictionary<String, AddressResolutionData> meetingRecipientsCache = new Dictionary<string, AddressResolutionData>();
 
         public AppointmentSyncing(string name, SyncContext context)
             : base(name, context)
@@ -176,46 +174,105 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        /// <summary>
-        /// This does not do what it says on the tin. To set the owner it would be necessary to set the assigned_user_id. Delete?
-        /// </summary>
-        /// <param name="olItem"></param>
-        /// <param name="meetingId"></param>
-        private void AddCurrentUserAsOwner(Outlook.AppointmentItem olItem, string meetingId)
+        protected override void OtherIterationActions()
         {
-            LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm, adding current user");
+            CheckMeetingAcceptances();
+        }
 
-            SetRelationshipParams info = new SetRelationshipParams
+
+        private void CheckMeetingAcceptances()
+        {
+            foreach (AppointmentSyncState state in this.ItemsSyncState)
             {
-                module2 = AppointmentSyncing.CrmModule,
-                module2_id = meetingId,
-                module1 = "Users",
-                module1_id = RestAPIWrapper.GetUserId()
-            };
-            RestAPIWrapper.TrySetRelationship(info, "meetings_assigned_user");
+                Outlook.AppointmentItem item = state.OutlookItem;
 
-            SetCrmRelationshipFromOutlook(meetingId, "Users", RestAPIWrapper.GetUserId());
+                if (item.UserProperties[OrganiserPropertyName]?.Value == RestAPIWrapper.GetUserId() &&
+                    item.Start > DateTime.Now)
+                {
+                    foreach (Outlook.Recipient invitee in item.Recipients)
+                    {
+                        switch (invitee.MeetingResponseStatus)
+                        {
+                            case Outlook.OlResponseStatus.olResponseAccepted:
+                                this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item, invitee, "Accept");
+                                break;
+                            case Outlook.OlResponseStatus.olResponseDeclined:
+                                this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item, invitee, "Decline");
+                                break;
+                            case Outlook.OlResponseStatus.olResponseTentative:
+                                this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item, invitee, "Tentative");
+                                break;
+                            default:
+                                // nothing to do
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set the meeting acceptance status, in CRM, for this invitee to this meeting from
+        /// their acceptance status in Outlook.
+        /// </summary>
+        /// <param name="meeting">The appointment item representing the meeting</param>
+        /// <param name="invitee">The recipient item representing the invitee</param>
+        /// <param name="acceptance">The acceptance status of this invitee of this meeting 
+        /// as a string recognised by CRM.</param>
+        private void AddOrUpdateMeetingAcceptanceFromOutlookToCRM(Outlook.AppointmentItem meeting, Outlook.Recipient invitee, string acceptance)
+        {
+            // OK: we don't know which CRM module the invitee belongs to - could be contacts, users, 
+            // or indirected via accounts - see AddMeetingRecipientsFromOutlookToCrm. We
+            // cannot look this up every time. So we're going to have to have some sort of a cache.
+            var resolution = this.meetingRecipientsCache[invitee.Address];
+            var crmItemId = meeting.UserProperties[CrmIdPropertyName]?.Value;                 
+
+            if (resolution != null && crmItemId != null)
+            {
+                RestAPIWrapper.AcceptDeclineMeeting(crmItemId, resolution.moduleName, resolution.moduleId, acceptance);
+            }
         }
 
         private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem olItem, string meetingId)
         {
             LogItemAction(olItem, "AppointmentSyncing.AddMeetingRecipientsFromOutlookToCrm");
-            foreach (Outlook.Recipient objRecepient in olItem.Recipients)
+            foreach (Outlook.Recipient recipient in olItem.Recipients)
             {
-                Log.Info($"objRecepientName= {objRecepient.Name}, objRecepient= {objRecepient.Address}");
+                Log.Info($"objRecepientName= {recipient.Name}, objRecepient= {recipient.Address}");
 
-                string sCID = SetCrmRelationshipFromOutlook(meetingId, objRecepient, ContactSyncing.CrmModule);
+                string address = recipient.Address;
 
-                if (sCID != String.Empty)
+                if (! TryAddRecipientInModule(ContactSyncing.CrmModule, meetingId, recipient) ||
+                    TryAddRecipientInModule("Users", meetingId, recipient) ||
+                    TryAddRecipientInModule("Leads", meetingId, recipient))
                 {
-                    string AccountID = RestAPIWrapper.GetRelationship(ContactSyncing.CrmModule, sCID, "accounts");
+                    string AccountID = RestAPIWrapper.GetRelationship(ContactSyncing.CrmModule, string.Empty, "accounts");
 
-                    SetCrmRelationshipFromOutlook(meetingId, "Accounts", AccountID);
-                }
-                else if (String.IsNullOrEmpty(SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Users"))) {
-                    SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Leads");
+                    if (SetCrmRelationshipFromOutlook(meetingId, "Accounts", AccountID))
+                    {
+                        this.meetingRecipientsCache[address] = new AddressResolutionData("Accounts", AccountID, recipient.Address);
+                    }
                 }
             }
+        }
+
+        private bool TryAddRecipientInModule(string moduleName, string meetingId, Outlook.Recipient recipient)
+        {
+            bool result;
+            string id = SetCrmRelationshipFromOutlook(meetingId, recipient, moduleName);
+
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                this.meetingRecipientsCache[recipient.Address] = 
+                    new AddressResolutionData(moduleName, id, recipient.Address);
+                result = true;
+            }
+            else
+            {
+                result = false;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -294,7 +351,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmId">The id of that item in CRM.</param>
         private void MaybeAddAcceptDeclineLinks(Outlook.AppointmentItem olItem, string crmId)
         {
-            string preferredVersion = StripAndTruncate(olItem.Body, AcceptDeclineHeader);
+            string preferredVersion = TextUtilities.StripAndTruncate(olItem.Body, ProtoAppointment.AcceptDeclineHeader);
 
             if (!preferredVersion.Equals(olItem.Body))
             {
@@ -326,10 +383,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (this.DefaultCrmModule.Equals(crmType))
                 {
-                    string crmVersion = StripAndTruncate(
+                    string crmVersion = TextUtilities.StripAndTruncate(
                         crmItem.GetValueAsString("description") ?? string.Empty,
-                        AcceptDeclineHeader);
-                    string outlookVersion = StripAndTruncate(olItem.Body, AcceptDeclineHeader);
+                        ProtoAppointment.AcceptDeclineHeader);
+                    string outlookVersion = TextUtilities.StripAndTruncate(olItem.Body, ProtoAppointment.AcceptDeclineHeader);
                     string preferredVersion;
 
                     if (outlookVersion.Equals(crmVersion))
@@ -361,69 +418,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 this.SaveItem(olItem);
             }
-        }
-
-        /// <summary>
-        /// If the string to modify contains the string to seek (ignoring differences in line ends)
-        /// return that part of the string to modify which precedes the string to seek; otherwise
-        /// return the string to modify unmodified. THIS IS NASTY. 
-        /// </summary>
-        /// <param name="toModify">The string which may be modified.</param>
-        /// <param name="toSeek">The string to seek.</param>
-        /// <returns>that part of the string to modify which precedes the string to seek.</returns>
-        private string StripAndTruncate(string toModify, string toSeek)
-        {
-            string result;
-
-            if (string.IsNullOrEmpty(toSeek))
-            {
-                result = toModify;
-            }
-            else if (string.IsNullOrWhiteSpace(toModify))
-            {
-                result = string.Empty;
-            }
-            else
-            {
-                var offset = IndexIgnoreLineEnds(toModify, toSeek);
-                var prefix = offset == -1 ?
-                    toModify :
-                    StripReturns(toModify).Substring(0, offset);
-
-                result = Regex.Replace(prefix, @"\s+$", string.Empty);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Find the index of the string to seek in the string to search, ignoring differences in line ends.
-        /// </summary>
-        /// <remarks>
-        /// This is obviously impossible since differences in line ends result in differences in offset; this 
-        /// method treats any concatenation of potential line-end characters as a single character.
-        /// </remarks>
-        /// <param name="toSearch">The string to be searched.</param>
-        /// <param name="toSeek">The string to seek.</param>
-        /// <returns>An approximation of the index, or -1 if not found.</returns>
-        private int IndexIgnoreLineEnds(string toSearch, string toSeek)
-        {
-            string strippedSearch = Regex.Replace(string.IsNullOrEmpty(toSearch) ? string.Empty : toSearch, @" *[\n\r]+", ".");
-            string strippedSeek = Regex.Replace(string.IsNullOrEmpty(toSeek) ? string.Empty : toSeek, @" *[\n\r]+", ".");
-
-            return strippedSearch.IndexOf(strippedSeek);
-        }
-
-        /// <summary>
-        /// Remove carriage return characters from this string.
-        /// </summary>
-        /// <param name="input">The string, which may contain carriage return characters.</param>
-        /// <returns>A similar string, which does not. If input is null, return an empty string.</returns>
-        private string StripReturns(string input)
-        {
-            return string.IsNullOrWhiteSpace(input) ?
-                string.Empty :
-                Regex.Replace(input, @" *\r", "");
         }
 
         /// <summary>
@@ -532,10 +526,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                             if (string.IsNullOrEmpty(entryId))
                             {
                                 /* i.e. this was a new item saved to CRM for the first time */
-                                AddCurrentUserAsOwner(olItem, result);
-
-                                this.MaybeAddAcceptDeclineLinks(olItem, result);
-
                                 this.SaveItem(olItem);
 
                                 if (olItem.Recipients != null)
@@ -709,6 +699,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
 
                 result?.OutlookItem.Save();
+
+                // TODO TODO TODO TODO: pull and cache the recipients!
             }
 
             return result;
@@ -1044,7 +1036,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>A block of text containing appropriate links.</returns>
         public string AcceptDeclineLinks(string crmItemId)
         {
-            StringBuilder bob = new StringBuilder(AcceptDeclineHeader);
+            StringBuilder bob = new StringBuilder(ProtoAppointment.AcceptDeclineHeader);
             bob.Append(Environment.NewLine);
 
             foreach (string acceptStatus in new string[] { "Accept", "Tentative", "Decline" })
@@ -1059,6 +1051,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             StringBuilder bob = new StringBuilder();
             bob.Append($"To {acceptStatus} this invitation: {Properties.Settings.Default.Host}/index.php?entryPoint=acceptDecline&module=Meetings")
+                .Append($"&user_id={RestAPIWrapper.GetUserId()}")
                 .Append($"&record={crmItemId}")
                 .Append($"&accept_status={acceptStatus}")
                 .Append(Environment.NewLine);
@@ -1077,6 +1070,32 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override Outlook.OlSensitivity GetSensitivity(Outlook.AppointmentItem item)
         {
             return item.Sensitivity;
+        }
+
+        /// <summary>
+        /// Used for caching data for resolving email addresses to CRM records.
+        /// </summary>
+        private class AddressResolutionData
+        {
+            /// <summary>
+            /// The email address resolved by this data.
+            /// </summary>
+            public readonly string emailAddress;
+            /// <summary>
+            /// The name of the CRM module to which it resolves.
+            /// </summary>
+            public readonly string moduleName;
+            /// <summary>
+            /// The id within that module of the record to which it resolves.
+            /// </summary>
+            public readonly string moduleId;
+
+            public AddressResolutionData(string moduleName, string moduleId, string emailAddress)
+            {
+                this.moduleName = moduleName;
+                this.moduleId = moduleId;
+                this.emailAddress = emailAddress;
+            }
         }
     }
 }
