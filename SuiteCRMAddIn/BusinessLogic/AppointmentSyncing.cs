@@ -513,7 +513,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (ShouldDeleteFromCrm(olItem))
                 {
-                    LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Deleting");
+                    LogItemAction(olItem, "AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Deleting");
  
                     DeleteFromCrm(olItem);
                 }
@@ -525,7 +525,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                         if (String.IsNullOrEmpty(result))
                         {
-                            Log.Warn("AppointmentSyncing.AddItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
+                            Log.Warn("AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
                         }
                         else
                         {
