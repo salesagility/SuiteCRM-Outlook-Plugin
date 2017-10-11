@@ -54,8 +54,7 @@ namespace SuiteCRMAddIn.Daemon
 
         public override string Perform()
         {
-            /* #223: ensure that the state has a crmId property, and that property 
-             * is null or empty.
+            /* #223: ensure that the state has a crmId is null or empty.
              * If not null or empty then this is not a new item: do nothing and exit. */
             if (string.IsNullOrEmpty(syncState.CrmEntryId))
             {

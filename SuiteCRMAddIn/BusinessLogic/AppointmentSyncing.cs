@@ -212,7 +212,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                     SetCrmRelationshipFromOutlook(meetingId, "Accounts", AccountID);
                 }
-                else if (String.IsNullOrEmpty(SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Contacts"))) {
+                else if (String.IsNullOrEmpty(SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Users"))) {
                     SetCrmRelationshipFromOutlook(meetingId, objRecepient, "Leads");
                 }
             }
@@ -513,32 +513,35 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (ShouldDeleteFromCrm(olItem))
                 {
-                    LogItemAction(olItem, "AppointmentSyncing.AddItemFromOutlookToCrm Deleting");
+                    LogItemAction(olItem, "AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Deleting");
  
                     DeleteFromCrm(olItem);
                 }
                 else if (ShouldDespatchToCrm(olItem))
                 {
-                    result = base.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, entryId);
+                    lock (enqueueingLock)
+                    {
+                        result = base.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, entryId);
 
-                    if (String.IsNullOrEmpty(result))
-                    {
-                        Log.Warn("AppointmentSyncing.AddItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(entryId))
+                        if (String.IsNullOrEmpty(result))
                         {
-                            /* i.e. this was a new item saved to CRM for the first time */
-                            AddCurrentUserAsOwner(olItem, result);
-
-                            this.MaybeAddAcceptDeclineLinks(olItem, result);
-
-                            this.SaveItem(olItem);
-
-                            if (olItem.Recipients != null)
+                            Log.Warn("AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
+                        }
+                        else
+                        {
+                            if (string.IsNullOrEmpty(entryId))
                             {
-                                AddMeetingRecipientsFromOutlookToCrm(olItem, result);
+                                /* i.e. this was a new item saved to CRM for the first time */
+                                AddCurrentUserAsOwner(olItem, result);
+
+                                this.MaybeAddAcceptDeclineLinks(olItem, result);
+
+                                this.SaveItem(olItem);
+
+                                if (olItem.Recipients != null)
+                                {
+                                    AddMeetingRecipientsFromOutlookToCrm(olItem, result);
+                                }
                             }
                         }
                     }
@@ -1056,7 +1059,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             StringBuilder bob = new StringBuilder();
             bob.Append($"To {acceptStatus} this invitation: {Properties.Settings.Default.Host}/index.php?entryPoint=acceptDecline&module=Meetings")
-                .Append($"&user_id={RestAPIWrapper.GetUserId()}")
                 .Append($"&record={crmItemId}")
                 .Append($"&accept_status={acceptStatus}")
                 .Append(Environment.NewLine);
