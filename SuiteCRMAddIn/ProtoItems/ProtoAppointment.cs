@@ -12,11 +12,6 @@ namespace SuiteCRMAddIn.ProtoItems
     /// </summary>
     public class ProtoAppointment : ProtoItem<Outlook.AppointmentItem>
     {
-        /// <summary>
-        /// Header for a block of accept/decline links in a meeting invite body.
-        /// </summary>
-        public const string AcceptDeclineHeader = "-- \nAccept/Decline links";
-
         private string Body;
         private int Duration;
         private DateTime End;
@@ -27,7 +22,7 @@ namespace SuiteCRMAddIn.ProtoItems
 
         public ProtoAppointment(Outlook.AppointmentItem olItem)
         {
-            this.Body = TextUtilities.StripAndTruncate(olItem.Body, AcceptDeclineHeader);
+            this.Body = olItem.Body;
             this.Duration = olItem.Duration;
             this.End = olItem.End;
             this.Location = olItem.Location;

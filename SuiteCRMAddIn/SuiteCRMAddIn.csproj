@@ -201,7 +201,6 @@
     can be found.
   -->
   <ItemGroup>
-    <Compile Include="BusinessLogic\MeetingAcceptanceWatcher.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -329,8 +329,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                     Log.Info("\tdefault SetRecepients");
                     SetRecipients(olItem, crmId, crmType);
                 }
-
-                MaybeAddAcceptDeclineLinks(crmItem, olItem, crmType);
             }
             finally
             {
@@ -343,82 +341,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             return newState;
         }
 
-        /// <summary>
-        /// A meeting created in CRM cannot natively be accepted or declined in Outlook. Add links to allow
-        /// acceptance/decline to the body of the item, if they do not already exist.
-        /// </summary>
-        /// <param name="olItem">The Outlook item to modify.</param>
-        /// <param name="crmId">The id of that item in CRM.</param>
-        private void MaybeAddAcceptDeclineLinks(Outlook.AppointmentItem olItem, string crmId)
-        {
-            string preferredVersion = TextUtilities.StripAndTruncate(olItem.Body, ProtoAppointment.AcceptDeclineHeader);
-
-            if (!preferredVersion.Equals(olItem.Body))
-            {
-                olItem.Body = $"{preferredVersion}\n\n{this.AcceptDeclineLinks(crmId)}";
-            }
-        }
-
-        /// <summary>
-        /// A meeting created in CRM cannot natively be accepted or declined in Outlook. Add links to allow
-        /// acceptance/decline to the body of the item, if they do not already exist.
-        /// </summary>
-        /// <remarks>
-        /// There are multiple potential gotchas here. The body may already contain the description (it should, 
-        /// they're meant to be copies of the same text); but either may have been edited independently of the
-        /// other. Either may already contain accept/decline links. And line feeds may have been replaced
-        /// by line-feed/carriage-return pairs. We want to end up with
-        /// 1. ONE copy of the body text;
-        /// 2. ONE copy of the 'description' text, if different;
-        /// 3. ONE copy of the accept.decline links.
-        /// </remarks>
-        /// <param name="crmItem">The CRM version of the item</param>
-        /// <param name="olItem">The Outlook version, assumed to be of the same item.</param>
-        /// <param name="crmType">The CRM type of the item.</param>
-        private void MaybeAddAcceptDeclineLinks(EntryValue crmItem, Outlook.AppointmentItem olItem, string crmType)
-        {
-            Outlook.UserProperty olPropertyModified = olItem.UserProperties[ModifiedDatePropertyName];
-
-            try
-            {
-                if (this.DefaultCrmModule.Equals(crmType))
-                {
-                    string crmVersion = TextUtilities.StripAndTruncate(
-                        crmItem.GetValueAsString("description") ?? string.Empty,
-                        ProtoAppointment.AcceptDeclineHeader);
-                    string outlookVersion = TextUtilities.StripAndTruncate(olItem.Body, ProtoAppointment.AcceptDeclineHeader);
-                    string preferredVersion;
-
-                    if (outlookVersion.Equals(crmVersion))
-                    {
-                        preferredVersion = outlookVersion;
-                    }
-                    else
-                    {
-                        if (olPropertyModified != null &&
-                            ParseDateTimeFromUserProperty(olPropertyModified.Value.ToString()) > crmItem.GetValueAsDateTime("date_modified"))
-                        {
-                            preferredVersion = outlookVersion;
-                        }
-                        else
-                        {
-                            preferredVersion = crmVersion;
-                        }
-                    }
-
-                    string newBody = $"{preferredVersion}\n\n{this.AcceptDeclineLinks(crmItem)}";
-
-                    if (!newBody.Equals(olItem.Body))
-                    {
-                        olItem.Body = newBody;
-                    }
-                }
-            }
-            finally
-            {
-                this.SaveItem(olItem);
-            }
-        }
 
         /// <summary>
         /// Set this outlook item's duration, but also end time and location, from this CRM item.
@@ -935,8 +857,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Outlook.AppointmentItem olItem = syncState.OutlookItem;
                 Outlook.UserProperty olPropertyModifiedDate = olItem.UserProperties[ModifiedDatePropertyName];
 
-                MaybeAddAcceptDeclineLinks(crmItem, syncState.OutlookItem, crmType);
-
                 if (olPropertyModifiedDate.Value != crmItem.GetValueAsString("date_modified"))
                 {
                     try
@@ -1018,46 +938,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.EntryID;
         }
 
-
-        /// <summary>
-        /// Construct, and return as a string, a group of accept/decline links for this item.
-        /// </summary>
-        /// <param name="crmItem">The item for which links should be constructed.</param>
-        /// <returns>A block of text containing appropriate links.</returns>
-        private string AcceptDeclineLinks(EntryValue crmItem)
-        {
-            return this.AcceptDeclineLinks(crmItem.id);
-        }
-
-        /// <summary>
-        /// Construct, and return as a string, a group of accept/decline links for this item.
-        /// </summary>
-        /// <param name="crmItemId">The id of the item for which links should be constructed.</param>
-        /// <returns>A block of text containing appropriate links.</returns>
-        public string AcceptDeclineLinks(string crmItemId)
-        {
-            StringBuilder bob = new StringBuilder(ProtoAppointment.AcceptDeclineHeader);
-            bob.Append(Environment.NewLine);
-
-            foreach (string acceptStatus in new string[] { "Accept", "Tentative", "Decline" })
-            {
-                bob.Append(AcceptDeclineLink(crmItemId, acceptStatus));
-            }
-
-            return bob.ToString();
-        }
-
-        private static string AcceptDeclineLink(string crmItemId, string acceptStatus)
-        {
-            StringBuilder bob = new StringBuilder();
-            bob.Append($"To {acceptStatus} this invitation: {Properties.Settings.Default.Host}/index.php?entryPoint=acceptDecline&module=Meetings")
-                .Append($"&user_id={RestAPIWrapper.GetUserId()}")
-                .Append($"&record={crmItemId}")
-                .Append($"&accept_status={acceptStatus}")
-                .Append(Environment.NewLine);
-
-            return bob.ToString();
-        }
 
         /// <summary>
         /// Return the sensitivity of this outlook item.
