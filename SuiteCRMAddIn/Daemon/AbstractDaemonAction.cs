@@ -69,6 +69,7 @@ namespace SuiteCRMAddIn.Daemon
         /// <summary>
         /// Perform this action.
         /// </summary>
-        public abstract void Perform();
+        /// <returns>A string which may be logged to report what has been done.</returns>
+        public abstract string Perform();
     }
 }
