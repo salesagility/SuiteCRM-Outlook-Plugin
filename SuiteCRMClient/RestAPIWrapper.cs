@@ -454,8 +454,15 @@ namespace SuiteCRMClient
                 @order_by = order_by,
                 @offset = offset,
                 @select_fields = fields,
-                @max_results = limit,
-                @deleted = Convert.ToInt32(GetDeleted)
+                @link_names_to_fields_array = module == "Meetings" ?
+                new[] {
+                    new { @name = "users", @value = new[] {"id", "email1" } },
+                    new { @name = "contacts", @value = new[] {"id", "email1" } },
+                    new { @name = "leads", @value = new[] {"id", "email1" } }
+                } :
+                null,
+                @max_results = $"{limit}",
+                @deleted = GetDeleted
             };
             result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.EntryList>("get_entry_list", data);                
             if (result.error != null)

@@ -738,7 +738,6 @@ namespace SuiteCRMAddIn
                     AppointmentSyncing.CrmModule,
                     this.log)
                     .ShowDialog();
-                meetingItem.Body += this.appointmentSynchroniser.AcceptDeclineLinks(syncState.CrmEntryId);
             }
 
             return true;
