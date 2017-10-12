@@ -448,6 +448,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                             if (string.IsNullOrEmpty(entryId))
                             {
                                 /* i.e. this was a new item saved to CRM for the first time */
+                                SetCrmRelationshipFromOutlook(result, "Users", RestAPIWrapper.GetUserId());
+
                                 this.SaveItem(olItem);
 
                                 if (olItem.Recipients != null)
