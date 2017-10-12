@@ -1,8 +1,8 @@
-##SuiteCRM Outlook Plug-in
+## SuiteCRM Outlook Plug-in
 
 ### What's in this repository 
 
-SuiteCRM Outlook Plug-In v3.0.6
+SuiteCRM Outlook Plug-In v3.0.8
 
 This repository has been created to allow community members to collaborate and contribute to the project.
 
@@ -10,7 +10,7 @@ For release notes and documentation on the plug-in, please [visit suitecrm.com][
 
 [suitecrm]: https://suitecrm.com
 
-##### Important: Please read before developing code intended for inclusion in the SuiteCRM Outlook Plug-In project.#####
+### Important: Please read before developing code intended for inclusion in the SuiteCRM Outlook Plug-In project. 
 
 Please read, print, sign, scan and email the following [contributor agreement][cont_agrmt]
 
