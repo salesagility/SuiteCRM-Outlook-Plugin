@@ -167,6 +167,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olProperty = olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
                 }
                 olProperty.Value = value ?? string.Empty;
+
+                Log.Debug($"AppointmentSyncing.EnsureSynchronisationPropertyForOutlookItem: Set property {name} to value {value} on item {olItem.Subject}");
+            }
+            catch ( Exception any )
+            {
+                Log.Error($"AppointmentSyncing.EnsureSynchronisationPropertyForOutlookItem: Failed to set property {name} to value {value} on item {olItem.Subject}", any);
             }
             finally
             {
@@ -792,9 +798,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
             var syncConfigured = SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar);
+            string organiser = olItem.Organizer;
+            string currentUser = Application.Session.CurrentUser.AddressEntry.GetExchangeUser().Name;
+            string crmId = olItem.UserProperties[CrmIdPropertyName]?.Value;
+
             return olItem != null &&
                 syncConfigured && 
-                olItem.Sensitivity == Outlook.OlSensitivity.olNormal;
+                olItem.Sensitivity == Outlook.OlSensitivity.olNormal &&
+                /* If there is a valid crmId it's arrived via CRM and is therefore safe to save to CRM;
+                 * if the current user is the organiser, AND there's no valid CRM id, then it's a new one
+                 * that the current user made, and we should save it to CRM. */
+                (!string.IsNullOrEmpty(crmId) || currentUser == organiser);
         }
 
         /// <summary>

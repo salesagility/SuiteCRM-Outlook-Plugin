@@ -528,6 +528,12 @@
     <BumpVersion 
       ReleaseLevel="$(ReleaseLevel)"
       TargetFileName="Properties\AssemblyInfo.cs"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="..\Doxyfile"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="..\README.md"/>
   </Target>
   <PropertyGroup>  
     <BuildDependsOn>  
