@@ -449,7 +449,8 @@
       <Using Namespace="System" />
       <Using Namespace="System.IO" />
       <Using Namespace="System.Text.RegularExpressions" />
-      <Code Type="Fragment" Language="cs"><![CDATA[
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
           /*
            * Read the version from the assembly file, increment it as directed, 
            * substitute it into the target file.
@@ -499,7 +500,8 @@
             Regex.Replace( File.ReadAllText(TargetFileName),
               oldVersion,
               newVersion));
-          ]]></Code>
+          ]]>
+      </Code>
     </Task>
   </UsingTask>
   <PropertyGroup>
@@ -517,21 +519,28 @@
     <Delete Files="$(DocDirectory)\*.tmp" />
   </Target>
   <Target Name="Bump">
-    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\SuiteCRMAddinSetup\SuiteCRMAddinSetup.isl" />
-    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\SuiteCrmClient\Properties\AssemblyInfo.cs" />
-    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="Properties\AssemblyInfo.cs" />
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="..\SuiteCRMAddinSetup\SuiteCRMAddinSetup.isl"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="..\SuiteCrmClient\Properties\AssemblyInfo.cs"/>
+    <BumpVersion 
+      ReleaseLevel="$(ReleaseLevel)"
+      TargetFileName="Properties\AssemblyInfo.cs"/>
   </Target>
-  <PropertyGroup>
+  <PropertyGroup>  
     <BuildDependsOn>  
       Bump;
       $(BuildDependsOn);  
       Doxygen  
-    </BuildDependsOn>
-  </PropertyGroup>
-  <PropertyGroup>
+    </BuildDependsOn>  
+  </PropertyGroup> 
+  <PropertyGroup>  
     <CleanDependsOn>  
       $(CleanDependsOn);  
       DoxyClean  
-    </CleanDependsOn>
-  </PropertyGroup>
+    </CleanDependsOn>  
+  </PropertyGroup> 
+
 </Project>
