@@ -254,6 +254,19 @@ namespace SuiteCRMClient
                 _result.id.ToString();
         }
 
+        public static void AcceptDeclineMeeting(dynamic crmItemId, string moduleName, string moduleId, string status)
+        {
+            object data = new
+            {
+                @session = SuiteCRMUserSession.id,
+                @module_name = "Meetings",
+                @record = crmItemId,
+                @accept_status = status,
+            };
+
+            string result = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("acceptDecline", data);
+        }
+
         public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
         {
             try
@@ -387,6 +400,8 @@ namespace SuiteCRMClient
         {
             bool result;
 
+            linkFieldName = linkFieldName.ToLower();
+
             if (EnsureLoggedIn())
             {
                 object data = new
@@ -399,14 +414,18 @@ namespace SuiteCRMClient
                     @name_value_list = new NameValue[] { },
                     @delete = relationship.delete
                 };
-                var _value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
+                var value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
 
-                if (_value.Failed > 0)
+                if (value.Failed == 0)
+                {
+                    Log.Info($"SuiteCrmHelper.SetRelationship: successfully set relationship using link field name '{linkFieldName}'");
+                }
+                else
                 {
                     Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
                 }
 
-                result = (_value.Created != 0);
+                result = (value.Created != 0);
             }
             else
             {

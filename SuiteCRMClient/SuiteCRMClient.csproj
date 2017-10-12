@@ -104,6 +104,7 @@
     <Compile Include="RestAPIWrapper.cs" />
     <Compile Include="RESTObjects\NameValueCollection.cs" />
     <Compile Include="RESTObjects\ServerInfo.cs" />
+    <Compile Include="TextUtilities.cs" />
     <Compile Include="UserSession.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
