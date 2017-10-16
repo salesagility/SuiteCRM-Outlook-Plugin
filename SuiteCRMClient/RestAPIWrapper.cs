@@ -254,6 +254,19 @@ namespace SuiteCRMClient
                 _result.id.ToString();
         }
 
+        public static void AcceptDeclineMeeting(dynamic crmItemId, string moduleName, string moduleId, string status)
+        {
+            object data = new
+            {
+                @session = SuiteCRMUserSession.id,
+                @module_name = "Meetings",
+                @record = crmItemId,
+                @accept_status = status,
+            };
+
+            string result = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("acceptDecline", data);
+        }
+
         public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
         {
             try
