@@ -467,8 +467,15 @@ namespace SuiteCRMClient
                 @order_by = order_by,
                 @offset = offset,
                 @select_fields = fields,
-                @max_results = limit,
-                @deleted = Convert.ToInt32(GetDeleted)
+                @link_names_to_fields_array = module == "Meetings" ?
+                new[] {
+                    new { @name = "users", @value = new[] {"id", "email1" } },
+                    new { @name = "contacts", @value = new[] {"id", "email1" } },
+                    new { @name = "leads", @value = new[] {"id", "email1" } }
+                } :
+                null,
+                @max_results = $"{limit}",
+                @deleted = GetDeleted
             };
             result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.EntryList>("get_entry_list", data);                
             if (result.error != null)
@@ -480,6 +487,7 @@ namespace SuiteCRMClient
             {
                 try
                 {
+                    result.resolveLinks();
                     Hashtable hashtable = new Hashtable();
                     int index = 0;
                     foreach (EntryValue _value in result.entry_list)
@@ -513,7 +521,7 @@ namespace SuiteCRMClient
         public static string GetValueByKey(EntryValue entry, string key)
         {
             string str = string.Empty;
-            foreach (NameValue _value in entry.name_value_list1)
+            foreach (NameValue _value in entry.nameValueList)
             {
                 if (_value.name == key)
                 {
