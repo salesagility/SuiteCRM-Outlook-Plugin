@@ -487,6 +487,7 @@ namespace SuiteCRMClient
             {
                 try
                 {
+                    result.resolveLinks();
                     Hashtable hashtable = new Hashtable();
                     int index = 0;
                     foreach (EntryValue _value in result.entry_list)
@@ -520,7 +521,7 @@ namespace SuiteCRMClient
         public static string GetValueByKey(EntryValue entry, string key)
         {
             string str = string.Empty;
-            foreach (NameValue _value in entry.name_value_list1)
+            foreach (NameValue _value in entry.nameValueList)
             {
                 if (_value.name == key)
                 {

@@ -631,7 +631,26 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 result?.OutlookItem.Save();
 
-                // TODO TODO TODO TODO: pull and cache the recipients!
+                if (crmItem?.relationships?.link_list != null)
+                {
+                    foreach (var list in crmItem.relationships.link_list)
+                    {
+                        foreach (var record in list.records)
+                        {
+                            var map = record.data.AsDictionary();
+                            try
+                            {
+                                this.meetingRecipientsCache[map["email1"].ToString()] =
+                                    new AddressResolutionData(list.name, map["id"].ToString(), map["email1"].ToString());
+                                Log.Debug($"Successfully cached recipient {map["email1"]} => {list.name}, {map["id"]}.");
+                            }
+                            catch (KeyNotFoundException kex)
+                            {
+                                Log.Error($"Key not found while caching meeting recipients.", kex);
+                            }
+                        }
+                    }
+                }
             }
 
             return result;

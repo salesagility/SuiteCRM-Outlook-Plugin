@@ -88,6 +88,9 @@
     <Compile Include="RESTObjects\EntryValue.cs" />
     <Compile Include="RESTObjects\ErrorValue.cs" />
     <Compile Include="RESTObjects\Field.cs" />
+    <Compile Include="RESTObjects\LinkRecord.cs" />
+    <Compile Include="RESTObjects\RelationshipListElement.cs" />
+    <Compile Include="RESTObjects\LinkListElement.cs" />
     <Compile Include="RESTObjects\Relationships.cs" />
     <Compile Include="RESTObjects\ModuleFields.cs" />
     <Compile Include="RESTObjects\AvailableModules.cs" />
