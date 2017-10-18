@@ -232,11 +232,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             // or indirected via accounts - see AddMeetingRecipientsFromOutlookToCrm. We
             // cannot look this up every time. So we're going to have to have some sort of a cache.
             var resolution = this.meetingRecipientsCache[invitee.Address];
-            var crmItemId = meeting.UserProperties[CrmIdPropertyName]?.Value;                 
+            var meetingId = meeting.UserProperties[CrmIdPropertyName]?.Value;                 
 
-            if (resolution != null && crmItemId != null)
+            if (resolution != null && meetingId != null)
             {
-                RestAPIWrapper.AcceptDeclineMeeting(crmItemId, resolution.moduleName, resolution.moduleId, acceptance);
+                RestAPIWrapper.AcceptDeclineMeeting(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
             }
         }
 
@@ -637,12 +637,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         foreach (var record in list.records)
                         {
-                            var map = record.data.AsDictionary();
+                            var data = record.data.AsDictionary();
                             try
                             {
-                                this.meetingRecipientsCache[map["email1"].ToString()] =
-                                    new AddressResolutionData(list.name, map["id"].ToString(), map["email1"].ToString());
-                                Log.Debug($"Successfully cached recipient {map["email1"]} => {list.name}, {map["id"]}.");
+                                this.meetingRecipientsCache[data[AddressResolutionData.EmailAddressFieldName].ToString()] =
+                                    new AddressResolutionData(list.name, data);
+                                Log.Debug($"Successfully cached recipient {data[AddressResolutionData.EmailAddressFieldName]} => {list.name}, {data[AddressResolutionData.ModuleIdFieldName]}.");
                             }
                             catch (KeyNotFoundException kex)
                             {
@@ -817,19 +817,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true iff settings.SyncCalendar is true, the item is not null, and it is not private (normal sensitivity)</returns>
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
-            Log.Debug("ShouldDespatchToCrm...");
             var syncConfigured = SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar);
-            Log.Debug($"\tShouldDespatchToCrm: syncConfigured = `{syncConfigured}`");
             string organiser = olItem.Organizer;
-            Log.Debug($"\tShouldDespatchToCrm: organiser = `{organiser}`");
             var currentUser = Application.Session.CurrentUser;
             var exchangeUser = currentUser.AddressEntry.GetExchangeUser();
             var currentUserName = exchangeUser == null ? 
                 Application.Session.CurrentUser.Name:
                 exchangeUser.Name;
-            Log.Debug($"\tShouldDespatchToCrm: currentUser = `{currentUser}`");
             string crmId = olItem.UserProperties[CrmIdPropertyName]?.Value;
-            Log.Debug($"\tShouldDespatchToCrm: crmId = `{crmId}`");
 
             return olItem != null &&
                 syncConfigured && 
@@ -1004,6 +999,23 @@ namespace SuiteCRMAddIn.BusinessLogic
         private class AddressResolutionData
         {
             /// <summary>
+            /// Expected name in the input map of the email address field.
+            /// </summary>
+            public const string EmailAddressFieldName = "email1";
+
+            /// <summary>
+            /// Expected name in the input map of the field containing the id in 
+            /// the specified module.
+            /// </summary>
+            public const string ModuleIdFieldName = "id";
+
+            /// <summary>
+            /// Expected name in the input map of the field containing an associated id in 
+            /// the `Accounts` module, if any.
+            /// </summary>
+            public const string AccountIdFieldName = "account_id";
+
+            /// <summary>
             /// The email address resolved by this data.
             /// </summary>
             public readonly string emailAddress;
@@ -1016,11 +1028,31 @@ namespace SuiteCRMAddIn.BusinessLogic
             /// </summary>
             public readonly string moduleId;
 
+            /// <summary>
+            /// The id within the `Accounts` module of a related record, if any.
+            /// </summary>
+            private readonly object accountId;
+
             public AddressResolutionData(string moduleName, string moduleId, string emailAddress)
             {
                 this.moduleName = moduleName;
                 this.moduleId = moduleId;
                 this.emailAddress = emailAddress;
+            }
+
+            public AddressResolutionData( string moduleName, Dictionary<string, object> data)
+            {
+                this.moduleName = moduleName;
+                this.moduleId = data[ModuleIdFieldName]?.ToString();
+                this.emailAddress = data[EmailAddressFieldName]?.ToString();
+                try
+                {
+                    this.accountId = data[AccountIdFieldName]?.ToString();
+                }
+                catch (KeyNotFoundException)
+                {
+                    // and ignore it; that key often won't be there.
+                }
             }
         }
     }

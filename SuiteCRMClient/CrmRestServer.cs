@@ -88,6 +88,26 @@ namespace SuiteCRMClient
         }
 
         /// <summary>
+        /// Send a get request with this path part to the server
+        /// </summary>
+        /// <param name="pathPart">The path part of the URL (may optionally include a query part)</param>
+        /// <returns>True if the call resulted in a 200 status code.</returns>
+        public bool SendGetRequest(string pathPart)
+        {
+            var requestUrl = SuiteCRMURL.AbsoluteUri + "/" + pathPart;
+            HttpWebRequest request = WebRequest.Create(requestUrl) as HttpWebRequest;
+
+            request.Method = "GET";
+            request.Timeout = this.timeout;
+
+            HttpWebResponse response = request.GetResponse() as HttpWebResponse;
+
+            log.Info($"Sent `{requestUrl}`; received back status {response.StatusCode}");
+
+            return (response.StatusCode == HttpStatusCode.OK);
+        }
+
+        /// <summary>
         /// Check whether this CRM response represents a CRM error, and if it does
         /// throw it as an exception.
         /// </summary>

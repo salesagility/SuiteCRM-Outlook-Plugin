@@ -254,17 +254,24 @@ namespace SuiteCRMClient
                 _result.id.ToString();
         }
 
-        public static void AcceptDeclineMeeting(dynamic crmItemId, string moduleName, string moduleId, string status)
+        /// <summary>
+        /// Send acceptance status to CRM to synchronise.
+        /// </summary>
+        /// <param name="meetingId">The id of the meeting to accept an invitation to.</param>
+        /// <param name="moduleName">The module within which the invitee resides.</param>
+        /// <param name="moduleId">The id of the invitee within that module.</param>
+        /// <param name="status">The status to set.</param>
+        /// <returns>true if nothing dreadful happens - not necessarily proof that the call succeeded.</returns>
+        public static bool AcceptDeclineMeeting(string meetingId, string moduleName, string moduleId, string status)
         {
-            object data = new
+            if (moduleName.EndsWith("s"))
             {
-                @session = SuiteCRMUserSession.id,
-                @module_name = "Meetings",
-                @record = crmItemId,
-                @accept_status = status,
-            };
+                moduleName = moduleName.Substring(0, moduleName.Length - 1);
+            }
+            String pathPart = 
+                $"index.php?entryPoint=acceptDecline&module=Meetings&{moduleName.ToLower()}_id={moduleId}&record={meetingId}&accept_status={status}";
 
-            string result = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("acceptDecline", data);
+            return SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
         }
 
         public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
@@ -279,9 +286,7 @@ namespace SuiteCRMClient
                     @module_id = ID,
                     @link_field_name = ModuleToFind,
                     @related_module_query = "",
-                    @related_fields = new string[] { "id" }/*,
-                    @query = ""
-                    //@limit = 1*/
+                    @related_fields = new string[] { "id" }
                 };
                 Relationships _result = SuiteCRMUserSession.RestServer.GetCrmResponse<Relationships>("get_relationships", data);
                 if (_result.entry_list.Length > 0)
@@ -307,18 +312,17 @@ namespace SuiteCRMClient
                     @module_id = ID,
                     @link_field_name = ModuleToFind,
                     @related_module_query = "",
-                    @related_fields = fields/*,
-                    @query = ""
-                    //@limit = 1*/
+                    @related_fields = fields
                 };
                 Relationships _result = SuiteCRMUserSession.RestServer.GetCrmResponse<Relationships>("get_relationships", data);
-                if (_result.entry_list.Length > 0)
-                    return _result.entry_list;
-                return null;
+                
+                return _result.entry_list.Length > 0 ? 
+                    _result.entry_list:
+                    null;
             }
-            catch (System.Exception)
+            catch (System.Exception any)
             {
-                // Swallow exception(!)
+                Log.Error($"RestAPIWrapper.GetRelationships: main `{MainModule}`, id `{ID}`, seeking `{ModuleToFind}`.", any);
                 return null;
             }
         }
@@ -345,7 +349,6 @@ namespace SuiteCRMClient
             catch (System.Exception exception)
             {
                 Log.Error("SuiteCrmHelper.SetRelationshipUnsafe:", exception);
-                // Swallow exception(!)
                 result = false;
             }
 
@@ -470,7 +473,7 @@ namespace SuiteCRMClient
                 @link_names_to_fields_array = module == "Meetings" ?
                 new[] {
                     new { @name = "users", @value = new[] {"id", "email1" } },
-                    new { @name = "contacts", @value = new[] {"id", "email1" } },
+                    new { @name = "contacts", @value = new[] {"id", "account_id", "email1" } },
                     new { @name = "leads", @value = new[] {"id", "email1" } }
                 } :
                 null,
