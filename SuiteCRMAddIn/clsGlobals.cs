@@ -74,11 +74,7 @@ namespace SuiteCRMAddIn
                 Recipient recipient = item.Recipients.Add(emailName);
                 recipient.Resolve();
                 ExchangeUser exchangeUser = recipient.AddressEntry.GetExchangeUser();
-                if (exchangeUser.PrimarySmtpAddress != string.Empty)
-                {
-                    return exchangeUser.PrimarySmtpAddress;
-                }
-                return exchangeUser.PrimarySmtpAddress;
+                return exchangeUser == null ? string.Empty : exchangeUser.PrimarySmtpAddress;
             }
             catch (System.Exception)
             {

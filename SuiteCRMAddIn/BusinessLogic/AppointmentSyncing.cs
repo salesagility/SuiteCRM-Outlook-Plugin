@@ -817,10 +817,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true iff settings.SyncCalendar is true, the item is not null, and it is not private (normal sensitivity)</returns>
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
+            Log.Debug("ShouldDespatchToCrm...");
             var syncConfigured = SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar);
+            Log.Debug($"\tShouldDespatchToCrm: syncConfigured = `{syncConfigured}`");
             string organiser = olItem.Organizer;
-            string currentUser = Application.Session.CurrentUser.AddressEntry.GetExchangeUser().Name;
+            Log.Debug($"\tShouldDespatchToCrm: organiser = `{organiser}`");
+            var currentUser = Application.Session.CurrentUser;
+            var exchangeUser = currentUser.AddressEntry.GetExchangeUser();
+            var currentUserName = exchangeUser == null ? 
+                Application.Session.CurrentUser.Name:
+                exchangeUser.Name;
+            Log.Debug($"\tShouldDespatchToCrm: currentUser = `{currentUser}`");
             string crmId = olItem.UserProperties[CrmIdPropertyName]?.Value;
+            Log.Debug($"\tShouldDespatchToCrm: crmId = `{crmId}`");
 
             return olItem != null &&
                 syncConfigured && 
@@ -828,7 +837,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 /* If there is a valid crmId it's arrived via CRM and is therefore safe to save to CRM;
                  * if the current user is the organiser, AND there's no valid CRM id, then it's a new one
                  * that the current user made, and we should save it to CRM. */
-                (!string.IsNullOrEmpty(crmId) || currentUser == organiser);
+                (!string.IsNullOrEmpty(crmId) || currentUserName == organiser);
         }
 
         /// <summary>
