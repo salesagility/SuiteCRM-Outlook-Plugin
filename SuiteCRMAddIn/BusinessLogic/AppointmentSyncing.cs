@@ -88,7 +88,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             string query = bob.ToString();
 
-            Log.Info($"AppointmentSyncing.GetID: query = `{query}`");
+            Log.Debug($"AppointmentSyncing.GetID: query = `{query}`");
 
             string[] fields = { "id" };
             EntryList _result = RestAPIWrapper.GetEntryList(moduleName, query, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
