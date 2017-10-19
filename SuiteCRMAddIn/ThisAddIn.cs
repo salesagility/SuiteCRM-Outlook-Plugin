@@ -704,14 +704,10 @@ namespace SuiteCRMAddIn
             {
                 if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
                 {
-                    if (!ProcessNewMailItem(
+                    ProcessNewMailItem(
                         EmailArchiveReason.Outbound,
                         item as Outlook.MailItem,
-                        Properties.Settings.Default.ExcludedEmails))
-                    {
-                        ProcessSentMeetingInvite(
-                            item as Outlook.MeetingItem);
-                    }
+                        Properties.Settings.Default.ExcludedEmails);
                 }
             }
             catch (Exception ex)
@@ -721,40 +717,28 @@ namespace SuiteCRMAddIn
         }
 
 
-        /// <summary>
-        /// A meeting invitation is being sent; if we're going to sync it we should do so now and add the accept/decline links to the body before it actually is sent.
-        /// </summary>
-        /// <param name="meetingItem">The meeting whose invite(s) are being despatched.</param>
-        /// <returns>true if the item was not null.</returns>
-        private bool ProcessSentMeetingInvite(Outlook.MeetingItem meetingItem)
-        {
-            if (meetingItem != null)
-            {
-                Outlook.AppointmentItem appointment = meetingItem.GetAssociatedAppointment(false);
-                var syncState = this.appointmentSynchroniser.AddOrGetSyncState(appointment);
-                new SyncWaitDialog(
-                    this.appointmentSynchroniser,
-                    syncState,
-                    AppointmentSyncing.CrmModule,
-                    this.log)
-                    .ShowDialog();
-            }
-
-            return true;
-        }
-
-
         private void Application_NewMail(string EntryID)
         {
             log.Debug(catalogue.GetString("Outlook NewMail: email received event"));
             try
             {
-                if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
+                if (this.IsLicensed)
                 {
-                    ProcessNewMailItem(
-                        EmailArchiveReason.Inbound,
-                        Application.Session.GetItemFromID(EntryID) as Outlook.MailItem,
-                        Properties.Settings.Default.ExcludedEmails);
+                    var item = Application.Session.GetItemFromID(EntryID);
+
+                    if (item is Outlook.MailItem && Properties.Settings.Default.AutoArchive)
+                    {
+                        ProcessNewMailItem( EmailArchiveReason.Inbound,
+                                            item as Outlook.MailItem,
+                                            Settings.Default.ExcludedEmails);
+                    }
+                    else if (item is Outlook.MeetingItem)
+                    {
+                        DaemonWorker.Instance.AddTask(
+                            new UpdateMeetingAcceptancesAction(
+                                appointmentSynchroniser, 
+                                item as Outlook.MeetingItem));
+                    }
                 }
             }
             catch (Exception ex)

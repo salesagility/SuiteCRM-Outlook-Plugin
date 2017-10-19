@@ -204,6 +204,7 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="Daemon\UpdateMeetingAcceptancesAction.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -227,12 +228,7 @@
     <Compile Include="Dialogs\ShuttingDownDialog.Designer.cs">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Dialogs\SyncWaitDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Dialogs\SyncWaitDialog.Designer.cs">
-      <DependentUpon>SyncWaitDialog.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Exceptions\ActionFailedException.cs" />
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
     <Compile Include="Extensions\Documentation.cs" />
@@ -330,9 +326,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\SettingsDialog.resx">
       <DependentUpon>SettingsDialog.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Dialogs\SyncWaitDialog.resx">
-      <DependentUpon>SyncWaitDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\WithCustomModulesSelectorForm.resx">
       <DependentUpon>WithCustomModulesSelectorForm.cs</DependentUpon>
