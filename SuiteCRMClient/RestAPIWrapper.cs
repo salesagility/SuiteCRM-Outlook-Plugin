@@ -271,6 +271,7 @@ namespace SuiteCRMClient
             String pathPart = 
                 $"index.php?entryPoint=acceptDecline&module=Meetings&{moduleName.ToLower()}_id={moduleId}&record={meetingId}&accept_status={status}";
 
+            EnsureLoggedIn();
             return SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
         }
 
@@ -703,7 +704,7 @@ namespace SuiteCRMClient
             }
             if (module == "Meetings")
             {
-                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees", "assigned_user_id" };
+                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees", "assigned_user_id", "outlook_id" };
             }
             if (module == "Calls")
             {

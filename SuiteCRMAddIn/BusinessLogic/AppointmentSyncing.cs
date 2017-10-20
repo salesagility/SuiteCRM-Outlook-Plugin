@@ -110,8 +110,15 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override void SaveItem(Outlook.AppointmentItem olItem)
         {
-            olItem.Save();
-            LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
+            try
+            {
+                olItem.Save();
+                LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
+            }
+            catch (System.Exception any)
+            {
+                Log.Error($"Error while saving appointment {olItem?.Subject}", any);
+            }
         }
 
 
@@ -197,8 +204,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Check meeting acceptances for all future meetings.
         /// </summary>
-        private void CheckMeetingAcceptances()
+        private int CheckMeetingAcceptances()
         {
+            int result = 0;
+
             foreach (AppointmentSyncState state in this.ItemsSyncState)
             {
                 Outlook.AppointmentItem item = state.OutlookItem;
@@ -206,9 +215,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (item.UserProperties[OrganiserPropertyName]?.Value == RestAPIWrapper.GetUserId() &&
                     item.Start > DateTime.Now)
                 {
-                    CheckMeetingAcceptances(item);
+                    result += CheckMeetingAcceptances(item);
                 }
             }
+
+            return result;
         }
 
 
@@ -277,15 +288,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// as a string recognised by CRM.</param>
         private void AddOrUpdateMeetingAcceptanceFromOutlookToCRM(Outlook.AppointmentItem meeting, Outlook.Recipient invitee, string acceptance)
         {
-            // OK: we don't know which CRM module the invitee belongs to - could be contacts, users, 
+            // We don't know which CRM module the invitee belongs to - could be contacts, users, 
             // or indirected via accounts - see AddMeetingRecipientsFromOutlookToCrm. We
-            // cannot look this up every time. So we're going to have to have some sort of a cache.
-            var resolution = this.meetingRecipientsCache[invitee.GetSmtpAddress()];
-            var meetingId = meeting.UserProperties[CrmIdPropertyName]?.Value;                 
-
-            if (resolution != null && meetingId != null)
+            // cannot look this up every time. Therefore we use a cache.
+            if (this.meetingRecipientsCache.ContainsKey(invitee.GetSmtpAddress()))
             {
-                RestAPIWrapper.AcceptDeclineMeeting(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
+                var resolution = this.meetingRecipientsCache[invitee.GetSmtpAddress()];
+                var meetingId = meeting.UserProperties[CrmIdPropertyName]?.Value;
+
+                if (resolution != null && meetingId != null)
+                {
+                    RestAPIWrapper.AcceptDeclineMeeting(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
+                }
+            }
+            else
+            {
+                Log.Warn($"Received {acceptance} to meeting {meeting.Subject} from {invitee.GetSmtpAddress()}, but we have no CRM record for that person");
             }
         }
 
@@ -328,6 +346,27 @@ namespace SuiteCRMAddIn.BusinessLogic
             else
             {
                 result = false;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// If a meeting was created in another Outlook we should NOT sync it with CRM because if we do we'll create 
+        /// duplicates. Only the Outlook which created it should sync it.
+        /// </summary>
+        /// <param name="folder">The folder to synchronise into.</param>
+        /// <param name="crmType">The CRM type of the candidate item.</param>
+        /// <param name="crmItem">The candidate item from CRM.</param>
+        /// <returns>True if it's offered to us by CRM with its Outlook ID already populated.</returns>
+        protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
+        {
+            bool result = crmType == this.DefaultCrmModule && !string.IsNullOrWhiteSpace(crmItem.GetValueAsString("outlook_id"));
+
+            if (result)
+            {
+                Log.Debug($"ShouldAddOrUpdateItemFromCrmToOutlook: not syncing meeting `{crmItem.GetValueAsString("name")}` as it appears to originate from another Outlook instance.");
             }
 
             return result;

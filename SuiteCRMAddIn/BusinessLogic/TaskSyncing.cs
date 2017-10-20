@@ -108,8 +108,15 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override void SaveItem(Outlook.TaskItem olItem)
         {
-            olItem.Save();
-            LogItemAction(olItem, "TaskSyncing.SaveItem, saved item");
+            try
+            {
+                olItem.Save();
+                LogItemAction(olItem, "TaskSyncing.SaveItem, saved item");
+            }
+            catch (System.Exception any)
+            {
+                Log.Error($"Error while saving task {olItem?.Subject}", any);
+            }
         }
 
         /// <summary>

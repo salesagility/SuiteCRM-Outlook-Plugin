@@ -77,7 +77,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override void SaveItem(Outlook.ContactItem olItem)
         {
-            olItem.Save();
+            try
+            {
+                olItem.Save();
+            }
+            catch (System.Exception any)
+            {
+                Log.Error($"Error while saving contact {olItem?.Email1Address}", any);
+            }
         }
 
         /// <summary>
