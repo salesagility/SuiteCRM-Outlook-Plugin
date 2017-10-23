@@ -58,11 +58,11 @@ namespace SuiteCRMAddIn.Daemon
              * If not null or empty then this is not a new item: do nothing and exit. */
             if (string.IsNullOrEmpty(syncState.CrmEntryId))
             {
-                return $"synced new item as {this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType)}.";
+                return $"synced new item as {this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType)}.\n{this.syncState.Description}";
             }
             else
             {
-                return $"item was already synced as {syncState.CrmEntryId}; aborted.";
+                return $"item was already synced as {syncState.CrmEntryId}; aborted.\n{this.syncState.Description}";
             }
         }
     }

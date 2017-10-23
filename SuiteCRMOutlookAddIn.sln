@@ -16,6 +16,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuiteCRMAddInTests", "Suite
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5848B79C-184D-414E-9E67-038D47F56C65}"
 	ProjectSection(SolutionItems) = preProject
+		Doxyfile = Doxyfile
 		lgpl-3.0.md = lgpl-3.0.md
 		README.md = README.md
 	EndProjectSection

@@ -362,7 +362,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if it's offered to us by CRM with its Outlook ID already populated.</returns>
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
-            bool result = crmType == this.DefaultCrmModule && !string.IsNullOrWhiteSpace(crmItem.GetValueAsString("outlook_id"));
+            bool result = crmType == this.DefaultCrmModule && string.IsNullOrWhiteSpace(crmItem.GetValueAsString("outlook_id"));
 
             if (result)
             {
@@ -401,20 +401,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
 
-                    newState = new AppointmentSyncState(crmType)
-                    {
-                        OutlookItem = olItem,
-                        OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
-                        CrmEntryId = crmId
-                    };
-
-                    ItemsSyncState.Add(newState);
-
                     olItem.Subject = crmItem.GetValueAsString("name");
                     olItem.Body = crmItem.GetValueAsString("description");
                     /* set the SEntryID property quickly, create the sync state and save the item, to reduce howlaround */
                     EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
-                    this.SaveItem(olItem);
+
+                    this.AddOrGetSyncState(olItem);
                 }
 
                 LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
@@ -431,7 +423,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (olItem != null)
                 {
-                    this.SaveItem(olItem);
+                    this.AddOrGetSyncState(olItem);
                 }
             }
 
@@ -626,22 +618,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                             /* The appointment probably already has the three magic properties 
                              * required for synchronisation; is that a proxy for believing that it
                              * already exists in CRM? If so, is it reliable? */
-                            ItemsSyncState.Add(new AppointmentSyncState(olPropertyType.Value.ToString())
-                            {
-                                OutlookItem = olItem,
-                                OModifiedDate = DateTime.UtcNow,
-                                CrmEntryId = olPropertyEntryId.Value.ToString()
-                            });
                             LogItemAction(olItem, "AppointmentSyncing.GetOutlookItems: Adding known item to queue");
                         }
                         else
                         {
-                            ItemsSyncState.Add(new AppointmentSyncState(AppointmentSyncing.CrmModule)
-                            {
-                                OutlookItem = olItem,
-                            });
                             LogItemAction(olItem, "AppointmentSyncing.GetOutlookItems: Adding unknown item to queue");
                         }
+
+                        this.AddOrGetSyncState(olItem);
                     }
                 }                
             }
@@ -656,7 +640,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The outlook item.</param>
         /// <param name="message">The message to be logged.</param>
-        protected override void LogItemAction(Outlook.AppointmentItem olItem, string message)
+        internal override void LogItemAction(Outlook.AppointmentItem olItem, string message)
         {
             try
             {
@@ -717,9 +701,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     /* found it, so update it from the CRM item */
                     result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, syncState);
-                }
 
-                result?.OutlookItem.Save();
+                    result?.OutlookItem.Save();
+                }
 
                 if (crmItem?.relationships?.link_list != null)
                 {
@@ -1069,6 +1053,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.EntryID;
         }
 
+        protected override string GetCrmEntryId(Outlook.AppointmentItem olItem)
+        {
+            return olItem?.UserProperties[CrmIdPropertyName]?.Value.ToString();
+        }
 
         /// <summary>
         /// Return the sensitivity of this outlook item.

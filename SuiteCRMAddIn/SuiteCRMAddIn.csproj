@@ -516,9 +516,9 @@
   <Target Name="Bump">
     <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\SuiteCRMAddinSetup\SuiteCRMAddinSetup.isl" />
     <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\SuiteCrmClient\Properties\AssemblyInfo.cs" />
-    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="Properties\AssemblyInfo.cs" />
     <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\Doxyfile" />
     <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\README.md" />
+    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="Properties\AssemblyInfo.cs" />
   </Target>
   <PropertyGroup>
     <BuildDependsOn>  
