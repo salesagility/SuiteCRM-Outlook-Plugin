@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System;
     using SuiteCRMAddIn.ProtoItems;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -37,6 +38,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
 
         public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
+
+        public override string Description
+        {
+            get
+            {
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[Synchroniser<Outlook.TaskItem>.CrmIdPropertyName];
+                string crmId = olPropertyEntryId == null ?
+                    "[not present]" :
+                    olPropertyEntryId.Value;
+                return $"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject    : '{olItem.Subject}'\n\tStatus      : {olItem.Status}";
+            }
+        }
 
         public override void DeleteItem()
         {

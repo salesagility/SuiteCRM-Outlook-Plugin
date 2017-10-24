@@ -45,7 +45,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Backing store for the OutlookItem property.
         /// </summary>
-        private ItemType olItem;
+        protected ItemType olItem;
 
         /// <summary>
         /// The outlook item for which I maintain the synchronisation state.

@@ -163,20 +163,20 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                             foreach (AvailableModule item in RestAPIWrapper.GetModules().items)
                             {
-                                if (!string.IsNullOrWhiteSpace(item.module_label))
+                                if (!string.IsNullOrWhiteSpace(item.module_key))
                                 {
                                     CacheAccessPermission(
-                                        item.module_label,
+                                        item.module_key,
                                         ImportPermissionToken,
                                         item.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)?.access ?? false);
                                     CacheAccessPermission(
-                                        item.module_label,
+                                        item.module_key,
                                         ExportPermissionToken,
                                         item.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)?.access ?? false);
 
                                     try
                                     {
-                                        Log.Debug($"Cached {CRMPermissionsCache.cache[item.module_label]} permission for {item.module_label}");
+                                        Log.Debug($"Cached {CRMPermissionsCache.cache[item.module_key]} permission for {item.module_key}");
                                     }
                                     catch (KeyNotFoundException)
                                     {
