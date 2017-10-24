@@ -362,7 +362,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if it's offered to us by CRM with its Outlook ID already populated.</returns>
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
-            bool result = crmType == this.DefaultCrmModule && string.IsNullOrWhiteSpace(crmItem.GetValueAsString("outlook_id"));
+            bool result = crmType == this.DefaultCrmModule && 
+                !string.IsNullOrWhiteSpace(crmItem.GetValueAsString("outlook_id"));
 
             if (result)
             {
