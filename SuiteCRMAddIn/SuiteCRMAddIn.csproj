@@ -229,6 +229,7 @@
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </Compile>
     <Compile Include="Exceptions\ActionFailedException.cs" />
+    <Compile Include="Exceptions\ActionRetryableException.cs" />
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
     <Compile Include="Extensions\Documentation.cs" />
