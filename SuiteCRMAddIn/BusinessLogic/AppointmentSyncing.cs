@@ -362,12 +362,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if it's offered to us by CRM with its Outlook ID already populated.</returns>
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
+            var outlookId = crmItem.GetValueAsString("outlook_id");
             /* we're good if it's a meeting... */
             bool result = crmType == this.DefaultCrmModule;
             /* provided it doesn't already have an Outlook id */
-            result &= string.IsNullOrWhiteSpace(crmItem.GetValueAsString("outlook_id"));
-            /* and we're also good if it's an appointment. */
+            result &= string.IsNullOrWhiteSpace(outlookId);
+            /* and we're also good if it's an appointment; */
             result |= crmType == AppointmentSyncing.AltCrmModule;
+            /* and we're also good if we've already got it */
+            result |= (this.GetExistingSyncState(crmItem) != null);
 
             if (!result)
             {
