@@ -22,7 +22,9 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using SuiteCRMAddIn.ProtoItems;
+    using Extensions;
+    using ProtoItems;
+    using System.Text;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
@@ -33,6 +35,25 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         public override string CrmType { get; }
+
+        public override string Description
+        {
+            get
+            {
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[AppointmentSyncing.CrmIdPropertyName];
+                string crmId = olPropertyEntryId == null ?
+                    "[not present]" :
+                    olPropertyEntryId.Value;
+                StringBuilder bob = new StringBuilder();
+                bob.Append($"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tRecipients:\n");
+                foreach (Outlook.Recipient recipient in olItem.Recipients)
+                {
+                    bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()}\n");
+                }
+
+                return bob.ToString();
+            }
+        }
 
         public override string OutlookItemEntryId => OutlookItem.EntryID;
 

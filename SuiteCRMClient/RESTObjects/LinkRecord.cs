@@ -23,49 +23,34 @@
 namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+    using System.Collections.Generic;
 
-    public class EntryList
+    public class LinkRecord
     {
-        [JsonProperty("entry_list")]
-        public EntryValue[] entry_list { get; set; }
-
-        private RelationshipListElement[] relationshipList;
+        /// <summary>
+        /// Underlying data for link records.
+        /// </summary>
+        private JObject recordsData;
 
         /// <summary>
-        /// Related records; the result of a `link_names_to_fields_array` clause in the query.
+        /// The processed link records.
         /// </summary>
-        [JsonProperty("relationship_list")]
-        public RelationshipListElement[] relationship_list
+        public NameValueCollection data;
+
+        [JsonProperty("link_value")]
+        public JObject link_value
         {
             get
             {
-                return this.relationshipList;
+                return this.recordsData;
             }
             set
             {
-                this.relationshipList = value;
+                this.recordsData = value;
+                this.data = new NameValueCollection(value);
             }
         }
 
-
-        [JsonProperty("error")]
-        public ErrorValue error { get; set; }
-        [JsonProperty("field_list")]
-        public Field[] field_list { get; set; }
-        [JsonProperty("next_offset")]
-        public int next_offset { get; set; }
-        [JsonProperty("result_count")]
-        public int result_count { get; set; }
-
-        public void resolveLinks()
-        {
-            if (this.entry_list.Length == this.relationshipList.Length)
-            {
-                for (int i = 0; i < this.entry_list.Length; i++)
-                {
-                    this.entry_list[i].relationships = this.relationshipList[i];
-                }
-            }
-        }
     }
 }

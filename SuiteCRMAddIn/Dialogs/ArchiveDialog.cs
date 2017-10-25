@@ -40,7 +40,7 @@ namespace SuiteCRMAddIn.Dialogs
 
     public partial class ArchiveDialog : Form
     {
-        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSyncing.CrmModule, "Leads", "Opportunities", "Project" };
+        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSyncing.CrmModule, "Leads", "Opportunities", "Project", "Users" };
 
         public ArchiveDialog()
         {
@@ -794,14 +794,17 @@ namespace SuiteCRMAddIn.Dialogs
                     ? $"Failed to archive {failCount} email(s)"
                     : $"{successCount} emails(s) were successfully archived.";
 
-                var first11Problems = emailArchiveResults.SelectMany(r => r.Problems).Take(11).ToList();
-                if (first11Problems.Any())
+                var allProblems = emailArchiveResults
+                    .Where(r => r.Problems != null)
+                    .SelectMany(r => r.Problems);
+
+                if (allProblems.Any())
                 {
                     message =
                         message +
                         "\n\nThere were some failures:\n" +
-                        string.Join("\n", first11Problems.Take(10)) +
-                        (first11Problems.Count > 10 ? "\n[and more]" : string.Empty);
+                        string.Join("\n", allProblems.Take(10)) +
+                        (allProblems.Count() > 10 ? "\n[and more]" : string.Empty);
                 }
 
                 MessageBox.Show(message, "Failure");

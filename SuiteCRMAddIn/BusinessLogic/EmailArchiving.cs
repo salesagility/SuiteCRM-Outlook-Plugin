@@ -226,7 +226,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private IList<System.Exception> CreateEmailRelationshipsWithEntities(string crmMailId, IEnumerable<CrmEntity> selectedCrmEntities)
         {
             var failures = new List<System.Exception>();
-            foreach (var entity in selectedCrmEntities)
+            foreach (CrmEntity entity in selectedCrmEntities)
             {
                 try
                 {

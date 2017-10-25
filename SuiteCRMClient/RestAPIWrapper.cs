@@ -254,17 +254,25 @@ namespace SuiteCRMClient
                 _result.id.ToString();
         }
 
-        public static void AcceptDeclineMeeting(dynamic crmItemId, string moduleName, string moduleId, string status)
+        /// <summary>
+        /// Send acceptance status to CRM to synchronise.
+        /// </summary>
+        /// <param name="meetingId">The id of the meeting to accept an invitation to.</param>
+        /// <param name="moduleName">The module within which the invitee resides.</param>
+        /// <param name="moduleId">The id of the invitee within that module.</param>
+        /// <param name="status">The status to set.</param>
+        /// <returns>true if nothing dreadful happens - not necessarily proof that the call succeeded.</returns>
+        public static bool AcceptDeclineMeeting(string meetingId, string moduleName, string moduleId, string status)
         {
-            object data = new
+            if (moduleName.EndsWith("s"))
             {
-                @session = SuiteCRMUserSession.id,
-                @module_name = "Meetings",
-                @record = crmItemId,
-                @accept_status = status,
-            };
+                moduleName = moduleName.Substring(0, moduleName.Length - 1);
+            }
+            String pathPart = 
+                $"index.php?entryPoint=acceptDecline&module=Meetings&{moduleName.ToLower()}_id={moduleId}&record={meetingId}&accept_status={status}";
 
-            string result = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("acceptDecline", data);
+            EnsureLoggedIn();
+            return SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
         }
 
         public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
@@ -279,9 +287,7 @@ namespace SuiteCRMClient
                     @module_id = ID,
                     @link_field_name = ModuleToFind,
                     @related_module_query = "",
-                    @related_fields = new string[] { "id" }/*,
-                    @query = ""
-                    //@limit = 1*/
+                    @related_fields = new string[] { "id" }
                 };
                 Relationships _result = SuiteCRMUserSession.RestServer.GetCrmResponse<Relationships>("get_relationships", data);
                 if (_result.entry_list.Length > 0)
@@ -307,18 +313,17 @@ namespace SuiteCRMClient
                     @module_id = ID,
                     @link_field_name = ModuleToFind,
                     @related_module_query = "",
-                    @related_fields = fields/*,
-                    @query = ""
-                    //@limit = 1*/
+                    @related_fields = fields
                 };
                 Relationships _result = SuiteCRMUserSession.RestServer.GetCrmResponse<Relationships>("get_relationships", data);
-                if (_result.entry_list.Length > 0)
-                    return _result.entry_list;
-                return null;
+                
+                return _result.entry_list.Length > 0 ? 
+                    _result.entry_list:
+                    null;
             }
-            catch (System.Exception)
+            catch (System.Exception any)
             {
-                // Swallow exception(!)
+                Log.Error($"RestAPIWrapper.GetRelationships: main `{MainModule}`, id `{ID}`, seeking `{ModuleToFind}`.", any);
                 return null;
             }
         }
@@ -345,7 +350,6 @@ namespace SuiteCRMClient
             catch (System.Exception exception)
             {
                 Log.Error("SuiteCrmHelper.SetRelationshipUnsafe:", exception);
-                // Swallow exception(!)
                 result = false;
             }
 
@@ -467,8 +471,15 @@ namespace SuiteCRMClient
                 @order_by = order_by,
                 @offset = offset,
                 @select_fields = fields,
-                @max_results = limit,
-                @deleted = Convert.ToInt32(GetDeleted)
+                @link_names_to_fields_array = module == "Meetings" ?
+                new[] {
+                    new { @name = "users", @value = new[] {"id", "email1" } },
+                    new { @name = "contacts", @value = new[] {"id", "account_id", "email1" } },
+                    new { @name = "leads", @value = new[] {"id", "email1" } }
+                } :
+                null,
+                @max_results = $"{limit}",
+                @deleted = GetDeleted
             };
             result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.EntryList>("get_entry_list", data);                
             if (result.error != null)
@@ -480,6 +491,7 @@ namespace SuiteCRMClient
             {
                 try
                 {
+                    result.resolveLinks();
                     Hashtable hashtable = new Hashtable();
                     int index = 0;
                     foreach (EntryValue _value in result.entry_list)
@@ -513,7 +525,7 @@ namespace SuiteCRMClient
         public static string GetValueByKey(EntryValue entry, string key)
         {
             string str = string.Empty;
-            foreach (NameValue _value in entry.name_value_list1)
+            foreach (NameValue _value in entry.nameValueList)
             {
                 if (_value.name == key)
                 {
@@ -692,7 +704,7 @@ namespace SuiteCRMClient
             }
             if (module == "Meetings")
             {
-                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees", "assigned_user_id" };
+                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees", "assigned_user_id", "outlook_id" };
             }
             if (module == "Calls")
             {

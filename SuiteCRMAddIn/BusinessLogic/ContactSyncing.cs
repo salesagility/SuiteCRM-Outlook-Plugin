@@ -77,7 +77,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override void SaveItem(Outlook.ContactItem olItem)
         {
-            olItem.Save();
+            try
+            {
+                olItem.Save();
+            }
+            catch (System.Exception any)
+            {
+                Log.Error($"Error while saving contact {olItem?.Email1Address}", any);
+            }
         }
 
         /// <summary>
@@ -87,7 +94,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmModule">The module to snychronise with.</param>
         protected override void SyncFolder(Outlook.MAPIFolder folder, string crmModule)
         {
-            Log.Info($"ContactSyncing.SyncFolder: '{folder}'");
+            Log.Info($"ContactSyncing.SyncFolder: '{folder.FolderPath}'");
             try
             {
                 if (this.permissionsCache.HasExportAccess())
@@ -219,17 +226,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
 
-            var newState = new ContactSyncState
-            {
-                OutlookItem = olItem,
-                OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
-                CrmEntryId = crmItem.GetValueAsString("id"),
-            };
-            ItemsSyncState.Add(newState);
-
-            LogItemAction(newState.OutlookItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook, saved item");
-
-            return newState;
+            return this.AddOrGetSyncState(olItem);
         }
 
         /// <summary>
@@ -237,11 +234,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The outlook item.</param>
         /// <param name="message">The message to be logged.</param>
-        protected override void LogItemAction(Outlook.ContactItem olItem, string message)
+        internal override void LogItemAction(Outlook.ContactItem olItem, string message)
         {
             try
             {
-                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties["SEntryID"];
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[CrmIdPropertyName];
                 string crmId = olPropertyEntryId == null ?
                     "[not present]" :
                     olPropertyEntryId.Value;
@@ -280,7 +277,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if either of these propertyies differ between the representations.</returns>
         private bool CrmItemChanged(EntryValue crmItem, Outlook.ContactItem olItem)
         {
-            Outlook.UserProperty dateModifiedProp = olItem.UserProperties["SOModifiedDate"];
+            Outlook.UserProperty dateModifiedProp = olItem.UserProperties[ModifiedDatePropertyName];
 
             return (dateModifiedProp.Value != crmItem.GetValueAsString("date_modified") ||
                 ShouldSyncFlagChanged(olItem, crmItem));
@@ -298,7 +295,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (!itemSyncState.IsDeletedInOutlook)
             {
                 Outlook.ContactItem olItem = itemSyncState.OutlookItem;
-                Outlook.UserProperty dateModifiedProp = olItem.UserProperties["SOModifiedDate"];
+                Outlook.UserProperty dateModifiedProp = olItem.UserProperties[ModifiedDatePropertyName];
                 Outlook.UserProperty shouldSyncProp = olItem.UserProperties["SShouldSync"];
                 this.LogItemAction(olItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
 
@@ -490,8 +487,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             return new ContactSyncState
             {
                 OutlookItem = oItem,
-                CrmEntryId = oItem.UserProperties["SEntryID"]?.Value.ToString(),
-                OModifiedDate = ParseDateTimeFromUserProperty(oItem.UserProperties["SOModifiedDate"]?.Value.ToString()),
+                CrmEntryId = oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
+                OModifiedDate = ParseDateTimeFromUserProperty(oItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()),
             };
         }
 
@@ -529,6 +526,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return olItem.EntryID;
         }
+
+        protected override string GetCrmEntryId(Outlook.ContactItem olItem)
+        {
+            return olItem?.UserProperties[CrmIdPropertyName]?.Value.ToString();
+        }
+
 
         internal override Outlook.OlSensitivity GetSensitivity(Outlook.ContactItem item)
         {

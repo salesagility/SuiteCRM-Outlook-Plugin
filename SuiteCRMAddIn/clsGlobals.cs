@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn
 {
+    using Extensions;
     using Microsoft.Office.Interop.Outlook;
     using System.Text.RegularExpressions;
 
@@ -45,14 +46,7 @@ namespace SuiteCRMAddIn
             {
                 foreach (Recipient recipient in mailItem.Recipients)
                 {
-                    if (recipient.AddressEntry.Type == "EX")
-                    {
-                        str = str + GetEmailAddressForExchangeServer(recipient.AddressEntry.Name) + ",";
-                    }
-                    else
-                    {
-                        str = str + recipient.Address + ",";
-                    }
+                    str += $"{recipient.GetSmtpAddress()},";
                 }
             }
             else if (mailItem.SenderEmailType == "EX")
@@ -74,11 +68,7 @@ namespace SuiteCRMAddIn
                 Recipient recipient = item.Recipients.Add(emailName);
                 recipient.Resolve();
                 ExchangeUser exchangeUser = recipient.AddressEntry.GetExchangeUser();
-                if (exchangeUser.PrimarySmtpAddress != string.Empty)
-                {
-                    return exchangeUser.PrimarySmtpAddress;
-                }
-                return exchangeUser.PrimarySmtpAddress;
+                return exchangeUser == null ? string.Empty : exchangeUser.PrimarySmtpAddress;
             }
             catch (System.Exception)
             {

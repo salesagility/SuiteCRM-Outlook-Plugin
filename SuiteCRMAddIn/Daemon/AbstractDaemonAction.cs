@@ -70,6 +70,7 @@ namespace SuiteCRMAddIn.Daemon
         /// Perform this action.
         /// </summary>
         /// <returns>A string which may be logged to report what has been done.</returns>
+        /// <exception cref="System.Exception">if the performance fails.</exception>
         public abstract string Perform();
     }
 }
