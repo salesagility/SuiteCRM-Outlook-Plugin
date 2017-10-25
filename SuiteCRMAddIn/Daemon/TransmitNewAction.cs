@@ -22,7 +22,9 @@
 */
 namespace SuiteCRMAddIn.Daemon
 {
+    using Exceptions;
     using SuiteCRMAddIn.BusinessLogic;
+    using System.Net;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -58,7 +60,13 @@ namespace SuiteCRMAddIn.Daemon
              * If not null or empty then this is not a new item: do nothing and exit. */
             if (string.IsNullOrEmpty(syncState.CrmEntryId))
             {
-                return $"synced new item as {this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType)}.\n{this.syncState.Description}";
+                try {
+                    return $"synced new item as {this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType)}.\n{this.syncState.Description}";
+                }
+                catch (WebException wex)
+                {
+                    throw new ActionRetryableException("Temporary network error", wex);
+                }
             }
             else
             {

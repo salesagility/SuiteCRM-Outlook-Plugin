@@ -41,7 +41,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The polling interval; default is five minutes.
         /// </summary>
-        protected TimeSpan SyncPeriod = TimeSpan.FromMinutes(5);
+        protected TimeSpan Interval = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// The thread in which syncing is run.
@@ -152,7 +152,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             this.state = RunState.Waiting;
                         }
-                        await Task.Delay(this.SyncPeriod, interrupter.Token);
+                        await Task.Delay(this.Interval, interrupter.Token);
                     }
                     catch (TaskCanceledException)
                     {

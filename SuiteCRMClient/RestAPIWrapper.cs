@@ -264,6 +264,8 @@ namespace SuiteCRMClient
         /// <returns>true if nothing dreadful happens - not necessarily proof that the call succeeded.</returns>
         public static bool AcceptDeclineMeeting(string meetingId, string moduleName, string moduleId, string status)
         {
+            Log.Debug($"RestApiWrapper.AcceptDeclineMeeting: meetingId=`{meetingId}`; moduleName=`{moduleName}`; moduleId=`{moduleId}`; status=`{status}`");
+
             if (moduleName.EndsWith("s"))
             {
                 moduleName = moduleName.Substring(0, moduleName.Length - 1);
