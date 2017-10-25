@@ -38,8 +38,8 @@
     <AssemblyOriginatorKeyFile>SuiteCRMClient.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=2.0.7.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.7\lib\net45-full\log4net.dll</HintPath>
+    <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -47,7 +47,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="NGettext, Version=0.6.1.0, Culture=neutral, PublicKeyToken=08d3d1c89dfd2985, processorArchitecture=MSIL">
-      <HintPath>..\packages\NGettext.0.6.2\lib\net45\NGettext.dll</HintPath>
+      <HintPath>..\packages\NGettext.0.6.3\lib\net45\NGettext.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -88,6 +88,9 @@
     <Compile Include="RESTObjects\EntryValue.cs" />
     <Compile Include="RESTObjects\ErrorValue.cs" />
     <Compile Include="RESTObjects\Field.cs" />
+    <Compile Include="RESTObjects\LinkRecord.cs" />
+    <Compile Include="RESTObjects\RelationshipListElement.cs" />
+    <Compile Include="RESTObjects\LinkListElement.cs" />
     <Compile Include="RESTObjects\Relationships.cs" />
     <Compile Include="RESTObjects\ModuleFields.cs" />
     <Compile Include="RESTObjects\AvailableModules.cs" />

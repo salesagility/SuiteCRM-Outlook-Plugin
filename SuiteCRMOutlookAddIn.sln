@@ -16,6 +16,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SuiteCRMAddInTests", "Suite
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5848B79C-184D-414E-9E67-038D47F56C65}"
 	ProjectSection(SolutionItems) = preProject
+		Doxyfile = Doxyfile
 		lgpl-3.0.md = lgpl-3.0.md
 		README.md = README.md
 	EndProjectSection
@@ -49,6 +50,7 @@ Global
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{383E8EE7-604D-447D-A2C2-C50080D28F69}.Debug|x86.Build.0 = Debug|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.DVD-5|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -59,6 +61,7 @@ Global
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.Release|x86.ActiveCfg = Release|Any CPU
+		{383E8EE7-604D-447D-A2C2-C50080D28F69}.Release|x86.Build.0 = Release|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|Any CPU.Build.0 = Release|Any CPU
 		{383E8EE7-604D-447D-A2C2-C50080D28F69}.SingleImage|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -74,6 +77,7 @@ Global
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.Debug|x86.Build.0 = Debug|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.DVD-5|Mixed Platforms.ActiveCfg = Debug|Any CPU
@@ -84,6 +88,7 @@ Global
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.Release|x86.ActiveCfg = Release|Any CPU
+		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.Release|x86.Build.0 = Release|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|Any CPU.Build.0 = Release|Any CPU
 		{8EF51293-040D-4A83-AFC3-9EA8C328B653}.SingleImage|Mixed Platforms.ActiveCfg = Debug|Any CPU

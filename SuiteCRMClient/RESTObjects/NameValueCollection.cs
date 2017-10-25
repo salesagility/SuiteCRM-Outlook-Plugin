@@ -22,28 +22,55 @@
  */
 namespace SuiteCRMClient.RESTObjects
 {
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using System.Collections.Generic;
+    using System.Linq;
 
-	/// <summary>
-	/// A collection of names and values, implemented as a list of name/value objects.
-	/// </summary>
-	/// <see cref="NameValue"/> 
+    /// <summary>
+    /// A collection of names and values, implemented as a list of name/value objects.
+    /// </summary>
+    /// <see cref="NameValue"/> 
     public class NameValueCollection : List<NameValue>
     {
+
+        /// <summary> 
+        /// It appears that CRM sends us back strings HTML escaped. 
+        /// </summary> 
+        private JsonSerializerSettings deserialiseSettings = new JsonSerializerSettings()
+        {
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+        };
+
+        /// <summary>
+        /// Construct a new unpopulated instance of NameValueCollection.
+        /// </summary>
+        public NameValueCollection()
+        {
+        }
+
+        /// <summary>
+        /// Construct a new instance of NameValueCollection initialised with this `data`.
+        /// </summary>
+        /// <param name="data">The data with which I should be populated.</param>
+        public NameValueCollection(JObject data)
+        {
+            foreach (object objField in data.ToArray<object>())
+            {
+                string strFieldString = objField.ToString();
+                strFieldString = strFieldString.Remove(0, strFieldString.IndexOf('{'));
+                NameValue objActualField = JsonConvert.DeserializeObject<NameValue>(strFieldString, deserialiseSettings);
+                this.Add(objActualField);
+            }
+        }
+
         /// <summary>
         /// Return my names/values as a dictionary.
         /// </summary>
         /// <returns>my names/values as a dictionary</returns>
         public Dictionary<string, object> AsDictionary()
         {
-            Dictionary<string, object> result = new Dictionary<string, object>();
-
-            foreach (NameValue entry in this)
-            {
-                result[entry.name] = entry.value;
-            }
-
-            return result;
+            return this.Where(x => !string.IsNullOrEmpty(x.name)).ToDictionary(x => x.name, x => x.value);
         }
     }
 }

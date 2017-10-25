@@ -60,6 +60,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public abstract Outlook.UserProperties OutlookUserProperties { get; }
 
+        /// <summary>
+        /// A description of the item, suitable for use in debugging logs.
+        /// </summary>
+        public abstract string Description { get; }
+
         public bool IsDeletedInOutlook
         {
             get

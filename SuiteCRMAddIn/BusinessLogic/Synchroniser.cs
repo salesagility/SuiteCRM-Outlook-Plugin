@@ -504,6 +504,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public SyncState<OutlookItemType> AddOrGetSyncState(OutlookItemType olItem)
         {
             var existingState = GetExistingSyncState(olItem);
+
             if (existingState != null)
             {
                 if (existingState.OutlookItem != olItem)
@@ -589,8 +590,24 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
 
+            if (result != null && result.CrmEntryId == null)
+            {
+                result.CrmEntryId = this.GetCrmEntryId(olItem);
+            }
+
+
+
             return result;
         }
+
+
+        /// <summary>
+        /// Get the CRM entry id of this item, if it has one and is known.
+        /// </summary>
+        /// <param name="olItem">The item whose id is saught.</param>
+        /// <returns>The id, or null if it is not known.</returns>
+        protected abstract string GetCrmEntryId(OutlookItemType olItem);
+
 
         /// <summary>
         /// Get the existing sync state representing this item, if it exists, else null.
@@ -883,13 +900,16 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 try
                 {
-                    var state = AddOrUpdateItemFromCrmToOutlook(folder, crmType, crmItem);
-                    if (state != null)
+                    if (ShouldAddOrUpdateItemFromCrmToOutlook(folder, crmType, crmItem))
                     {
-                        // i.e., the entry was updated...
-                        untouched.Remove(state);
-                        state.SetSynced();
-                        LogItemAction(state.OutlookItem, "Synchroniser.AddOrUpdateItemsFromCrmToOutlook, item removed from untouched");
+                        var state = AddOrUpdateItemFromCrmToOutlook(folder, crmType, crmItem);
+                        if (state != null)
+                        {
+                            // i.e., the entry was updated...
+                            untouched.Remove(state);
+                            state.SetSynced();
+                            LogItemAction(state.OutlookItem, "Synchroniser.AddOrUpdateItemsFromCrmToOutlook, item removed from untouched");
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -897,6 +917,19 @@ namespace SuiteCRMAddIn.BusinessLogic
                     Log.Error("Synchroniser.AddOrUpdateItemsFromCrmToOutlook", ex);
                 }
             }
+        }
+
+        /// <summary>
+        /// Specialisations should return false if there's a good reason why we should 
+        /// NOT sync this item.
+        /// </summary>
+        /// <param name="folder">The folder to synchronise into.</param>
+        /// <param name="crmType">The CRM type of the candidate item.</param>
+        /// <param name="crmItem">The candidate item from CRM.</param>
+        /// <returns>true</returns>
+        protected virtual bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
+        {
+            return true;
         }
 
         /// <summary>
@@ -948,7 +981,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The outlook item.</param>
         /// <param name="message">The message to be logged.</param>
-        protected abstract void LogItemAction(OutlookItemType olItem, string message);
+        internal abstract void LogItemAction(OutlookItemType olItem, string message);
 
 
         public void Dispose()
@@ -1041,7 +1074,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             if (IsCurrentView && this.GetExistingSyncState(olItem) == null)
                             {
-                                SyncState<OutlookItemType> state = this.ConstructAndAddSyncState(olItem);
+                                SyncState<OutlookItemType> state = this.AddOrGetSyncState(olItem);
                                 DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType>(this, state, this.DefaultCrmModule));
                             }
                             else

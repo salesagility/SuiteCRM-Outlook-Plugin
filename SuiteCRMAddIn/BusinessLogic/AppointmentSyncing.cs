@@ -25,6 +25,7 @@ using System.Diagnostics;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using Extensions;
     using ProtoItems;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
@@ -33,6 +34,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Text;
+    using System.Text.RegularExpressions;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -70,24 +72,30 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.fetchQueryPrefix = "assigned_user_id = '{0}'";
         }
 
-        public string GetID(string sEmailID, string sModule)
+        /// <summary>
+        /// Get the id of the record with the specified `smtpAddress` in the module with the specified `moduleName`.
+        /// </summary>
+        /// <param name="smtpAddress">The SMTP email address to be sought.</param>
+        /// <param name="moduleName">The name of the module in which to seek it.</param>
+        /// <returns>The corresponding id, if present, else the empty string.</returns>
+        public string GetID(string smtpAddress, string moduleName)
         {
-            string str5 = "(" + sModule.ToLower() + ".id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '" + sModule + "' and ea.email_address LIKE '%" + SuiteCRMAddIn.clsGlobals.MySqlEscape(sEmailID) + "%'))";
+            StringBuilder bob = new StringBuilder( $"({moduleName.ToLower()}.id in ")
+                .Append( $"(select eabr.bean_id from email_addr_bean_rel eabr ")
+                .Append( $"INNER JOIN email_addresses ea on eabr.email_address_id = ea.id ")
+                .Append( $"where eabr.bean_module = '{moduleName}' ")
+                .Append( $"and ea.email_address LIKE '%{SuiteCRMAddIn.clsGlobals.MySqlEscape(smtpAddress)}%'))");
 
-            Log.Info("-------------------GetID-----Start---------------");
+            string query = bob.ToString();
 
-            Log.Info("\tstr5=" + str5);
+            Log.Debug($"AppointmentSyncing.GetID: query = `{query}`");
 
-            Log.Info("-------------------GetID-----End---------------");
+            string[] fields = { "id" };
+            EntryList _result = RestAPIWrapper.GetEntryList(moduleName, query, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
 
-            string[] fields = new string[1];
-            fields[0] = "id";
-            EntryList _result = RestAPIWrapper.GetEntryList(sModule, str5, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-            if (_result.result_count > 0)
-            {
-                return RestAPIWrapper.GetValueByKey(_result.entry_list[0], "id");
-            }
-            return String.Empty;
+            return _result.result_count > 0 ?
+                RestAPIWrapper.GetValueByKey(_result.entry_list[0], "id") :
+                string.Empty;
         }
 
         override public Outlook.MAPIFolder GetDefaultFolder()
@@ -102,8 +110,15 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override void SaveItem(Outlook.AppointmentItem olItem)
         {
-            olItem.Save();
-            LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
+            try
+            {
+                olItem.Save();
+                LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
+            }
+            catch (System.Exception any)
+            {
+                Log.Error($"Error while saving appointment {olItem?.Subject}", any);
+            }
         }
 
 
@@ -167,6 +182,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olProperty = olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
                 }
                 olProperty.Value = value ?? string.Empty;
+
+                Log.Debug($"AppointmentSyncing.EnsureSynchronisationPropertyForOutlookItem: Set property {name} to value {value} on item {olItem.Subject}");
+            }
+            catch ( Exception any )
+            {
+                Log.Error($"AppointmentSyncing.EnsureSynchronisationPropertyForOutlookItem: Failed to set property {name} to value {value} on item {olItem.Subject}", any);
             }
             finally
             {
@@ -180,8 +201,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        private void CheckMeetingAcceptances()
+        /// <summary>
+        /// Check meeting acceptances for all future meetings.
+        /// </summary>
+        private int CheckMeetingAcceptances()
         {
+            int result = 0;
+
             foreach (AppointmentSyncState state in this.ItemsSyncState)
             {
                 Outlook.AppointmentItem item = state.OutlookItem;
@@ -189,27 +215,68 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (item.UserProperties[OrganiserPropertyName]?.Value == RestAPIWrapper.GetUserId() &&
                     item.Start > DateTime.Now)
                 {
-                    foreach (Outlook.Recipient invitee in item.Recipients)
+                    result += CheckMeetingAcceptances(item);
+                }
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Check meeting acceptances for the invitees of the meeting associated with this `appointment`.
+        /// </summary>
+        /// <param name="appointment">The appointment.</param>
+        /// <returns>the number of valid acceptance statuses found.</returns>
+        private int CheckMeetingAcceptances(Outlook.AppointmentItem appointment)
+        {
+            int count = 0;
+
+            if ( appointment != null) {
+                foreach (Outlook.Recipient invitee in appointment.Recipients)
+                {
+                    string acceptance = string.Empty;
+
+                    switch (invitee.MeetingResponseStatus)
                     {
-                        switch (invitee.MeetingResponseStatus)
-                        {
-                            case Outlook.OlResponseStatus.olResponseAccepted:
-                                this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item, invitee, "Accept");
-                                break;
-                            case Outlook.OlResponseStatus.olResponseDeclined:
-                                this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item, invitee, "Decline");
-                                break;
-                            case Outlook.OlResponseStatus.olResponseTentative:
-                                this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item, invitee, "Tentative");
-                                break;
-                            default:
-                                // nothing to do
-                                break;
-                        }
+                        case Outlook.OlResponseStatus.olResponseAccepted:
+                            acceptance = "Accept";
+                            break;
+                        case Outlook.OlResponseStatus.olResponseDeclined:
+                            acceptance = "Decline";
+                            break;
+                        case Outlook.OlResponseStatus.olResponseTentative:
+                            acceptance = "Tentative";
+                            break;
+                        default:
+                            // nothing to do
+                            break;
+                    }
+
+                    if (!string.IsNullOrEmpty(acceptance))
+                    {
+                        this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(appointment, invitee, acceptance);
+                        count++;
                     }
                 }
             }
+
+            return count;
         }
+
+
+        /// <summary>
+        /// Check meeting acceptances for the invitees of this `meeting`.
+        /// </summary>
+        /// <param name="meeting">The meeting.</param>
+        /// <returns>the number of valid acceptance statuses found.</returns>
+        public int UpdateMeetingAcceptances(Outlook.MeetingItem meeting)
+        {
+            return meeting == null ? 
+                0 : 
+                this.CheckMeetingAcceptances(meeting.GetAssociatedAppointment(false));
+        }
+
 
         /// <summary>
         /// Set the meeting acceptance status, in CRM, for this invitee to this meeting from
@@ -221,15 +288,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// as a string recognised by CRM.</param>
         private void AddOrUpdateMeetingAcceptanceFromOutlookToCRM(Outlook.AppointmentItem meeting, Outlook.Recipient invitee, string acceptance)
         {
-            // OK: we don't know which CRM module the invitee belongs to - could be contacts, users, 
+            // We don't know which CRM module the invitee belongs to - could be contacts, users, 
             // or indirected via accounts - see AddMeetingRecipientsFromOutlookToCrm. We
-            // cannot look this up every time. So we're going to have to have some sort of a cache.
-            var resolution = this.meetingRecipientsCache[invitee.Address];
-            var crmItemId = meeting.UserProperties[CrmIdPropertyName]?.Value;                 
-
-            if (resolution != null && crmItemId != null)
+            // cannot look this up every time. Therefore we use a cache.
+            if (this.meetingRecipientsCache.ContainsKey(invitee.GetSmtpAddress()))
             {
-                RestAPIWrapper.AcceptDeclineMeeting(crmItemId, resolution.moduleName, resolution.moduleId, acceptance);
+                var resolution = this.meetingRecipientsCache[invitee.GetSmtpAddress()];
+                var meetingId = meeting.UserProperties[CrmIdPropertyName]?.Value;
+
+                if (resolution != null && meetingId != null)
+                {
+                    RestAPIWrapper.AcceptDeclineMeeting(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
+                }
+            }
+            else
+            {
+                Log.Warn($"Received {acceptance} to meeting {meeting.Subject} from {invitee.GetSmtpAddress()}, but we have no CRM record for that person");
             }
         }
 
@@ -238,21 +312,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             LogItemAction(olItem, "AppointmentSyncing.AddMeetingRecipientsFromOutlookToCrm");
             foreach (Outlook.Recipient recipient in olItem.Recipients)
             {
-                Log.Info($"objRecepientName= {recipient.Name}, objRecepient= {recipient.Address}");
+                string smtpAddress = recipient.GetSmtpAddress();
+                Log.Info($"objRecepientName= {recipient.Name}, objRecepient= {smtpAddress}");
 
-                string address = recipient.Address;
-
-                if (! TryAddRecipientInModule(ContactSyncing.CrmModule, meetingId, recipient) ||
-                    TryAddRecipientInModule("Users", meetingId, recipient) ||
-                    TryAddRecipientInModule("Leads", meetingId, recipient))
-                {
-                    string AccountID = RestAPIWrapper.GetRelationship(ContactSyncing.CrmModule, string.Empty, "accounts");
-
-                    if (SetCrmRelationshipFromOutlook(meetingId, "Accounts", AccountID))
-                    {
-                        this.meetingRecipientsCache[address] = new AddressResolutionData("Accounts", AccountID, recipient.Address);
-                    }
-                }
+                TryAddRecipientInModule(ContactSyncing.CrmModule, meetingId, recipient);
+                TryAddRecipientInModule("Users", meetingId, recipient);
+                TryAddRecipientInModule("Leads", meetingId, recipient);
             }
         }
 
@@ -263,13 +328,50 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (!string.IsNullOrWhiteSpace(id))
             {
-                this.meetingRecipientsCache[recipient.Address] = 
-                    new AddressResolutionData(moduleName, id, recipient.Address);
+                string smtpAddress = recipient.GetSmtpAddress();
+
+                this.meetingRecipientsCache[recipient.GetSmtpAddress()] = 
+                    new AddressResolutionData(moduleName, id, smtpAddress);
+
+                string accountId = RestAPIWrapper.GetRelationship(ContactSyncing.CrmModule, id, "accounts");
+
+                if (!string.IsNullOrWhiteSpace(accountId) &&
+                    SetCrmRelationshipFromOutlook(meetingId, "Accounts", accountId))
+                {
+                    this.meetingRecipientsCache[smtpAddress] = new AddressResolutionData("Accounts", accountId, smtpAddress);
+                }
+
                 result = true;
             }
             else
             {
                 result = false;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// If a meeting was created in another Outlook we should NOT sync it with CRM because if we do we'll create 
+        /// duplicates. Only the Outlook which created it should sync it.
+        /// </summary>
+        /// <param name="folder">The folder to synchronise into.</param>
+        /// <param name="crmType">The CRM type of the candidate item.</param>
+        /// <param name="crmItem">The candidate item from CRM.</param>
+        /// <returns>True if it's offered to us by CRM with its Outlook ID already populated.</returns>
+        protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
+        {
+            /* we're good if it's a meeting... */
+            bool result = crmType == this.DefaultCrmModule;
+            /* provided it doesn't already have an Outlook id */
+            result &= string.IsNullOrWhiteSpace(crmItem.GetValueAsString("outlook_id"));
+            /* and we're also good if it's an appointment. */
+            result |= crmType == AppointmentSyncing.AltCrmModule;
+
+            if (!result)
+            {
+                Log.Debug($"ShouldAddOrUpdateItemFromCrmToOutlook: not syncing meeting `{crmItem.GetValueAsString("name")}` as it appears to originate from another Outlook instance.");
             }
 
             return result;
@@ -304,20 +406,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     olItem = appointmentsFolder.Items.Add(Outlook.OlItemType.olAppointmentItem);
 
-                    newState = new AppointmentSyncState(crmType)
-                    {
-                        OutlookItem = olItem,
-                        OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null),
-                        CrmEntryId = crmId
-                    };
-
-                    ItemsSyncState.Add(newState);
-
                     olItem.Subject = crmItem.GetValueAsString("name");
                     olItem.Body = crmItem.GetValueAsString("description");
                     /* set the SEntryID property quickly, create the sync state and save the item, to reduce howlaround */
                     EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
-                    this.SaveItem(olItem);
+
+                    this.AddOrGetSyncState(olItem);
                 }
 
                 LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
@@ -334,7 +428,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (olItem != null)
                 {
-                    this.SaveItem(olItem);
+                    this.AddOrGetSyncState(olItem);
                 }
             }
 
@@ -529,22 +623,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                             /* The appointment probably already has the three magic properties 
                              * required for synchronisation; is that a proxy for believing that it
                              * already exists in CRM? If so, is it reliable? */
-                            ItemsSyncState.Add(new AppointmentSyncState(olPropertyType.Value.ToString())
-                            {
-                                OutlookItem = olItem,
-                                OModifiedDate = DateTime.UtcNow,
-                                CrmEntryId = olPropertyEntryId.Value.ToString()
-                            });
                             LogItemAction(olItem, "AppointmentSyncing.GetOutlookItems: Adding known item to queue");
                         }
                         else
                         {
-                            ItemsSyncState.Add(new AppointmentSyncState(AppointmentSyncing.CrmModule)
-                            {
-                                OutlookItem = olItem,
-                            });
                             LogItemAction(olItem, "AppointmentSyncing.GetOutlookItems: Adding unknown item to queue");
                         }
+
+                        this.AddOrGetSyncState(olItem);
                     }
                 }                
             }
@@ -559,7 +645,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The outlook item.</param>
         /// <param name="message">The message to be logged.</param>
-        protected override void LogItemAction(Outlook.AppointmentItem olItem, string message)
+        internal override void LogItemAction(Outlook.AppointmentItem olItem, string message)
         {
             try
             {
@@ -571,7 +657,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tRecipients:\n");
                 foreach (Outlook.Recipient recipient in olItem.Recipients)
                 {
-                    bob.Append($"\t\t{recipient.Name}: {recipient.Address}\n");
+                    bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()}\n");
                 }
                 Log.Info(bob.ToString());
             }
@@ -620,11 +706,30 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     /* found it, so update it from the CRM item */
                     result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, syncState);
+
+                    result?.OutlookItem.Save();
                 }
 
-                result?.OutlookItem.Save();
-
-                // TODO TODO TODO TODO: pull and cache the recipients!
+                if (crmItem?.relationships?.link_list != null)
+                {
+                    foreach (var list in crmItem.relationships.link_list)
+                    {
+                        foreach (var record in list.records)
+                        {
+                            var data = record.data.AsDictionary();
+                            try
+                            {
+                                this.meetingRecipientsCache[data[AddressResolutionData.EmailAddressFieldName].ToString()] =
+                                    new AddressResolutionData(list.name, data);
+                                Log.Debug($"Successfully cached recipient {data[AddressResolutionData.EmailAddressFieldName]} => {list.name}, {data[AddressResolutionData.ModuleIdFieldName]}.");
+                            }
+                            catch (KeyNotFoundException kex)
+                            {
+                                Log.Error($"Key not found while caching meeting recipients.", kex);
+                            }
+                        }
+                    }
+                }
             }
 
             return result;
@@ -694,9 +799,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns></returns>
         private string SetCrmRelationshipFromOutlook(string meetingId, Outlook.Recipient recipient, string foreignModule)
         {
-            string foreignId = GetID(recipient.Address, foreignModule);
+            string foreignId = GetID(recipient.GetSmtpAddress(), foreignModule);
 
-            return SetCrmRelationshipFromOutlook(meetingId, foreignModule, foreignId) ?
+            return !string.IsNullOrWhiteSpace(foreignId) && 
+                SetCrmRelationshipFromOutlook(meetingId, foreignModule, foreignId) ?
                 foreignId :
                 string.Empty;
         }
@@ -792,9 +898,21 @@ namespace SuiteCRMAddIn.BusinessLogic
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
             var syncConfigured = SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar);
+            string organiser = olItem.Organizer;
+            var currentUser = Application.Session.CurrentUser;
+            var exchangeUser = currentUser.AddressEntry.GetExchangeUser();
+            var currentUserName = exchangeUser == null ? 
+                Application.Session.CurrentUser.Name:
+                exchangeUser.Name;
+            string crmId = olItem.UserProperties[CrmIdPropertyName]?.Value;
+
             return olItem != null &&
                 syncConfigured && 
-                olItem.Sensitivity == Outlook.OlSensitivity.olNormal;
+                olItem.Sensitivity == Outlook.OlSensitivity.olNormal &&
+                /* If there is a valid crmId it's arrived via CRM and is therefore safe to save to CRM;
+                 * if the current user is the organiser, AND there's no valid CRM id, then it's a new one
+                 * that the current user made, and we should save it to CRM. */
+                (!string.IsNullOrEmpty(crmId) || currentUserName == organiser);
         }
 
         /// <summary>
@@ -940,6 +1058,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.EntryID;
         }
 
+        protected override string GetCrmEntryId(Outlook.AppointmentItem olItem)
+        {
+            return olItem?.UserProperties[CrmIdPropertyName]?.Value.ToString();
+        }
 
         /// <summary>
         /// Return the sensitivity of this outlook item.
@@ -954,11 +1076,29 @@ namespace SuiteCRMAddIn.BusinessLogic
             return item.Sensitivity;
         }
 
+
         /// <summary>
         /// Used for caching data for resolving email addresses to CRM records.
         /// </summary>
         private class AddressResolutionData
         {
+            /// <summary>
+            /// Expected name in the input map of the email address field.
+            /// </summary>
+            public const string EmailAddressFieldName = "email1";
+
+            /// <summary>
+            /// Expected name in the input map of the field containing the id in 
+            /// the specified module.
+            /// </summary>
+            public const string ModuleIdFieldName = "id";
+
+            /// <summary>
+            /// Expected name in the input map of the field containing an associated id in 
+            /// the `Accounts` module, if any.
+            /// </summary>
+            public const string AccountIdFieldName = "account_id";
+
             /// <summary>
             /// The email address resolved by this data.
             /// </summary>
@@ -972,11 +1112,31 @@ namespace SuiteCRMAddIn.BusinessLogic
             /// </summary>
             public readonly string moduleId;
 
+            /// <summary>
+            /// The id within the `Accounts` module of a related record, if any.
+            /// </summary>
+            private readonly object accountId;
+
             public AddressResolutionData(string moduleName, string moduleId, string emailAddress)
             {
                 this.moduleName = moduleName;
                 this.moduleId = moduleId;
                 this.emailAddress = emailAddress;
+            }
+
+            public AddressResolutionData( string moduleName, Dictionary<string, object> data)
+            {
+                this.moduleName = moduleName;
+                this.moduleId = data[ModuleIdFieldName]?.ToString();
+                this.emailAddress = data[EmailAddressFieldName]?.ToString();
+                try
+                {
+                    this.accountId = data[AccountIdFieldName]?.ToString();
+                }
+                catch (KeyNotFoundException)
+                {
+                    // and ignore it; that key often won't be there.
+                }
             }
         }
     }

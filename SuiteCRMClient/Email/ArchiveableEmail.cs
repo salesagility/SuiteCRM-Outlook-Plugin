@@ -180,30 +180,23 @@ namespace SuiteCRMClient.Email
         {
             ArchiveResult result;
 
-            if (crmContactIds.Count > 0)
+            try
             {
+                result = TrySave(crmContactIds, this.HTMLBody, null);
+            }
+            catch (Exception firstFail)
+            {
+                log.Warn($"ArchiveableEmail.Save: failed to save '{this.Subject}' with HTML body", firstFail);
+
                 try
                 {
-                    result = TrySave(crmContactIds, this.HTMLBody, null);
+                    result = TrySave(crmContactIds, string.Empty, new[] { firstFail });
                 }
-                catch (Exception firstFail)
+                catch (Exception secondFail)
                 {
-                    log.Warn($"ArchiveableEmail.Save: failed to save '{this.Subject}' with HTML body", firstFail);
-
-                    try
-                    {
-                        result = TrySave(crmContactIds, string.Empty, new[] { firstFail });
-                    }
-                    catch (Exception secondFail)
-                    {
-                        log.Error($"ArchiveableEmail.Save: failed to save '{this.Subject}' at all", secondFail);
-                        result = ArchiveResult.Failure(new[] { firstFail, secondFail });
-                    }
+                    log.Error($"ArchiveableEmail.Save: failed to save '{this.Subject}' at all", secondFail);
+                    result = ArchiveResult.Failure(new[] { firstFail, secondFail });
                 }
-            }
-            else
-            {
-                result = ArchiveResult.Failure(null);
             }
             
             return result;

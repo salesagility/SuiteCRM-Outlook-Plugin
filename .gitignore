@@ -46,7 +46,7 @@ lang_cmp.php
 packages/
 *.suo
 *.user
-
+.vs/
 obj
 bin
 
