@@ -25,18 +25,12 @@ namespace SuiteCRMAddIn.Exceptions
     using System;
 
     /// <summary>
-    /// An exception thrown if an action failed.
+    /// An exception thrown when an action has failed but may be retried.
     /// </summary>
-    public class ActionFailedException : Exception
+    public class ActionRetryableException : ActionFailedException
     {
-        public ActionFailedException(string message) : base(message)
-        {
+        public ActionRetryableException(string message) : base(message) { }
 
-        }
-
-        public ActionFailedException(string message, Exception cause) : base( message, cause)
-        {
-
-        }
+        public ActionRetryableException(string message, Exception cause) : base(message, cause) { }
     }
 }

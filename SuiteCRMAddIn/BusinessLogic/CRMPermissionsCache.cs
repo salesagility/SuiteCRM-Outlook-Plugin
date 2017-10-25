@@ -92,7 +92,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public CRMPermissionsCache(string name, ILogger log) : base(name, log)
         {
             this.log = log;
-            this.SyncPeriod = TimeSpan.FromHours(1);
+            this.Interval = TimeSpan.FromHours(1);
         }
 
 
