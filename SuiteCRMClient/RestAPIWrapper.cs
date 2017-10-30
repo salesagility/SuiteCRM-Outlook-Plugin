@@ -346,12 +346,12 @@ namespace SuiteCRMClient
 
                 if (!result)
                 {
-                    Log.Warn("SuiteCrmHelper.SetRelationshipUnsafe: failed to set relationship");
+                    Log.Warn("RestAPIWrapper.SetRelationshipUnsafe: failed to set relationship");
                 }
             }
             catch (System.Exception exception)
             {
-                Log.Error("SuiteCrmHelper.SetRelationshipUnsafe:", exception);
+                Log.Error("RestAPIWrapper.SetRelationshipUnsafe:", exception);
                 result = false;
             }
 
@@ -424,11 +424,11 @@ namespace SuiteCRMClient
 
                 if (value.Failed == 0)
                 {
-                    Log.Info($"SuiteCrmHelper.SetRelationship: successfully set relationship using link field name '{linkFieldName}'");
+                    Log.Info($"RestAPIWrapper.TrySetRelationship: successfully set relationship using link field name '{linkFieldName}'");
                 }
                 else
                 {
-                    Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
+                    Log.Warn($"RestAPIWrapper.TrySetRelationship: failed to set relationship using link field name '{linkFieldName}'");
                 }
 
                 result = (value.Created != 0);
