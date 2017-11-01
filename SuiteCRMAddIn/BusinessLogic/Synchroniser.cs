@@ -190,6 +190,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             get;
         }
 
+        /// <summary>
+        /// A count of the number of items I am responsible for synchronising.
+        /// </summary>
+        public int ItemsCount
+        {
+            get
+            {
+                return this.ItemsSyncState.Count();
+            }
+        }
+
         protected SyncContext Context => context;
 
         protected Outlook.Application Application => Context.Application;
@@ -736,6 +747,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 crmItem.GetValueAsString("date_modified"),
                 type,
                 crmItem.GetValueAsString("id"));
+        }
+
+        internal IEnumerable<WithRemovableSynchronisationProperties> GetSynchronisedItems()
+        {
+            var result = new List<WithRemovableSynchronisationProperties>();
+            result.AddRange(this.ItemsSyncState.AsEnumerable<SyncState<OutlookItemType>>());
+
+            return result;
         }
 
         /// <summary>

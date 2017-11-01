@@ -26,6 +26,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using ProtoItems;
     using System.Text;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System;
 
     public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
@@ -73,5 +74,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return new ProtoAppointment(outlookItem);
         }
+
+        public override void RemoveSynchronisationProperties()
+        {
+            olItem.ClearSynchronisationProperties();
+        }
+
     }
 }

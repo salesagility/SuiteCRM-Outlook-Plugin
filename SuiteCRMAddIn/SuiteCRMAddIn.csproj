@@ -204,6 +204,7 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
     <Compile Include="Daemon\UpdateMeetingAcceptancesAction.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
       <SubType>Form</SubType>
@@ -221,6 +222,12 @@
     <Compile Include="Daemon\FetchEmailCategoriesAction.cs" />
     <Compile Include="Daemon\TransmitNewAction.cs" />
     <Compile Include="Daemon\TransmitUpdateAction.cs" />
+    <Compile Include="Dialogs\ClearCrmIdsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ClearCrmIdsDialog.Designer.cs">
+      <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\Documentation.cs" />
     <Compile Include="Dialogs\ShuttingDownDialog.cs">
       <SubType>Form</SubType>
@@ -232,6 +239,9 @@
     <Compile Include="Exceptions\ActionRetryableException.cs" />
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
+    <Compile Include="Extensions\TaskItemExtension.cs" />
+    <Compile Include="Extensions\ContactItemExtension.cs" />
+    <Compile Include="Extensions\AppointmentItemExtension.cs" />
     <Compile Include="Extensions\Documentation.cs" />
     <Compile Include="Extensions\MailItemExtensions.cs" />
     <Compile Include="Extensions\RecipientExtensions.cs" />
@@ -312,6 +322,9 @@
     </Compile>
     <EmbeddedResource Include="Dialogs\AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ClearCrmIdsDialog.resx">
+      <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ShuttingDownDialog.resx">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>

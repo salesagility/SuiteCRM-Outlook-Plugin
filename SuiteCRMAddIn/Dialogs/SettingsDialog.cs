@@ -332,15 +332,12 @@ namespace SuiteCRMAddIn.Dialogs
 
             try
             {
-                if (!SafelyGetText(txtURL).EndsWith(@"/"))
-                {
-                    txtURL.Text = SafelyGetText(txtURL) + "/";
-                }
+                CheckUrlChanged();
 
-				string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
-                if (LDAPAuthenticationKey== string.Empty)
+                string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
+                if (LDAPAuthenticationKey == string.Empty)
                 {
-					LDAPAuthenticationKey = null;
+                    LDAPAuthenticationKey = null;
                 }
 
                 /* save settings before, and regardless of, test that login succeeds. 
@@ -380,6 +377,25 @@ namespace SuiteCRMAddIn.Dialogs
             base.Close();
 
             this.SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Check whether the URL has changed; if it has, offer to clear down existing CRM ids.
+        /// </summary>
+        private void CheckUrlChanged()
+        {
+            var newUrl = SafelyGetText(txtURL);
+            var oldUrl = Properties.Settings.Default.Host;
+
+            if (!newUrl.Equals(oldUrl))
+            {
+                new ClearCrmIdsDialog(this.Log).ShowDialog();
+            }
+
+            if (!newUrl.EndsWith(@"/"))
+            {
+                txtURL.Text = newUrl + "/";
+            }
         }
 
         /// <summary>

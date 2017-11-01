@@ -132,6 +132,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>the proto-item.</returns>
         internal abstract ProtoItem<ItemType> CreateProtoItem(ItemType outlookItem);
 
+
         /// <summary>
         /// Don't send updates immediately on change, to prevent jitter; don't send updates if nothing
         /// has really changed.
