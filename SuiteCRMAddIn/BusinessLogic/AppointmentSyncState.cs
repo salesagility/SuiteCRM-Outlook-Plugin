@@ -32,10 +32,28 @@ namespace SuiteCRMAddIn.BusinessLogic
     {
         public AppointmentSyncState(string crmType)
         {
-            CrmType = crmType;
         }
 
-        public override string CrmType { get; }
+        public override string CrmType
+        {
+            get
+            {
+                try
+                {
+                    switch (olItem.MeetingStatus)
+                    {
+                        case Outlook.OlMeetingStatus.olNonMeeting:
+                            return AppointmentSyncing.AltCrmModule;
+                        default:
+                            return AppointmentSyncing.CrmModule;
+                    }
+                }
+                catch (Exception)
+                {
+                    return string.Empty;
+                }
+            }
+        }
 
         public override string Description
         {
@@ -49,7 +67,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 bob.Append($"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tRecipients:\n");
                 foreach (Outlook.Recipient recipient in olItem.Recipients)
                 {
-                    bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()}\n");
+                    bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()} - ({recipient.MeetingResponseStatus})\n");
                 }
 
                 return bob.ToString();

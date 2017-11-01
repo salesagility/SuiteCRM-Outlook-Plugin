@@ -274,7 +274,7 @@ namespace SuiteCRMClient
                 $"index.php?entryPoint=acceptDecline&module=Meetings&{moduleName.ToLower()}_id={moduleId}&record={meetingId}&accept_status={status}";
 
             EnsureLoggedIn();
-            return SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
+            return SuiteCRMUserSession.RestServer != null && SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
         }
 
         public static string GetRelationship(string MainModule, string ID, string ModuleToFind)

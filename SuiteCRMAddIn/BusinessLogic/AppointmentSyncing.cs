@@ -223,56 +223,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (item.UserProperties[OrganiserPropertyName]?.Value == RestAPIWrapper.GetUserId() &&
                     item.Start > DateTime.Now)
                 {
-                    result += CheckMeetingAcceptances(item);
+                    result += AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item);
                 }
             }
 
             return result;
-        }
-
-
-        /// <summary>
-        /// Check meeting acceptances for the invitees of the meeting associated with this `appointment`.
-        /// </summary>
-        /// <param name="appointment">The appointment.</param>
-        /// <returns>the number of valid acceptance statuses found.</returns>
-        private int CheckMeetingAcceptances(Outlook.AppointmentItem appointment)
-        {
-            int count = 0;
-
-            if ( appointment != null) {
-                foreach (Outlook.Recipient invitee in appointment.Recipients)
-                {
-                    string acceptance = string.Empty;
-
-                    switch (invitee.MeetingResponseStatus)
-                    {
-                        case Outlook.OlResponseStatus.olResponseAccepted:
-                            acceptance = "Accept";
-                            break;
-                        case Outlook.OlResponseStatus.olResponseTentative:
-                            acceptance = "Tentative";
-                            break;
-                        case Microsoft.Office.Interop.Outlook.OlResponseStatus.olResponseNone:
-                        case Microsoft.Office.Interop.Outlook.OlResponseStatus.olResponseOrganized:
-                        case Microsoft.Office.Interop.Outlook.OlResponseStatus.olResponseNotResponded:
-                            // nothing to do
-                            break;
-                        case Outlook.OlResponseStatus.olResponseDeclined:
-                        default:
-                            acceptance = "Decline";
-                            break;
-                    }
-
-                    if (!string.IsNullOrEmpty(acceptance))
-                    {
-                        this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(appointment, invitee, acceptance);
-                        count++;
-                    }
-                }
-            }
-
-            return count;
         }
 
 
@@ -285,9 +240,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return meeting == null ? 
                 0 : 
-                this.CheckMeetingAcceptances(meeting.GetAssociatedAppointment(false));
+                this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(meeting.GetAssociatedAppointment(false));
         }
 
+
+        /// <summary>
+        /// Set the meeting acceptance status, in CRM, of all invitees to this meeting from
+        /// their acceptance status in Outlook.
+        /// </summary>
+        private int AddOrUpdateMeetingAcceptanceFromOutlookToCRM(Outlook.AppointmentItem meeting)
+        {
+            int count = 0;
+            foreach (Outlook.Recipient recipient in meeting.Recipients)
+            {
+                count += this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(meeting, recipient, recipient.CrmAcceptanceStatus());
+            }
+
+            return count;
+        }
 
         /// <summary>
         /// Set the meeting acceptance status, in CRM, for this invitee to this meeting from
@@ -297,20 +267,25 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="invitee">The recipient item representing the invitee</param>
         /// <param name="acceptance">The acceptance status of this invitee of this meeting 
         /// as a string recognised by CRM.</param>
-        private void AddOrUpdateMeetingAcceptanceFromOutlookToCRM(Outlook.AppointmentItem meeting, Outlook.Recipient invitee, string acceptance)
+        /// 
+        private int AddOrUpdateMeetingAcceptanceFromOutlookToCRM(Outlook.AppointmentItem meeting, Outlook.Recipient invitee, string acceptance)
         {
+            int count = 0;
             // We don't know which CRM module the invitee belongs to - could be contacts, users, 
             // or indirected via accounts - see AddMeetingRecipientsFromOutlookToCrm. We
             // cannot look this up every time. Therefore we use a cache.
             if (this.meetingRecipientsCache.ContainsKey(invitee.GetSmtpAddress()))
             {
-               var meetingId = meeting.UserProperties[CrmIdPropertyName]?.Value;
+                var meetingId = meeting.UserProperties[CrmIdPropertyName]?.Value;
 
-                if (meetingId != null)
+                if (meetingId != null && 
+                    !string.IsNullOrEmpty(acceptance) && 
+                    SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar))
                 {
                     foreach (AddressResolutionData resolution in this.meetingRecipientsCache[invitee.GetSmtpAddress()])
                     {
                         RestAPIWrapper.AcceptDeclineMeeting(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
+                        count++;
                     }
                 }
             }
@@ -318,6 +293,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Warn($"Received {acceptance} to meeting {meeting.Subject} from {invitee.GetSmtpAddress()}, but we have no CRM record for that person");
             }
+
+            return count;
         }
 
         private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem olItem, string meetingId)
@@ -583,6 +560,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                                 }
                             }
                         }
+
+                        this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(olItem);
                     }
                 }
                 else
@@ -688,7 +667,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tRecipients:\n");
                 foreach (Outlook.Recipient recipient in olItem.Recipients)
                 {
-                    bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()}\n");
+                    bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()} - ({recipient.MeetingResponseStatus})\n");
                 }
                 Log.Info(bob.ToString());
             }

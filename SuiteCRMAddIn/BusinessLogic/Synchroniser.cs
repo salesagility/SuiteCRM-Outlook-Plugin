@@ -33,6 +33,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Linq;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Threading;
+    using System.Runtime.InteropServices;
 
     /// <summary>
     /// Synchronise items of the class for which I am responsible.
@@ -576,28 +577,33 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             else
             {
-                var olItemEntryId = GetOutlookEntryId(olItem);
-                try
-                {
-                    /* if there are duplicate entries I want them logged */
-                    result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
-                        .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-                        .Where(a => !a.IsDeletedInOutlook)
-                        .SingleOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
-                }
-                catch (InvalidOperationException notUnique)
-                {
-                    Log.Error(
-                        String.Format(
-                            "Synchroniser.GetExistingSyncState: Outlook Id {0} was not unique in this.ItemsSyncState?",
-                            olItemEntryId),
-                        notUnique);
+                try {
+                    var olItemEntryId = GetOutlookEntryId(olItem);
+                    try
+                    {
+                        /* if there are duplicate entries I want them logged */
+                        result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
+                            .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
+                            .Where(a => !a.IsDeletedInOutlook)
+                            .SingleOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
+                    }
+                    catch (InvalidOperationException notUnique)
+                    {
+                        Log.Error(
+                            $"Synchroniser.GetExistingSyncState: Outlook Id {olItemEntryId} was not unique in this.ItemsSyncState?",
+                            notUnique);
 
-                    /* but if it isn't unique, the first will actually do for now */
-                    result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
-                        .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-                        .Where(a => !a.IsDeletedInOutlook)
-                        .FirstOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
+                        /* but if it isn't unique, the first will actually do for now */
+                        result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
+                            .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
+                            .Where(a => !a.IsDeletedInOutlook)
+                            .FirstOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
+                    }
+                }
+                catch (COMException comx)
+                {
+                    Log.Debug($"Synchroniser.GetExistingSyncState: Object has probably been deleted: {comx.ErrorCode}, {comx.Message}");
+                    result = null;
                 }
             }
 
