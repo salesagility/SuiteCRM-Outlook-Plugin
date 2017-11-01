@@ -1106,7 +1106,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.AppointmentItem> ConstructSyncState(Outlook.AppointmentItem oItem)
         {
-            return new AppointmentSyncState(oItem.UserProperties[TypePropertyName]?.Value.ToString())
+            return new AppointmentSyncState()
             {
                 OutlookItem = oItem,
                 CrmEntryId = oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),

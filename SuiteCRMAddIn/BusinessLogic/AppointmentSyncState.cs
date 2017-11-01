@@ -30,7 +30,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
     public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
-        public AppointmentSyncState(string crmType)
+        public AppointmentSyncState()
         {
         }
 
