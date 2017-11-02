@@ -30,7 +30,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// <summary>
     /// Superclass for SyncState<T>, q.v..
     /// </summary>
-    public abstract class SyncState
+    public abstract class SyncState : WithRemovableSynchronisationProperties
     {
         private bool _wasDeleted = false;
 
@@ -91,9 +91,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             CrmEntryId = null;
             if (!IsDeletedInOutlook)
             {
-                OutlookUserProperties["SOModifiedDate"]?.Delete();
-                OutlookUserProperties["SEntryID"]?.Delete();
+                RemoveSynchronisationProperties();
             }
         }
+
+        /// <summary>
+        /// Remove all synchronisation properties from this object.
+        /// </summary>
+        public abstract void RemoveSynchronisationProperties();
     }
 }

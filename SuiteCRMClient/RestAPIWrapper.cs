@@ -274,7 +274,7 @@ namespace SuiteCRMClient
                 $"index.php?entryPoint=acceptDecline&module=Meetings&{moduleName.ToLower()}_id={moduleId}&record={meetingId}&accept_status={status}";
 
             EnsureLoggedIn();
-            return SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
+            return SuiteCRMUserSession.RestServer != null && SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
         }
 
         public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
@@ -346,12 +346,12 @@ namespace SuiteCRMClient
 
                 if (!result)
                 {
-                    Log.Warn("SuiteCrmHelper.SetRelationshipUnsafe: failed to set relationship");
+                    Log.Warn("RestAPIWrapper.SetRelationshipUnsafe: failed to set relationship");
                 }
             }
             catch (System.Exception exception)
             {
-                Log.Error("SuiteCrmHelper.SetRelationshipUnsafe:", exception);
+                Log.Error("RestAPIWrapper.SetRelationshipUnsafe:", exception);
                 result = false;
             }
 
@@ -424,11 +424,11 @@ namespace SuiteCRMClient
 
                 if (value.Failed == 0)
                 {
-                    Log.Info($"SuiteCrmHelper.SetRelationship: successfully set relationship using link field name '{linkFieldName}'");
+                    Log.Info($"RestAPIWrapper.TrySetRelationship: successfully set relationship using link field name '{linkFieldName}'");
                 }
                 else
                 {
-                    Log.Warn($"SuiteCrmHelper.SetRelationship: failed to set relationship using link field name '{linkFieldName}'");
+                    Log.Warn($"RestAPIWrapper.TrySetRelationship: failed to set relationship using link field name '{linkFieldName}'");
                 }
 
                 result = (value.Created != 0);
@@ -545,10 +545,12 @@ namespace SuiteCRMClient
         public static ModuleFields GetFieldsForModule(string module)
         {
             ModuleFields result;
+            /* module name is case sensitive, initial capital */
+            string moduleName = char.ToUpper(module[0]) + module.Substring(1);
 
-            if (RestAPIWrapper.moduleFieldsCache.ContainsKey(module))
+            if (RestAPIWrapper.moduleFieldsCache.ContainsKey(moduleName))
             {
-                result = RestAPIWrapper.moduleFieldsCache[module];
+                result = RestAPIWrapper.moduleFieldsCache[moduleName];
             }
             else
             {
@@ -558,11 +560,11 @@ namespace SuiteCRMClient
                     object data = new
                     {
                         @session = SuiteCRMUserSession.id,
-                        @module_name = module
+                        @module_name = moduleName
                     };
 
                     result = SuiteCRMUserSession.RestServer.GetCrmResponse<ModuleFields>("get_module_fields", data);
-                    RestAPIWrapper.moduleFieldsCache[module] = result;
+                    RestAPIWrapper.moduleFieldsCache[moduleName] = result;
                 }
                 else
                 {

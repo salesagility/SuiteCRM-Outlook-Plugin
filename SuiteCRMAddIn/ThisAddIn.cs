@@ -923,5 +923,43 @@ namespace SuiteCRMAddIn
                 MessageBoxIcon.Warning);
             Log.Error(summary, error);
         }
+
+        /// <summary>
+        /// Count how many items there are whose state I am monitoring.
+        /// </summary>
+        /// <returns>The number of items I am monitoring.</returns>
+        internal int CountItems()
+        {
+            int result = this.appointmentSynchroniser != null ? this.appointmentSynchroniser.ItemsCount : 0;
+            result += this.contactSynchroniser != null ? this.contactSynchroniser.ItemsCount : 0;
+            result += this.taskSynchroniser != null ? this.taskSynchroniser.ItemsCount : 0;
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Get all the synchronisable items I'm tracking - at present, only as WithRemovableSynchronisationProperties objects.
+        /// </summary>
+        /// <returns>all the synchronisable items I'm tracking</returns>
+        internal IEnumerable<WithRemovableSynchronisationProperties> GetSynchronisableItems()
+        {
+            List<WithRemovableSynchronisationProperties> result = new List<WithRemovableSynchronisationProperties>();
+
+            if (this.appointmentSynchroniser != null)
+            {
+                result.AddRange(this.appointmentSynchroniser.GetSynchronisedItems());
+            }
+            if (this.contactSynchroniser != null)
+            {
+                result.AddRange(this.contactSynchroniser.GetSynchronisedItems());
+            }
+            if (this.taskSynchroniser != null)
+            {
+                result.AddRange(this.taskSynchroniser.GetSynchronisedItems());
+            }
+
+            return result;
+        }
     }
 }
