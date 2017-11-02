@@ -63,6 +63,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         public const string OrganiserPropertyName = "SOrganiser";
 
         /// <summary>
+        /// Microsoft Conferencing Add-in creates temporary items whose names begin 
+        /// 'PLEASE IGNORE'. We should not sync these.
+        /// </summary>
+        public const string MSConfTmpSubjectPrefix = "PLEASE IGNORE";
+
+        /// <summary>
         /// A cache of email addresses to CRM modules and identities
         /// </summary>
         private Dictionary<String, List<AddressResolutionData>> meetingRecipientsCache = 
@@ -1017,7 +1023,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 /* If there is a valid crmId it's arrived via CRM and is therefore safe to save to CRM;
                  * if the current user is the organiser, AND there's no valid CRM id, then it's a new one
                  * that the current user made, and we should save it to CRM. */
-                (!string.IsNullOrEmpty(crmId) || currentUserName == organiser);
+                (!string.IsNullOrEmpty(crmId) || currentUserName == organiser) &&
+                /* Microsoft Conferencing Add-in creates temporary items with names which start 
+                 * 'PLEASE IGNORE' - we should not sync these. */
+                !olItem.Subject.StartsWith(MSConfTmpSubjectPrefix);
         }
 
         /// <summary>
