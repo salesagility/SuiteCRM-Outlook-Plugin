@@ -46,6 +46,11 @@ namespace SuiteCRMAddIn.Dialogs
 
         private Microsoft.Office.Interop.Outlook.Application Application => Globals.ThisAddIn.Application;
 
+        /// <summary>
+        /// The CRM URL value at the time the dialog was invoked.
+        /// </summary>
+        private string oldUrl = Properties.Settings.Default.Host;
+
         private bool ValidateDetails()
         {
             if (SafelyGetText(txtURL) == string.Empty)
@@ -385,9 +390,8 @@ namespace SuiteCRMAddIn.Dialogs
         private void CheckUrlChanged()
         {
             var newUrl = SafelyGetText(txtURL);
-            var oldUrl = Properties.Settings.Default.Host;
 
-            if (!newUrl.Equals(oldUrl))
+            if (newUrl != oldUrl)
             {
                 new ClearCrmIdsDialog(this.Log).ShowDialog();
             }

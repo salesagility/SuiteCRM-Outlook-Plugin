@@ -545,10 +545,12 @@ namespace SuiteCRMClient
         public static ModuleFields GetFieldsForModule(string module)
         {
             ModuleFields result;
+            /* module name is case sensitive, initial capital */
+            string moduleName = char.ToUpper(module[0]) + module.Substring(1);
 
-            if (RestAPIWrapper.moduleFieldsCache.ContainsKey(module))
+            if (RestAPIWrapper.moduleFieldsCache.ContainsKey(moduleName))
             {
-                result = RestAPIWrapper.moduleFieldsCache[module];
+                result = RestAPIWrapper.moduleFieldsCache[moduleName];
             }
             else
             {
@@ -558,11 +560,11 @@ namespace SuiteCRMClient
                     object data = new
                     {
                         @session = SuiteCRMUserSession.id,
-                        @module_name = module
+                        @module_name = moduleName
                     };
 
                     result = SuiteCRMUserSession.RestServer.GetCrmResponse<ModuleFields>("get_module_fields", data);
-                    RestAPIWrapper.moduleFieldsCache[module] = result;
+                    RestAPIWrapper.moduleFieldsCache[moduleName] = result;
                 }
                 else
                 {

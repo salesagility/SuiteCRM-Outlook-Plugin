@@ -253,7 +253,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             int count = 0;
             foreach (Outlook.Recipient recipient in meeting.Recipients)
             {
-                count += this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(meeting, recipient, recipient.CrmAcceptanceStatus());
+                var acceptance = recipient.CrmAcceptanceStatus();
+                if (!string.IsNullOrEmpty(acceptance))
+                {
+                    count += this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(meeting, recipient, acceptance);
+                }
             }
 
             return count;
@@ -271,27 +275,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         private int AddOrUpdateMeetingAcceptanceFromOutlookToCRM(Outlook.AppointmentItem meeting, Outlook.Recipient invitee, string acceptance)
         {
             int count = 0;
-            // We don't know which CRM module the invitee belongs to - could be contacts, users, 
-            // or indirected via accounts - see AddMeetingRecipientsFromOutlookToCrm. We
-            // cannot look this up every time. Therefore we use a cache.
-            if (this.meetingRecipientsCache.ContainsKey(invitee.GetSmtpAddress()))
-            {
-                var meetingId = meeting.UserProperties[CrmIdPropertyName]?.Value;
+            string smtpAddress = invitee.GetSmtpAddress();
+            var meetingId = meeting.UserProperties[CrmIdPropertyName]?.Value;
 
-                if (meetingId != null && 
-                    !string.IsNullOrEmpty(acceptance) && 
-                    SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar))
-                {
-                    foreach (AddressResolutionData resolution in this.meetingRecipientsCache[invitee.GetSmtpAddress()])
-                    {
-                        RestAPIWrapper.AcceptDeclineMeeting(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
-                        count++;
-                    }
-                }
-            }
-            else
+            if (meetingId != null && 
+                !string.IsNullOrEmpty(acceptance) && 
+                SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar))
             {
-                Log.Warn($"Received {acceptance} to meeting {meeting.Subject} from {invitee.GetSmtpAddress()}, but we have no CRM record for that person");
+                foreach (AddressResolutionData resolution in this.ResolveRecipient(meeting, invitee))
+                {
+                    RestAPIWrapper.AcceptDeclineMeeting(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
+                    count++;
+                }
             }
 
             return count;
@@ -306,24 +301,73 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 Log.Info($"recepientName= {recipient.Name}, recepient= {smtpAddress}");
 
-                if (this.meetingRecipientsCache.ContainsKey(smtpAddress))
-                {
-                    List<AddressResolutionData> resolutions = this.meetingRecipientsCache[smtpAddress];
+                List<AddressResolutionData> resolutions = this.ResolveRecipient(olItem, recipient);
 
-                    foreach (AddressResolutionData resolution in resolutions)
-                    {
-                        SetCrmRelationshipFromOutlook(meetingId, resolution);
-                    }
-                }
-                else
+                foreach (AddressResolutionData resolution in resolutions)
                 {
-                    TryAddRecipientInModule("Leads", meetingId, recipient);
-                    TryAddRecipientInModule("Users", meetingId, recipient);
-                    TryAddRecipientInModule(ContactSyncing.CrmModule, meetingId, recipient);
+                    SetCrmRelationshipFromOutlook(meetingId, resolution);
                 }
             }
         }
 
+
+        /// <summary>
+        /// Find all CRM records related to this recipient of this meeting, and produce address
+        /// resolution data from them.
+        /// </summary>
+        /// <param name="olItem">An appointment, assumed to be a meeting.</param>
+        /// <param name="recipient">A recipient of that meeting request.</param>
+        /// <returns>A list of address resolution objects.</returns>
+        private List<AddressResolutionData> ResolveRecipient(Outlook.AppointmentItem olItem, Outlook.Recipient recipient)
+        {
+            List<AddressResolutionData> result = new List<AddressResolutionData>();
+            var smtpAddress = recipient.GetSmtpAddress();
+
+            Log.Info($"recepientName= {recipient.Name}, recepient= {smtpAddress}");
+
+            if (this.meetingRecipientsCache.ContainsKey(smtpAddress))
+            {
+                result.AddRange(meetingRecipientsCache[smtpAddress]);
+            }
+            else
+            {
+                string meetingId = olItem.UserProperties[AppointmentSyncing.CrmIdPropertyName]?.Value;
+                Dictionary<string, string> moduleIds = new Dictionary<string, string>();
+
+                if (!string.IsNullOrEmpty(meetingId))
+                {
+                    foreach (string moduleName in new string[] { "Leads", "Users", ContactSyncing.CrmModule })
+                    {
+                        string moduleId = this.GetID(smtpAddress, moduleName);
+                        if (!string.IsNullOrEmpty(moduleId))
+                        {
+                            moduleIds[moduleName] = moduleId;
+                            AddressResolutionData data = new AddressResolutionData(moduleName, meetingId, smtpAddress);
+                            this.CacheAddressResolutionData(data);
+                            result.Add(data);
+                        }
+                    }
+
+                    if (moduleIds.ContainsKey(ContactSyncing.CrmModule))
+                    {
+                        string accountId = RestAPIWrapper.GetRelationship(
+                            ContactSyncing.CrmModule, 
+                            moduleIds[ContactSyncing.CrmModule], 
+                            "accounts");
+
+                        if (!string.IsNullOrWhiteSpace(accountId) &&
+                            SetCrmRelationshipFromOutlook(meetingId, "Accounts", accountId))
+                        {
+                            var data = new AddressResolutionData("Accounts", accountId, smtpAddress);
+                            this.CacheAddressResolutionData(data);
+                            result.Add(data);
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
 
         private bool TryAddRecipientInModule(string moduleName, string meetingId, Outlook.Recipient recipient)
         {
