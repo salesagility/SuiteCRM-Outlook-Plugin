@@ -42,7 +42,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// NOTE that there is a significant difference between <code>module_name</code> and <code>module_key</code>.
     /// <code>module_key</code> is the name used internally by CRM for the module, and is unaffected by natural
     /// language changes; <code>module_name</code> will change with the natural language of the installation.
-    /// Thans to Andreas Ravnestad for this insight.
+    /// Thanks to Andreas Ravnestad for this insight.
     /// </para>
     /// </remarks>
     public abstract class CRMPermissionsCache : RepeatingProcess
