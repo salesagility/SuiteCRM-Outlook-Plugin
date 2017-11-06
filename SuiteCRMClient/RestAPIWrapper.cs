@@ -264,17 +264,19 @@ namespace SuiteCRMClient
         /// <returns>true if nothing dreadful happens - not necessarily proof that the call succeeded.</returns>
         public static bool AcceptDeclineMeeting(string meetingId, string moduleName, string moduleId, string status)
         {
-            Log.Debug($"RestApiWrapper.AcceptDeclineMeeting: meetingId=`{meetingId}`; moduleName=`{moduleName}`; moduleId=`{moduleId}`; status=`{status}`");
+            Log.Warn("Accept/Decline propagation disabled");
+            //Log.Debug($"RestApiWrapper.AcceptDeclineMeeting: meetingId=`{meetingId}`; moduleName=`{moduleName}`; moduleId=`{moduleId}`; status=`{status}`");
 
-            if (moduleName.EndsWith("s"))
-            {
-                moduleName = moduleName.Substring(0, moduleName.Length - 1);
-            }
-            String pathPart = 
-                $"index.php?entryPoint=acceptDecline&module=Meetings&{moduleName.ToLower()}_id={moduleId}&record={meetingId}&accept_status={status}";
+            //if (moduleName.EndsWith("s"))
+            //{
+            //    moduleName = moduleName.Substring(0, moduleName.Length - 1);
+            //}
+            //String pathPart = 
+            //    $"index.php?entryPoint=acceptDecline&module=Meetings&{moduleName.ToLower()}_id={moduleId}&record={meetingId}&accept_status={status}";
 
-            EnsureLoggedIn();
-            return SuiteCRMUserSession.RestServer != null && SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
+            //EnsureLoggedIn();
+            //return SuiteCRMUserSession.RestServer != null && SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
+            return true;
         }
 
         public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
