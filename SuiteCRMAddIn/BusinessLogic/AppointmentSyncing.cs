@@ -297,7 +297,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 foreach (AddressResolutionData resolution in this.ResolveRecipient(meeting, invitee))
                 {
-                    RestAPIWrapper.AcceptDeclineMeeting(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
+                    RestAPIWrapper.SetMeetingAcceptance(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
                     count++;
                 }
             }

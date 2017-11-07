@@ -74,10 +74,10 @@ namespace SuiteCRMAddIn.Extensions
             {
                 case Outlook.OlResponseStatus.olResponseAccepted:
                 case Microsoft.Office.Interop.Outlook.OlResponseStatus.olResponseOrganized:
-                    acceptance = "Accept";
+                    acceptance = "accept";
                     break;
                 case Outlook.OlResponseStatus.olResponseTentative:
-                    acceptance = "Tentative";
+                    acceptance = "tentative";
                     break;
                 case Microsoft.Office.Interop.Outlook.OlResponseStatus.olResponseNone:
                 case Microsoft.Office.Interop.Outlook.OlResponseStatus.olResponseNotResponded:
@@ -85,7 +85,7 @@ namespace SuiteCRMAddIn.Extensions
                     break;
                 case Outlook.OlResponseStatus.olResponseDeclined:
                 default:
-                    acceptance = "Decline";
+                    acceptance = "decline";
                     break;
             }
 

@@ -260,23 +260,32 @@ namespace SuiteCRMClient
         /// <param name="meetingId">The id of the meeting to accept an invitation to.</param>
         /// <param name="moduleName">The module within which the invitee resides.</param>
         /// <param name="moduleId">The id of the invitee within that module.</param>
-        /// <param name="status">The status to set.</param>
+        /// <param name="status">The acceptance status to set.</param>
         /// <returns>true if nothing dreadful happens - not necessarily proof that the call succeeded.</returns>
-        public static bool AcceptDeclineMeeting(string meetingId, string moduleName, string moduleId, string status)
+        public static bool SetMeetingAcceptance(string meetingId, string moduleName, string moduleId, string status)
         {
-            Log.Warn("Accept/Decline propagation disabled");
-            //Log.Debug($"RestApiWrapper.AcceptDeclineMeeting: meetingId=`{meetingId}`; moduleName=`{moduleName}`; moduleId=`{moduleId}`; status=`{status}`");
+            Log.Debug($"RestApiWrapper.SetMeetingAcceptance: meetingId=`{meetingId}`; moduleName=`{moduleName}`; moduleId=`{moduleId}`; status=`{status}`");
+            bool result = false;
 
-            //if (moduleName.EndsWith("s"))
-            //{
-            //    moduleName = moduleName.Substring(0, moduleName.Length - 1);
-            //}
-            //String pathPart = 
-            //    $"index.php?entryPoint=acceptDecline&module=Meetings&{moduleName.ToLower()}_id={moduleId}&record={meetingId}&accept_status={status}";
+            if (EnsureLoggedIn())
+            {
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = "Meetings",
+                    @module_id = meetingId,
+                    @link_field_name = moduleName.ToLower(),
+                    @related_ids = new string[] { moduleId },
+                    @name_value_list = new NameValue[] { new NameValue() { name = "accept_status", value = status } },
+                };
+                var value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
 
-            //EnsureLoggedIn();
-            //return SuiteCRMUserSession.RestServer != null && SuiteCRMUserSession.RestServer.SendGetRequest(pathPart);
-            return true;
+                result = value.Failed == 0;
+            }
+            string success = result ? "succeeded" : "failed";
+            Log.Debug($"RestApiWrapper.SetMeetingAcceptance: {success}");
+
+            return result;
         }
 
         public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
