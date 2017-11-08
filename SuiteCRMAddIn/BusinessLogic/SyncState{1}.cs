@@ -116,8 +116,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     foreach (string key in older.Keys)
                     {
-                        unchanged &= (older[key] == null && current[key] == null) ||
-                                        older[key].Equals(current[key]);
+                        unchanged &= current.ContainsKey(key) &&
+                            ((older[key] == null && current[key] == null) ||
+                                        older[key].Equals(current[key]));
                     }
                 }
             }
