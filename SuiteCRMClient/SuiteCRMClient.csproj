@@ -95,12 +95,11 @@
     <Compile Include="RESTObjects\ModuleFields.cs" />
     <Compile Include="RESTObjects\AvailableModules.cs" />
     <Compile Include="RESTObjects\NameValue.cs" />
-    <Compile Include="RESTObjects\NewNoteAttachment.cs" />
+    <Compile Include="RESTObjects\NoteAttachment.cs" />
     <Compile Include="RESTObjects\Contacts.cs" />
     <Compile Include="RESTObjects\EntryList.cs" />
     <Compile Include="RESTObjects\Login.cs" />
     <Compile Include="RESTObjects\eNewSetRelationshipListResult.cs" />
-    <Compile Include="RESTObjects\NoteAttachment.cs" />
     <Compile Include="RESTObjects\SetEntriesDetailResult.cs" />
     <Compile Include="RESTObjects\SetEntryResult.cs" />
     <Compile Include="RESTObjects\SetRelationshipParams.cs" />

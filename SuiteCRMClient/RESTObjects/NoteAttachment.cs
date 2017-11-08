@@ -24,17 +24,18 @@ namespace SuiteCRMClient.RESTObjects
 {
     using Newtonsoft.Json;
 
-    /// <remarks>
-    /// I'm deeply suspicious of these pairs of classes, e.g. NoteAttachment and NewNoteAttachment.
-    /// TODO: investigate and, if possible, merge.
-    /// </remarks>
+    /// <summary>
+    /// An attachment, in our case, to an email.
+    /// </summary>
     public class NoteAttachment
     {
-       [JsonProperty("file")]
-       public string file { get; set; }
-       [JsonProperty("filename")]
-       public string filename { get; set; }
-       [JsonProperty("id")]
-       public string id { get; set; }
+        [JsonProperty("id")]
+        public string ID { get; set; }
+        [JsonProperty("filename")]
+        public string FileName { get; set; }
+        [JsonProperty("file")]
+        public byte[] FileContent { get; set; }
+        [JsonProperty("parent_type")]
+        public string ParentType { get; internal set; }
     }
 }

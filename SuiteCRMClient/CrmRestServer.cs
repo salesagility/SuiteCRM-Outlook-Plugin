@@ -75,7 +75,7 @@ namespace SuiteCRMClient
                 LogRequest(request, method, input);
                 LogResponse(jsonResponse);
 #endif
-                CheckForCrmError(request, this.CreatePayload(method, input));
+                CheckForCrmError(jsonResponse, this.CreatePayload(method, input));
 
                 return DeserializeJson<T>(jsonResponse);
             }
