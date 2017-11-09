@@ -37,12 +37,27 @@ namespace SuiteCRMClient.Exceptions
         public readonly ErrorValue Error;
 
         /// <summary>
+        /// The payload of the request which resulted in the error.
+        /// </summary>
+        public readonly string payload;
+
+        /// <summary>
         /// Construct a new instance of CrmServerErrorException.
         /// </summary>
         /// <param name="error">The CRM error to wrap.</param>
         public CrmServerErrorException(ErrorValue error) : base($"CRM Server error {error.number} ({error.name}): {error.description}")
         {
             this.Error = error;
+        }
+
+        /// <summary>
+        /// Construct a new instance of CrmServerErrorException.
+        /// </summary>
+        /// <param name="error">The CRM error to wrap.</param>
+        /// <param name="payload">The payload of the request which resulted in the error.</param>
+        public CrmServerErrorException(ErrorValue error, string payload) : base($"CRM Server error {error.number} ({error.name}): {error.description}; request payload: {payload}")
+        {
+            this.payload = payload;
         }
     }
 }

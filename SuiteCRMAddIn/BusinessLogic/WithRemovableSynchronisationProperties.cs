@@ -20,48 +20,20 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMAddIn.BusinessLogic
 {
-    using Newtonsoft.Json;
-
-    public class SetRelationshipParams
+    /// <summary>
+    /// SyncStates have Outlook Items which have synchronisation properties. When the user changes 
+    /// from one CRM system to another, we need to remove the properties; I want the ClearCrmIdsDialog 
+    /// to be able to show progress. To make this easier I plan to have it clear the properties itself.
+    /// But it ought not to know anything about SyncStates other than that they have syncrhonisation 
+    /// properties which may be removed.
+    /// </summary>
+    public interface WithRemovableSynchronisationProperties
     {
-        private string m1;
-        private string m2;
-
-        [JsonProperty("module1_id")]
-        public string module1_id { get; set; }
-        [JsonProperty("module1")]
-        public string module1
-        {
-            get
-            {
-                return m1;
-            }
-            set
-            {
-                m1 = char.ToUpper(value[0]) + value.Substring(1);
-            }
-        }
-        [JsonProperty("module2_id")]
-        public string module2_id { get; set; }
-        [JsonProperty("module2")]
-        public string module2
-        {
-            get
-            {
-                return m2;
-            }
-            set
-            {
-                m2 = char.ToUpper(value[0]) + value.Substring(1);
-            }
-        }
-
         /// <summary>
-        /// Only required if you want to delete a relationsip, in which case set it to 1.
+        /// Remove all synchronisation properties from this object.
         /// </summary>
-        [JsonProperty("delete")]
-        public int delete { get; set; } = 0;
+        void RemoveSynchronisationProperties();
     }
 }

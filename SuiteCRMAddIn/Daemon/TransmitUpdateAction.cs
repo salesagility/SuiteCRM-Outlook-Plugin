@@ -23,6 +23,8 @@
 namespace SuiteCRMAddIn.Daemon
 {
     using BusinessLogic;
+    using Exceptions;
+    using System.Net;
 
     /// <summary>
     /// An action to transmit to the server an item which is not a new item, but
@@ -65,9 +67,16 @@ namespace SuiteCRMAddIn.Daemon
 
         public override string Perform()
         {
-            synchroniser.AddOrUpdateItemFromOutlookToCrm(state);
+            try
+            {
+                synchroniser.AddOrUpdateItemFromOutlookToCrm(state);
 
-            return "Synced.";
+                return "Synced.";
+            }
+            catch (WebException wex)
+            {
+                throw new ActionRetryableException("Temporary network error", wex);
+            }
         }
     }
 }

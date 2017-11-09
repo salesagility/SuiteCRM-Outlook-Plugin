@@ -46,6 +46,11 @@ namespace SuiteCRMAddIn.Dialogs
 
         private Microsoft.Office.Interop.Outlook.Application Application => Globals.ThisAddIn.Application;
 
+        /// <summary>
+        /// The CRM URL value at the time the dialog was invoked.
+        /// </summary>
+        private string oldUrl = Properties.Settings.Default.Host;
+
         private bool ValidateDetails()
         {
             if (SafelyGetText(txtURL) == string.Empty)
@@ -332,15 +337,12 @@ namespace SuiteCRMAddIn.Dialogs
 
             try
             {
-                if (!SafelyGetText(txtURL).EndsWith(@"/"))
-                {
-                    txtURL.Text = SafelyGetText(txtURL) + "/";
-                }
+                CheckUrlChanged();
 
-				string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
-                if (LDAPAuthenticationKey== string.Empty)
+                string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
+                if (LDAPAuthenticationKey == string.Empty)
                 {
-					LDAPAuthenticationKey = null;
+                    LDAPAuthenticationKey = null;
                 }
 
                 /* save settings before, and regardless of, test that login succeeds. 
@@ -380,6 +382,24 @@ namespace SuiteCRMAddIn.Dialogs
             base.Close();
 
             this.SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Check whether the URL has changed; if it has, offer to clear down existing CRM ids.
+        /// </summary>
+        private void CheckUrlChanged()
+        {
+            var newUrl = SafelyGetText(txtURL);
+
+            if (newUrl != oldUrl)
+            {
+                new ClearCrmIdsDialog(this.Log).ShowDialog();
+            }
+
+            if (!newUrl.EndsWith(@"/"))
+            {
+                txtURL.Text = newUrl + "/";
+            }
         }
 
         /// <summary>

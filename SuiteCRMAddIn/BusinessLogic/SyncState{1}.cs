@@ -116,8 +116,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     foreach (string key in older.Keys)
                     {
-                        unchanged &= (older[key] == null && current[key] == null) ||
-                                        older[key].Equals(current[key]);
+                        unchanged &= current.ContainsKey(key) &&
+                            ((older[key] == null && current[key] == null) ||
+                                        older[key].Equals(current[key]));
                     }
                 }
             }
@@ -131,6 +132,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="outlookItem">The outlook item to copy.</param>
         /// <returns>the proto-item.</returns>
         internal abstract ProtoItem<ItemType> CreateProtoItem(ItemType outlookItem);
+
 
         /// <summary>
         /// Don't send updates immediately on change, to prevent jitter; don't send updates if nothing

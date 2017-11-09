@@ -26,15 +26,34 @@ namespace SuiteCRMAddIn.BusinessLogic
     using ProtoItems;
     using System.Text;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System;
 
     public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
-        public AppointmentSyncState(string crmType)
+        public AppointmentSyncState()
         {
-            CrmType = crmType;
         }
 
-        public override string CrmType { get; }
+        public override string CrmType
+        {
+            get
+            {
+                try
+                {
+                    switch (olItem.MeetingStatus)
+                    {
+                        case Outlook.OlMeetingStatus.olNonMeeting:
+                            return AppointmentSyncing.AltCrmModule;
+                        default:
+                            return AppointmentSyncing.CrmModule;
+                    }
+                }
+                catch (Exception)
+                {
+                    return string.Empty;
+                }
+            }
+        }
 
         public override string Description
         {
@@ -45,10 +64,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                     "[not present]" :
                     olPropertyEntryId.Value;
                 StringBuilder bob = new StringBuilder();
-                bob.Append($"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tRecipients:\n");
+                bob.Append($"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tStatus     : {olItem.MeetingStatus}\n\tRecipients:\n");
                 foreach (Outlook.Recipient recipient in olItem.Recipients)
                 {
-                    bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()}\n");
+                    bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()} - ({recipient.MeetingResponseStatus})\n");
                 }
 
                 return bob.ToString();
@@ -73,5 +92,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return new ProtoAppointment(outlookItem);
         }
+
+        public override void RemoveSynchronisationProperties()
+        {
+            olItem.ClearSynchronisationProperties();
+        }
+
     }
 }

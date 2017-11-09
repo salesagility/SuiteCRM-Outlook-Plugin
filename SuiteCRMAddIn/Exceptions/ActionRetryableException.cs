@@ -20,21 +20,17 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.RESTObjects
+namespace SuiteCRMAddIn.Exceptions
 {
-    using Newtonsoft.Json;
+    using System;
 
-    /// <remarks>
-    /// I'm deeply suspicious of these pairs of classes, e.g. NoteAttachment and NewNoteAttachment.
-    /// TODO: investigate and, if possible, merge.
-    /// </remarks>
-    public class NewNoteAttachment
+    /// <summary>
+    /// An exception thrown when an action has failed but may be retried.
+    /// </summary>
+    public class ActionRetryableException : ActionFailedException
     {
-        [JsonProperty("id")]
-        public string ID { get; set; }
-        [JsonProperty("filename")]
-        public string FileName { get; set; }
-        [JsonProperty("file")]
-        public byte[] FileCotent { get; set; }
+        public ActionRetryableException(string message) : base(message) { }
+
+        public ActionRetryableException(string message, Exception cause) : base(message, cause) { }
     }
 }

@@ -349,11 +349,22 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     olProperty = olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
                 }
-                olProperty.Value = value ?? string.Empty;
+                if (!olProperty.Value.Equals(value))
+                {
+                    try
+                    {
+                        olProperty.Value = value ?? string.Empty;
+                        Log.Debug($"TaskSyncing.EnsureSynchronisationPropertyForOutlookItem: Set property {name} to value {value} on item {olItem.Subject}");
+                    }
+                    finally
+                    {
+                        this.SaveItem(olItem);
+                    }
+                }
             }
-            finally
+            catch (Exception any)
             {
-                this.SaveItem(olItem);
+                Log.Error($"TaskSyncing.EnsureSynchronisationPropertyForOutlookItem: Failed to set property {name} to value {value} on item {olItem.Subject}", any);
             }
         }
 

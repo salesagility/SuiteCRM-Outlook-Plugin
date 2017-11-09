@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn.Daemon
 {
     using BusinessLogic;
+    using Exceptions;
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Concurrent;
@@ -59,7 +60,7 @@ namespace SuiteCRMAddIn.Daemon
         /// </summary>
         private DaemonWorker() : base("Daemon", Globals.ThisAddIn.Log)
         {
-            SyncPeriod = TimeSpan.FromSeconds(30);
+            Interval = TimeSpan.FromSeconds(30);
             this.Start();
         }
 
@@ -78,7 +79,11 @@ namespace SuiteCRMAddIn.Daemon
         /// <returns></returns>
         public override int PrepareShutdown()
         {
-            this.SyncPeriod = TimeSpan.FromMilliseconds(50);
+            int shutDownInterval = 10;
+            if (this.Interval.Milliseconds > shutDownInterval)
+            {
+                this.Interval = TimeSpan.FromMilliseconds(shutDownInterval);
+            }
             return this.QueueLength;
         }
 
@@ -98,17 +103,21 @@ namespace SuiteCRMAddIn.Daemon
                     string report = task.Perform();
                     Log.Info($"{task.Description} completed: {report}");
                 }
-                catch (Exception any)
+                catch (ActionRetryableException retryable)
                 {
                     if (++task.Attempts < task.MaxAttempts)
                     {
                         tasks.Enqueue(task);
-                        Log.Warn($"{task.Description} failed with error {any.GetType().Name}: {any.Message}; requeueing");
+                        Log.Warn($"{task.Description} failed with error {retryable.GetType().Name}: {retryable.Message}; requeueing");
                     }
                     else
                     {
-                        Log.Error($"{task.Description} failed with error {any.GetType().Name}: {any.Message}; too many retries, aborting", any);
+                        Log.Error($"{task.Description} failed with error {retryable.GetType().Name}: {retryable.Message}; too many retries, aborting", retryable);
                     }
+                }
+                catch (Exception any)
+                {
+                    Log.Error($"{task.Description} failed with error {any.GetType().Name}: {any.Message}; Not retryable, aborting", any);
                 }
             }
         }

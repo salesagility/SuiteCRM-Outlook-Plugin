@@ -60,5 +60,37 @@ namespace SuiteCRMAddIn.Extensions
             return result;
         }
 
+
+        /// <summary>
+        /// Get the token used by CRM to reflect the acceptance status of this recipient.
+        /// </summary>
+        /// <param name="recipient">The recipient.</param>
+        /// <returns>The acceptance status.</returns>
+        public static string CrmAcceptanceStatus(this Outlook.Recipient recipient)
+        {
+            string acceptance = string.Empty;
+
+            switch (recipient.MeetingResponseStatus)
+            {
+                case Outlook.OlResponseStatus.olResponseAccepted:
+                case Microsoft.Office.Interop.Outlook.OlResponseStatus.olResponseOrganized:
+                    acceptance = "accept";
+                    break;
+                case Outlook.OlResponseStatus.olResponseTentative:
+                    acceptance = "tentative";
+                    break;
+                case Microsoft.Office.Interop.Outlook.OlResponseStatus.olResponseNone:
+                case Microsoft.Office.Interop.Outlook.OlResponseStatus.olResponseNotResponded:
+                    // nothing to do
+                    break;
+                case Outlook.OlResponseStatus.olResponseDeclined:
+                default:
+                    acceptance = "decline";
+                    break;
+            }
+
+            return acceptance;
+        }
+
     }
 }
