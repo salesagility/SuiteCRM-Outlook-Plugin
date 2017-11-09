@@ -28,6 +28,7 @@ namespace SuiteCRMAddIn.Extensions
     using SuiteCRMClient.Logging;
     using System;
     using System.Runtime.InteropServices;
+    using TidyManaged;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -186,7 +187,7 @@ namespace SuiteCRMAddIn.Extensions
             mailArchive.Subject = olItem.Subject;
             mailArchive.Sent = olItem.ArchiveTime(reason);
             mailArchive.Body = olItem.Body;
-            mailArchive.HTMLBody = olItem.HTMLBody;
+            mailArchive.HTMLBody = Tidy(olItem.HTMLBody);
             mailArchive.Reason = reason;
             mailArchive.Category = olItem.UserProperties[CRMCategoryPropertyName] != null ?
                 olItem.UserProperties[CRMCategoryPropertyName].Value :
@@ -205,6 +206,25 @@ namespace SuiteCRMAddIn.Extensions
             }
 
             return mailArchive;
+        }
+
+
+        /// <summary>
+        /// The "HTML" which Outlook generates is diabolically bad, and CMS frequently chokes on it.
+        /// Convert it to valid HTML before dispatch.
+        /// </summary>
+        /// <param name="html">The HTML - possibly including vile Microsoft junk - to tidy.</param>
+        /// <returns>Nice clean XHTML.</returns>
+        private static string Tidy(string html)
+        {
+            using (Document doc = Document.FromString(html))
+            {
+                doc.ShowWarnings = false;
+                doc.Quiet = true;
+                doc.OutputXhtml = true;
+                doc.CleanAndRepair();
+                return doc.Save();
+            }
         }
 
 

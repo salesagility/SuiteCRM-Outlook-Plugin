@@ -380,10 +380,11 @@ namespace SuiteCRMClient.Email
             };
             var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry", initNoteDataWebFormat);
 
-            RESTObjects.NewNoteAttachment note = new RESTObjects.NewNoteAttachment();
+            RESTObjects.NoteAttachment note = new RESTObjects.NoteAttachment();
             note.ID = res.id;
             note.FileName = attachment.DisplayName;
-            note.FileCotent = attachment.FileContentInBase64String;
+            note.FileContent = attachment.FileContentInBase64String;
+            note.ParentType = "Emails";
 
             object attachmentDataWebFormat = new
             {

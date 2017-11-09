@@ -28,9 +28,10 @@
 
         public override string Perform()
         {
-            if ( this.synchroniser.UpdateMeetingAcceptances(this.meeting) == 0)
+            // throw new ActionDisabledException();
+            if (this.synchroniser.UpdateMeetingAcceptances(this.meeting) == 0)
             {
-                throw new ActionFailedException($"Meeting `{this.meeting.Subject}`: no acceptances yet");
+                throw new ActionRetryableException($"Meeting `{this.meeting.Subject}`: no acceptances yet");
             }
             return ("OK");
         }

@@ -20,6 +20,8 @@ namespace SuiteCRMAddIn.ProtoItems
         private readonly DateTime start;
         private readonly string subject;
         private readonly string outlookId;
+        private readonly Outlook.OlMeetingStatus status;
+        private readonly string CancelledPrefix = "CANCELLED";
 
         public ProtoAppointment(Outlook.AppointmentItem olItem)
         {
@@ -30,6 +32,7 @@ namespace SuiteCRMAddIn.ProtoItems
             this.start = olItem.Start;
             this.subject = olItem.Subject;
             this.outlookId = olItem.EntryID;
+            this.status = olItem.MeetingStatus;
 
             var organiserProperty = olItem.UserProperties[AppointmentSyncing.OrganiserPropertyName];
 
@@ -46,8 +49,22 @@ namespace SuiteCRMAddIn.ProtoItems
         public override NameValueCollection AsNameValues(string entryId)
         {
             NameValueCollection data = new NameValueCollection();
+            string statusString;
+            string name;
 
-            data.Add(RestAPIWrapper.SetNameValuePair("name", this.subject));
+            switch (this.status)
+            {
+                case Outlook.OlMeetingStatus.olMeetingCanceled:
+                    statusString = "Not Held";
+                    name = this.subject.StartsWith(CancelledPrefix) ? this.subject : $"{CancelledPrefix}: {this.subject}";
+                    break;
+                default:
+                    statusString = this.start < DateTime.Now ? "Held" : "Planned";
+                    name = this.subject;
+                    break;
+            }
+
+            data.Add(RestAPIWrapper.SetNameValuePair("name", name));
             data.Add(RestAPIWrapper.SetNameValuePair("description", this.body));
             data.Add(RestAPIWrapper.SetNameValuePair("location", this.location));
             data.Add(RestAPIWrapper.SetNameValuePair("date_start", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.start.ToUniversalTime())));
@@ -56,6 +73,7 @@ namespace SuiteCRMAddIn.ProtoItems
             data.Add(RestAPIWrapper.SetNameValuePair("duration_hours", (this.duration / 60).ToString()));
             data.Add(RestAPIWrapper.SetNameValuePair("assigned_user_id", this.organiser));
             data.Add(RestAPIWrapper.SetNameValuePair("outlook_id", this.outlookId));
+            data.Add(RestAPIWrapper.SetNameValuePair("status", statusString));
 
             if (!string.IsNullOrEmpty(entryId))
             {

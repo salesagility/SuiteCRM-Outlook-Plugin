@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     using System;
     using SuiteCRMAddIn.ProtoItems;
+    using Extensions;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -69,5 +70,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return new ProtoContact(outlookItem);
         }
+
+        public override void RemoveSynchronisationProperties()
+        {
+            olItem.ClearSynchronisationProperties();
+        }
+
     }
 }

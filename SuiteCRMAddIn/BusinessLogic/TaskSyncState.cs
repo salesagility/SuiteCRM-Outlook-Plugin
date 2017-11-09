@@ -23,7 +23,8 @@
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using System;
-    using SuiteCRMAddIn.ProtoItems;
+    using ProtoItems;
+    using Extensions;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -62,6 +63,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override ProtoItem<Outlook.TaskItem> CreateProtoItem(Outlook.TaskItem outlookItem)
         {
             return new ProtoTask(outlookItem);
+        }
+
+        public override void RemoveSynchronisationProperties()
+        {
+            olItem.ClearSynchronisationProperties();
         }
     }
 }
