@@ -199,10 +199,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Outlook.AppointmentItem item = state.OutlookItem;
 
-                if (item.UserProperties[OrganiserPropertyName]?.Value == RestAPIWrapper.GetUserId() &&
-                    item.Start > DateTime.Now)
+                try
                 {
-                    result += AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item);
+                    if (item.UserProperties[OrganiserPropertyName]?.Value == RestAPIWrapper.GetUserId() &&
+                        item.Start > DateTime.Now)
+                    {
+                        result += AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item);
+                    }
+                }
+                catch (COMException comx)
+                {
+                    Log.Error($"Item with CRMid {state.CrmEntryId} appears to be invalid", comx);
                 }
             }
 
@@ -539,7 +546,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
         {
             Outlook.AppointmentItem olItem = syncState.OutlookItem;
-            Outlook.UserProperty olPropertyType = olItem.UserProperties[TypePropertyName];
+            Outlook.UserProperty olPropertyType = null;
+
+            try
+            {
+                olPropertyType = olItem.UserProperties[TypePropertyName];
+            }
+            catch (COMException)
+            {
+                Log.Warn($"Item with CRM id `{syncState.CrmEntryId}` is invalid - has probably been deleted");
+            }
+
             var itemType = olPropertyType != null ? olPropertyType.Value.ToString() : this.DefaultCrmModule;
 
             return this.AddOrUpdateItemFromOutlookToCrm(syncState, itemType, syncState.CrmEntryId);

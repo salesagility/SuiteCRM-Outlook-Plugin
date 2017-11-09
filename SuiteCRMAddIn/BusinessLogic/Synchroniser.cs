@@ -584,7 +584,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         /* if there are duplicate entries I want them logged */
                         result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
                             .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-                            .Where(a => !a.IsDeletedInOutlook)
+                            // .Where(a => !a.IsDeletedInOutlook)
                             .SingleOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
                     }
                     catch (InvalidOperationException notUnique)
@@ -596,7 +596,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         /* but if it isn't unique, the first will actually do for now */
                         result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
                             .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-                            .Where(a => !a.IsDeletedInOutlook)
+                            // .Where(a => !a.IsDeletedInOutlook)
                             .FirstOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
                     }
                 }
