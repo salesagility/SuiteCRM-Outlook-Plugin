@@ -28,12 +28,12 @@
 
         public override string Perform()
         {
-            // throw new ActionDisabledException();
-            if (this.synchroniser.UpdateMeetingAcceptances(this.meeting) == 0)
-            {
-                throw new ActionRetryableException($"Meeting `{this.meeting.Subject}`: no acceptances yet");
-            }
-            return ("OK");
+            throw new ActionDisabledException();
+            //if (this.synchroniser.UpdateMeetingAcceptances(this.meeting) == 0)
+            //{
+            //    throw new ActionRetryableException($"Meeting `{this.meeting.Subject}`: no acceptances yet");
+            //}
+            //return ("OK");
         }
     }
 }
