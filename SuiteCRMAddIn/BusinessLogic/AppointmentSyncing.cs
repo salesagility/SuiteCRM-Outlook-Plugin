@@ -644,7 +644,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override string ConstructAndDespatchCrmItem(Outlook.AppointmentItem olItem, string crmType, string entryId)
         {
-            return RestAPIWrapper.SetEntryUnsafe(new ProtoAppointment(olItem).AsNameValues(entryId), crmType);
+            string result;
+
+            try
+            {
+                result = RestAPIWrapper.SetEntry(new ProtoAppointment(olItem).AsNameValues(entryId), crmType);
+            }
+            catch (Exception fail)
+            {
+                Log.Error($"Failed to set entry for appointment {olItem.GlobalAppointmentID} `{olItem.Subject}`", fail);
+                result = string.Empty;
+            }
+
+            return result;
         }
 
 
@@ -721,7 +733,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     "[not present]" :
                     olPropertyEntryId.Value;
                 StringBuilder bob = new StringBuilder();
-                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tStatus     : {olItem.MeetingStatus}\n\tRecipients:\n");
+                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}\n\tGlobal Id   : {olItem.GlobalAppointmentID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tStatus     : {olItem.MeetingStatus}\n\tRecipients:\n");
                 foreach (Outlook.Recipient recipient in olItem.Recipients)
                 {
                     bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()} - ({recipient.MeetingResponseStatus})\n");
@@ -1016,21 +1028,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
             var syncConfigured = SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar);
-            string organiser = olItem.Organizer;
-            var currentUser = Application.Session.CurrentUser;
-            var exchangeUser = currentUser.AddressEntry.GetExchangeUser();
-            var currentUserName = exchangeUser == null ? 
-                Application.Session.CurrentUser.Name:
-                exchangeUser.Name;
-            string crmId = olItem.UserProperties[CrmIdPropertyName]?.Value;
 
             return olItem != null &&
                 syncConfigured && 
                 olItem.Sensitivity == Outlook.OlSensitivity.olNormal &&
-                /* If there is a valid crmId it's arrived via CRM and is therefore safe to save to CRM;
-                 * if the current user is the organiser, AND there's no valid CRM id, then it's a new one
-                 * that the current user made, and we should save it to CRM. */
-                (!string.IsNullOrEmpty(crmId) || currentUserName == organiser) &&
                 /* Microsoft Conferencing Add-in creates temporary items with names which start 
                  * 'PLEASE IGNORE' - we should not sync these. */
                 !olItem.Subject.StartsWith(MSConfTmpSubjectPrefix);

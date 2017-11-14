@@ -238,7 +238,23 @@ namespace SuiteCRMClient
             return SetEntryUnsafe(data.ToArray(), moduleName);
         }
 
+        /// <summary>
+        /// Sets an entry in CRM and returns the id. 
+        /// </summary>
+        /// <param name="data">The data to set.</param>
+        /// <param name="moduleName">The name of the CRM module into which to insert it.</param>
+        /// <returns>the CRM id of the object created or modified.</returns>
+        public static string SetEntry(NameValueCollection data, string moduleName)
+        {
+            return SetEntry(data.ToArray(), moduleName);
+        }
 
+        /// <summary>
+        /// Sets an entry in CRM and returns the id. 
+        /// </summary>
+        /// <param name="data">The data to set.</param>
+        /// <param name="moduleName">The name of the CRM module into which to insert it.</param>
+        /// <returns>the CRM id of the object created or modified.</returns>
         public static string SetEntry(NameValue[] values, string moduleName)
         {
             EnsureLoggedIn();
