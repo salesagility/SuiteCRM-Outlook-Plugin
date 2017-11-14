@@ -104,11 +104,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             else
             {
-                var older = this.Cache.AsNameValues(this.OutlookItemEntryId)
+                var older = this.Cache.AsNameValues(this.CrmEntryId)
                     .AsDictionary();
 
                 var current = this.CreateProtoItem(this.OutlookItem)
-                    .AsNameValues(this.OutlookItemEntryId)
+                    .AsNameValues(this.CrmEntryId)
                     .AsDictionary();
                 unchanged = older.Keys.Count.Equals(current.Keys.Count);
 
