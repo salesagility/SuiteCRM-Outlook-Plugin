@@ -102,17 +102,18 @@ namespace SuiteCRMAddIn
         public static string GetCurrentUsername()
         {
             string result;
-            Outlook.AddressEntry addressEntry = Globals.ThisAddIn.Application.Session.CurrentUser.AddressEntry;
+            Outlook.Recipient currentUser = Globals.ThisAddIn.Application.Session.CurrentUser;
+            Outlook.AddressEntry addressEntry = currentUser.AddressEntry;
+
             if (addressEntry.Type == "EX")
             {
-                Outlook.ExchangeUser currentUser =
-                    Globals.ThisAddIn.Application.Session.CurrentUser.AddressEntry.GetExchangeUser();
-
-                result = currentUser.Name;
+                result = addressEntry.GetExchangeUser().Name;
             }
             else
             {
-                result = addressEntry.Address.Substring(addressEntry.Address.IndexOf('@'));
+
+                result = currentUser.Name;
+                // result = addressEntry.Address.Substring(0, addressEntry.Address.IndexOf('@'));
             }
 
             return result;

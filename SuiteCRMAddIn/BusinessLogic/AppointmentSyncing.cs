@@ -733,7 +733,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                     "[not present]" :
                     olPropertyEntryId.Value;
                 StringBuilder bob = new StringBuilder();
-                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}\n\tGlobal Id   : {olItem.GlobalAppointmentID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tStatus     : {olItem.MeetingStatus}\n\tRecipients:\n");
+                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
+                    .Append($"\n\tGlobal Id   : {olItem.GlobalAppointmentID}")
+                    .Append($"\n\tCRM Id      : {crmId}")
+                    .Append($"\n\tSubject     : '{olItem.Subject}'")
+                    .Append($"\n\tSensitivity : {olItem.Sensitivity}")
+                    .Append($"\n\tStatus      : {olItem.MeetingStatus}")
+                    .Append($"\n\tOrganiser   : {olItem.Organizer}")
+                    .Append($"\n\tWindows User: {Environment.UserName}")
+                    .Append($"\n\tOutlook User: {clsGlobals.GetCurrentUsername()}")
+                    .Append($"\n\tRecipients  :\n");
                 foreach (Outlook.Recipient recipient in olItem.Recipients)
                 {
                     bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()} - ({recipient.MeetingResponseStatus})\n");

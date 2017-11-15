@@ -61,7 +61,8 @@ namespace SuiteCRMAddIn.Daemon
             if (string.IsNullOrEmpty(syncState.CrmEntryId))
             {
                 try {
-                    return $"synced new item as {this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType)}.\n{this.syncState.Description}";
+                    string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType);
+                    return $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
                 }
                 catch (WebException wex)
                 {
