@@ -322,7 +322,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             foreach (var syncState in toCreateOnCrmServer)
             {
-                AddOrUpdateItemFromOutlookToCrm(syncState, this.DefaultCrmModule);
+                AddOrUpdateItemFromOutlookToCrm(syncState, crmModule);
             }
         }
 
@@ -1205,7 +1205,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if this synchroniser relates to the current tab and the timing logic is satisfied.</returns>
         protected bool ShouldPerformSyncNow(SyncState<OutlookItemType> syncState)
         {
-            return (IsCurrentView && syncState.ShouldPerformSyncNow());
+            return (/* IsCurrentView && */ syncState.ShouldPerformSyncNow());
         }
     }
 
