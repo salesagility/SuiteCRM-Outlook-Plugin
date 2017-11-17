@@ -56,11 +56,16 @@ namespace SuiteCRMAddIn.Daemon
         public int QueueLength => tasks.Count;
 
         /// <summary>
+        /// The period (in milliseconds) for which I sleep between jobs.
+        /// </summary>
+        public int intervalMs = 5000;
+
+        /// <summary>
         /// Construct (the one, singleton) instance of the DaemonWorker class
         /// </summary>
         private DaemonWorker() : base("Daemon", Globals.ThisAddIn.Log)
         {
-            Interval = TimeSpan.FromSeconds(30);
+            Interval = TimeSpan.FromMilliseconds(intervalMs);
             this.Start();
         }
 

@@ -555,24 +555,5 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olItem.LastName == crmItem.GetValueAsString("last_name") &&
                 olItem.Email1Address == crmItem.GetValueAsString("email1");
         }
-
-        /// <summary>
-        /// True if the currently open tab in Outlook displays items of my item type.
-        /// </summary>
-        /// <remarks>
-        /// This is used in determining whether an item is in fact newly created by the user;
-        /// it has a certain code smell to it.
-        /// </remarks>
-        protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olContactItem;
-
-        /// <summary>
-        /// Return the sensitivity of this outlook item.
-        /// </summary>
-        /// <remarks>
-        /// Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.
-        /// </remarks>
-        /// <param name="item">The outlook item whose sensitivity is required.</param>
-        /// <returns>the sensitivity of the item.</returns>
-        protected override bool PropagatesLocalDeletions => true;
     }
 }

@@ -787,43 +787,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected abstract void EnsureSynchronisationPropertyForOutlookItem(OutlookItemType olItem, string name, string value);
 
         /// <summary>
-        /// Returns true iff user is currently focussed on this (Contacts/Appointments/Tasks) tab.
-        /// </summary>
-        /// <remarks>
-        /// This is used in determining whether an item is in fact newly created by the user;
-        /// it has a certain code smell to it.
-        /// </remarks>
-        protected abstract bool IsCurrentView { get; }
-
-        /// <summary>
-        /// Returns true iff local (Outlook) deletions should be propagated to the server.
-        /// </summary>
-        /// <remarks>TODO: Why should this ever be false?</remarks>
-        protected abstract bool PropagatesLocalDeletions { get; }
-
-        /// <summary>
         /// Deal, in CRM, with items deleted in Outlook.
         /// </summary>
         protected void RemoveDeletedItems()
         {
-            if (IsCurrentView && PropagatesLocalDeletions)
+            // Make a copy of the list to avoid mutation error while iterating:
+            var syncStatesCopy = new List<SyncState<OutlookItemType>>(ItemsSyncState);
+            foreach (var syncState in syncStatesCopy)
             {
-                // Make a copy of the list to avoid mutation error while iterating:
-                var syncStatesCopy = new List<SyncState<OutlookItemType>>(ItemsSyncState);
-                foreach (var syncState in syncStatesCopy)
-                {
-                    var shouldDeleteFromCrm = syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm;
-                    if (shouldDeleteFromCrm) RemoveFromCrm(syncState);
-                    if (syncState.IsDeletedInOutlook) ItemsSyncState.Remove(syncState);
-                }
-            }
-            else
-            {
-                var items = ItemsSyncState.Where(x => x.IsDeletedInOutlook).Count();
-                if (items > 0)
-                {
-                    Log.Error($"Possibly bug #95: was attempting to delete {items} items from CRM");
-                }
+                var shouldDeleteFromCrm = syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm;
+                if (shouldDeleteFromCrm) RemoveFromCrm(syncState);
+                if (syncState.IsDeletedInOutlook) ItemsSyncState.Remove(syncState);
             }
         }
 
@@ -1097,7 +1071,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         lock (enqueueingLock)
                         {
-                            if (IsCurrentView && this.GetExistingSyncState(olItem) == null)
+                            if (this.GetExistingSyncState(olItem) == null)
                             {
                                 SyncState<OutlookItemType> state = this.AddOrGetSyncState(olItem);
                                 DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType>(this, state, this.DefaultCrmModule));
@@ -1205,7 +1179,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if this synchroniser relates to the current tab and the timing logic is satisfied.</returns>
         protected bool ShouldPerformSyncNow(SyncState<OutlookItemType> syncState)
         {
-            return (/* IsCurrentView && */ syncState.ShouldPerformSyncNow());
+            return (syncState.ShouldPerformSyncNow());
         }
     }
 
