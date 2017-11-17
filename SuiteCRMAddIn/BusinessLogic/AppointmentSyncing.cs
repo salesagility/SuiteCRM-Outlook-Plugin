@@ -113,9 +113,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncCalendar;
 
-        protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olAppointmentItem;
-
-
         protected override void SaveItem(Outlook.AppointmentItem olItem)
         {
             try
@@ -135,11 +132,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
         }
-
-
-        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
-        // (but not for Appointments).
-        protected override bool PropagatesLocalDeletions => true;
 
         /// <summary>
         /// Action method of the thread.

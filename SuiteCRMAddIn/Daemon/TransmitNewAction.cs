@@ -66,7 +66,24 @@ namespace SuiteCRMAddIn.Daemon
                 }
                 catch (WebException wex)
                 {
-                    throw new ActionRetryableException("Temporary network error", wex);
+                    if (wex.Status == WebExceptionStatus.ProtocolError)
+                    {
+                        using (HttpWebResponse response = wex.Response as HttpWebResponse)
+                        {
+                            switch (response.StatusCode)
+                            {
+                                case HttpStatusCode.RequestTimeout:
+                                case HttpStatusCode.ServiceUnavailable:
+                                    throw new ActionRetryableException($"Temporary error ({response.StatusCode})", wex);
+                                default:
+                                    throw new ActionFailedException($"Permanent error ({response.StatusCode})", wex);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new ActionRetryableException("Temporary network error", wex);
+                    }
                 }
             }
             else
