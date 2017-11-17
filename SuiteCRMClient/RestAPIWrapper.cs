@@ -29,6 +29,8 @@ namespace SuiteCRMClient
     using System.Collections;
     using System.Linq;
     using Logging;
+    using System.Net.Mail;
+    using System.Text.RegularExpressions;
 
     /// <summary>
     /// A class which comprises wrappers for calls in the REST API, which return objects
@@ -173,6 +175,64 @@ namespace SuiteCRMClient
             }
             return CachedUserId;
         }
+
+
+        /// <summary>
+        /// Get the user id of the user with this email address, if any.
+        /// </summary>
+        /// <param name="mailAddress">the email address to seek.</param>
+        /// <returns>An id if available, else the empty string.</returns>
+        public static string GetUserId(MailAddress mailAddress)
+        {
+            string result = string.Empty;
+            EntryList list = GetEntryList(
+                "Users", 
+                $"(users.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Users' and ea.email_address LIKE '%{MySqlEscape(mailAddress.ToString())}%'))", 
+                0, 
+                "id DESC", 
+                0, 
+                false, 
+                new string[] { "id" });
+            
+            if (list.entry_list.Count<EntryValue>() > 0)
+            {
+                result = list.entry_list[0].id;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Get the user id of the user with this email address, if any.
+        /// </summary>
+        /// <param name="username">the username to seek.</param>
+        /// <returns>An id if available, else the empty string.</returns>
+        public static string GetUserId(string username)
+        {
+            string result = string.Empty;
+            EntryList list = GetEntryList("Users", $"user_name LIKE '%{MySqlEscape(username)}%'", 0, "id DESC", 0, false, new string[] { "id" });
+
+            if (list.entry_list.Count<EntryValue>() > 0)
+            {
+                result = list.entry_list[0].id;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Create and return a copy of this string which escapes all characters which
+        /// might render MySQL vulnerable to SQL injection attacks.
+        /// </summary>
+        /// <param name="input">The input string.</param>
+        /// <returns>A suitably escaped copy of the input.</returns>
+        public static string MySqlEscape(string input)
+        {
+            return string.IsNullOrEmpty(input) ? null : Regex.Replace(input, "[\\r\\n\\x00\\x1a\\\\'\"]", @"\$0");
+        }
+
 
 
         /// <summary>
@@ -490,61 +550,64 @@ namespace SuiteCRMClient
         
         public static EntryList GetEntryList(string module, string query, int limit, string order_by, int offset, bool GetDeleted, string[] fields)
         {
-            EnsureLoggedIn();
             EntryList result = new EntryList();
-            object data = new
+
+            if (EnsureLoggedIn())
             {
-                @session = SuiteCRMUserSession.id,
-                @module_name = module,
-                @query = query,
-                @order_by = order_by,
-                @offset = offset,
-                @select_fields = fields,
-                @link_names_to_fields_array = module == "Meetings" ?
-                new[] {
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = module,
+                    @query = query,
+                    @order_by = order_by,
+                    @offset = offset,
+                    @select_fields = fields,
+                    @link_names_to_fields_array = module == "Meetings" ?
+                    new[] {
                     new { @name = "users", @value = new[] {"id", "email1" } },
                     new { @name = "contacts", @value = new[] {"id", "account_id", "email1" } },
                     new { @name = "leads", @value = new[] {"id", "email1" } }
-                } :
-                null,
-                @max_results = $"{limit}",
-                @deleted = GetDeleted
-            };
-            result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.EntryList>("get_entry_list", data);                
-            if (result.error != null)
-            {
-                throw new Exception(result.error.description);                    
-            }
-
-            if (result.entry_list != null)
-            {
-                try
+                    } :
+                    null,
+                    @max_results = $"{limit}",
+                    @deleted = GetDeleted
+                };
+                result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.EntryList>("get_entry_list", data);
+                if (result.error != null)
                 {
-                    result.resolveLinks();
-                    Hashtable hashtable = new Hashtable();
-                    int index = 0;
-                    foreach (EntryValue _value in result.entry_list)
-                    {
-                        if (!hashtable.Contains(_value.id))
-                        {
-                            hashtable.Add(_value.id, _value);
-                        }
-                        result.entry_list[index] = null;
-                        index++;
-                    }
-                    int num2 = 0;
-                    result.entry_list = null;
-                    result.entry_list = new EntryValue[hashtable.Count];
-                    result.result_count = hashtable.Count;
-                    foreach (DictionaryEntry entry in hashtable)
-                    {
-                        result.entry_list[num2] = (EntryValue)entry.Value;
-                        num2++;
-                    }
+                    throw new Exception(result.error.description);
                 }
-                catch (System.Exception)
+
+                if (result.entry_list != null)
                 {
-                    result.result_count = 0;
+                    try
+                    {
+                        result.resolveLinks();
+                        Hashtable hashtable = new Hashtable();
+                        int index = 0;
+                        foreach (EntryValue _value in result.entry_list)
+                        {
+                            if (!hashtable.Contains(_value.id))
+                            {
+                                hashtable.Add(_value.id, _value);
+                            }
+                            result.entry_list[index] = null;
+                            index++;
+                        }
+                        int num2 = 0;
+                        result.entry_list = null;
+                        result.entry_list = new EntryValue[hashtable.Count];
+                        result.result_count = hashtable.Count;
+                        foreach (DictionaryEntry entry in hashtable)
+                        {
+                            result.entry_list[num2] = (EntryValue)entry.Value;
+                            num2++;
+                        }
+                    }
+                    catch (System.Exception)
+                    {
+                        result.result_count = 0;
+                    }
                 }
             }
 

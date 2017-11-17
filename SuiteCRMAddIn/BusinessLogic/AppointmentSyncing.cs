@@ -92,7 +92,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 .Append( $"(select eabr.bean_id from email_addr_bean_rel eabr ")
                 .Append( $"INNER JOIN email_addresses ea on eabr.email_address_id = ea.id ")
                 .Append( $"where eabr.bean_module = '{moduleName}' ")
-                .Append( $"and ea.email_address LIKE '%{SuiteCRMAddIn.clsGlobals.MySqlEscape(smtpAddress)}%'))");
+                .Append( $"and ea.email_address LIKE '%{RestAPIWrapper.MySqlEscape(smtpAddress)}%'))");
 
             string query = bob.ToString();
 
