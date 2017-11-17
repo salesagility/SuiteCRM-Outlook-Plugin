@@ -19,7 +19,7 @@ namespace SuiteCRMAddIn.ProtoItems
         private readonly string organiser;
         private readonly DateTime start;
         private readonly string subject;
-        private readonly string outlookId;
+        private readonly string globalId;
         private readonly Outlook.OlMeetingStatus status;
         private readonly string CancelledPrefix = "CANCELLED";
 
@@ -31,14 +31,17 @@ namespace SuiteCRMAddIn.ProtoItems
             this.location = olItem.Location;
             this.start = olItem.Start;
             this.subject = olItem.Subject;
-            this.outlookId = olItem.EntryID;
+            this.globalId = olItem.GlobalAppointmentID;
             this.status = olItem.MeetingStatus;
 
             var organiserProperty = olItem.UserProperties[AppointmentSyncing.OrganiserPropertyName];
 
             if (organiserProperty == null || string.IsNullOrWhiteSpace(organiserProperty.Value))
             {
-                 this.organiser = RestAPIWrapper.GetUserId();
+                if (olItem.Organizer == clsGlobals.GetCurrentUsername())
+                {
+                    this.organiser = RestAPIWrapper.GetUserId();
+                }
             }
             else
             {
@@ -71,14 +74,26 @@ namespace SuiteCRMAddIn.ProtoItems
             data.Add(RestAPIWrapper.SetNameValuePair("date_end", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.end.ToUniversalTime())));
             data.Add(RestAPIWrapper.SetNameValuePair("duration_minutes", (this.duration % 60).ToString()));
             data.Add(RestAPIWrapper.SetNameValuePair("duration_hours", (this.duration / 60).ToString()));
-            data.Add(RestAPIWrapper.SetNameValuePair("assigned_user_id", this.organiser));
-            data.Add(RestAPIWrapper.SetNameValuePair("outlook_id", this.outlookId));
+
+            if (!string.IsNullOrEmpty(this.organiser))
+            {
+                data.Add(RestAPIWrapper.SetNameValuePair("assigned_user_id", this.organiser));
+            }
+
+            data.Add(RestAPIWrapper.SetNameValuePair("outlook_id", this.globalId));
             data.Add(RestAPIWrapper.SetNameValuePair("status", statusString));
 
-            if (!string.IsNullOrEmpty(entryId))
+            if (string.IsNullOrEmpty(entryId))
             {
-                data.Add(RestAPIWrapper.SetNameValuePair("id", entryId));
+                /* A Guid can be constructed from a 32 digit hex string. The globalId is a
+                 * 112 digit hex string. It appears from inspection that the least significant
+                 * bytes are those that vary between examples, with the most significant bytes 
+                 * being invariant in the samples we have to hand. */
+                entryId = new Guid(this.globalId.Substring(this.globalId.Length - 32)).ToString();
+                data.Add(RestAPIWrapper.SetNameValuePair("new_with_id", true));
             }
+
+            data.Add(RestAPIWrapper.SetNameValuePair("id", entryId));
 
             return data;
         }

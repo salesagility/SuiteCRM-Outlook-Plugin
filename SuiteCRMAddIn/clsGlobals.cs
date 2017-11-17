@@ -23,7 +23,7 @@
 namespace SuiteCRMAddIn
 {
     using Extensions;
-    using Microsoft.Office.Interop.Outlook;
+    using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Text.RegularExpressions;
 
 
@@ -38,13 +38,13 @@ namespace SuiteCRMAddIn
             }
             return Regex.Replace(usString, "[\\r\\n\\x00\\x1a\\\\'\"]", @"\$0");
         }
-        public static string GetSMTPEmailAddress(MailItem mailItem)
+        public static string GetSMTPEmailAddress(Outlook.MailItem mailItem)
         {
             string str2;
             string str = string.Empty;
             if (((str2 = Globals.ThisAddIn.Application.ActiveExplorer().CurrentFolder.Name) != null) && (str2 == "Sent Items"))
             {
-                foreach (Recipient recipient in mailItem.Recipients)
+                foreach (Outlook.Recipient recipient in mailItem.Recipients)
                 {
                     str += $"{recipient.GetSmtpAddress()},";
                 }
@@ -64,10 +64,10 @@ namespace SuiteCRMAddIn
         {
             try
             {
-                MailItem item = (MailItem)Globals.ThisAddIn.Application.ActiveExplorer().Application.CreateItem(OlItemType.olMailItem);
-                Recipient recipient = item.Recipients.Add(emailName);
+                Outlook.MailItem item = (Outlook.MailItem)Globals.ThisAddIn.Application.ActiveExplorer().Application.CreateItem(Outlook.OlItemType.olMailItem);
+                Outlook.Recipient recipient = item.Recipients.Add(emailName);
                 recipient.Resolve();
-                ExchangeUser exchangeUser = recipient.AddressEntry.GetExchangeUser();
+                Outlook.ExchangeUser exchangeUser = recipient.AddressEntry.GetExchangeUser();
                 return exchangeUser == null ? string.Empty : exchangeUser.PrimarySmtpAddress;
             }
             catch (System.Exception)
@@ -76,21 +76,47 @@ namespace SuiteCRMAddIn
                 return string.Empty;
             }
         }
-        public static string GetSenderAddress(MailItem mail, string type)
+        public static string GetSenderAddress(Outlook.MailItem mail, string type)
         {
             if (type == "SendArchive")
             {
-                if (Globals.ThisAddIn.Application.Session.CurrentUser.AddressEntry.Type == "EX")
+                var addressEntry = Globals.ThisAddIn.Application.Session.CurrentUser.AddressEntry;
+                if (addressEntry.Type == "EX")
                 {
-                    return GetEmailAddressForExchangeServer(Globals.ThisAddIn.Application.Session.CurrentUser.AddressEntry.Name);
+                    return GetEmailAddressForExchangeServer(addressEntry.Name);
                 }
-                return Globals.ThisAddIn.Application.Session.CurrentUser.AddressEntry.Address;
+                return addressEntry.Address;
             }
             if (mail.SenderEmailType == "EX")
             {
                 return GetEmailAddressForExchangeServer(mail.SenderName);
             }
             return mail.SenderEmailAddress;
+        }
+
+
+        /// <summary>
+        /// Get a best approximation of the username of the current user.
+        /// </summary>
+        /// <returns>a best approximation of the username of the current user</returns>
+        public static string GetCurrentUsername()
+        {
+            string result;
+            Outlook.Recipient currentUser = Globals.ThisAddIn.Application.Session.CurrentUser;
+            Outlook.AddressEntry addressEntry = currentUser.AddressEntry;
+
+            if (addressEntry.Type == "EX")
+            {
+                result = addressEntry.GetExchangeUser().Name;
+            }
+            else
+            {
+
+                result = currentUser.Name;
+                // result = addressEntry.Address.Substring(0, addressEntry.Address.IndexOf('@'));
+            }
+
+            return result;
         }
     }
 }
