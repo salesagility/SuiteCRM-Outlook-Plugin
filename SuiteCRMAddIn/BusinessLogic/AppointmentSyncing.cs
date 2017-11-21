@@ -80,32 +80,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.fetchQueryPrefix = "assigned_user_id = '{0}'";
         }
 
-        /// <summary>
-        /// Get the id of the record with the specified `smtpAddress` in the module with the specified `moduleName`.
-        /// </summary>
-        /// <param name="smtpAddress">The SMTP email address to be sought.</param>
-        /// <param name="moduleName">The name of the module in which to seek it.</param>
-        /// <returns>The corresponding id, if present, else the empty string.</returns>
-        public string GetID(string smtpAddress, string moduleName)
-        {
-            StringBuilder bob = new StringBuilder( $"({moduleName.ToLower()}.id in ")
-                .Append( $"(select eabr.bean_id from email_addr_bean_rel eabr ")
-                .Append( $"INNER JOIN email_addresses ea on eabr.email_address_id = ea.id ")
-                .Append( $"where eabr.bean_module = '{moduleName}' ")
-                .Append( $"and ea.email_address LIKE '%{RestAPIWrapper.MySqlEscape(smtpAddress)}%'))");
-
-            string query = bob.ToString();
-
-            Log.Debug($"AppointmentSyncing.GetID: query = `{query}`");
-
-            string[] fields = { "id" };
-            EntryList _result = RestAPIWrapper.GetEntryList(moduleName, query, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
-
-            return _result.result_count > 0 ?
-                RestAPIWrapper.GetValueByKey(_result.entry_list[0], "id") :
-                string.Empty;
-        }
-
         override public Outlook.MAPIFolder GetDefaultFolder()
         {
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
@@ -237,19 +211,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Check meeting acceptances for the invitees of this `meeting`.
-        /// </summary>
-        /// <param name="meeting">The meeting.</param>
-        /// <returns>the number of valid acceptance statuses found.</returns>
-        public int UpdateMeetingAcceptances(Outlook.MeetingItem meeting)
-        {
-            return meeting == null ? 
-                0 : 
-                this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(meeting.GetAssociatedAppointment(false));
-        }
-
-
-        /// <summary>
         /// Set the meeting acceptance status, in CRM, of all invitees to this meeting from
         /// their acceptance status in Outlook.
         /// </summary>
@@ -304,11 +265,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 var smtpAddress = recipient.GetSmtpAddress();
 
-                Log.Info($"recepientName= {recipient.Name}, recepient= {smtpAddress}");
+                Log.Debug($"recipientName= {recipient.Name}, recipient= {smtpAddress}");
 
-                List<AddressResolutionData> resolutions = this.ResolveRecipient(olItem, recipient);
-
-                foreach (AddressResolutionData resolution in resolutions)
+                foreach (AddressResolutionData resolution in this.ResolveRecipient(olItem, recipient))
                 {
                     SetCrmRelationshipFromOutlook(meetingId, resolution);
                 }
@@ -328,7 +287,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             List<AddressResolutionData> result = new List<AddressResolutionData>();
             var smtpAddress = recipient.GetSmtpAddress();
 
-            Log.Info($"recepientName= {recipient.Name}, recepient= {smtpAddress}");
+            Log.Debug($"recipientName= {recipient.Name}, recipientAddress= {smtpAddress}");
 
             if (this.meetingRecipientsCache.ContainsKey(smtpAddress))
             {
@@ -337,36 +296,23 @@ namespace SuiteCRMAddIn.BusinessLogic
             else
             {
                 string meetingId = olItem.UserProperties[AppointmentSyncing.CrmIdPropertyName]?.Value;
-                Dictionary<string, string> moduleIds = new Dictionary<string, string>();
+                Dictionary<string, IEnumerable<string>> moduleIds = new Dictionary<string, IEnumerable<string>>();
 
                 if (!string.IsNullOrEmpty(meetingId))
                 {
                     foreach (string moduleName in new string[] { "Leads", "Users", ContactSyncing.CrmModule })
                     {
-                        string moduleId = this.GetID(smtpAddress, moduleName);
-                        if (!string.IsNullOrEmpty(moduleId))
+                        var resolutions = ResolveRecipientWithinModule(smtpAddress, moduleName);
+                        if (resolutions.Count() > 0)
                         {
-                            moduleIds[moduleName] = moduleId;
-                            AddressResolutionData data = new AddressResolutionData(moduleName, moduleId, smtpAddress);
-                            this.CacheAddressResolutionData(data);
-                            result.Add(data);
+                            moduleIds[moduleName] = resolutions.Select(x => x.moduleId);
+                            result.AddRange(resolutions);
                         }
                     }
 
                     if (moduleIds.ContainsKey(ContactSyncing.CrmModule))
                     {
-                        string accountId = RestAPIWrapper.GetRelationship(
-                            ContactSyncing.CrmModule, 
-                            moduleIds[ContactSyncing.CrmModule], 
-                            "accounts");
-
-                        if (!string.IsNullOrWhiteSpace(accountId) &&
-                            SetCrmRelationshipFromOutlook(meetingId, "Accounts", accountId))
-                        {
-                            var data = new AddressResolutionData("Accounts", accountId, smtpAddress);
-                            this.CacheAddressResolutionData(data);
-                            result.Add(data);
-                        }
+                        result.AddRange(ResolveRecipientAccounts(smtpAddress, meetingId, moduleIds[ContactSyncing.CrmModule]));
                     }
                 }
             }
@@ -374,35 +320,72 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        private bool TryAddRecipientInModule(string moduleName, string meetingId, Outlook.Recipient recipient)
+
+        /// <summary>
+        /// Resolve all entries within the Accounts module which are linked via a contact to this SMTP address
+        /// </summary>
+        /// <param name="smtpAddress">The SMTP address to seek.</param>
+        /// <param name="meetingId">The id of the meeting whose recipients are to be resolved.</param>
+        /// <param name="contactIds">The ids of contacts who are recipients of this meeting.</param>
+        /// <returns>A list of resolutions of entries within the Accounts module which are related to this SMTP address.</returns>
+        private List<AddressResolutionData> ResolveRecipientAccounts(string smtpAddress, string meetingId, IEnumerable<string> contactIds)
         {
-            bool result;
-            string id = SetCrmRelationshipFromOutlook(meetingId, recipient, moduleName);
+            List<AddressResolutionData> result = new List<AddressResolutionData>();
 
-            if (!string.IsNullOrWhiteSpace(id))
+            foreach (string resolution in contactIds)
             {
-                string smtpAddress = recipient.GetSmtpAddress();
-
-                this.CacheAddressResolutionData(
-                    new AddressResolutionData(moduleName, id, smtpAddress));
-
-                string accountId = RestAPIWrapper.GetRelationship(ContactSyncing.CrmModule, id, "accounts");
+                string accountId = RestAPIWrapper.GetRelationship(
+                    ContactSyncing.CrmModule,
+                    resolution,
+                    "accounts");
 
                 if (!string.IsNullOrWhiteSpace(accountId) &&
                     SetCrmRelationshipFromOutlook(meetingId, "Accounts", accountId))
                 {
-                    this.CacheAddressResolutionData( 
-                        new AddressResolutionData("Accounts", accountId, smtpAddress));
+                    var data = new AddressResolutionData("Accounts", accountId, smtpAddress);
+                    this.CacheAddressResolutionData(data);
+                    result.Add(data);
                 }
-
-                result = true;
-            }
-            else
-            {
-                result = false;
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Resolve all entries within this named module which match this smtpAddress
+        /// </summary>
+        /// <param name="smtpAddress">The SMTP address to seek</param>
+        /// <param name="moduleName">The name of the module in which to seek it.</param>
+        /// <returns>A list of resolutions of entries within the named module which match this SMTP address.</returns>
+        private IEnumerable<AddressResolutionData> ResolveRecipientWithinModule(string smtpAddress, string moduleName)
+        {
+            return this.ResolveSmtpAddressIdsWithinModule(smtpAddress, moduleName)
+                .Select(x => this.CacheAddressResolutionData(new AddressResolutionData(moduleName, x, smtpAddress))); 
+        }
+
+
+        /// <summary>
+        /// Get the id of the record with the specified `smtpAddress` in the module with the specified `moduleName`.
+        /// </summary>
+        /// <param name="smtpAddress">The SMTP email address to be sought.</param>
+        /// <param name="moduleName">The name of the module in which to seek it.</param>
+        /// <returns>The corresponding id, if present, else the empty string.</returns>
+        private IEnumerable<string> ResolveSmtpAddressIdsWithinModule(string smtpAddress, string moduleName)
+        {
+            StringBuilder bob = new StringBuilder($"({moduleName.ToLower()}.id in ")
+                .Append($"(select eabr.bean_id from email_addr_bean_rel eabr ")
+                .Append($"INNER JOIN email_addresses ea on eabr.email_address_id = ea.id ")
+                .Append($"where eabr.bean_module = '{moduleName}' ")
+                .Append($"and ea.email_address LIKE '%{RestAPIWrapper.MySqlEscape(smtpAddress)}%'))");
+
+            string query = bob.ToString();
+
+            Log.Debug($"AppointmentSyncing.GetID: query = `{query}`");
+
+            string[] fields = { "id" };
+            EntryList entries = RestAPIWrapper.GetEntryList(moduleName, query, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+
+            return entries.entry_list.Select(x => RestAPIWrapper.GetValueByKey(x, "id"));
         }
 
 
@@ -732,7 +715,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                     .Append($"\n\tSensitivity : {olItem.Sensitivity}")
                     .Append($"\n\tStatus      : {olItem.MeetingStatus}")
                     .Append($"\n\tOrganiser   : {olItem.Organizer}")
-                    .Append($"\n\tWindows User: {Environment.UserName}")
                     .Append($"\n\tOutlook User: {clsGlobals.GetCurrentUsername()}")
                     .Append($"\n\tRecipients  :\n");
                 foreach (Outlook.Recipient recipient in olItem.Recipients)
@@ -818,20 +800,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="moduleName">The name of the module in which the record was found</param>
         /// <param name="record">The record.</param>
-        private void CacheAddressResolutionData(string moduleName, LinkRecord record)
+        /// <returns>The resolution data cached.</returns>
+        private AddressResolutionData CacheAddressResolutionData(string moduleName, LinkRecord record)
         {
             Dictionary<string, object> data = record.data.AsDictionary();
             string smtpAddress = data[AddressResolutionData.EmailAddressFieldName].ToString();
             AddressResolutionData resolution = new AddressResolutionData(moduleName, data);
 
-            CacheAddressResolutionData(resolution);
+            return CacheAddressResolutionData(resolution);
         }
 
         /// <summary>
         /// Add this resolution to the cache.
         /// </summary>
         /// <param name="resolution">The resolution to add.</param>
-        private void CacheAddressResolutionData(AddressResolutionData resolution)
+        /// <returns>The resolution data cached.</returns>
+        private AddressResolutionData CacheAddressResolutionData(AddressResolutionData resolution)
         {
             List<AddressResolutionData> resolutions;
 
@@ -850,6 +834,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             Log.Debug($"Successfully cached recipient {resolution.emailAddress} => {resolution.moduleName}, {resolution.moduleId}.");
+
+            return resolution;
         }
 
         protected override bool IsMatch(Outlook.AppointmentItem olItem, EntryValue crmItem)
@@ -914,14 +900,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="recipient">The outlook recipient representing the person to link with.</param>
         /// <param name="foreignModule">the name of the module we're seeking to link with.</param>
         /// <returns>True if a relationship was created.</returns>
-        private string SetCrmRelationshipFromOutlook(string meetingId, Outlook.Recipient recipient, string foreignModule)
+        private IEnumerable<string> SetCrmRelationshipFromOutlook(string meetingId, Outlook.Recipient recipient, string foreignModule)
         {
-            string foreignId = GetID(recipient.GetSmtpAddress(), foreignModule);
+            IEnumerable<string> foreignIds = ResolveSmtpAddressIdsWithinModule(recipient.GetSmtpAddress(), foreignModule);
 
-            return !string.IsNullOrWhiteSpace(foreignId) && 
-                SetCrmRelationshipFromOutlook(meetingId, foreignModule, foreignId) ?
-                foreignId :
-                string.Empty;
+            return foreignIds.Where(x => !string.IsNullOrWhiteSpace(x) && SetCrmRelationshipFromOutlook(meetingId, foreignModule, x));
         }
 
 
