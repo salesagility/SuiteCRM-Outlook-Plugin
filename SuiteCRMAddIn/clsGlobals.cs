@@ -29,7 +29,7 @@ namespace SuiteCRMAddIn
 
     public static class clsGlobals
     {
-      
+        [System.Obsolete("Prefer RestApiWrapper.MySqlEscape")]
         public static string MySqlEscape(string usString)
         {
             if (usString == null)

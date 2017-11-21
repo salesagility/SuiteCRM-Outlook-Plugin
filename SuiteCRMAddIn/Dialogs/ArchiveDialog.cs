@@ -408,9 +408,9 @@ namespace SuiteCRMAddIn.Dialogs
         {
             string queryText = string.Empty;
             List<string> searchTokens = searchText.Split(new char[] { ' ' }).ToList();
-            var escapedSearchText = clsGlobals.MySqlEscape(searchText);
-            var firstTerm = clsGlobals.MySqlEscape(searchTokens.First());
-            var lastTerm = clsGlobals.MySqlEscape(searchTokens.Last());
+            var escapedSearchText = RestAPIWrapper.MySqlEscape(searchText);
+            var firstTerm = RestAPIWrapper.MySqlEscape(searchTokens.First());
+            var lastTerm = RestAPIWrapper.MySqlEscape(searchTokens.Last());
             string logicalOperator = firstTerm == lastTerm ? "OR" : "AND";
 
             switch (moduleName)

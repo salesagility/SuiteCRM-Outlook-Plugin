@@ -4,7 +4,10 @@ namespace SuiteCRMAddIn.ProtoItems
     using BusinessLogic;
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
+    using SuiteCRMClient.Logging;
     using System;
+    using System.Net.Mail;
+    using System.Text.RegularExpressions;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -42,11 +45,60 @@ namespace SuiteCRMAddIn.ProtoItems
                 {
                     this.organiser = RestAPIWrapper.GetUserId();
                 }
+                else
+                {
+                    this.organiser = TryResolveOrganiser(olItem);
+                }
             }
             else
             {
                 this.organiser = organiserProperty.Value.ToString();
             }
+        }
+
+        /// <summary>
+        /// Try to resolve this organiser identifier against the users of the CRM.
+        /// </summary>
+        /// <param name="organiser">The organiser value of some meeting.</param>
+        /// <returns>The id of the related user if any, else the empty string.</returns>
+        public static string TryResolveOrganiser(Outlook.AppointmentItem olItem)
+        {
+            string result = string.Empty;
+            string organiser = olItem.Organizer;
+
+            try
+            {
+                if (organiser.IndexOf('@') > -1)
+                {
+                    foreach (string pattern in new string[] { @".*<(.+@.+)>", @".+@.+" })
+                    {
+                        Match match = Regex.Match(organiser, pattern, RegexOptions.IgnoreCase);
+                        if (match.Success)
+                        {
+                            string address = match.Groups[0].Value;
+
+                            try
+                            {
+                                result = RestAPIWrapper.GetUserId(new MailAddress(address));
+                            }
+                            catch (FormatException)
+                            {
+                                // not a valid email address - no matter.
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    result = RestAPIWrapper.GetUserId(organiser);
+                }
+            }
+            catch (Exception any)
+            {
+                Globals.ThisAddIn.Log.Error($"Failed to resolve organiser `{olItem.Organizer}` of meeting `{olItem.Subject}`", any);
+            }
+
+            return result;
         }
 
         public override NameValueCollection AsNameValues(string entryId)
