@@ -757,6 +757,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     else
                     {
+                        result = matches[0];
                         this.Log.Warn($"Howlaround detected? Appointment '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
                     }
                 }
@@ -775,6 +776,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         foreach (var record in list.records)
                         {
                             var data = record.data.AsDictionary();
+                            result.OutlookItem.EnsureRecipient(data["email1"].ToString());
                             try
                             {
                                 this.CacheAddressResolutionData(list.name, record);

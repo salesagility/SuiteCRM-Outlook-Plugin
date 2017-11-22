@@ -77,7 +77,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal TransmissionState TxState { get; private set; } = TransmissionState.New;
 
         /// <summary>
-        /// The cache of the state of the item when it was first linked.
+        /// The cache of the state of the item when it was last synced.
         /// </summary>
         public ProtoItem<ItemType> Cache { get; private set; }
 
