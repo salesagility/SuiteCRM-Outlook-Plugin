@@ -64,3 +64,7 @@ SuiteCRMAddIn/Documentation/html/
 SuiteCRMAddIn/Documentation/latex/
 
 *.pcapng
+
+*.vsp
+
+*.psess
