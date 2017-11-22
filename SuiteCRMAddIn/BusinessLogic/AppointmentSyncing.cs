@@ -258,7 +258,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return count;
         }
 
-        private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem olItem, string meetingId)
+        private void AddOrUpdateMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem olItem, string meetingId)
         {
             LogItemAction(olItem, "AppointmentSyncing.AddMeetingRecipientsFromOutlookToCrm");
             foreach (Outlook.Recipient recipient in olItem.Recipients)
@@ -579,21 +579,17 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                         else
                         {
-                            if (string.IsNullOrEmpty(entryId))
+                            SetCrmRelationshipFromOutlook(result, "Users", RestAPIWrapper.GetUserId());
+
+                            this.SaveItem(olItem);
+
+                            if (olItem.Recipients != null)
                             {
-                                /* i.e. this was a new item saved to CRM for the first time */
-                                SetCrmRelationshipFromOutlook(result, "Users", RestAPIWrapper.GetUserId());
+                                this.AddOrUpdateMeetingRecipientsFromOutlookToCrm(olItem, result);
 
-                                this.SaveItem(olItem);
-
-                                if (olItem.Recipients != null)
-                                {
-                                    AddMeetingRecipientsFromOutlookToCrm(olItem, result);
-                                }
+                                this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(olItem);
                             }
                         }
-
-                        this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(olItem);
                     }
                 }
                 else
@@ -954,11 +950,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 olItem.MeetingStatus = Outlook.OlMeetingStatus.olMeeting;
-                int iCount = olItem.Recipients.Count;
-                for (int iItr = 1; iItr <= iCount; iItr++)
-                {
-                    olItem.Recipients.Remove(1);
-                }
 
                 string[] invitee_categories = { "users", ContactSyncing.CrmModule, "leads" };
                 foreach (string invitee_category in invitee_categories)
@@ -966,18 +957,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                     EntryValue[] relationships = RestAPIWrapper.GetRelationships(sModule, sMeetingID, invitee_category, new string[] { "id", "email1", "phone_work" });
                     if (relationships != null)
                     {
-
                         foreach (var relationship in relationships)
                         {
-                            string phone_work = relationship.GetValueAsString("phone_work");
                             string email1 = relationship.GetValueAsString("email1");
-                            string identifier = (sModule == AppointmentSyncing.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
-                                    email1 :
-                                    $"{email1} : {phone_work}";
 
-                            if (!String.IsNullOrWhiteSpace(identifier))
+                            if (!String.IsNullOrWhiteSpace(email1))
                             {
-                                olItem.Recipients.Add(identifier);
+                                olItem.EnsureRecipient(email1);
                             }
                         }
                     }

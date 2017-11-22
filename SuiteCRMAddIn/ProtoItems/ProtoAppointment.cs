@@ -6,9 +6,12 @@ namespace SuiteCRMAddIn.ProtoItems
     using SuiteCRMClient.RESTObjects;
     using SuiteCRMClient.Logging;
     using System;
+    using System.Linq;
     using System.Net.Mail;
     using System.Text.RegularExpressions;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Collections.Generic;
+    using SuiteCRMAddIn.Extensions;
 
     /// <summary>
     /// Broadly, a C# representation of a CRM appointment.
@@ -25,7 +28,25 @@ namespace SuiteCRMAddIn.ProtoItems
         private readonly string globalId;
         private readonly Outlook.OlMeetingStatus status;
         private readonly string CancelledPrefix = "CANCELLED";
+        private readonly ISet<string> recipientAddresses = new HashSet<string>();
 
+
+        /// <summary>
+        /// Readonly access to an ordered list of my recipient addresses.
+        /// </summary>
+        public IEnumerable<string> RecipientAddresses
+        {
+            get
+            {
+                return recipientAddresses.AsEnumerable().OrderBy(x => x);
+            }
+        }
+
+
+        /// <summary>
+        /// Create a new instance of ProtoAppointment, taking values from this Outlook item.
+        /// </summary>
+        /// <param name="olItem">The Outlook item to take values from.</param>
         public ProtoAppointment(Outlook.AppointmentItem olItem)
         {
             this.body = olItem.Body;
@@ -54,12 +75,17 @@ namespace SuiteCRMAddIn.ProtoItems
             {
                 this.organiser = organiserProperty.Value.ToString();
             }
+
+            foreach (Outlook.Recipient recipient in olItem.Recipients)
+            {
+                this.recipientAddresses.Add(recipient.GetSmtpAddress());
+            }
         }
 
         /// <summary>
-        /// Try to resolve this organiser identifier against the users of the CRM.
+        /// Try to resolve the organiser of this Outlook Item against the users of the CRM.
         /// </summary>
-        /// <param name="organiser">The organiser value of some meeting.</param>
+        /// <param name="olItem">The Outlook item representing a meeting.</param>
         /// <returns>The id of the related user if any, else the empty string.</returns>
         public static string TryResolveOrganiser(Outlook.AppointmentItem olItem)
         {
@@ -101,6 +127,13 @@ namespace SuiteCRMAddIn.ProtoItems
             return result;
         }
 
+
+        /// <summary>
+        /// AsNameValues is used in transmission to CRM as well as for comparison, so it should NOT
+        /// access our cache of recipient addresses.
+        /// </summary>
+        /// <param name="entryId">The CRM entry Id of the object represented.</param>
+        /// <returns>A set of name/value pairs suitable for transmitting to CRM.</returns>
         public override NameValueCollection AsNameValues(string entryId)
         {
             NameValueCollection data = new NameValueCollection();

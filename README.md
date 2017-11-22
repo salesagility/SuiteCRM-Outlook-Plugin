@@ -2,7 +2,7 @@
 
 ### What's in this repository 
 
-SuiteCRM Outlook Plug-In v 3.0.10.52
+SuiteCRM Outlook Plug-In v 3.0.10.62
 
 This repository has been created to allow community members to collaborate and contribute to the project.
 
