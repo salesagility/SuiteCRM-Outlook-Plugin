@@ -326,6 +326,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+
+        /// <summary>
+        /// Deal with an item which used to exist in Outlook but which no longer does.
+        /// The default behaviour is to remove it from CRM.
+        /// </summary>
+        /// <param name="syncState">The dangling syncState of the missing item.</param>
+        /// <param name="crmModule">The CRM module in which that item exists.</param>
+        internal virtual void HandleItemMissingFromOutlook(SyncState<OutlookItemType> syncState, string crmModule)
+        {
+            this.RemoveFromCrm(syncState);
+            this.RemoveItemSyncState(syncState);
+        }
+
         /// <summary>
         /// Perform all the necessary checking before adding or updating an item on CRM.
         /// </summary>
@@ -584,7 +597,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         /* if there are duplicate entries I want them logged */
                         result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
                             .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-                            // .Where(a => !a.IsDeletedInOutlook)
+                            .Where(a => !a.IsDeletedInOutlook)
                             .SingleOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
                     }
                     catch (InvalidOperationException notUnique)
@@ -596,7 +609,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         /* but if it isn't unique, the first will actually do for now */
                         result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
                             .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-                            // .Where(a => !a.IsDeletedInOutlook)
+                            .Where(a => !a.IsDeletedInOutlook)
                             .FirstOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
                     }
                 }
@@ -787,43 +800,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected abstract void EnsureSynchronisationPropertyForOutlookItem(OutlookItemType olItem, string name, string value);
 
         /// <summary>
-        /// Returns true iff user is currently focussed on this (Contacts/Appointments/Tasks) tab.
-        /// </summary>
-        /// <remarks>
-        /// This is used in determining whether an item is in fact newly created by the user;
-        /// it has a certain code smell to it.
-        /// </remarks>
-        protected abstract bool IsCurrentView { get; }
-
-        /// <summary>
-        /// Returns true iff local (Outlook) deletions should be propagated to the server.
-        /// </summary>
-        /// <remarks>TODO: Why should this ever be false?</remarks>
-        protected abstract bool PropagatesLocalDeletions { get; }
-
-        /// <summary>
         /// Deal, in CRM, with items deleted in Outlook.
         /// </summary>
         protected void RemoveDeletedItems()
         {
-            if (IsCurrentView && PropagatesLocalDeletions)
+            // Make a copy of the list to avoid mutation error while iterating:
+            var syncStatesCopy = new List<SyncState<OutlookItemType>>(ItemsSyncState);
+            foreach (var syncState in syncStatesCopy)
             {
-                // Make a copy of the list to avoid mutation error while iterating:
-                var syncStatesCopy = new List<SyncState<OutlookItemType>>(ItemsSyncState);
-                foreach (var syncState in syncStatesCopy)
-                {
-                    var shouldDeleteFromCrm = syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm;
-                    if (shouldDeleteFromCrm) RemoveFromCrm(syncState);
-                    if (syncState.IsDeletedInOutlook) ItemsSyncState.Remove(syncState);
-                }
-            }
-            else
-            {
-                var items = ItemsSyncState.Where(x => x.IsDeletedInOutlook).Count();
-                if (items > 0)
-                {
-                    Log.Error($"Possibly bug #95: was attempting to delete {items} items from CRM");
-                }
+                var shouldDeleteFromCrm = syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm;
+                if (shouldDeleteFromCrm) RemoveFromCrm(syncState);
+                if (syncState.IsDeletedInOutlook) ItemsSyncState.Remove(syncState);
             }
         }
 
