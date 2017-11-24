@@ -69,20 +69,23 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
+                bool result;
                 if (_wasDeleted) return true;
                 // TODO: Make this logic more robust. Perhaps check HRESULT of COMException?
                 try
                 {
                     // Has the side-effect of throwing an exception if the item has been deleted:
                     var entryId = OutlookItemEntryId;
-                    return false;
+                    result = false;
                 }
                 catch (COMException com)
                 {
-                    Globals.ThisAddIn.Log.Debug($"Object has probably been deleted: {com.ErrorCode}, {com.Message}");
+                    Globals.ThisAddIn.Log.Debug($"Object has probably been deleted: {com.ErrorCode}, {com.Message}; HResult {com.HResult}");
                     _wasDeleted = true;
-                    return true;
+                    result = true;
                 }
+
+                return result;
             }
         }
 
