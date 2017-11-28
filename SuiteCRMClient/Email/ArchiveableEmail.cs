@@ -180,22 +180,30 @@ namespace SuiteCRMClient.Email
         {
             ArchiveResult result;
 
-            try
+            if (crmContactIds.Count == 0)
             {
-                result = TrySave(crmContactIds, this.HTMLBody, null);
+                result = ArchiveResult.Failure(
+                    new[] { new Exception("Found no related entities in CRM to link with") });
             }
-            catch (Exception firstFail)
+            else
             {
-                log.Warn($"ArchiveableEmail.Save: failed to save '{this.Subject}' with HTML body", firstFail);
-
                 try
                 {
-                    result = TrySave(crmContactIds, string.Empty, new[] { firstFail });
+                    result = TrySave(crmContactIds, this.HTMLBody, null);
                 }
-                catch (Exception secondFail)
+                catch (Exception firstFail)
                 {
-                    log.Error($"ArchiveableEmail.Save: failed to save '{this.Subject}' at all", secondFail);
-                    result = ArchiveResult.Failure(new[] { firstFail, secondFail });
+                    log.Warn($"ArchiveableEmail.Save: failed to save '{this.Subject}' with HTML body", firstFail);
+
+                    try
+                    {
+                        result = TrySave(crmContactIds, string.Empty, new[] { firstFail });
+                    }
+                    catch (Exception secondFail)
+                    {
+                        log.Error($"ArchiveableEmail.Save: failed to save '{this.Subject}' at all", secondFail);
+                        result = ArchiveResult.Failure(new[] { firstFail, secondFail });
+                    }
                 }
             }
             
