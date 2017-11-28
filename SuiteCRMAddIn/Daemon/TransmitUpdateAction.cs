@@ -46,6 +46,7 @@ namespace SuiteCRMAddIn.Daemon
         /// </summary>
         private SyncState<OutlookItemType> state;
 
+
         /// <summary>
         /// Create a new instance of the TrensmitUpdateItem class, wrapping this state.
         /// </summary>
@@ -75,7 +76,7 @@ namespace SuiteCRMAddIn.Daemon
                 }
                 catch (COMException comx)
                 {
-                    log.Error($"TransmitUpdateAction: item had vanished", comx);
+                    log.Error($"Item missing? HResult = {comx.HResult}", comx);
                 }
             }
         }
@@ -85,7 +86,15 @@ namespace SuiteCRMAddIn.Daemon
         {
             get
             {
-                return $"{this.GetType().Name} ({state.CrmType} {state.Description})";
+                try
+                {
+                    return $"{this.GetType().Name} ({state.CrmType} {state.Description})";
+                }
+                catch (COMException comx)
+                {
+                    Globals.ThisAddIn.Log.Error($"Item missing? HResult = {comx.HResult}", comx);
+                    return $"{this.GetType().Name} ({state.CrmType} - possibly cancelled meeting?";
+                }
             }
         }
 
@@ -94,7 +103,16 @@ namespace SuiteCRMAddIn.Daemon
         {
             try
             {
-                synchroniser.AddOrUpdateItemFromOutlookToCrm(state);
+                try
+                {
+                    var id = state.CrmEntryId;
+                    synchroniser.AddOrUpdateItemFromOutlookToCrm(state);
+                }
+                catch (COMException comx)
+                {
+                    Globals.ThisAddIn.Log.Error($"Item missing? HResult = {comx.HResult}", comx);
+                    synchroniser.HandleItemMissingFromOutlook(state);
+                }
 
                 return "Synced.";
             }

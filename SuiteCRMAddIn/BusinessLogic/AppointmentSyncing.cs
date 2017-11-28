@@ -241,7 +241,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (COMException comx)
                 {
-                    Log.Error($"Item with CRMid {state.CrmEntryId} appears to be invalid", comx);
+                    Log.Error($"Item with CRMid {state.CrmEntryId} appears to be invalid (HResult {comx.HResult})", comx);
+                    this.HandleItemMissingFromOutlook(state);
                 }
             }
 
@@ -574,15 +575,16 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 olPropertyType = olItem.UserProperties[TypePropertyName];
+
+                var itemType = olPropertyType != null ? olPropertyType.Value.ToString() : this.DefaultCrmModule;
+
+                return this.AddOrUpdateItemFromOutlookToCrm(syncState, itemType, syncState.CrmEntryId);
             }
             catch (COMException)
             {
-                Log.Warn($"Item with CRM id `{syncState.CrmEntryId}` is invalid - has probably been deleted");
+                this.HandleItemMissingFromOutlook(syncState);
+                return syncState.CrmEntryId;
             }
-
-            var itemType = olPropertyType != null ? olPropertyType.Value.ToString() : this.DefaultCrmModule;
-
-            return this.AddOrUpdateItemFromOutlookToCrm(syncState, itemType, syncState.CrmEntryId);
         }
 
         /// <summary>
@@ -736,7 +738,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                     "[not present]" :
                     olPropertyEntryId.Value;
                 StringBuilder bob = new StringBuilder();
-                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tStatus     : {olItem.MeetingStatus}\n\tRecipients:\n");
+                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
+                    .Append($"\n\tGlobal Id   : {olItem.GlobalAppointmentID}")
+                    .Append($"\n\tCRM Id      : {crmId}")
+                    .Append($"\n\tSubject     : '{olItem.Subject}'")
+                    .Append($"\n\tSensitivity : {olItem.Sensitivity}")
+                    .Append($"\n\tStatus      : {olItem.MeetingStatus}")
+                    .Append($"\n\tOrganiser   : {olItem.Organizer}")
+                    .Append($"\n\tOutlook User: {clsGlobals.GetCurrentUsername()}")
+                    .Append($"\n\tRecipients  :\n");
+
                 foreach (Outlook.Recipient recipient in olItem.Recipients)
                 {
                     bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()} - ({recipient.MeetingResponseStatus})\n");
@@ -815,30 +826,40 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        internal override void HandleItemMissingFromOutlook(SyncState<Outlook.AppointmentItem> syncState, string crmModule)
+        internal override void HandleItemMissingFromOutlook(SyncState<Outlook.AppointmentItem> syncState)
         {
-            if (crmModule == AppointmentSyncing.CrmModule)
+            if (syncState.CrmType == AppointmentSyncing.CrmModule)
             {
                 /* typically, when this method is called, the Outlook Item will already be invalid, and if it is not,
                  * it may become invalid during the execution of this method. So this method CANNOT depend on any
                  * values taken from the Outlook item. */
                 EntryList entries = RestAPIWrapper.GetEntryList(
-                    crmModule, $"id = '{syncState.CrmEntryId}'",
+                    syncState.CrmType, $"id = '{syncState.CrmEntryId}'",
                     Properties.Settings.Default.SyncMaxRecords,
                     "date_entered DESC", 0, false, null);
 
                 if (entries.entry_list.Count() > 0)
                 {
-                    this.HandleItemMissingFromOutlook(entries.entry_list[0], syncState, crmModule);
+                    this.HandleItemMissingFromOutlook(entries.entry_list[0], syncState, syncState.CrmType);
                 }
-                else
-                {
-                    base.HandleItemMissingFromOutlook(syncState, crmModule);
-                }
+            }
+        }
+
+
+        /// <summary>
+        /// Override: we get notified of a removal, for a Meeting item, when the meeting is
+        /// cancelled. We do NOT want to remove such an item; instead, we want to update it.
+        /// </summary>
+        /// <param name="state"></param>
+        protected override void RemoveFromCrm(SyncState state)
+        {
+            if (state.CrmType == AppointmentSyncing.CrmModule)
+            {
+                this.AddOrUpdateItemFromOutlookToCrm((SyncState<Outlook.AppointmentItem>)state);
             }
             else
             {
-                base.HandleItemMissingFromOutlook(syncState, crmModule);
+                base.RemoveFromCrm(state);
             }
         }
 

@@ -38,6 +38,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
         }
 
+        /// <summary>
+        /// When we're asked for the CrmType the underlying object may have ceased to
+        /// exist - so cache it!
+        /// </summary>
+        private string crmType;
+
+
+        /// <summary>
+        /// The CRM type of the item I represent.
+        /// </summary>
         public override string CrmType
         {
             get
@@ -47,10 +57,17 @@ namespace SuiteCRMAddIn.BusinessLogic
                     switch (olItem.MeetingStatus)
                     {
                         case Outlook.OlMeetingStatus.olNonMeeting:
-                            return AppointmentSyncing.AltCrmModule;
+                            crmType = AppointmentSyncing.AltCrmModule;
+                            break;
                         default:
-                            return AppointmentSyncing.CrmModule;
+                            crmType = AppointmentSyncing.CrmModule;
+                            break;
                     }
+                    return crmType;
+                }
+                catch (COMException)
+                {
+                    return crmType;
                 }
                 catch (Exception)
                 {

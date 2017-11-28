@@ -314,6 +314,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             var toDeleteFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
             var toCreateOnCrmServer = itemsCopy.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
+            var missingFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.IsDeletedInOutlook && a.CrmType == crmModule).ToList();
 
             foreach (var syncState in toDeleteFromOutlook)
             {
@@ -322,7 +323,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             foreach (var syncState in toCreateOnCrmServer)
             {
-                AddOrUpdateItemFromOutlookToCrm(syncState, crmModule);
+                AddOrUpdateItemFromOutlookToCrm(syncState);
             }
         }
 
@@ -332,12 +333,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// The default behaviour is to remove it from CRM.
         /// </summary>
         /// <param name="syncState">The dangling syncState of the missing item.</param>
-        /// <param name="crmModule">The CRM module in which that item exists.</param>
-        internal virtual void HandleItemMissingFromOutlook(SyncState<OutlookItemType> syncState, string crmModule)
+        internal virtual void HandleItemMissingFromOutlook(SyncState<OutlookItemType> syncState)
         {
             this.RemoveFromCrm(syncState);
             this.RemoveItemSyncState(syncState);
         }
+
 
         /// <summary>
         /// Perform all the necessary checking before adding or updating an item on CRM.
@@ -1084,7 +1085,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         lock (enqueueingLock)
                         {
-                            if (IsCurrentView && this.GetExistingSyncState(olItem) == null)
+                            if (this.GetExistingSyncState(olItem) == null)
                             {
                                 SyncState<OutlookItemType> state = this.AddOrGetSyncState(olItem);
                                 DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType>(this, state, this.DefaultCrmModule));
@@ -1192,7 +1193,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if this synchroniser relates to the current tab and the timing logic is satisfied.</returns>
         protected bool ShouldPerformSyncNow(SyncState<OutlookItemType> syncState)
         {
-            return (IsCurrentView && syncState.ShouldPerformSyncNow());
+            return (syncState.ShouldPerformSyncNow());
         }
     }
 
