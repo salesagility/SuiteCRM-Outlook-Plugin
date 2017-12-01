@@ -77,7 +77,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal TransmissionState TxState { get; private set; } = TransmissionState.New;
 
         /// <summary>
-        /// The cache of the state of the item when it was first linked.
+        /// The cache of the state of the item when it was last synced.
         /// </summary>
         public ProtoItem<ItemType> Cache { get; private set; }
 
@@ -104,11 +104,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             else
             {
-                var older = this.Cache.AsNameValues(this.OutlookItemEntryId)
+                var older = this.Cache.AsNameValues(this.CrmEntryId)
                     .AsDictionary();
 
                 var current = this.CreateProtoItem(this.OutlookItem)
-                    .AsNameValues(this.OutlookItemEntryId)
+                    .AsNameValues(this.CrmEntryId)
                     .AsDictionary();
                 unchanged = older.Keys.Count.Equals(current.Keys.Count);
 

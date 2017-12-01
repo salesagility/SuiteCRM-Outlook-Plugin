@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
+    using Extensions;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -60,6 +61,23 @@ namespace SuiteCRMAddIn.Extensions
             if (olProperty != null)
             {
                 olProperty.Delete();
+            }
+        }
+
+        public static void EnsureRecipient(this Outlook.AppointmentItem olItem, string smtpAddress)
+        {
+            bool found = false;
+
+            foreach (Outlook.Recipient recipient in olItem.Recipients)
+            {
+                found |= recipient.GetSmtpAddress().Equals(smtpAddress);
+
+                if (found) break;
+            }
+
+            if (!found)
+            {
+                olItem.Recipients.Add(smtpAddress);
             }
         }
     }
