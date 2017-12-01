@@ -834,7 +834,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                  * it may become invalid during the execution of this method. So this method CANNOT depend on any
                  * values taken from the Outlook item. */
                 EntryList entries = RestAPIWrapper.GetEntryList(
-                    syncState.CrmType, $"id = '{syncState.CrmEntryId}'",
+                    syncState.CrmType, $"id = {syncState.CrmEntryId}",
                     Properties.Settings.Default.SyncMaxRecords,
                     "date_entered DESC", 0, false, null);
 

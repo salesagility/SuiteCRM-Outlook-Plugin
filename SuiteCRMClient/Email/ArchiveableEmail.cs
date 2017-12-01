@@ -282,19 +282,18 @@ namespace SuiteCRMClient.Email
         /// <returns>A packet which, when transmitted to CRM, will instantiate my email.</returns>
         private object ConstructPacket(string htmlBody)
         {
-            List<RESTObjects.NameValue> emailData = new List<RESTObjects.NameValue>
-            {
-                new RESTObjects.NameValue() {name = "from_addr", value = this.From},
-                new RESTObjects.NameValue() {name = "to_addrs", value = this.To.Replace("\n", "")},
-                new RESTObjects.NameValue() {name = "name", value = this.Subject},
-                new RESTObjects.NameValue() {name = "date_sent", value = this.Sent.ToString(EmailDateFormat)},
-                new RESTObjects.NameValue() {name = "description", value = this.Body},
-                new RESTObjects.NameValue() {name = "description_html", value = htmlBody},
-                new RESTObjects.NameValue() {name = "assigned_user_id", value = RestAPIWrapper.GetUserId()},
-                new RESTObjects.NameValue() {name = "status", value = "archived"},
-                new RESTObjects.NameValue() {name = "category_id", value = this.Category},
-                new RESTObjects.NameValue() {name = "message_id", value = this.OutlookId }
-            };
+            EmailPacket emailData = new EmailPacket();
+
+            emailData.MaybeAddField("from_addr_name", this.From);
+            emailData.MaybeAddField("to_addrs_names", this.To, true);
+            emailData.MaybeAddField("cc_addrs_names", this.CC, true);
+            emailData.MaybeAddField("name", this.Subject);
+            emailData.MaybeAddField("date_sent", this.Sent.ToString(EmailDateFormat));
+            emailData.MaybeAddField("description", this.Body);
+            emailData.MaybeAddField("description_html", htmlBody);
+            emailData.MaybeAddField("assigned_user_id", RestAPIWrapper.GetUserId());
+            emailData.MaybeAddField("category_id", this.Category);
+            emailData.MaybeAddField("message_id", this.OutlookId);
 
             return new
             {
@@ -401,6 +400,21 @@ namespace SuiteCRMClient.Email
             };
 
             return attachmentDataWebFormat;
+        }
+
+        private class EmailPacket : List<RESTObjects.NameValue>
+        {
+            public void MaybeAddField(string fieldName, string fieldValue, bool replaceCRs = false)
+            {
+                if (!string.IsNullOrWhiteSpace(fieldValue))
+                {
+                    this.Add(new RESTObjects.NameValue()
+                    {
+                        name = fieldName,
+                        value = replaceCRs ? fieldValue.Replace("\n", "") : fieldValue
+                    });
+                }
+            }
         }
     }
 }
