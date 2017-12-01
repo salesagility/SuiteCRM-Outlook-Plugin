@@ -61,11 +61,29 @@ namespace SuiteCRMAddIn.Daemon
             if (string.IsNullOrEmpty(syncState.CrmEntryId))
             {
                 try {
-                    return $"synced new item as {this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType)}.\n{this.syncState.Description}";
+                    string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType);
+                    return $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
                 }
                 catch (WebException wex)
                 {
-                    throw new ActionRetryableException("Temporary network error", wex);
+                    if (wex.Status == WebExceptionStatus.ProtocolError)
+                    {
+                        using (HttpWebResponse response = wex.Response as HttpWebResponse)
+                        {
+                            switch (response.StatusCode)
+                            {
+                                case HttpStatusCode.RequestTimeout:
+                                case HttpStatusCode.ServiceUnavailable:
+                                    throw new ActionRetryableException($"Temporary error ({response.StatusCode})", wex);
+                                default:
+                                    throw new ActionFailedException($"Permanent error ({response.StatusCode})", wex);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new ActionRetryableException("Temporary network error", wex);
+                    }
                 }
             }
             else

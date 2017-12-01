@@ -24,6 +24,7 @@ namespace SuiteCRMClient.Exceptions
 {
     using System;
 
+    [Serializable]
     public class CrmSaveDataException: Exception
     {
         public CrmSaveDataException(string message, Exception inner = null)
