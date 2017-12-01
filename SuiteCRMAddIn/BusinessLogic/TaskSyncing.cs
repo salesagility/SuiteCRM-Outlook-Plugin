@@ -394,13 +394,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem?.UserProperties[CrmIdPropertyName]?.Value.ToString();
         }
 
-
-        protected override bool IsCurrentView => Context.CurrentFolderItemType == Outlook.OlItemType.olTaskItem;
-
-        // Should presumably be removed at some point. Existing code was ignoring deletions for Contacts and Tasks
-        // (but not for Appointments).
-        protected override bool PropagatesLocalDeletions => true;
-
         /// <summary>
         /// Return the sensitivity of this outlook item.
         /// </summary>

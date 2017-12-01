@@ -24,9 +24,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     using Extensions;
     using ProtoItems;
+    using System.Linq;
     using System.Text;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System;
+    using System.Collections.Generic;
 
     public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
@@ -83,6 +85,51 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void DeleteItem()
         {
             this.OutlookItem.Delete();
+        }
+
+
+        /// <summary>
+        /// An appointment may be changed because its recipients have changed.
+        /// </summary>
+        /// <returns>True if the underlying item has changed, or its recipients have changed.</returns>
+        protected override bool ReallyChanged()
+        {
+            var result = base.ReallyChanged();
+
+            ProtoItem older = this.Cache as ProtoAppointment;
+
+            if (older != null)
+            {
+                var currentAddresses = new HashSet<string>();
+                var olderAddresses = new List<string>();
+                olderAddresses.AddRange(((ProtoAppointment)older).RecipientAddresses);
+
+                foreach (Outlook.Recipient recipient in olItem.Recipients)
+                {
+                    currentAddresses.Add(recipient.GetSmtpAddress());
+                }
+                if (currentAddresses.Count == olderAddresses.Count)
+                {
+                    var sorted = new List<string>();
+                    sorted.AddRange(currentAddresses);
+                    sorted.Sort();
+
+                    for (int i = 0; i < sorted.Count; i++)
+                    {
+                        if (sorted[i] != olderAddresses[i])
+                        {
+                            result = true;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    result = true;
+                }
+            }
+
+            return result;
         }
 
         /// <summary>

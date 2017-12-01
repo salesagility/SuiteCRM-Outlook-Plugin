@@ -165,53 +165,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     else
                     {
                         this.Log.Debug($"Permissions cache miss for {moduleKey}/{permission}");
-                        try
-                        {
-                            this.Log.Debug("Note: we deliberately cache permissions for all named modules whether we're interested in them or not - it's quicker than filtering them");
-
-                            foreach (AvailableModule item in RestAPIWrapper.GetModules().items)
-                            {
-                                if (!string.IsNullOrWhiteSpace(item.module_key))
-                                {
-                                    CacheAccessPermission(
-                                        item.module_key,
-                                        ImportPermissionToken,
-                                        item.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)?.access ?? false);
-                                    CacheAccessPermission(
-                                        item.module_key,
-                                        ExportPermissionToken,
-                                        item.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)?.access ?? false);
-
-                                    try
-                                    {
-                                        Log.Debug($"Cached {CRMPermissionsCache.cache[item.module_key]} permission for {item.module_key}");
-                                    }
-                                    catch (KeyNotFoundException)
-                                    {
-                                        // ignore for now.
-                                    }
-                                }
-                            }
-
-                            cached = HasCachedAccess(moduleKey, permission);
-
-                            if (cached == null)
-                            {
-                                /* really shouldn't happen - we've just set it! */
-                                Log.Warn($"Cannot detect access {moduleKey}/{permission} despite having just set it");
-                                /* not really satisfactory, but unlikely to happen */
-                                result = false;
-                            }
-                            else
-                            {
-                                result = (bool)cached;
-                            }
-                        }
-                        catch (Exception fetchFailed)
-                        {
-                            Log.Error($"Cannot detect access {moduleKey}/{permission} because {fetchFailed.GetType().Name}: {fetchFailed.Message}", fetchFailed);
-                            throw;
-                        }
+                        result = CacheAllAndCheckAccess(moduleKey, permission);
                     }
                 }
 
@@ -222,6 +176,83 @@ namespace SuiteCRMAddIn.BusinessLogic
                 // OK, this is impossible. But it IS happening... why?
                 Log.Error($"Key not found exception while seeking '{moduleKey}'", knf);
                 return result;
+            }
+        }
+
+
+        /// <summary>
+        /// Cache permissions for all modules, and return the value for the specified parameters.
+        /// </summary>
+        /// <remarks>
+        /// We deliberately cache permissions for all named modules whether we're interested in them or not - 
+        /// it's quicker than filtering them.
+        /// </remarks>
+        /// <param name="moduleKey">The key of the module we're actually seeking.</param>
+        /// <param name="permission">The permission we're actually seeking.</param>
+        /// <returns>true if we have the access specified by permission for the module specified by this module key.</returns>
+        private bool CacheAllAndCheckAccess(string moduleKey, string permission)
+        {
+            bool? cached;
+            bool result;
+
+            try
+            {
+                this.Log.Debug("Note: ");
+
+                foreach (AvailableModule item in RestAPIWrapper.GetModules().items)
+                {
+                    CachePermissionsForModule(item);
+                }
+
+                cached = HasCachedAccess(moduleKey, permission);
+
+                if (cached == null)
+                {
+                    /* really shouldn't happen - we've just set it! */
+                    Log.Warn($"Cannot detect access {moduleKey}/{permission} despite having just set it");
+                    /* not really satisfactory, but unlikely to happen */
+                    result = false;
+                }
+                else
+                {
+                    result = (bool)cached;
+                }
+            }
+            catch (Exception fetchFailed)
+            {
+                Log.Error($"Cannot detect access {moduleKey}/{permission} because {fetchFailed.GetType().Name}: {fetchFailed.Message}", fetchFailed);
+                throw;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Cache both inport and export permissions for the specified module.
+        /// </summary>
+        /// <param name="module">The modules for which permissions should be cached.</param>
+        private void CachePermissionsForModule(AvailableModule module)
+        {
+            if (!string.IsNullOrWhiteSpace(module.module_key))
+            {
+                CacheAccessPermission(
+                    module.module_key,
+                    ImportPermissionToken,
+                    module.module_acls1.FirstOrDefault(b => b.action == ImportPermissionToken)?.access ?? false);
+                CacheAccessPermission(
+                    module.module_key,
+                    ExportPermissionToken,
+                    module.module_acls1.FirstOrDefault(b => b.action == ExportPermissionToken)?.access ?? false);
+
+                try
+                {
+                    Log.Debug($"Cached {CRMPermissionsCache.cache[module.module_key]} permission for {module.module_key}");
+                }
+                catch (KeyNotFoundException)
+                {
+                    // shouldn't ever happen. Ignore for now.
+                }
             }
         }
 
