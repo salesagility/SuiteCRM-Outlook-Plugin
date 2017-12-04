@@ -314,6 +314,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             var toDeleteFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
             var toCreateOnCrmServer = itemsCopy.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
+            var missingFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.IsDeletedInOutlook && a.CrmType == crmModule).ToList();
 
             foreach (var syncState in toDeleteFromOutlook)
             {
@@ -322,9 +323,22 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             foreach (var syncState in toCreateOnCrmServer)
             {
-                AddOrUpdateItemFromOutlookToCrm(syncState, crmModule);
+                AddOrUpdateItemFromOutlookToCrm(syncState);
             }
         }
+
+
+        /// <summary>
+        /// Deal with an item which used to exist in Outlook but which no longer does.
+        /// The default behaviour is to remove it from CRM.
+        /// </summary>
+        /// <param name="syncState">The dangling syncState of the missing item.</param>
+        internal virtual void HandleItemMissingFromOutlook(SyncState<OutlookItemType> syncState)
+        {
+            this.RemoveFromCrm(syncState);
+            this.RemoveItemSyncState(syncState);
+        }
+
 
         /// <summary>
         /// Perform all the necessary checking before adding or updating an item on CRM.

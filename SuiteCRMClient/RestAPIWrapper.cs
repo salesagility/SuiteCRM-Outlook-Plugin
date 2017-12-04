@@ -213,7 +213,9 @@ namespace SuiteCRMClient
             string result = string.Empty;
             EntryList list = GetEntryList("Users", $"user_name LIKE '%{MySqlEscape(username)}%'", 0, "id DESC", 0, false, new string[] { "id" });
 
-            if (list.entry_list.Count<EntryValue>() > 0)
+            if (list != null && 
+                list.entry_list != null && 
+                list.entry_list.Count<EntryValue>() > 0)
             {
                 result = list.entry_list[0].id;
             }

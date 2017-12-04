@@ -26,6 +26,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMAddIn.ProtoItems;
     using Extensions;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Runtime.InteropServices;
+    using SuiteCRMClient.Logging;
 
     /// <summary>
     /// A SyncState for Contact items.
@@ -53,6 +55,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 return $"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tFull name   : '{olItem.FullName}'\n\tSensitivity : {olItem.Sensitivity}";
             }
         }
+
 
         /// <summary>
         /// Don't actually delete contact items from Outlook; instead, mark them private so they
