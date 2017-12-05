@@ -54,6 +54,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public const string EmailDateFormat = "yyyy-MM-dd HH:mm:ss";
 
+        /// <summary>
+        /// The modules to which we'll try to save if no more specific list of modules is specified.
+        /// </summary>
+        public static readonly List<string> defaultModuleKeys = new List<string>() { ContactSyncing.CrmModule, "Leads" };
+
         public EmailArchiving(string name, ILogger log) : base(name, log)
         {
         }
@@ -87,6 +92,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private void ArchiveFolderItems(Outlook.Folder objFolder, DateTime minReceivedDateTime)
         {
+            this.ArchiveFolderItems(objFolder, minReceivedDateTime, defaultModuleKeys);
+        }
+
+        private void ArchiveFolderItems(Outlook.Folder objFolder, DateTime minReceivedDateTime, IEnumerable<string> moduleKeys)
+        {
             try
             {
                 var unreadEmails = objFolder.Items.Restrict(
@@ -99,7 +109,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         try
                         {
-                            olItem.Archive(EmailArchiveReason.Inbound);
+                            olItem.Archive(EmailArchiveReason.Inbound, moduleKeys);
                         }
                         catch (Exception any)
                         {
@@ -125,7 +135,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (EmailShouldBeArchived(reason, parentFolder.Store))
             {
-                olItem.Archive(reason, excludedEmails);
+                olItem.Archive(reason, defaultModuleKeys, excludedEmails);
             }
             else
             {
@@ -209,7 +219,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public ArchiveResult ArchiveEmailWithEntityRelationships(Outlook.MailItem olItem, IEnumerable<CrmEntity> selectedCrmEntities, EmailArchiveReason reason)
         {
-            var result = olItem.Archive(reason);
+
+            var result = olItem.Archive(reason, selectedCrmEntities.Select(x => x.ModuleName));
+
             if (result.IsSuccess)
             {
                 var warnings = CreateEmailRelationshipsWithEntities(result.EmailId, selectedCrmEntities);

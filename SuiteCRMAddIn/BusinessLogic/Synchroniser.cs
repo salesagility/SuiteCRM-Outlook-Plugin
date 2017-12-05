@@ -71,6 +71,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected object enqueueingLock = new object();
 
         /// <summary>
+        /// A lock on the creation of new objects in Outlook.
+        /// </summary>
+        protected object creationLock = new object();
+
+        /// <summary>
+        /// The actual transmission lock object of this synchroniser.
+        /// </summary>
+        protected object transmissionLock = new object();
+
+        /// <summary>
         /// The prefix for the fetch query, used in FetchRecordsFromCrm, q.v.
         /// </summary>
         protected string fetchQueryPrefix;
@@ -226,10 +236,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// We need to prevent two simultaneous transmissions of the same object, so it's probably unsafe
         /// to have two threads transmitting contact items at the same time. But there's no reason why
         /// we should not transmit contact items and task items at the same time, for example. So each
-        /// Synchorniser subclass will have its own transmission lock.
+        /// Synchroniser instance will have its own transmission lock.
         /// </summary>
         /// <returns>A transmission lock.</returns>
-        protected abstract object TransmissionLock { get; }
+        protected object TransmissionLock
+        {
+            get
+            {
+                return transmissionLock;
+            }
+        }
+
 
         /// <summary>
         /// Get a date stamp for midnight five days ago (why?).
