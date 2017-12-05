@@ -158,26 +158,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        /// <summary>
-        /// The actual transmission lock object of this synchroniser.
-        /// </summary>
-        private object txLock = new object();
 
         /// <summary>
         /// Prefix for meetings which have been canceled.
         /// </summary>
         private static readonly string CanceledPrefix = "CANCELED";
-
-        /// <summary>
-        /// Allow my parent class to access my transmission lock object.
-        /// </summary>
-        protected override object TransmissionLock
-        {
-            get
-            {
-                return txLock;
-            }
-        }
 
 
         /// <summary>

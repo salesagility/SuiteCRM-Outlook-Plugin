@@ -96,7 +96,7 @@
     <Compile Include="RESTObjects\AvailableModules.cs" />
     <Compile Include="RESTObjects\NameValue.cs" />
     <Compile Include="RESTObjects\NoteAttachment.cs" />
-    <Compile Include="RESTObjects\Contacts.cs" />
+    <Compile Include="RESTObjects\IdsOnly.cs" />
     <Compile Include="RESTObjects\EntryList.cs" />
     <Compile Include="RESTObjects\Login.cs" />
     <Compile Include="RESTObjects\eNewSetRelationshipListResult.cs" />
