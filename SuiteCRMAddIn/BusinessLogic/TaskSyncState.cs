@@ -26,6 +26,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using ProtoItems;
     using Extensions;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Runtime.InteropServices;
 
     /// <summary>
     /// A SyncState for Contact items.
@@ -51,6 +52,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 return $"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject    : '{olItem.Subject}'\n\tStatus      : {olItem.Status}";
             }
         }
+
 
         public override void DeleteItem()
         {

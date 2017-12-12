@@ -25,7 +25,10 @@ namespace SuiteCRMClient.RESTObjects
     using System.Collections.Generic;
     using Newtonsoft.Json;
 
-    public class Contacts
+    /// <summary>
+    /// Pulls back just the ids - from records in, essentially, any module with an id.
+    /// </summary>
+    public class IdsOnly
     {
         [JsonProperty("entry_list")]
         public List<Entry> entry_list { get; set; }

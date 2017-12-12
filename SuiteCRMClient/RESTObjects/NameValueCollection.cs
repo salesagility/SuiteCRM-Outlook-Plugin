@@ -65,6 +65,16 @@ namespace SuiteCRMClient.RESTObjects
         }
 
         /// <summary>
+        /// Get the binding for this name within this name-value collection.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The binding.</returns>
+        public NameValue GetBinding(string name)
+        {
+            return this.Where(x => x.name == name).FirstOrDefault();
+        }
+
+        /// <summary>
         /// Return my names/values as a dictionary.
         /// </summary>
         /// <returns>my names/values as a dictionary</returns>

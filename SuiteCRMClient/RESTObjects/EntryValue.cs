@@ -72,6 +72,16 @@ namespace SuiteCRMClient.RESTObjects
             return result;
         }
 
+        /// <summary>
+        /// Get the binding for this name within this entry.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The binding.</returns>
+        public NameValue GetBinding(string name)
+        {
+            return this.nameValueList.GetBinding(name);
+        }
+
         public RelationshipListElement relationships { get; set; }
 
         public string GetValueAsString(string key)

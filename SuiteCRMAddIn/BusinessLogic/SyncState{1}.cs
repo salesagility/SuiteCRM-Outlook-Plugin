@@ -25,6 +25,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMAddIn.ProtoItems;
     using SuiteCRMClient.Logging;
     using System;
+    using System.Runtime.InteropServices;
 
     /// <summary>
     /// The sync state of an item of the specified type.

@@ -47,21 +47,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.fetchQueryPrefix = string.Empty;
         }
 
-        /// <summary>
-        /// The actual transmission lock object of this synchroniser.
-        /// </summary>
-        private object txLock = new object();
-
-        /// <summary>
-        /// Allow my parent class to access my transmission lock object.
-        /// </summary>
-        protected override object TransmissionLock
-        {
-            get
-            {
-                return txLock;
-            }
-        }
 
         public override string DefaultCrmModule
         {
@@ -182,14 +167,32 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             Log.Debug($"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {RestAPIWrapper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
 
-            DateTime dateStart = crmItem.GetValueAsDateTime("date_start");
-            DateTime dateDue = crmItem.GetValueAsDateTime("date_due");
-            string timeStart = ExtractTime(dateStart);
-            string timeDue = ExtractTime(dateDue);
-
             var syncState = this.GetExistingSyncState(crmItem);
 
             if (syncState == null)
+            {
+                result = MaybeAddNewItemFromCrmToOutlook(tasksFolder, crmItem);
+            }
+            else
+            {
+                result = UpdateExistingOutlookItemFromCrm(crmItem, syncState);
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Item creation really ought to happen within the context of a lock, in order to prevent duplicate creation.
+        /// </summary>
+        /// <param name="tasksFolder">The folder in which the item should be created.</param>
+        /// <param name="crmItem">The CRM item it will represent.</param>
+        /// <returns>A syncstate whose Outlook item is the Outlook item representing this crmItem.</returns>
+        private SyncState<Outlook.TaskItem> MaybeAddNewItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, EntryValue crmItem)
+        {
+            SyncState<Outlook.TaskItem> result;
+
+            lock (creationLock)
             {
                 /* check for howlaround */
                 var matches = this.FindMatches(crmItem);
@@ -197,16 +200,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (matches.Count == 0)
                 {
                     /* didn't find it, so add it to Outlook */
-                    result = AddNewItemFromCrmToOutlook(tasksFolder, crmItem, dateStart, dateDue, timeStart, timeDue);
+                    result = AddNewItemFromCrmToOutlook(tasksFolder, crmItem);
                 }
                 else
                 {
                     this.Log.Warn($"Howlaround detected? Task '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
+                    result = matches[0];
                 }
-            }
-            else
-            {
-                result = UpdateExistingOutlookItemFromCrm(crmItem, dateStart, dateDue, timeStart, timeDue, syncState);
             }
 
             return result;
@@ -220,7 +220,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                                     .ToString(@"hh\:mm");
         }
 
-        private SyncState<Outlook.TaskItem> UpdateExistingOutlookItemFromCrm(EntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due, SyncState<Outlook.TaskItem> syncStateForItem)
+        private SyncState<Outlook.TaskItem> UpdateExistingOutlookItemFromCrm(EntryValue crmItem, SyncState<Outlook.TaskItem> syncStateForItem)
         {
             if (!syncStateForItem.IsDeletedInOutlook)
             {
@@ -229,17 +229,22 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 if (oProp.Value != crmItem.GetValueAsString("date_modified"))
                 {
-                    SetOutlookItemPropertiesFromCrmItem(crmItem, date_start, date_due, time_start, time_due, olItem);
+                    SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
                 }
                 syncStateForItem.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
             }
             return syncStateForItem;
         }
 
-        private void SetOutlookItemPropertiesFromCrmItem(EntryValue crmItem, DateTime? dateStart, DateTime? dateDue, string timeStart, string timeDue, Outlook.TaskItem olItem)
+        private void SetOutlookItemPropertiesFromCrmItem(EntryValue crmItem, Outlook.TaskItem olItem)
         {
             try
             {
+                DateTime dateStart = crmItem.GetValueAsDateTime("date_start");
+                DateTime dateDue = crmItem.GetValueAsDateTime("date_due");
+                string timeStart = ExtractTime(dateStart);
+                string timeDue = ExtractTime(dateDue);
+
                 olItem.Subject = crmItem.GetValueAsString("name");
 
                 olItem.StartDate = MaybeChangeDate(dateStart, olItem.StartDate, "olItem.StartDate");
@@ -287,14 +292,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        private SyncState<Outlook.TaskItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, EntryValue crmItem, DateTime? date_start, DateTime? date_due, string time_start, string time_due)
+        private SyncState<Outlook.TaskItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, EntryValue crmItem)
         {
             Outlook.TaskItem olItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
             TaskSyncState newState = null;
 
             try
             {
-                this.SetOutlookItemPropertiesFromCrmItem(crmItem, date_start, date_due, time_start, time_due, olItem);
+                this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
 
                 this.AddOrGetSyncState(olItem);
             }
