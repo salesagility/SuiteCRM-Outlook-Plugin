@@ -4,60 +4,181 @@ namespace SuiteCRMAddIn.ProtoItems
     using BusinessLogic;
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
+    using SuiteCRMClient.Logging;
     using System;
+    using System.Linq;
+    using System.Net.Mail;
+    using System.Text.RegularExpressions;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Collections.Generic;
+    using SuiteCRMAddIn.Extensions;
 
     /// <summary>
     /// Broadly, a C# representation of a CRM appointment.
     /// </summary>
     public class ProtoAppointment : ProtoItem<Outlook.AppointmentItem>
     {
-        private string Body;
-        private int Duration;
-        private DateTime End;
-        private string Location;
-        private string Organiser;
-        private DateTime Start;
-        private string Subject;
+        private readonly string body;
+        private readonly int duration;
+        private readonly DateTime end;
+        private readonly string location;
+        private readonly string organiser;
+        private readonly DateTime start;
+        private readonly string subject;
+        private readonly string globalId;
+        private readonly Outlook.OlMeetingStatus status;
+        private readonly string CancelledPrefix = "CANCELLED";
+        private readonly ISet<string> recipientAddresses = new HashSet<string>();
 
+
+        /// <summary>
+        /// Readonly access to an ordered list of my recipient addresses.
+        /// </summary>
+        public IEnumerable<string> RecipientAddresses
+        {
+            get
+            {
+                return recipientAddresses.AsEnumerable().OrderBy(x => x);
+            }
+        }
+
+
+        /// <summary>
+        /// Create a new instance of ProtoAppointment, taking values from this Outlook item.
+        /// </summary>
+        /// <param name="olItem">The Outlook item to take values from.</param>
         public ProtoAppointment(Outlook.AppointmentItem olItem)
         {
-            this.Body = olItem.Body;
-            this.Duration = olItem.Duration;
-            this.End = olItem.End;
-            this.Location = olItem.Location;
-            this.Start = olItem.Start;
-            this.Subject = olItem.Subject;
+            this.body = olItem.Body;
+            this.duration = olItem.Duration;
+            this.end = olItem.End;
+            this.location = olItem.Location;
+            this.start = olItem.Start;
+            this.subject = olItem.Subject;
+            this.globalId = olItem.GlobalAppointmentID;
+            this.status = olItem.MeetingStatus;
 
             var organiserProperty = olItem.UserProperties[AppointmentSyncing.OrganiserPropertyName];
 
             if (organiserProperty == null || string.IsNullOrWhiteSpace(organiserProperty.Value))
             {
-                 this.Organiser = RestAPIWrapper.GetUserId();
+                if (olItem.Organizer == clsGlobals.GetCurrentUsername())
+                {
+                    this.organiser = RestAPIWrapper.GetUserId();
+                }
+                else
+                {
+                    this.organiser = TryResolveOrganiser(olItem);
+                }
             }
             else
             {
-                this.Organiser = organiserProperty.Value.ToString();
+                this.organiser = organiserProperty.Value.ToString();
+            }
+
+            foreach (Outlook.Recipient recipient in olItem.Recipients)
+            {
+                this.recipientAddresses.Add(recipient.GetSmtpAddress());
             }
         }
 
+        /// <summary>
+        /// Try to resolve the organiser of this Outlook Item against the users of the CRM.
+        /// </summary>
+        /// <param name="olItem">The Outlook item representing a meeting.</param>
+        /// <returns>The id of the related user if any, else the empty string.</returns>
+        public static string TryResolveOrganiser(Outlook.AppointmentItem olItem)
+        {
+            string result = string.Empty;
+            string organiser = olItem.Organizer;
+
+            try
+            {
+                if (organiser.IndexOf('@') > -1)
+                {
+                    foreach (string pattern in new string[] { @".*<(.+@.+)>", @".+@.+" })
+                    {
+                        Match match = Regex.Match(organiser, pattern, RegexOptions.IgnoreCase);
+                        if (match.Success)
+                        {
+                            string address = match.Groups[0].Value;
+
+                            try
+                            {
+                                result = RestAPIWrapper.GetUserId(new MailAddress(address));
+                            }
+                            catch (FormatException)
+                            {
+                                // not a valid email address - no matter.
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    result = RestAPIWrapper.GetUserId(organiser);
+                }
+            }
+            catch (Exception any)
+            {
+                Globals.ThisAddIn.Log.Error($"Failed to resolve organiser `{olItem.Organizer}` of meeting `{olItem.Subject}`", any);
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// AsNameValues is used in transmission to CRM as well as for comparison, so it should NOT
+        /// access our cache of recipient addresses.
+        /// </summary>
+        /// <param name="entryId">The CRM entry Id of the object represented.</param>
+        /// <returns>A set of name/value pairs suitable for transmitting to CRM.</returns>
         public override NameValueCollection AsNameValues(string entryId)
         {
             NameValueCollection data = new NameValueCollection();
+            string statusString;
+            string name;
 
-            data.Add(RestAPIWrapper.SetNameValuePair("name", this.Subject));
-            data.Add(RestAPIWrapper.SetNameValuePair("description", this.Body));
-            data.Add(RestAPIWrapper.SetNameValuePair("location", this.Location));
-            data.Add(RestAPIWrapper.SetNameValuePair("date_start", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.Start.ToUniversalTime())));
-            data.Add(RestAPIWrapper.SetNameValuePair("date_end", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.End.ToUniversalTime())));
-            data.Add(RestAPIWrapper.SetNameValuePair("duration_minutes", (this.Duration % 60).ToString()));
-            data.Add(RestAPIWrapper.SetNameValuePair("duration_hours", (this.Duration / 60).ToString()));
-            data.Add(RestAPIWrapper.SetNameValuePair("assigned_user_id", this.Organiser));
-
-            if (!string.IsNullOrEmpty(entryId))
+            switch (this.status)
             {
-                data.Add(RestAPIWrapper.SetNameValuePair("id", entryId));
+                case Outlook.OlMeetingStatus.olMeetingCanceled:
+                    statusString = "Not Held";
+                    name = this.subject.StartsWith(CancelledPrefix) ? this.subject : $"{CancelledPrefix}: {this.subject}";
+                    break;
+                default:
+                    statusString = this.start < DateTime.Now ? "Held" : "Planned";
+                    name = this.subject;
+                    break;
             }
+
+            data.Add(RestAPIWrapper.SetNameValuePair("name", name));
+            data.Add(RestAPIWrapper.SetNameValuePair("description", this.body));
+            data.Add(RestAPIWrapper.SetNameValuePair("location", this.location));
+            data.Add(RestAPIWrapper.SetNameValuePair("date_start", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.start.ToUniversalTime())));
+            data.Add(RestAPIWrapper.SetNameValuePair("date_end", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.end.ToUniversalTime())));
+            data.Add(RestAPIWrapper.SetNameValuePair("duration_minutes", (this.duration % 60).ToString()));
+            data.Add(RestAPIWrapper.SetNameValuePair("duration_hours", (this.duration / 60).ToString()));
+
+            if (!string.IsNullOrEmpty(this.organiser))
+            {
+                data.Add(RestAPIWrapper.SetNameValuePair("assigned_user_id", this.organiser));
+            }
+
+            data.Add(RestAPIWrapper.SetNameValuePair("outlook_id", this.globalId));
+            data.Add(RestAPIWrapper.SetNameValuePair("status", statusString));
+
+            if (string.IsNullOrEmpty(entryId))
+            {
+                /* A Guid can be constructed from a 32 digit hex string. The globalId is a
+                 * 112 digit hex string. It appears from inspection that the least significant
+                 * bytes are those that vary between examples, with the most significant bytes 
+                 * being invariant in the samples we have to hand. */
+                entryId = new Guid(this.globalId.Substring(this.globalId.Length - 32)).ToString();
+                data.Add(RestAPIWrapper.SetNameValuePair("new_with_id", true));
+            }
+
+            data.Add(RestAPIWrapper.SetNameValuePair("id", entryId));
 
             return data;
         }

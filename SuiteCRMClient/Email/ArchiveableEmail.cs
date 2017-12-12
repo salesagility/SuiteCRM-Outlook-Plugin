@@ -23,6 +23,7 @@
 namespace SuiteCRMClient.Email
 {
     using System;
+    using System.Linq;
     using System.Collections.Generic;
     using SuiteCRMClient.Logging;
 
@@ -71,29 +72,32 @@ namespace SuiteCRMClient.Email
         }
 
         /// <summary>
-        /// Get contact ids of all email addresses in my From, To, or CC fields which 
-        /// are known to CRM and not included in these excluded addresses.
+        /// Get related ids from the modules with these moduleKeys, of all email addresses 
+        /// in my From, To, or CC fields which are known to CRM and not included in these 
+        /// excluded addresses.
         /// </summary>
+        /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
         /// <param name="contatenatedExcludedAddresses">A string containing zero or many email 
         /// addresses for which contact ids should not be returned.</param>
-        /// <returns>A list of strings representing CRM contact ids.</returns>
-        public List<string> GetValidContactIDs(string contatenatedExcludedAddresses = "")
+        /// <returns>A list of pairs strings representing CRM module keys and contact ids.</returns>
+        public IEnumerable<IdModulePair> GetRelatedIds(IEnumerable<string> moduleKeys, string contatenatedExcludedAddresses = "")
         {
-            return GetValidContactIds(ConstructAddressList(contatenatedExcludedAddresses.ToUpper()));
+            return GetRelatedIds(moduleKeys, ConstructAddressList(contatenatedExcludedAddresses.ToUpper()));
         }
 
         /// <summary>
         /// Get contact ids of all email addresses in my From, To, or CC fields which 
         /// are known to CRM and not included in these excluded addresses.
         /// </summary>
-        /// <param name="excludedAddresses">email addresses for which contact ids should 
+        /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
+        /// <param name="excludedAddresses">email addresses for which related ids should 
         /// not be returned.</param>
-        /// <returns>A list of strings representing CRM contact ids.</returns>
-        private List<string> GetValidContactIds(List<string> excludedAddresses)
+        /// <returns>A list of strings representing CRM ids.</returns>
+        private IEnumerable<IdModulePair> GetRelatedIds(IEnumerable<string> moduleKeys, IEnumerable<string> excludedAddresses)
         {
             RestAPIWrapper.EnsureLoggedIn(SuiteCRMUserSession);
 
-            List<string> result = new List<string>();
+            List<IdModulePair> result = new List<IdModulePair>();
             List<string> checkedAddresses = new List<string>();
 
             try
@@ -102,12 +106,18 @@ namespace SuiteCRMClient.Email
                 {
                     if (!checkedAddresses.Contains(address) && !excludedAddresses.Contains(address.ToUpper()))
                     {
-                        var contactReturn = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.Contacts>("get_entry_list",
-                            ConstructGetContactIdByAddressPacket(address));
+                        RESTObjects.IdsOnly contacts = null;
 
-                        if (contactReturn.entry_list != null && contactReturn.entry_list.Count > 0)
+                        foreach (string moduleKey in moduleKeys)
                         {
-                            result.Add(contactReturn.entry_list[0].id);
+                            contacts = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.IdsOnly>("get_entry_list",
+                            ConstructGetContactIdByAddressPacket(address, moduleKey));
+
+
+                            if (contacts.entry_list != null && contacts.entry_list.Count > 0)
+                            {
+                                result.AddRange(contacts.entry_list.Select(x => new IdModulePair(moduleKey, x.id)));
+                            }
                         }
                     }
                     checkedAddresses.Add(address);
@@ -134,17 +144,20 @@ namespace SuiteCRMClient.Email
         private static List<string> ConstructAddressList(string contatenatedAddresses)
         {
             List<string> addresses = new List<string>();
-            addresses.AddRange(contatenatedAddresses.Split(',', ';', '\n', ':', ' ', '\t'));
+            addresses.AddRange(contatenatedAddresses
+                .Split(',', ';', '\n', '\r', ':', ' ', '\t')
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim()));
             return addresses;
         }
 
-        private object ConstructGetContactIdByAddressPacket(string address)
+        private object ConstructGetContactIdByAddressPacket(string address, string moduleKey)
         {
             return new
             {
                 @session = SuiteCRMUserSession.id,
-                @module_name = "Contacts",
-                @query = GetContactIDQuery(address),
+                @module_name = moduleKey,
+                @query = GetContactIDQuery(address, moduleKey),
                 @order_by = "",
                 @offset = 0,
                 @select_fields = new string[] { "id" },
@@ -152,18 +165,22 @@ namespace SuiteCRMClient.Email
             };
         }
 
-        private string GetContactIDQuery(string strEmail)
+        private string GetContactIDQuery(string address, string moduleKey)
         {
-            return "contacts.id in (SELECT eabr.bean_id FROM email_addr_bean_rel eabr JOIN email_addresses ea ON (ea.id = eabr.email_address_id) WHERE eabr.deleted=0 and ea.email_address = '" + strEmail + "')";
+            moduleKey = moduleKey.ToLower();
+            moduleKey = moduleKey.EndsWith("s") ? moduleKey : $"{moduleKey}s";
+
+            return $"{moduleKey}.id in (SELECT eabr.bean_id FROM email_addr_bean_rel eabr JOIN email_addresses ea ON (ea.id = eabr.email_address_id) WHERE eabr.deleted=0 and ea.email_address = '{address}')";
         }
 
         /// <summary>
         /// Save my email to CRM, if it relates to any valid contacts.
         /// </summary>
         /// <param name="excludedEmails">Emails of contacts with which it should not be related.</param>
-        public ArchiveResult Save(string excludedEmails = "")
+        /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
+        public ArchiveResult Save(IEnumerable<string> moduleKeys, string excludedEmails = "")
         {
-            return Save(GetValidContactIDs(excludedEmails));
+            return Save(GetRelatedIds(moduleKeys, excludedEmails));
         }
 
 
@@ -176,11 +193,16 @@ namespace SuiteCRMClient.Email
         /// I have no idea whether there is a benefit of this two-attempt strategy.
         /// </remarks>
         /// <param name="crmContactIds">The contact ids to link with.</param>
-        public ArchiveResult Save(List<string> crmContactIds)
+        public ArchiveResult Save(IEnumerable<IdModulePair> crmContactIds)
         {
             ArchiveResult result;
 
-            if (crmContactIds.Count > 0)
+            if (crmContactIds.Count() == 0)
+            {
+                result = ArchiveResult.Failure(
+                    new[] { new Exception("Found no related entities in CRM to link with") });
+            }
+            else
             {
                 try
                 {
@@ -201,10 +223,6 @@ namespace SuiteCRMClient.Email
                     }
                 }
             }
-            else
-            {
-                result = ArchiveResult.Failure(null);
-            }
             
             return result;
         }
@@ -217,7 +235,7 @@ namespace SuiteCRMClient.Email
         /// <param name="htmlBody">The HTML body with which I should be saved.</param>
         /// <param name="fails">Any previous failures in attempting to save me.</param>
         /// <returns>An archive result object describing the outcome of this attempt.</returns>
-        private ArchiveResult TrySave(List<string> contactIds, string htmlBody, Exception[] fails)
+        private ArchiveResult TrySave(IEnumerable<IdModulePair> contactIds, string htmlBody, Exception[] fails)
         {
             var restServer = SuiteCRMUserSession.RestServer;
             var emailResult = restServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry",
@@ -257,16 +275,16 @@ namespace SuiteCRMClient.Email
         /// </summary>
         /// <param name="crmContactIds">The contact ids which should be related to my email result.</param>
         /// <param name="emailResult">An email result (presumed to represent me).</param>
-        private void SaveContacts(List<string> crmContactIds, RESTObjects.SetEntryResult emailResult)
+        private void SaveContacts(IEnumerable<IdModulePair> crmContactIds, RESTObjects.SetEntryResult emailResult)
         {
             var restServer = SuiteCRMUserSession.RestServer;
 
-            foreach (string contactId in crmContactIds)
+            foreach (IdModulePair contactId in crmContactIds)
             {
                 try
                 {
                     restServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship",
-                        ConstructContactRelationshipPacket(emailResult.id, contactId));
+                        ConstructRelationshipPacket(emailResult.id, contactId.Id, contactId.ModuleKey, "emails"));
                 }
                 catch (Exception any)
                 {
@@ -281,19 +299,18 @@ namespace SuiteCRMClient.Email
         /// <returns>A packet which, when transmitted to CRM, will instantiate my email.</returns>
         private object ConstructPacket(string htmlBody)
         {
-            List<RESTObjects.NameValue> emailData = new List<RESTObjects.NameValue>
-            {
-                new RESTObjects.NameValue() {name = "from_addr", value = this.From},
-                new RESTObjects.NameValue() {name = "to_addrs", value = this.To.Replace("\n", "")},
-                new RESTObjects.NameValue() {name = "name", value = this.Subject},
-                new RESTObjects.NameValue() {name = "date_sent", value = this.Sent.ToString(EmailDateFormat)},
-                new RESTObjects.NameValue() {name = "description", value = this.Body},
-                new RESTObjects.NameValue() {name = "description_html", value = htmlBody},
-                new RESTObjects.NameValue() {name = "assigned_user_id", value = RestAPIWrapper.GetUserId()},
-                new RESTObjects.NameValue() {name = "status", value = "archived"},
-                new RESTObjects.NameValue() {name = "category_id", value = this.Category},
-                new RESTObjects.NameValue() {name = "message_id", value = this.OutlookId }
-            };
+            EmailPacket emailData = new EmailPacket();
+
+            emailData.MaybeAddField("from_addr_name", this.From);
+            emailData.MaybeAddField("to_addrs_names", this.To, true);
+            emailData.MaybeAddField("cc_addrs_names", this.CC, true);
+            emailData.MaybeAddField("name", this.Subject);
+            emailData.MaybeAddField("date_sent", this.Sent.ToString(EmailDateFormat));
+            emailData.MaybeAddField("description", this.Body);
+            emailData.MaybeAddField("description_html", htmlBody);
+            emailData.MaybeAddField("assigned_user_id", RestAPIWrapper.GetUserId());
+            emailData.MaybeAddField("category_id", this.Category);
+            emailData.MaybeAddField("message_id", this.OutlookId);
 
             return new
             {
@@ -320,18 +337,6 @@ namespace SuiteCRMClient.Email
         private object ConstructAttachmentRelationshipPacket(string emailId, string attachmentId)
         {
             return ConstructRelationshipPacket(emailId, attachmentId, "Emails", "notes");
-        }
-
-        /// <summary>
-        /// Construct a packet representing the relationship between the email represented 
-        /// by this email id and the contact represented by this contact id.
-        /// </summary>
-        /// <param name="emailId">The id of the email.</param>
-        /// <param name="contactId">The id of the contact.</param>
-        /// <returns>A packet which, when transmitted to CRM, will instantiate this relationship.</returns>
-        private object ConstructContactRelationshipPacket(string emailId, string contactId)
-        {
-            return ConstructRelationshipPacket(contactId, emailId, "Contacts", "emails");
         }
 
         /// <summary>
@@ -387,10 +392,11 @@ namespace SuiteCRMClient.Email
             };
             var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry", initNoteDataWebFormat);
 
-            RESTObjects.NewNoteAttachment note = new RESTObjects.NewNoteAttachment();
+            RESTObjects.NoteAttachment note = new RESTObjects.NoteAttachment();
             note.ID = res.id;
             note.FileName = attachment.DisplayName;
-            note.FileCotent = attachment.FileContentInBase64String;
+            note.FileContent = attachment.FileContentInBase64String;
+            note.ParentType = "Emails";
 
             object attachmentDataWebFormat = new
             {
@@ -399,6 +405,34 @@ namespace SuiteCRMClient.Email
             };
 
             return attachmentDataWebFormat;
+        }
+
+        private class EmailPacket : List<RESTObjects.NameValue>
+        {
+            public void MaybeAddField(string fieldName, string fieldValue, bool replaceCRs = false)
+            {
+                if (!string.IsNullOrWhiteSpace(fieldValue))
+                {
+                    this.Add(new RESTObjects.NameValue()
+                    {
+                        name = fieldName,
+                        value = replaceCRs ? fieldValue.Replace("\n", "") : fieldValue
+                    });
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Essentially syntactic sugar making code dealing with id/module pairs easier to read.
+        /// </summary>
+        public class IdModulePair : Tuple<string,string>
+        {
+            public string ModuleKey => base.Item1;
+
+            public string Id => base.Item2;
+
+            public IdModulePair(string moduleKey, string recordId) : base(moduleKey, recordId) { }
         }
     }
 }

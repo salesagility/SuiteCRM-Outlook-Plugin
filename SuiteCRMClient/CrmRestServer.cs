@@ -65,26 +65,46 @@ namespace SuiteCRMClient
 
         public Uri SuiteCRMURL { get; set; }
 
-        public T GetCrmResponse<T>(string strMethod, object objInput)
+        public T GetCrmResponse<T>(string method, object input)
         {
             try
             {
-                var request = CreateCrmRestRequest(strMethod, objInput);
-                var jsonResponse = GetResponseString(request);
+                HttpWebRequest request = CreateCrmRestRequest(method, input);
+                string jsonResponse = GetResponseString(request);
 #if DEBUG
-                LogRequest(request, strMethod, objInput);
+                LogRequest(request, method, input);
                 LogResponse(jsonResponse);
 #endif
-                CheckForCrmError(jsonResponse);
+                CheckForCrmError(jsonResponse, this.CreatePayload(method, input));
 
                 return DeserializeJson<T>(jsonResponse);
             }
             catch (Exception ex)
             {
-                log.Warn($"Tried calling '{strMethod}' with parameter '{objInput}', timeout is {this.timeout}ms");
-                log.Error($"Failed calling '{strMethod}'", ex);
+                log.Warn($"Tried calling '{method}' with parameter '{input}', timeout is {this.timeout}ms");
+                log.Error($"Failed calling '{method}'", ex);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Send a get request with this path part to the server
+        /// </summary>
+        /// <param name="pathPart">The path part of the URL (may optionally include a query part)</param>
+        /// <returns>True if the call resulted in a 200 status code.</returns>
+        public bool SendGetRequest(string pathPart)
+        {
+            var requestUrl = SuiteCRMURL.AbsoluteUri + "/" + pathPart;
+            HttpWebRequest request = WebRequest.Create(requestUrl) as HttpWebRequest;
+
+            request.Method = "GET";
+            request.Timeout = this.timeout;
+
+            HttpWebResponse response = request.GetResponse() as HttpWebResponse;
+
+            log.Info($"Sent `{requestUrl}`; received back status {response.StatusCode}");
+
+            return (response.StatusCode == HttpStatusCode.OK);
         }
 
         /// <summary>
@@ -92,8 +112,9 @@ namespace SuiteCRMClient
         /// throw it as an exception.
         /// </summary>
         /// <param name="jsonResponse">A response from CRM.</param>
+        /// <param name="payload">The payload of the request which gave rise to this response.</param>
         /// <exception cref="CrmServerErrorException">if the response was recognised as an error.</exception>
-        private void CheckForCrmError(string jsonResponse)
+        private void CheckForCrmError(string jsonResponse, string payload)
         {
             ErrorValue error;
             try
@@ -108,7 +129,7 @@ namespace SuiteCRMClient
 
             if (error != null && error.IsPopulated())
             {
-                throw new CrmServerErrorException(error);
+                throw new CrmServerErrorException(error, payload);
             }
         }
 

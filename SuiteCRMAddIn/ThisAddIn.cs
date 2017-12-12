@@ -705,7 +705,7 @@ namespace SuiteCRMAddIn
                 if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
                 {
                     ProcessNewMailItem(
-                        EmailArchiveReason.Outbound, 
+                        EmailArchiveReason.Outbound,
                         item as Outlook.MailItem,
                         Properties.Settings.Default.ExcludedEmails);
                 }
@@ -716,17 +716,29 @@ namespace SuiteCRMAddIn
             }
         }
 
+
         private void Application_NewMail(string EntryID)
         {
             log.Debug(catalogue.GetString("Outlook NewMail: email received event"));
             try
             {
-                if (this.IsLicensed && Properties.Settings.Default.AutoArchive)
+                if (this.IsLicensed)
                 {
-                    ProcessNewMailItem(
-                        EmailArchiveReason.Inbound,
-                        Application.Session.GetItemFromID(EntryID) as Outlook.MailItem,
-                        Properties.Settings.Default.ExcludedEmails);
+                    var item = Application.Session.GetItemFromID(EntryID);
+
+                    if (item is Outlook.MailItem && Properties.Settings.Default.AutoArchive)
+                    {
+                        ProcessNewMailItem( EmailArchiveReason.Inbound,
+                                            item as Outlook.MailItem,
+                                            Settings.Default.ExcludedEmails);
+                    }
+                    else if (item is Outlook.MeetingItem)
+                    {
+                        DaemonWorker.Instance.AddTask(
+                            new UpdateMeetingAcceptancesAction(
+                                appointmentSynchroniser, 
+                                item as Outlook.MeetingItem));
+                    }
                 }
             }
             catch (Exception ex)
@@ -735,17 +747,22 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void ProcessNewMailItem(EmailArchiveReason archiveType, Outlook.MailItem mailItem, string excludedEmails = "")
+        private bool ProcessNewMailItem(EmailArchiveReason archiveType, Outlook.MailItem mailItem, string excludedEmails = "")
         {
+            bool result;
+
             if (mailItem == null)
             {
                 log.Info(catalogue.GetString("New 'mail item' was null"));
-                return;
+                result = false;
             }
             else
             {
                 this.EmailArchiver.ProcessEligibleNewMailItem(mailItem, archiveType, excludedEmails);
+                result = true;
             }
+
+            return result;
         }
 
         /// <summary>
@@ -905,6 +922,44 @@ namespace SuiteCRMAddIn
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
             Log.Error(summary, error);
+        }
+
+        /// <summary>
+        /// Count how many items there are whose state I am monitoring.
+        /// </summary>
+        /// <returns>The number of items I am monitoring.</returns>
+        internal int CountItems()
+        {
+            int result = this.appointmentSynchroniser != null ? this.appointmentSynchroniser.ItemsCount : 0;
+            result += this.contactSynchroniser != null ? this.contactSynchroniser.ItemsCount : 0;
+            result += this.taskSynchroniser != null ? this.taskSynchroniser.ItemsCount : 0;
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Get all the synchronisable items I'm tracking - at present, only as WithRemovableSynchronisationProperties objects.
+        /// </summary>
+        /// <returns>all the synchronisable items I'm tracking</returns>
+        internal IEnumerable<WithRemovableSynchronisationProperties> GetSynchronisableItems()
+        {
+            List<WithRemovableSynchronisationProperties> result = new List<WithRemovableSynchronisationProperties>();
+
+            if (this.appointmentSynchroniser != null)
+            {
+                result.AddRange(this.appointmentSynchroniser.GetSynchronisedItems());
+            }
+            if (this.contactSynchroniser != null)
+            {
+                result.AddRange(this.contactSynchroniser.GetSynchronisedItems());
+            }
+            if (this.taskSynchroniser != null)
+            {
+                result.AddRange(this.taskSynchroniser.GetSynchronisedItems());
+            }
+
+            return result;
         }
     }
 }

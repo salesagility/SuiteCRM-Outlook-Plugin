@@ -26,14 +26,37 @@ namespace SuiteCRMClient.RESTObjects
 
     public class SetRelationshipParams
     {
+        private string m1;
+        private string m2;
+
         [JsonProperty("module1_id")]
         public string module1_id { get; set; }
         [JsonProperty("module1")]
-        public string module1 { get; set; }
+        public string module1
+        {
+            get
+            {
+                return m1;
+            }
+            set
+            {
+                m1 = char.ToUpper(value[0]) + value.Substring(1);
+            }
+        }
         [JsonProperty("module2_id")]
         public string module2_id { get; set; }
         [JsonProperty("module2")]
-        public string module2 { get; set; }
+        public string module2
+        {
+            get
+            {
+                return m2;
+            }
+            set
+            {
+                m2 = char.ToUpper(value[0]) + value.Substring(1);
+            }
+        }
 
         /// <summary>
         /// Only required if you want to delete a relationsip, in which case set it to 1.

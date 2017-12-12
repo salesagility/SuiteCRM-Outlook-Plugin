@@ -40,7 +40,7 @@ namespace SuiteCRMAddIn.Dialogs
 
     public partial class ArchiveDialog : Form
     {
-        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSyncing.CrmModule, "Leads", "Opportunities", "Project" };
+        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSyncing.CrmModule, "Leads", "Opportunities", "Project", "Users" };
 
         public ArchiveDialog()
         {
@@ -168,31 +168,24 @@ namespace SuiteCRMAddIn.Dialogs
         /// <returns>A string comprising the sender addresses from the emails, comma separated.</returns>
         private static string ConstructSearchText(IEnumerable<MailItem> emails)
         {
-            List<string> addresses = new List<string>();
-            string searchText = String.Empty;
-
-            foreach (var email in emails)
-            {
-                addresses.Add(clsGlobals.GetSMTPEmailAddress(email));
-            }
-
-            foreach (var address in addresses.OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
-            {
-                searchText += address + ",";
-            }
-
-            return searchText.TrimEnd(',');
+            return string.Join(",", emails.Select(email => clsGlobals.GetSMTPEmailAddress(email))
+                .OrderBy(address => address)
+                .GroupBy(address => address)
+                .Select(g => g.First()));
         }
 
-        private void CheckAllChildNodes(TreeNode treeNode, bool nodeChecked)
+
+        /// <summary>
+        /// Set the checkboxes of all children of this node to this value.
+        /// </summary>
+        /// <param name="node">The parent of the nodes to change.</param>
+        /// <param name="value">The value to set.</param>
+        private void CheckAllChildNodes(TreeNode node, bool value)
         {
-            foreach (TreeNode node in treeNode.Nodes)
+            foreach (TreeNode child in node.Nodes)
             {
-                node.Checked = nodeChecked;
-                if (node.Nodes.Count > 0)
-                {
-                    this.CheckAllChildNodes(node, nodeChecked);
-                }
+                child.Checked = value;
+                this.CheckAllChildNodes(child, value);
             }
         }
 
@@ -215,11 +208,7 @@ namespace SuiteCRMAddIn.Dialogs
 
         private bool UnallowedNumber(string strText)
         {
-            char[] charUnallowedNumber = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-            for (int i = 0; i < charUnallowedNumber.Length; i++)
-                if (strText.StartsWith(charUnallowedNumber[i].ToString()))
-                    return true;
-            return false;
+            return Char.IsDigit(strText.First());
         }
 
         private void btnClose_Click(object sender, EventArgs e)
@@ -227,6 +216,15 @@ namespace SuiteCRMAddIn.Dialogs
             base.Close();
         }
 
+
+        /// <summary>
+        /// Search CRM for records matching this search text, and populate the tree view
+        /// with a tree of nodes representing the records found.
+        /// </summary>
+        /// <remarks>
+        /// TODO: Candidate for refactoring.
+        /// </remarks>
+        /// <param name="searchText">The text to search for.</param>
         public void Search(string searchText)
         {
             using (WaitCursor.For(this))
@@ -398,6 +396,7 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         /// <remarks>
         /// Refactored from a horrible nest of spaghetti code. I don't yet fully understand this.
+        /// TODO: Candidate for further refactoring to reduce complexity.
         /// </remarks>
         /// <param name="searchText">The text entered to search for.</param>
         /// <param name="moduleName">The name of the module to search.</param>
@@ -408,9 +407,9 @@ namespace SuiteCRMAddIn.Dialogs
         {
             string queryText = string.Empty;
             List<string> searchTokens = searchText.Split(new char[] { ' ' }).ToList();
-            var escapedSearchText = clsGlobals.MySqlEscape(searchText);
-            var firstTerm = clsGlobals.MySqlEscape(searchTokens.First());
-            var lastTerm = clsGlobals.MySqlEscape(searchTokens.Last());
+            var escapedSearchText = RestAPIWrapper.MySqlEscape(searchText);
+            var firstTerm = RestAPIWrapper.MySqlEscape(searchTokens.First());
+            var lastTerm = RestAPIWrapper.MySqlEscape(searchTokens.Last());
             string logicalOperator = firstTerm == lastTerm ? "OR" : "AND";
 
             switch (moduleName)
@@ -773,10 +772,20 @@ namespace SuiteCRMAddIn.Dialogs
             }
         }
 
-        private bool ReportOnEmailArchiveSuccess(List<ArchiveResult> emailArchiveResults)
+
+        /// <summary>
+        /// Construct a message reporting on the success or failure of archiving represented
+        /// by these results, and show it in a message box.
+        /// </summary>
+        /// <remarks>
+        /// TODO: Candidate for significant refactoring - this is ugly.
+        /// </remarks>
+        /// <param name="results">The email archiving results to report on.</param>
+        /// <returns>true if the report indicated success, else false.</returns>
+        private bool ReportOnEmailArchiveSuccess(List<ArchiveResult> results)
         {
-            var successCount = emailArchiveResults.Count(r => r.IsSuccess);
-            var failCount = emailArchiveResults.Count - successCount;
+            var successCount = results.Count(r => r.IsSuccess);
+            var failCount = results.Count - successCount;
             var fullSuccess = failCount == 0;
             if (fullSuccess)
             {
@@ -794,14 +803,17 @@ namespace SuiteCRMAddIn.Dialogs
                     ? $"Failed to archive {failCount} email(s)"
                     : $"{successCount} emails(s) were successfully archived.";
 
-                var first11Problems = emailArchiveResults.SelectMany(r => r.Problems).Take(11).ToList();
-                if (first11Problems.Any())
+                var allProblems = results
+                    .Where(r => r.Problems != null)
+                    .SelectMany(r => r.Problems);
+
+                if (allProblems.Any())
                 {
                     message =
                         message +
                         "\n\nThere were some failures:\n" +
-                        string.Join("\n", first11Problems.Take(10)) +
-                        (first11Problems.Count > 10 ? "\n[and more]" : string.Empty);
+                        string.Join("\n", allProblems.Take(10)) +
+                        (allProblems.Count() > 10 ? "\n[and more]" : string.Empty);
                 }
 
                 MessageBox.Show(message, "Failure");

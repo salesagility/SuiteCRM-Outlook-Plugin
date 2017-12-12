@@ -20,16 +20,20 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.Exceptions
+namespace SuiteCRMAddIn.BusinessLogic
 {
-    using System;
-
-    [Serializable]
-    public class CrmSaveDataException: Exception
+    /// <summary>
+    /// SyncStates have Outlook Items which have synchronisation properties. When the user changes 
+    /// from one CRM system to another, we need to remove the properties; I want the ClearCrmIdsDialog 
+    /// to be able to show progress. To make this easier I plan to have it clear the properties itself.
+    /// But it ought not to know anything about SyncStates other than that they have syncrhonisation 
+    /// properties which may be removed.
+    /// </summary>
+    public interface WithRemovableSynchronisationProperties
     {
-        public CrmSaveDataException(string message, Exception inner = null)
-            : base(message, inner)
-        {
-        }
+        /// <summary>
+        /// Remove all synchronisation properties from this object.
+        /// </summary>
+        void RemoveSynchronisationProperties();
     }
 }

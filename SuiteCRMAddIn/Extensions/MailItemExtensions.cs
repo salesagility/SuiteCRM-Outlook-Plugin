@@ -22,12 +22,15 @@
  */
 namespace SuiteCRMAddIn.Extensions
 {
+    using BusinessLogic;
     using Exceptions;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
     using System;
+    using System.Collections.Generic;
     using System.Runtime.InteropServices;
+    using TidyManaged;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -182,11 +185,13 @@ namespace SuiteCRMAddIn.Extensions
                 }
             }
 
+            mailArchive.CC = olItem.CC;
+
             mailArchive.OutlookId = olItem.EnsureEntryID();
             mailArchive.Subject = olItem.Subject;
             mailArchive.Sent = olItem.ArchiveTime(reason);
             mailArchive.Body = olItem.Body;
-            mailArchive.HTMLBody = olItem.HTMLBody;
+            mailArchive.HTMLBody = Tidy(olItem.HTMLBody);
             mailArchive.Reason = reason;
             mailArchive.Category = olItem.UserProperties[CRMCategoryPropertyName] != null ?
                 olItem.UserProperties[CRMCategoryPropertyName].Value :
@@ -205,6 +210,25 @@ namespace SuiteCRMAddIn.Extensions
             }
 
             return mailArchive;
+        }
+
+
+        /// <summary>
+        /// The "HTML" which Outlook generates is diabolically bad, and CMS frequently chokes on it.
+        /// Convert it to valid HTML before dispatch.
+        /// </summary>
+        /// <param name="html">The HTML - possibly including vile Microsoft junk - to tidy.</param>
+        /// <returns>Nice clean XHTML.</returns>
+        private static string Tidy(string html)
+        {
+            using (Document doc = Document.FromString(html))
+            {
+                doc.ShowWarnings = false;
+                doc.Quiet = true;
+                doc.OutputXhtml = true;
+                doc.CleanAndRepair();
+                return doc.Save();
+            }
         }
 
 
@@ -320,21 +344,27 @@ namespace SuiteCRMAddIn.Extensions
             return result;
         }
 
+        public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason)
+        {
+            return Archive(olItem, reason, EmailArchiving.defaultModuleKeys);
+        }
 
         /// <summary>
         /// Archive this email item to CRM.
         /// </summary>
         /// <param name="olItem">The email item to archive.</param>
         /// <param name="reason">The reason it is being archived.</param>
+        /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
+        /// <param name="excludedEmails">email address(es) which should not be linked.</param>
         /// <returns>A result object indicating success or failure.</returns>
-        public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, string excludedEmails = "")
+        public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, IEnumerable<string> moduleKeys, string excludedEmails = "")
         {
             ArchiveResult result;
             Outlook.UserProperty olProperty = olItem.UserProperties[CrmIdPropertyName];
 
             if (olProperty == null)
             {
-                result = olItem.AsArchiveable(reason).Save(excludedEmails);
+                result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
                 
                 if (result.IsSuccess)
                 {

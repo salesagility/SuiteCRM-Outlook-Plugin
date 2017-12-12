@@ -46,7 +46,7 @@ lang_cmp.php
 packages/
 *.suo
 *.user
-
+.vs/
 obj
 bin
 
@@ -62,3 +62,11 @@ licencekey\.txt
 SuiteCRMAddIn/Documentation/html/
 
 SuiteCRMAddIn/Documentation/latex/
+
+*.pcapng
+
+*.xlsx
+
+*.psess
+
+*.vsp

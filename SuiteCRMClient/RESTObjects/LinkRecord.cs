@@ -20,16 +20,37 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.Exceptions
+namespace SuiteCRMClient.RESTObjects
 {
-    using System;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+    using System.Collections.Generic;
 
-    [Serializable]
-    public class CrmSaveDataException: Exception
+    public class LinkRecord
     {
-        public CrmSaveDataException(string message, Exception inner = null)
-            : base(message, inner)
+        /// <summary>
+        /// Underlying data for link records.
+        /// </summary>
+        private JObject recordsData;
+
+        /// <summary>
+        /// The processed link records.
+        /// </summary>
+        public NameValueCollection data;
+
+        [JsonProperty("link_value")]
+        public JObject link_value
         {
+            get
+            {
+                return this.recordsData;
+            }
+            set
+            {
+                this.recordsData = value;
+                this.data = new NameValueCollection(value);
+            }
         }
+
     }
 }

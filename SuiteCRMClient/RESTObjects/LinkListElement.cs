@@ -20,16 +20,26 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.Exceptions
+namespace SuiteCRMClient.RESTObjects
 {
-    using System;
+    using Newtonsoft.Json;
 
-    [Serializable]
-    public class CrmSaveDataException: Exception
+    /// <summary>
+    /// A `link_list`, part of a `relationship_list` retrieved by a
+    /// `link_names_to_fields_array` clause in an API query.
+    /// </summary>
+    public class LinkListElement
     {
-        public CrmSaveDataException(string message, Exception inner = null)
-            : base(message, inner)
-        {
-        }
+        /// <summary>
+        /// The name of the linked module
+        /// </summary>
+        [JsonProperty("name")]
+        public string name { get; set; }
+
+        /// <summary>
+        /// Linked records in that module.
+        /// </summary>
+        [JsonProperty("records")]
+        public LinkRecord[] records;
     }
 }

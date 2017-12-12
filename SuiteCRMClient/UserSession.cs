@@ -238,6 +238,7 @@ namespace SuiteCRMClient
                         @session = this.id
                     };
                     var objRet = this.restServer.GetCrmResponse<object>("logout", logoutData);
+                    _log.Debug("Logged out");
                 }
             }
             catch (Exception ex)

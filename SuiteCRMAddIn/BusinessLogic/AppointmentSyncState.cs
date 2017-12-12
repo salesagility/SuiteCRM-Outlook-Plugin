@@ -22,17 +22,78 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using SuiteCRMAddIn.ProtoItems;
+    using Extensions;
+    using ProtoItems;
+    using System.Linq;
+    using System.Text;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System;
+    using System.Collections.Generic;
+    using System.Runtime.InteropServices;
+    using SuiteCRMClient.Logging;
 
     public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
-        public AppointmentSyncState(string crmType)
+        public AppointmentSyncState()
         {
-            CrmType = crmType;
         }
 
-        public override string CrmType { get; }
+        /// <summary>
+        /// When we're asked for the CrmType the underlying object may have ceased to
+        /// exist - so cache it!
+        /// </summary>
+        private string crmType;
+
+
+        /// <summary>
+        /// The CRM type of the item I represent.
+        /// </summary>
+        public override string CrmType
+        {
+            get
+            {
+                try
+                {
+                    switch (olItem.MeetingStatus)
+                    {
+                        case Outlook.OlMeetingStatus.olNonMeeting:
+                            crmType = AppointmentSyncing.AltCrmModule;
+                            break;
+                        default:
+                            crmType = AppointmentSyncing.CrmModule;
+                            break;
+                    }
+                    return crmType;
+                }
+                catch (COMException)
+                {
+                    return crmType;
+                }
+                catch (Exception)
+                {
+                    return string.Empty;
+                }
+            }
+        }
+
+        public override string Description
+        {
+            get
+            {
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[AppointmentSyncing.CrmIdPropertyName];
+                string crmId = olPropertyEntryId == null ?
+                    "[not present]" :
+                    olPropertyEntryId.Value;
+                StringBuilder bob = new StringBuilder();
+                bob.Append($"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{olItem.Subject}'\n\tSensitivity : {olItem.Sensitivity}\n\tStatus     : {olItem.MeetingStatus}\n\tRecipients:\n");
+                foreach (Outlook.Recipient recipient in olItem.Recipients)
+                {
+                    bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()} - ({recipient.MeetingResponseStatus})\n");
+                }
+
+                return bob.ToString();
+            }
+        }
 
         public override string OutlookItemEntryId => OutlookItem.EntryID;
 
@@ -52,5 +113,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return new ProtoAppointment(outlookItem);
         }
+
+        public override void RemoveSynchronisationProperties()
+        {
+            olItem.ClearSynchronisationProperties();
+        }
+
     }
 }

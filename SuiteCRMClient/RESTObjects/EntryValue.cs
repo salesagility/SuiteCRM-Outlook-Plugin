@@ -34,15 +34,7 @@ namespace SuiteCRMClient.RESTObjects
         /// <summary>
         /// A map of my names/values.
         /// </summary>
-        private Dictionary<string, object> map = new Dictionary<string, object>();
-
-        /// <summary> 
-        /// It appears that CRM sends us back strings HTML escaped. 
-        /// </summary> 
-        private JsonSerializerSettings deserialiseSettings = new JsonSerializerSettings()
-        {
-            StringEscapeHandling = StringEscapeHandling.EscapeHtml
-        };
+        private Dictionary<string, object> map;
 
         [JsonProperty("id")]
         public string id { get; set; }
@@ -59,18 +51,11 @@ namespace SuiteCRMClient.RESTObjects
             set
             {
                 this.name_value_objectField = value;
-                this.name_value_list1 = new NameValueCollection();
-                foreach (object objField in value.ToArray<object>())
-                {
-                    string strFieldString = objField.ToString();
-                    strFieldString = strFieldString.Remove(0, strFieldString.IndexOf('{'));
-                    NameValue objActualField = JsonConvert.DeserializeObject<NameValue>(strFieldString, deserialiseSettings);
-                    this.name_value_list1.Add(objActualField);
-                    this.map[objActualField.name] = objActualField.value;
-                }
+                this.nameValueList = new NameValueCollection(value);
+                this.map = this.nameValueList.AsDictionary();
             }
         }
-        public NameValueCollection name_value_list1 { get; set; }
+        public NameValueCollection nameValueList { get; set; }
 
         public object GetValue(string key)
         {
@@ -78,7 +63,7 @@ namespace SuiteCRMClient.RESTObjects
 
             try
             {
-                result = this.map[key];
+                result = this.map == null ? null : this.map[key];
             }
             catch (Exception)
             {
@@ -86,6 +71,18 @@ namespace SuiteCRMClient.RESTObjects
 
             return result;
         }
+
+        /// <summary>
+        /// Get the binding for this name within this entry.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The binding.</returns>
+        public NameValue GetBinding(string name)
+        {
+            return this.nameValueList.GetBinding(name);
+        }
+
+        public RelationshipListElement relationships { get; set; }
 
         public string GetValueAsString(string key)
         {

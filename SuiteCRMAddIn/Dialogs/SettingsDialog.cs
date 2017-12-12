@@ -46,6 +46,11 @@ namespace SuiteCRMAddIn.Dialogs
 
         private Microsoft.Office.Interop.Outlook.Application Application => Globals.ThisAddIn.Application;
 
+        /// <summary>
+        /// The CRM URL value at the time the dialog was invoked.
+        /// </summary>
+        private string oldUrl = Properties.Settings.Default.Host;
+
         private bool ValidateDetails()
         {
             if (SafelyGetText(txtURL) == string.Empty)
@@ -239,13 +244,8 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 try
                 {
-                    if (txtURL.Text.EndsWith(@"/"))
-                    {
-                    }
-                    else
-                    {
-                        txtURL.Text = txtURL.Text + "/";
-                    }
+                    this.CheckUrlChanged(false);
+
                     if (SafelyGetText(txtLDAPAuthenticationKey) == string.Empty)
                     {
                         txtLDAPAuthenticationKey.Text = null;
@@ -332,15 +332,12 @@ namespace SuiteCRMAddIn.Dialogs
 
             try
             {
-                if (!SafelyGetText(txtURL).EndsWith(@"/"))
-                {
-                    txtURL.Text = SafelyGetText(txtURL) + "/";
-                }
+                CheckUrlChanged(true);
 
-				string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
-                if (LDAPAuthenticationKey== string.Empty)
+                string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
+                if (LDAPAuthenticationKey == string.Empty)
                 {
-					LDAPAuthenticationKey = null;
+                    LDAPAuthenticationKey = null;
                 }
 
                 /* save settings before, and regardless of, test that login succeeds. 
@@ -380,6 +377,28 @@ namespace SuiteCRMAddIn.Dialogs
             base.Close();
 
             this.SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Check whether the URL has changed; if it has, offer to clear down existing CRM ids.
+        /// </summary>
+        /// <param name="offerToClearCRMIds">
+        /// If true and the URL has changed, offer to clear the CRM ids.
+        /// </param>
+        private void CheckUrlChanged(bool offerToClearCRMIds)
+        {
+            var newUrl = SafelyGetText(txtURL);
+
+            if (!newUrl.EndsWith(@"/"))
+            {
+                txtURL.Text = newUrl + "/";
+                newUrl = SafelyGetText(txtURL);
+            }
+
+            if (offerToClearCRMIds && newUrl != oldUrl)
+            {
+                new ClearCrmIdsDialog(this.Log).ShowDialog();
+            }
         }
 
         /// <summary>

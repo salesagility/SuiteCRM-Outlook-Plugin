@@ -22,8 +22,11 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using SuiteCRMAddIn.ProtoItems;
+    using System;
+    using ProtoItems;
+    using Extensions;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Runtime.InteropServices;
 
     /// <summary>
     /// A SyncState for Contact items.
@@ -38,6 +41,19 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
 
+        public override string Description
+        {
+            get
+            {
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[Synchroniser<Outlook.TaskItem>.CrmIdPropertyName];
+                string crmId = olPropertyEntryId == null ?
+                    "[not present]" :
+                    olPropertyEntryId.Value;
+                return $"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject    : '{olItem.Subject}'\n\tStatus      : {olItem.Status}";
+            }
+        }
+
+
         public override void DeleteItem()
         {
             this.OutlookItem.Delete();
@@ -49,6 +65,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override ProtoItem<Outlook.TaskItem> CreateProtoItem(Outlook.TaskItem outlookItem)
         {
             return new ProtoTask(outlookItem);
+        }
+
+        public override void RemoveSynchronisationProperties()
+        {
+            olItem.ClearSynchronisationProperties();
         }
     }
 }

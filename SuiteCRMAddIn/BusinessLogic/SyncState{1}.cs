@@ -25,6 +25,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMAddIn.ProtoItems;
     using SuiteCRMClient.Logging;
     using System;
+    using System.Runtime.InteropServices;
 
     /// <summary>
     /// The sync state of an item of the specified type.
@@ -45,7 +46,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Backing store for the OutlookItem property.
         /// </summary>
-        private ItemType olItem;
+        protected ItemType olItem;
 
         /// <summary>
         /// The outlook item for which I maintain the synchronisation state.
@@ -77,7 +78,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal TransmissionState TxState { get; private set; } = TransmissionState.New;
 
         /// <summary>
-        /// The cache of the state of the item when it was first linked.
+        /// The cache of the state of the item when it was last synced.
         /// </summary>
         public ProtoItem<ItemType> Cache { get; private set; }
 
@@ -104,11 +105,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             else
             {
-                var older = this.Cache.AsNameValues(this.OutlookItemEntryId)
+                var older = this.Cache.AsNameValues(this.CrmEntryId)
                     .AsDictionary();
 
                 var current = this.CreateProtoItem(this.OutlookItem)
-                    .AsNameValues(this.OutlookItemEntryId)
+                    .AsNameValues(this.CrmEntryId)
                     .AsDictionary();
                 unchanged = older.Keys.Count.Equals(current.Keys.Count);
 
@@ -116,8 +117,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     foreach (string key in older.Keys)
                     {
-                        unchanged &= (older[key] == null && current[key] == null) ||
-                                        older[key].Equals(current[key]);
+                        unchanged &= current.ContainsKey(key) &&
+                            ((older[key] == null && current[key] == null) ||
+                                        older[key].Equals(current[key]));
                     }
                 }
             }
@@ -131,6 +133,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="outlookItem">The outlook item to copy.</param>
         /// <returns>the proto-item.</returns>
         internal abstract ProtoItem<ItemType> CreateProtoItem(ItemType outlookItem);
+
 
         /// <summary>
         /// Don't send updates immediately on change, to prevent jitter; don't send updates if nothing

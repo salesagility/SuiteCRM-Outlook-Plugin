@@ -20,16 +20,13 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.Exceptions
+namespace SuiteCRMClient.RESTObjects
 {
-    using System;
+    using Newtonsoft.Json;
 
-    [Serializable]
-    public class CrmSaveDataException: Exception
+    public class RelationshipListElement
     {
-        public CrmSaveDataException(string message, Exception inner = null)
-            : base(message, inner)
-        {
-        }
+        [JsonProperty("link_list")]
+        public LinkListElement[] link_list { get; set; }
     }
 }

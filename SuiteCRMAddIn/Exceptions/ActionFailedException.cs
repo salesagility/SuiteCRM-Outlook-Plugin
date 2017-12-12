@@ -20,16 +20,23 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient.Exceptions
+namespace SuiteCRMAddIn.Exceptions
 {
     using System;
 
-    [Serializable]
-    public class CrmSaveDataException: Exception
+    /// <summary>
+    /// An exception thrown if an action failed.
+    /// </summary>
+    public class ActionFailedException : Exception
     {
-        public CrmSaveDataException(string message, Exception inner = null)
-            : base(message, inner)
+        public ActionFailedException(string message) : base(message)
         {
+
+        }
+
+        public ActionFailedException(string message, Exception cause) : base( message, cause)
+        {
+
         }
     }
 }

@@ -22,11 +22,14 @@
 */
 namespace SuiteCRMAddIn.Daemon
 {
+    using Exceptions;
     using SuiteCRMAddIn.BusinessLogic;
+    using System.Net;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
     /// An action to transmit to the server an item which is a new item, and
-    /// does not already have a SyncState.
+    /// does not already have a valid CRM id.
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of item I transmit.</typeparam>
     public class TransmitNewAction<OutlookItemType> : AbstractDaemonAction
@@ -51,9 +54,42 @@ namespace SuiteCRMAddIn.Daemon
             }
         }
 
-        public override void Perform()
+        public override string Perform()
         {
-            this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType);
+            /* #223: ensure that the state has a crmId is null or empty.
+             * If not null or empty then this is not a new item: do nothing and exit. */
+            if (string.IsNullOrEmpty(syncState.CrmEntryId))
+            {
+                try {
+                    string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType);
+                    return $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
+                }
+                catch (WebException wex)
+                {
+                    if (wex.Status == WebExceptionStatus.ProtocolError)
+                    {
+                        using (HttpWebResponse response = wex.Response as HttpWebResponse)
+                        {
+                            switch (response.StatusCode)
+                            {
+                                case HttpStatusCode.RequestTimeout:
+                                case HttpStatusCode.ServiceUnavailable:
+                                    throw new ActionRetryableException($"Temporary error ({response.StatusCode})", wex);
+                                default:
+                                    throw new ActionFailedException($"Permanent error ({response.StatusCode})", wex);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new ActionRetryableException("Temporary network error", wex);
+                    }
+                }
+            }
+            else
+            {
+                return $"item was already synced as {syncState.CrmEntryId}; aborted.\n{this.syncState.Description}";
+            }
         }
     }
 }

@@ -22,8 +22,12 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System;
     using SuiteCRMAddIn.ProtoItems;
+    using Extensions;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Runtime.InteropServices;
+    using SuiteCRMClient.Logging;
 
     /// <summary>
     /// A SyncState for Contact items.
@@ -39,6 +43,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
 
         public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
+
+        public override string Description
+        {
+            get
+            {
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[Synchroniser<Outlook.ContactItem>.CrmIdPropertyName];
+                string crmId = olPropertyEntryId == null ?
+                    "[not present]" :
+                    olPropertyEntryId.Value;
+                return $"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tFull name   : '{olItem.FullName}'\n\tSensitivity : {olItem.Sensitivity}";
+            }
+        }
+
 
         /// <summary>
         /// Don't actually delete contact items from Outlook; instead, mark them private so they
@@ -56,5 +73,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return new ProtoContact(outlookItem);
         }
+
+        public override void RemoveSynchronisationProperties()
+        {
+            olItem.ClearSynchronisationProperties();
+        }
+
     }
 }

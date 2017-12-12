@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\NUnit3TestAdapter.3.9.0\build\net35\NUnit3TestAdapter.props" Condition="Exists('..\packages\NUnit3TestAdapter.3.9.0\build\net35\NUnit3TestAdapter.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <!--
     This section defines project-level properties.
@@ -47,6 +48,8 @@
     <FriendlyName>SuiteCRMAddIn</FriendlyName>
     <OfficeApplicationDescription />
     <LoadBehavior>3</LoadBehavior>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">
@@ -146,7 +149,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="NGettext, Version=0.6.1.0, Culture=neutral, PublicKeyToken=08d3d1c89dfd2985, processorArchitecture=MSIL">
-      <HintPath>..\packages\NGettext.0.6.2\lib\net45\NGettext.dll</HintPath>
+      <HintPath>..\packages\NGettext.0.6.3\lib\net45\NGettext.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -161,6 +164,10 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="TidyHTML5Managed, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\TidyHtml5ManagedRepack.1.1.4\lib\net45\TidyHTML5Managed.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Office.Tools.v4.0.Framework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
@@ -201,6 +208,8 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
+    <Compile Include="Daemon\UpdateMeetingAcceptancesAction.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -217,6 +226,12 @@
     <Compile Include="Daemon\FetchEmailCategoriesAction.cs" />
     <Compile Include="Daemon\TransmitNewAction.cs" />
     <Compile Include="Daemon\TransmitUpdateAction.cs" />
+    <Compile Include="Dialogs\ClearCrmIdsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ClearCrmIdsDialog.Designer.cs">
+      <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\Documentation.cs" />
     <Compile Include="Dialogs\ShuttingDownDialog.cs">
       <SubType>Form</SubType>
@@ -224,8 +239,14 @@
     <Compile Include="Dialogs\ShuttingDownDialog.Designer.cs">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Exceptions\ActionDisabledException.cs" />
+    <Compile Include="Exceptions\ActionFailedException.cs" />
+    <Compile Include="Exceptions\ActionRetryableException.cs" />
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
+    <Compile Include="Extensions\TaskItemExtension.cs" />
+    <Compile Include="Extensions\ContactItemExtension.cs" />
+    <Compile Include="Extensions\AppointmentItemExtension.cs" />
     <Compile Include="Extensions\Documentation.cs" />
     <Compile Include="Extensions\MailItemExtensions.cs" />
     <Compile Include="Extensions\RecipientExtensions.cs" />
@@ -306,6 +327,9 @@
     </Compile>
     <EmbeddedResource Include="Dialogs\AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ClearCrmIdsDialog.resx">
+      <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ShuttingDownDialog.resx">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
@@ -429,6 +453,8 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+    <Error Condition="!Exists('..\packages\NUnit3TestAdapter.3.9.0\build\net35\NUnit3TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit3TestAdapter.3.9.0\build\net35\NUnit3TestAdapter.props'))" />
+    <Error Condition="!Exists('..\packages\TidyHtml5ManagedRepack.1.1.4\build\TidyHtml5ManagedRepack.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\TidyHtml5ManagedRepack.1.1.4\build\TidyHtml5ManagedRepack.targets'))" />
   </Target>
   <UsingTask TaskName="BumpVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
@@ -440,8 +466,7 @@
       <Using Namespace="System" />
       <Using Namespace="System.IO" />
       <Using Namespace="System.Text.RegularExpressions" />
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[
+      <Code Type="Fragment" Language="cs"><![CDATA[
           /*
            * Read the version from the assembly file, increment it as directed, 
            * substitute it into the target file.
@@ -491,8 +516,7 @@
             Regex.Replace( File.ReadAllText(TargetFileName),
               oldVersion,
               newVersion));
-          ]]>
-      </Code>
+          ]]></Code>
     </Task>
   </UsingTask>
   <PropertyGroup>
@@ -510,34 +534,24 @@
     <Delete Files="$(DocDirectory)\*.tmp" />
   </Target>
   <Target Name="Bump">
-    <BumpVersion 
-      ReleaseLevel="$(ReleaseLevel)"
-      TargetFileName="..\SuiteCRMAddinSetup\SuiteCRMAddinSetup.isl"/>
-    <BumpVersion 
-      ReleaseLevel="$(ReleaseLevel)"
-      TargetFileName="..\SuiteCrmClient\Properties\AssemblyInfo.cs"/>
-    <BumpVersion 
-      ReleaseLevel="$(ReleaseLevel)"
-      TargetFileName="$(Doxyfile)"/>
-    <BumpVersion 
-      ReleaseLevel="$(ReleaseLevel)"
-      TargetFileName="..\README.md"/>
-    <BumpVersion 
-      ReleaseLevel="$(ReleaseLevel)"
-      TargetFileName="Properties\AssemblyInfo.cs"/>
+    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\SuiteCRMAddinSetup\SuiteCRMAddinSetup.isl" />
+    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\SuiteCrmClient\Properties\AssemblyInfo.cs" />
+    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\Doxyfile" />
+    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\README.md" />
+    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="Properties\AssemblyInfo.cs" />
   </Target>
-  <PropertyGroup>  
+  <PropertyGroup>
     <BuildDependsOn>  
       Bump;
       $(BuildDependsOn);  
       Doxygen  
-    </BuildDependsOn>  
-  </PropertyGroup> 
-  <PropertyGroup>  
+    </BuildDependsOn>
+  </PropertyGroup>
+  <PropertyGroup>
     <CleanDependsOn>  
       $(CleanDependsOn);  
       DoxyClean  
-    </CleanDependsOn>  
-  </PropertyGroup> 
-
+    </CleanDependsOn>
+  </PropertyGroup>
+  <Import Project="..\packages\TidyHtml5ManagedRepack.1.1.4\build\TidyHtml5ManagedRepack.targets" Condition="Exists('..\packages\TidyHtml5ManagedRepack.1.1.4\build\TidyHtml5ManagedRepack.targets')" />
 </Project>
