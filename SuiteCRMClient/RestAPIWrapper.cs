@@ -211,9 +211,12 @@ namespace SuiteCRMClient
         public static string GetUserId(string username)
         {
             string result = string.Empty;
-            EntryList list = GetEntryList("Users", $"user_name LIKE '%{MySqlEscape(username)}%'", 0, "id DESC", 0, false, new string[] { "id" });
+           
+            EntryList list = GetEntryList("Users", $"users.user_name LIKE '%{MySqlEscape(username)}%'", 0, "id DESC", 0, false, new string[] { "id" });
 
-            if (list.entry_list.Count<EntryValue>() > 0)
+            if (list != null && 
+                list.entry_list != null && 
+                list.entry_list.Count<EntryValue>() > 0)
             {
                 result = list.entry_list[0].id;
             }
@@ -366,28 +369,20 @@ namespace SuiteCRMClient
 
         public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
         {
+            string result;
+
             try
             {
-                EnsureLoggedIn();
-                object data = new
-                {
-                    @session = SuiteCRMUserSession.id,
-                    @module_name = MainModule,
-                    @module_id = ID,
-                    @link_field_name = ModuleToFind,
-                    @related_module_query = "",
-                    @related_fields = new string[] { "id" }
-                };
-                Relationships _result = SuiteCRMUserSession.RestServer.GetCrmResponse<Relationships>("get_relationships", data);
-                if (_result.entry_list.Length > 0)
-                    return _result.entry_list[0].id;
-                return "";
+                EntryValue[] entries = RestAPIWrapper.GetRelationships(MainModule, ID, ModuleToFind, new string[] { "id" });
+                result = entries.Length > 0 ? entries[0].id : string.Empty;
             }
             catch (System.Exception)
             {
                 // Swallow exception(!)
-                return "";
+                result = string.Empty;
             }
+
+            return result;
         }
 
         public static EntryValue[] GetRelationships(string MainModule, string ID, string ModuleToFind, string[] fields)
@@ -402,7 +397,12 @@ namespace SuiteCRMClient
                     @module_id = ID,
                     @link_field_name = ModuleToFind,
                     @related_module_query = "",
-                    @related_fields = fields
+                    @related_fields = fields,
+                    @related_module_link_name_to_fields_array = new object[] { },
+                    @deleted = false,
+                    @order_by = "",
+                    @offset = 0,
+                    @limit = false
                 };
                 Relationships _result = SuiteCRMUserSession.RestServer.GetCrmResponse<Relationships>("get_relationships", data);
                 
@@ -570,7 +570,8 @@ namespace SuiteCRMClient
                     } :
                     null,
                     @max_results = $"{limit}",
-                    @deleted = GetDeleted
+                    @deleted = GetDeleted,
+                    @favorites = false
                 };
                 result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.EntryList>("get_entry_list", data);
                 if (result.error != null)
@@ -780,31 +781,36 @@ namespace SuiteCRMClient
         /// </remarks>
         public static string[] GetSugarFields(string module)
         {
-            string[] strArray = new string[14];
-            if (module == null)
+            string[] result = new string[14];
+
+            switch (module)
             {
-                return strArray;
+                case "Calls":
+                    result = new string[] { "id", "name", "description", "date_start", "date_end",
+                        "date_modified", "duration_minutes", "duration_hours" };
+                    break;
+                case "Contacts":
+                    result = new string[] {"id", "first_name", "last_name", "email1", "phone_work",
+                        "phone_home", "title", "department", "primary_address_city", "primary_address_country",
+                        "primary_address_postalcode", "primary_address_state", "primary_address_street",
+                        "description", "user_sync", "date_modified", "account_name", "phone_mobile",
+                        "phone_fax", "salutation", "sync_contact" };
+                    break;
+                case "Meetings":
+                    result = new string[] { "id", "name", "description", "date_start", "date_end", "location",
+                        "date_modified", "duration_minutes", "duration_hours", "invitees", "assigned_user_id",
+                        "outlook_id" };
+                    break;
+                case "Tasks":
+                    result = new string[] { "id", "name", "description", "date_due", "status", "date_modified",
+                        "date_start", "priority", "assigned_user_id" };
+                    break;
+                default:
+                    result = new string[14];
+                    break;
             }
-            if (module == "Contacts")
-            {
-                return new string[] { 
-                    "id", "first_name", "last_name", "email1", "phone_work", "phone_home", "title", "department", "primary_address_city", "primary_address_country", "primary_address_postalcode", "primary_address_state", "primary_address_street", "description", "user_sync", "date_modified", 
-                    "account_name", "phone_mobile", "phone_fax", "salutation", "sync_contact"
-                 };
-            }
-            if (module == "Tasks")
-            {
-                return new string[] { "id", "name", "description", "date_due", "status", "date_modified", "date_start", "priority", "assigned_user_id" };
-            }
-            if (module == "Meetings")
-            {
-                return new string[] { "id", "name", "description", "date_start", "date_end", "location", "date_modified", "duration_minutes", "duration_hours", "invitees", "assigned_user_id", "outlook_id" };
-            }
-            if (module == "Calls")
-            {
-                return new string[] { "id", "name", "description", "date_start", "date_end", "date_modified", "duration_minutes", "duration_hours" };
-            }
-            return strArray;
+
+            return result;
         }
     }
 }

@@ -22,11 +22,14 @@
  */
 namespace SuiteCRMAddIn.Extensions
 {
+    using BusinessLogic;
     using Exceptions;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using TidyManaged;
     using Outlook = Microsoft.Office.Interop.Outlook;
@@ -167,21 +170,27 @@ namespace SuiteCRMAddIn.Extensions
             mailArchive.From = olItem.GetSenderSMTPAddress();
             mailArchive.To = string.Empty;
 
-            Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
+            Log.Info($"MailItemExtension.AsArchiveable: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
 
             foreach (Outlook.Recipient recipient in olItem.Recipients)
             {
                 string address = recipient.GetSmtpAddress();
 
-                if (mailArchive.To == string.Empty)
+                switch (recipient.Type)
                 {
-                    mailArchive.To = address;
-                }
-                else
-                {
-                    mailArchive.To += ";" + address;
+                    case (int)Outlook.OlMailRecipientType.olCC:
+                        mailArchive.CC = ExtendRecipientField(mailArchive.CC, address);
+                        break;
+                    case (int)Outlook.OlMailRecipientType.olBCC:
+                        // unlikely to happen and in any case we don't store these
+                        break;
+                    default:
+                        mailArchive.To = ExtendRecipientField(mailArchive.To, address);
+                        break;
                 }
             }
+
+            mailArchive.CC = olItem.CC;
 
             mailArchive.OutlookId = olItem.EnsureEntryID();
             mailArchive.Subject = olItem.Subject;
@@ -206,6 +215,11 @@ namespace SuiteCRMAddIn.Extensions
             }
 
             return mailArchive;
+        }
+
+        private static string ExtendRecipientField(string fieldContent, string address)
+        {
+            return string.IsNullOrEmpty(fieldContent) ? address : $"{fieldContent};{address}";
         }
 
 
@@ -340,21 +354,27 @@ namespace SuiteCRMAddIn.Extensions
             return result;
         }
 
+        public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason)
+        {
+            return Archive(olItem, reason, EmailArchiving.defaultModuleKeys.Select(x => new CrmEntity(x, null)));
+        }
 
         /// <summary>
         /// Archive this email item to CRM.
         /// </summary>
         /// <param name="olItem">The email item to archive.</param>
         /// <param name="reason">The reason it is being archived.</param>
+        /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
+        /// <param name="excludedEmails">email address(es) which should not be linked.</param>
         /// <returns>A result object indicating success or failure.</returns>
-        public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, string excludedEmails = "")
+        public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, IEnumerable<CrmEntity> moduleKeys, string excludedEmails = "")
         {
             ArchiveResult result;
             Outlook.UserProperty olProperty = olItem.UserProperties[CrmIdPropertyName];
 
             if (olProperty == null)
             {
-                result = olItem.AsArchiveable(reason).Save(excludedEmails);
+                result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
                 
                 if (result.IsSuccess)
                 {

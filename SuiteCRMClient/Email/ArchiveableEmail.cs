@@ -23,8 +23,10 @@
 namespace SuiteCRMClient.Email
 {
     using System;
+    using System.Linq;
     using System.Collections.Generic;
     using SuiteCRMClient.Logging;
+    using RESTObjects;
 
     /// <summary>
     /// A representation of an email which may be archived to CRM.
@@ -71,29 +73,32 @@ namespace SuiteCRMClient.Email
         }
 
         /// <summary>
-        /// Get contact ids of all email addresses in my From, To, or CC fields which 
-        /// are known to CRM and not included in these excluded addresses.
+        /// Get related ids from the modules with these moduleKeys, of all email addresses 
+        /// in my From, To, or CC fields which are known to CRM and not included in these 
+        /// excluded addresses.
         /// </summary>
+        /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
         /// <param name="contatenatedExcludedAddresses">A string containing zero or many email 
         /// addresses for which contact ids should not be returned.</param>
-        /// <returns>A list of strings representing CRM contact ids.</returns>
-        public List<string> GetValidContactIDs(string contatenatedExcludedAddresses = "")
+        /// <returns>A list of pairs strings representing CRM module keys and contact ids.</returns>
+        public IEnumerable<CrmEntity> GetRelatedIds(IEnumerable<string> moduleKeys, string contatenatedExcludedAddresses = "")
         {
-            return GetValidContactIds(ConstructAddressList(contatenatedExcludedAddresses.ToUpper()));
+            return GetRelatedIds(moduleKeys, ConstructAddressList(contatenatedExcludedAddresses.ToUpper()));
         }
 
         /// <summary>
         /// Get contact ids of all email addresses in my From, To, or CC fields which 
         /// are known to CRM and not included in these excluded addresses.
         /// </summary>
-        /// <param name="excludedAddresses">email addresses for which contact ids should 
+        /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
+        /// <param name="excludedAddresses">email addresses for which related ids should 
         /// not be returned.</param>
-        /// <returns>A list of strings representing CRM contact ids.</returns>
-        private List<string> GetValidContactIds(List<string> excludedAddresses)
+        /// <returns>A list of strings representing CRM ids.</returns>
+        private IEnumerable<CrmEntity> GetRelatedIds(IEnumerable<string> moduleKeys, IEnumerable<string> excludedAddresses)
         {
             RestAPIWrapper.EnsureLoggedIn(SuiteCRMUserSession);
 
-            List<string> result = new List<string>();
+            List<CrmEntity> result = new List<CrmEntity>();
             List<string> checkedAddresses = new List<string>();
 
             try
@@ -102,12 +107,18 @@ namespace SuiteCRMClient.Email
                 {
                     if (!checkedAddresses.Contains(address) && !excludedAddresses.Contains(address.ToUpper()))
                     {
-                        var contactReturn = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.Contacts>("get_entry_list",
-                            ConstructGetContactIdByAddressPacket(address));
+                        RESTObjects.IdsOnly contacts = null;
 
-                        if (contactReturn.entry_list != null && contactReturn.entry_list.Count > 0)
+                        foreach (string moduleKey in moduleKeys)
                         {
-                            result.Add(contactReturn.entry_list[0].id);
+                            contacts = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.IdsOnly>("get_entry_list",
+                            ConstructGetContactIdByAddressPacket(address, moduleKey));
+
+
+                            if (contacts.entry_list != null && contacts.entry_list.Count > 0)
+                            {
+                                result.AddRange(contacts.entry_list.Select(x => new CrmEntity(moduleKey, x.id)));
+                            }
                         }
                     }
                     checkedAddresses.Add(address);
@@ -134,36 +145,45 @@ namespace SuiteCRMClient.Email
         private static List<string> ConstructAddressList(string contatenatedAddresses)
         {
             List<string> addresses = new List<string>();
-            addresses.AddRange(contatenatedAddresses.Split(',', ';', '\n', ':', ' ', '\t'));
+            addresses.AddRange(contatenatedAddresses
+                .Split(',', ';', '\n', '\r', ':', ' ', '\t')
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim()));
             return addresses;
         }
 
-        private object ConstructGetContactIdByAddressPacket(string address)
+        private object ConstructGetContactIdByAddressPacket(string address, string moduleKey)
         {
+            string tableName = ModuleToTableResolver.GetTableName(moduleKey);
             return new
             {
-                @session = SuiteCRMUserSession.id,
-                @module_name = "Contacts",
-                @query = GetContactIDQuery(address),
-                @order_by = "",
-                @offset = 0,
-                @select_fields = new string[] { "id" },
-                @max_results = 1
+                session = SuiteCRMUserSession.id,
+                module_name = tableName,
+                query = GetContactIDQuery(address, tableName),
+                order_by = "",
+                offset = 0,
+                select_fields = new string[] { "id" },
+                max_results = 1,
+                deleted = false,
+                favorites = false
             };
         }
 
-        private string GetContactIDQuery(string strEmail)
+        private string GetContactIDQuery(string address, string tableName)
         {
-            return "contacts.id in (SELECT eabr.bean_id FROM email_addr_bean_rel eabr JOIN email_addresses ea ON (ea.id = eabr.email_address_id) WHERE eabr.deleted=0 and ea.email_address = '" + strEmail + "')";
+            return $"{tableName.ToLower()}.id in (SELECT eabr.bean_id FROM email_addr_bean_rel eabr JOIN email_addresses ea ON (ea.id = eabr.email_address_id) WHERE eabr.deleted=0 and ea.email_address = '{address}')";
         }
 
         /// <summary>
         /// Save my email to CRM, if it relates to any valid contacts.
         /// </summary>
         /// <param name="excludedEmails">Emails of contacts with which it should not be related.</param>
-        public ArchiveResult Save(string excludedEmails = "")
+        /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
+        public ArchiveResult Save(IEnumerable<CrmEntity> relatedRecords, string excludedEmails = "")
         {
-            return Save(GetValidContactIDs(excludedEmails));
+            IEnumerable<CrmEntity> withIds = relatedRecords.Where(x => !string.IsNullOrEmpty(x.EntityId));
+            IEnumerable<CrmEntity> foundIds = GetRelatedIds(relatedRecords.Where(x => string.IsNullOrEmpty(x.EntityId)).Select(x => x.ModuleName), excludedEmails);
+            return Save(withIds.Union(foundIds));
         }
 
 
@@ -175,12 +195,12 @@ namespace SuiteCRMClient.Email
         /// trying first with the HTML body, and if that failed trying again with it empty. The other did not. 
         /// I have no idea whether there is a benefit of this two-attempt strategy.
         /// </remarks>
-        /// <param name="crmContactIds">The contact ids to link with.</param>
-        public ArchiveResult Save(List<string> crmContactIds)
+        /// <param name="relatedRecords">CRM module names/ids of records to which I should be related.</param>
+        public ArchiveResult Save(IEnumerable<CrmEntity> relatedRecords)
         {
             ArchiveResult result;
 
-            if (crmContactIds.Count == 0)
+            if (relatedRecords.Count() == 0)
             {
                 result = ArchiveResult.Failure(
                     new[] { new Exception("Found no related entities in CRM to link with") });
@@ -189,7 +209,7 @@ namespace SuiteCRMClient.Email
             {
                 try
                 {
-                    result = TrySave(crmContactIds, this.HTMLBody, null);
+                    result = TrySave(relatedRecords, this.HTMLBody, null);
                 }
                 catch (Exception firstFail)
                 {
@@ -197,7 +217,7 @@ namespace SuiteCRMClient.Email
 
                     try
                     {
-                        result = TrySave(crmContactIds, string.Empty, new[] { firstFail });
+                        result = TrySave(relatedRecords, string.Empty, new[] { firstFail });
                     }
                     catch (Exception secondFail)
                     {
@@ -214,22 +234,89 @@ namespace SuiteCRMClient.Email
         /// <summary>
         /// Attempt to save me given these contact Ids and this HTML body, taking note of these previous failures.
         /// </summary>
-        /// <param name="contactIds">CRM ids of contacts to which I should be related.</param>
+        /// <param name="relatedRecords">CRM module names/ids of records to which I should be related.</param>
         /// <param name="htmlBody">The HTML body with which I should be saved.</param>
         /// <param name="fails">Any previous failures in attempting to save me.</param>
         /// <returns>An archive result object describing the outcome of this attempt.</returns>
-        private ArchiveResult TrySave(List<string> contactIds, string htmlBody, Exception[] fails)
+        private ArchiveResult TrySave(IEnumerable<CrmEntity> relatedRecords, string htmlBody, Exception[] fails)
         {
             var restServer = SuiteCRMUserSession.RestServer;
             var emailResult = restServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry",
                ConstructPacket(htmlBody));
             ArchiveResult result = ArchiveResult.Success(emailResult.id, fails);
 
-            SaveContacts(contactIds, emailResult);
-
-            SaveAttachments(emailResult);
+            if (result.IsSuccess)
+            {
+                LinkRelatedRecords(relatedRecords, emailResult);
+                SaveAttachments(emailResult);
+            }
 
             return result;
+        }
+
+        /// <summary>
+        /// Relate this email result (presumed to represent me) in CRM to these related records.
+        /// </summary>
+        /// <param name="relatedRecords">The records which should be related to my email result.</param>
+        /// <param name="emailResult">An email result (presumed to represent me).</param>
+        private void LinkRelatedRecords(IEnumerable<CrmEntity> relatedRecords, RESTObjects.SetEntryResult emailResult)
+        {
+            var restServer = SuiteCRMUserSession.RestServer;
+
+            foreach (CrmEntity record in relatedRecords)
+            {
+                try
+                {
+                    var success = RestAPIWrapper.TrySetRelationship(
+                        new SetRelationshipParams
+                        {
+                            module2 = "emails",
+                            module2_id = emailResult.id,
+                            module1 = ModuleToTableResolver.GetTableName(record.ModuleName),
+                            module1_id = record.EntityId,
+                        }, Objective.Email);
+
+                    if (success)
+                    {
+                        log.Debug($"Successfully bound {record.ModuleName} '{record.EntityId}' to email '{emailResult.id}' in CRM");
+                    }
+                    else
+                    {
+                        log.Warn($"Failed to bind {record.ModuleName} '{record.EntityId}' to email '{emailResult.id}' in CRM");
+                    }
+                }
+                catch (Exception any)
+                {
+                    log.Error($"Failed to bind {record.ModuleName} '{record.EntityId}' to email '{emailResult.id}' in CRM", any);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Construct a packet representing my email.
+        /// </summary>
+        /// <returns>A packet which, when transmitted to CRM, will instantiate my email.</returns>
+        private object ConstructPacket(string htmlBody)
+        {
+            EmailPacket emailData = new EmailPacket();
+
+            emailData.MaybeAddField("from_addr_name", this.From);
+            emailData.MaybeAddField("to_addrs_names", this.To, true);
+            emailData.MaybeAddField("cc_addrs_names", this.CC, true);
+            emailData.MaybeAddField("name", this.Subject);
+            emailData.MaybeAddField("date_sent", this.Sent.ToString(EmailDateFormat));
+            emailData.MaybeAddField("description", this.Body);
+            emailData.MaybeAddField("description_html", htmlBody);
+            emailData.MaybeAddField("assigned_user_id", RestAPIWrapper.GetUserId());
+            emailData.MaybeAddField("category_id", this.Category);
+            emailData.MaybeAddField("message_id", this.OutlookId);
+
+            return new
+            {
+                @session = SuiteCRMUserSession.id,
+                @module_name = "Emails",
+                @name_value_list = emailData
+            };
         }
 
 
@@ -253,110 +340,26 @@ namespace SuiteCRMClient.Email
             }
         }
 
-        /// <summary>
-        /// Relate this email result (presumed to represent me) in CRM to these contact ids.
-        /// </summary>
-        /// <param name="crmContactIds">The contact ids which should be related to my email result.</param>
-        /// <param name="emailResult">An email result (presumed to represent me).</param>
-        private void SaveContacts(List<string> crmContactIds, RESTObjects.SetEntryResult emailResult)
-        {
-            var restServer = SuiteCRMUserSession.RestServer;
-
-            foreach (string contactId in crmContactIds)
-            {
-                try
-                {
-                    restServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship",
-                        ConstructContactRelationshipPacket(emailResult.id, contactId));
-                }
-                catch (Exception any)
-                {
-                    log.Error($"Failed to bind contact '{contactId}' to email '{emailResult.id}' in CRM", any);
-                }
-            }
-        }
 
         /// <summary>
-        /// Construct a packet representing my email.
+        /// Relate the email and the attachment
         /// </summary>
-        /// <returns>A packet which, when transmitted to CRM, will instantiate my email.</returns>
-        private object ConstructPacket(string htmlBody)
+        /// <param name="emailId"></param>
+        /// <param name="attachmentId"></param>
+        /// <returns></returns>
+        private bool BindAttachmentInCrm(string emailId, string attachmentId)
         {
-            List<RESTObjects.NameValue> emailData = new List<RESTObjects.NameValue>
-            {
-                new RESTObjects.NameValue() {name = "from_addr", value = this.From},
-                new RESTObjects.NameValue() {name = "to_addrs", value = this.To.Replace("\n", "")},
-                new RESTObjects.NameValue() {name = "name", value = this.Subject},
-                new RESTObjects.NameValue() {name = "date_sent", value = this.Sent.ToString(EmailDateFormat)},
-                new RESTObjects.NameValue() {name = "description", value = this.Body},
-                new RESTObjects.NameValue() {name = "description_html", value = htmlBody},
-                new RESTObjects.NameValue() {name = "assigned_user_id", value = RestAPIWrapper.GetUserId()},
-                new RESTObjects.NameValue() {name = "status", value = "archived"},
-                new RESTObjects.NameValue() {name = "category_id", value = this.Category},
-                new RESTObjects.NameValue() {name = "message_id", value = this.OutlookId }
-            };
-
-            return new
-            {
-                @session = SuiteCRMUserSession.id,
-                @module_name = "Emails",
-                @name_value_list = emailData
-            };
+            return RestAPIWrapper.TrySetRelationship(
+                        new SetRelationshipParams
+                        {
+                            module2 = "emails",
+                            module2_id = emailId,
+                            module1 = "notes",
+                            module1_id = attachmentId,
+                        }, Objective.Email);
         }
 
-        private void BindAttachmentInCrm(string emailId, string attachmentId)
-        {
-            //Relate the email and the attachment
-            SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship",
-                ConstructAttachmentRelationshipPacket(emailId, attachmentId));
-        }
-
-        /// <summary>
-        /// Construct a packet representing the relationship between the email represented 
-        /// by this email id and the attachment represented by this attachment id.
-        /// </summary>
-        /// <param name="emailId">The id of the email.</param>
-        /// <param name="attachmentId">The id of the attachment.</param>
-        /// <returns>A packet which, when transmitted to CRM, will instantiate this relationship.</returns>
-        private object ConstructAttachmentRelationshipPacket(string emailId, string attachmentId)
-        {
-            return ConstructRelationshipPacket(emailId, attachmentId, "Emails", "notes");
-        }
-
-        /// <summary>
-        /// Construct a packet representing the relationship between the email represented 
-        /// by this email id and the contact represented by this contact id.
-        /// </summary>
-        /// <param name="emailId">The id of the email.</param>
-        /// <param name="contactId">The id of the contact.</param>
-        /// <returns>A packet which, when transmitted to CRM, will instantiate this relationship.</returns>
-        private object ConstructContactRelationshipPacket(string emailId, string contactId)
-        {
-            return ConstructRelationshipPacket(contactId, emailId, "Contacts", "emails");
-        }
-
-        /// <summary>
-        /// Construct a packet representing the relationship between the object represented 
-        /// by this module id in the module with this module name and the object in the foreign
-        /// module linked through this link field represented by this foreign id.
-        /// </summary>
-        /// <param name="moduleId">The id of the record in the named module.</param>
-        /// <param name="foreignId">The id of the record in the foreign module.</param>
-        /// <param name="moduleName">The name of the module in which the record is to be created.</param>
-        /// <param name="linkField">The name of the link field in the named module which links to the foreign module.</param>
-        /// <returns>A packet which, when transmitted to CRM, will instantiate this relationship.</returns>
-        private object ConstructRelationshipPacket(string moduleId, string foreignId, string moduleName, string linkField)
-        {
-            return new
-            {
-                session = SuiteCRMUserSession.id,
-                module_name = moduleName,
-                module_id = moduleId,
-                link_field_name = linkField,
-                related_ids = new string[] { foreignId }
-            };
-        }
-
+ 
         /// <summary>
         /// Transmit this attachment packet to CRM.
         /// </summary>
@@ -401,6 +404,21 @@ namespace SuiteCRMClient.Email
             };
 
             return attachmentDataWebFormat;
+        }
+
+        private class EmailPacket : List<RESTObjects.NameValue>
+        {
+            public void MaybeAddField(string fieldName, string fieldValue, bool replaceCRs = false)
+            {
+                if (!string.IsNullOrWhiteSpace(fieldValue))
+                {
+                    this.Add(new RESTObjects.NameValue()
+                    {
+                        name = fieldName,
+                        value = replaceCRs ? fieldValue.Replace("\n", "") : fieldValue
+                    });
+                }
+            }
         }
     }
 }

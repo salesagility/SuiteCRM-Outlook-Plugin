@@ -24,7 +24,10 @@ namespace SuiteCRMAddIn.Daemon
 {
     using BusinessLogic;
     using Exceptions;
+    using SuiteCRMClient.Logging;
     using System.Net;
+    using System.Runtime.InteropServices;
+    using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
     /// An action to transmit to the server an item which is not a new item, but
@@ -43,6 +46,7 @@ namespace SuiteCRMAddIn.Daemon
         /// </summary>
         private SyncState<OutlookItemType> state;
 
+
         /// <summary>
         /// Create a new instance of the TrensmitUpdateItem class, wrapping this state.
         /// </summary>
@@ -53,6 +57,28 @@ namespace SuiteCRMAddIn.Daemon
             state.SetQueued();
             this.synchroniser = synchroniser;
             this.state = state;
+
+            SyncState<Outlook.AppointmentItem> meeting = state as SyncState<Outlook.AppointmentItem>;
+
+            if (meeting != null)
+            {
+                ILogger log = Globals.ThisAddIn.Log;
+                try
+                {
+                    switch (meeting.OutlookItem.MeetingStatus) {
+                        case Outlook.OlMeetingStatus.olMeetingCanceled:
+                            log.Info($"TransmitUpdateAction: registered meeting {state.Description} cancelled");
+                            break;
+                        case Microsoft.Office.Interop.Outlook.OlMeetingStatus.olMeetingReceivedAndCanceled:
+                            log.Info($"TransmitUpdateAction: registered meeting {state.Description} received and cancelled");
+                            break;
+                    }
+                }
+                catch (COMException comx)
+                {
+                    log.Error($"Item missing? HResult = {comx.HResult}", comx);
+                }
+            }
         }
 
 
@@ -60,7 +86,15 @@ namespace SuiteCRMAddIn.Daemon
         {
             get
             {
-                return $"{this.GetType().Name} ({state.CrmType} {state.CrmEntryId})";
+                try
+                {
+                    return $"{this.GetType().Name} ({state.CrmType} {state.Description})";
+                }
+                catch (COMException comx)
+                {
+                    Globals.ThisAddIn.Log.Error($"Item missing? HResult = {comx.HResult}", comx);
+                    return $"{this.GetType().Name} ({state.CrmType} - possibly cancelled meeting?";
+                }
             }
         }
 
@@ -69,7 +103,16 @@ namespace SuiteCRMAddIn.Daemon
         {
             try
             {
-                synchroniser.AddOrUpdateItemFromOutlookToCrm(state);
+                try
+                {
+                    var id = state.CrmEntryId;
+                    synchroniser.AddOrUpdateItemFromOutlookToCrm(state);
+                }
+                catch (COMException comx)
+                {
+                    Globals.ThisAddIn.Log.Error($"Item missing? HResult = {comx.HResult}", comx);
+                    synchroniser.HandleItemMissingFromOutlook(state);
+                }
 
                 return "Synced.";
             }

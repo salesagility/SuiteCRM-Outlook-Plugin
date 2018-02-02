@@ -65,8 +65,8 @@ SuiteCRMAddIn/Documentation/latex/
 
 *.pcapng
 
-*.vsp
+*.xlsx
 
 *.psess
 
-*.xlsx
+*.vsp

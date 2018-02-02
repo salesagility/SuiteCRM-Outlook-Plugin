@@ -54,6 +54,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public const string EmailDateFormat = "yyyy-MM-dd HH:mm:ss";
 
+        /// <summary>
+        /// The modules to which we'll try to save if no more specific list of modules is specified.
+        /// </summary>
+        public static readonly List<string> defaultModuleKeys = new List<string>() { ContactSyncing.CrmModule, "Leads" };
+
         public EmailArchiving(string name, ILogger log) : base(name, log)
         {
         }
@@ -87,32 +92,99 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private void ArchiveFolderItems(Outlook.Folder objFolder, DateTime minReceivedDateTime)
         {
+            this.ArchiveFolderItems(objFolder, minReceivedDateTime, defaultModuleKeys);
+        }
+
+
+        /// <summary>
+        /// Archive items in the specified folder which are email items, and which have been 
+        /// received since the specified date.
+        /// </summary>
+        /// <remarks>
+        /// I don't understand all of this. I particularly don't understand why we ever call it 
+        /// on folders whose content are not mail items.
+        /// </remarks>
+        /// <param name="folder">The folder to archive.</param>
+        /// <param name="minReceivedDateTime">The date to search from.</param>
+        /// <param name="moduleKeys">The keys of the modules to which we'll seek to relate the archived item.</param>
+        private void ArchiveFolderItems(Outlook.Folder folder, DateTime minReceivedDateTime, IEnumerable<string> moduleKeys)
+        {
             try
             {
-                var unreadEmails = objFolder.Items.Restrict(
-                        $"[ReceivedTime] >= \'{minReceivedDateTime.AddDays(-1):yyyy-MM-dd HH:mm}\'");
+                /* safe but undesirable fallback - if we cannot identify a property to restrict by,
+                 * search the whole folder */
+                Outlook.Items candidateItems = folder.Items;
 
-                for (int i = 1; i <= unreadEmails.Count; i++)
+                if (folder.DefaultItemType == Outlook.OlItemType.olMailItem)
                 {
-                    var olItem = unreadEmails[i] as Outlook.MailItem;
-                    if (olItem != null)
+                    foreach (string property in new string[] { "ReceivedTime", "LastModificationTime" })
                     {
                         try
                         {
-                            olItem.Archive(EmailArchiveReason.Inbound);
+                            candidateItems = folder.Items.Restrict(
+                              $"[{property}] >= \'{minReceivedDateTime.AddDays(-1):yyyy-MM-dd HH:mm}\'");
+                            break;
                         }
-                        catch (Exception any)
+                        catch (COMException)
                         {
-                            Log.Error($"Failed to archive email '{olItem.Subject}' from '{olItem.GetSenderSMTPAddress()}", any);
+                            Log.Warn($"EmailArchiving.ArchiveFolderItems; Items in folder {folder.Name} do not have a {property} property");
                         }
                     }
+
+
+                    foreach (var candidate in candidateItems)
+                    {
+                        var comType = Microsoft.VisualBasic.Information.TypeName(candidate);
+                        
+                        
+                        switch (comType)
+                        {
+                            case "MailItem":
+                                ArchiveMailItem(candidate, moduleKeys);
+                                break;
+                            case "MeetingItem":
+                            case "ReportItem":
+                                Log.Debug($"EmailArchiving.ArchiveFolderItems; candidate is a '{comType}', we don't archive these");
+                                break;
+                            default:
+                                Log.Debug($"EmailArchiving.ArchiveFolderItems; candidate is a '{comType}', don't know how to archive these");
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    Log.Debug($"EmailArchiving.ArchiveFolderItems; Folder {folder.Name} does not contain mail items, not archiving");
                 }
             }
             catch (Exception ex)
             {
-                Log.Error($"EmailArchiving.ArchiveFolderItems; folder {objFolder.Name}:", ex);
+                Log.Error($"EmailArchiving.ArchiveFolderItems; folder {folder.Name}:", ex);
             }
         }
+
+
+        /// <summary>
+        /// Archive an item believed to be an Outlook.MailItem.
+        /// </summary>
+        /// <param name="item">The item to archive.</param>
+        /// <param name="moduleKeys">Keys of module(s) to relate the item to.</param>
+        private void ArchiveMailItem(object item, IEnumerable<string> moduleKeys)
+        {
+            var olItem = item as Outlook.MailItem;
+            if (olItem != null)
+            {
+                try
+                {
+                    olItem.Archive(EmailArchiveReason.Inbound, moduleKeys.Select(x => new CrmEntity(x, null)));
+                }
+                catch (Exception any)
+                {
+                    Log.Error($"EmailArchiving.ArchiveFolderItems; Failed to archive MailItem '{olItem.Subject}' from '{olItem.GetSenderSMTPAddress()}", any);
+                }
+            }
+        }
+
 
         public void ProcessEligibleNewMailItem(Outlook.MailItem olItem, EmailArchiveReason reason, string excludedEmails = "")
         {
@@ -125,7 +197,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (EmailShouldBeArchived(reason, parentFolder.Store))
             {
-                olItem.Archive(reason, excludedEmails);
+                olItem.Archive(reason, defaultModuleKeys.Select(x => new CrmEntity(x, null)), excludedEmails);
             }
             else
             {
@@ -209,36 +281,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public ArchiveResult ArchiveEmailWithEntityRelationships(Outlook.MailItem olItem, IEnumerable<CrmEntity> selectedCrmEntities, EmailArchiveReason reason)
         {
-            var result = olItem.Archive(reason);
-            if (result.IsSuccess)
-            {
-                var warnings = CreateEmailRelationshipsWithEntities(result.EmailId, selectedCrmEntities);
-                result = ArchiveResult.Success(
-                    result.EmailId,
-                    result.Problems == null ?
-                    warnings :
-                    result.Problems.Concat(warnings));
-            }
-
-            return result;
-        }
-
-        private IList<System.Exception> CreateEmailRelationshipsWithEntities(string crmMailId, IEnumerable<CrmEntity> selectedCrmEntities)
-        {
-            var failures = new List<System.Exception>();
-            foreach (CrmEntity entity in selectedCrmEntities)
-            {
-                try
-                {
-                    CreateEmailRelationshipOrFail(crmMailId, entity);
-                }
-                catch (System.Exception failure)
-                {
-                    Log.Error("CreateEmailRelationshipsWithEntities", failure);
-                    failures.Add(failure);
-                }
-            }
-            return failures;
+            return olItem.Archive(reason, selectedCrmEntities);
         }
 
         private void SaveMailItemIfNecessary(Outlook.MailItem olItem, EmailArchiveReason reason)
