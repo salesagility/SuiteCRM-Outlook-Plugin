@@ -29,6 +29,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System;
     using System.Collections.Generic;
+    using System.Runtime.InteropServices;
+    using SuiteCRMClient.Logging;
 
     public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
@@ -36,6 +38,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
         }
 
+        /// <summary>
+        /// When we're asked for the CrmType the underlying object may have ceased to
+        /// exist - so cache it!
+        /// </summary>
+        private string crmType;
+
+
+        /// <summary>
+        /// The CRM type of the item I represent.
+        /// </summary>
         public override string CrmType
         {
             get
@@ -45,10 +57,17 @@ namespace SuiteCRMAddIn.BusinessLogic
                     switch (olItem.MeetingStatus)
                     {
                         case Outlook.OlMeetingStatus.olNonMeeting:
-                            return AppointmentSyncing.AltCrmModule;
+                            crmType = AppointmentSyncing.AltCrmModule;
+                            break;
                         default:
-                            return AppointmentSyncing.CrmModule;
+                            crmType = AppointmentSyncing.CrmModule;
+                            break;
                     }
+                    return crmType;
+                }
+                catch (COMException)
+                {
+                    return crmType;
                 }
                 catch (Exception)
                 {
@@ -85,51 +104,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void DeleteItem()
         {
             this.OutlookItem.Delete();
-        }
-
-
-        /// <summary>
-        /// An appointment may be changed because its recipients have changed.
-        /// </summary>
-        /// <returns>True if the underlying item has changed, or its recipients have changed.</returns>
-        protected override bool ReallyChanged()
-        {
-            var result = base.ReallyChanged();
-
-            ProtoItem older = this.Cache as ProtoAppointment;
-
-            if (older != null)
-            {
-                var currentAddresses = new HashSet<string>();
-                var olderAddresses = new List<string>();
-                olderAddresses.AddRange(((ProtoAppointment)older).RecipientAddresses);
-
-                foreach (Outlook.Recipient recipient in olItem.Recipients)
-                {
-                    currentAddresses.Add(recipient.GetSmtpAddress());
-                }
-                if (currentAddresses.Count == olderAddresses.Count)
-                {
-                    var sorted = new List<string>();
-                    sorted.AddRange(currentAddresses);
-                    sorted.Sort();
-
-                    for (int i = 0; i < sorted.Count; i++)
-                    {
-                        if (sorted[i] != olderAddresses[i])
-                        {
-                            result = true;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    result = true;
-                }
-            }
-
-            return result;
         }
 
         /// <summary>

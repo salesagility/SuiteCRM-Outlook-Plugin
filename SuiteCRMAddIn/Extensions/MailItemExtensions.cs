@@ -190,6 +190,8 @@ namespace SuiteCRMAddIn.Extensions
                 }
             }
 
+            mailArchive.CC = olItem.CC;
+
             mailArchive.OutlookId = olItem.EnsureEntryID();
             mailArchive.Subject = olItem.Subject;
             mailArchive.Sent = olItem.ArchiveTime(reason);

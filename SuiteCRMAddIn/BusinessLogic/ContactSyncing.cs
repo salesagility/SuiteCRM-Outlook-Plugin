@@ -51,21 +51,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncContacts;
 
-        /// <summary>
-        /// The actual transmission lock object of this synchroniser.
-        /// </summary>
-        private object txLock = new object();
-
-        /// <summary>
-        /// Allow my parent class to access my transmission lock object.
-        /// </summary>
-        protected override object TransmissionLock
-        {
-            get
-            {
-                return txLock;
-            }
-        }
 
         public override string DefaultCrmModule
         {

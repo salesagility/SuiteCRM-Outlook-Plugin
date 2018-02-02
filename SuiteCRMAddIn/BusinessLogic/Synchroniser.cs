@@ -71,6 +71,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected object enqueueingLock = new object();
 
         /// <summary>
+        /// A lock on the creation of new objects in Outlook.
+        /// </summary>
+        protected object creationLock = new object();
+
+        /// <summary>
+        /// The actual transmission lock object of this synchroniser.
+        /// </summary>
+        protected object transmissionLock = new object();
+
+        /// <summary>
         /// The prefix for the fetch query, used in FetchRecordsFromCrm, q.v.
         /// </summary>
         protected string fetchQueryPrefix;
@@ -226,10 +236,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// We need to prevent two simultaneous transmissions of the same object, so it's probably unsafe
         /// to have two threads transmitting contact items at the same time. But there's no reason why
         /// we should not transmit contact items and task items at the same time, for example. So each
-        /// Synchorniser subclass will have its own transmission lock.
+        /// Synchroniser instance will have its own transmission lock.
         /// </summary>
         /// <returns>A transmission lock.</returns>
-        protected abstract object TransmissionLock { get; }
+        protected object TransmissionLock
+        {
+            get
+            {
+                return transmissionLock;
+            }
+        }
+
 
         /// <summary>
         /// Get a date stamp for midnight five days ago (why?).
@@ -314,6 +331,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             var toDeleteFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
             var toCreateOnCrmServer = itemsCopy.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
+            var missingFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.IsDeletedInOutlook && a.CrmType == crmModule).ToList();
 
             foreach (var syncState in toDeleteFromOutlook)
             {
@@ -322,9 +340,22 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             foreach (var syncState in toCreateOnCrmServer)
             {
-                AddOrUpdateItemFromOutlookToCrm(syncState, crmModule);
+                AddOrUpdateItemFromOutlookToCrm(syncState);
             }
         }
+
+
+        /// <summary>
+        /// Deal with an item which used to exist in Outlook but which no longer does.
+        /// The default behaviour is to remove it from CRM.
+        /// </summary>
+        /// <param name="syncState">The dangling syncState of the missing item.</param>
+        internal virtual void HandleItemMissingFromOutlook(SyncState<OutlookItemType> syncState)
+        {
+            this.RemoveFromCrm(syncState);
+            this.RemoveItemSyncState(syncState);
+        }
+
 
         /// <summary>
         /// Perform all the necessary checking before adding or updating an item on CRM.

@@ -244,13 +244,8 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 try
                 {
-                    if (txtURL.Text.EndsWith(@"/"))
-                    {
-                    }
-                    else
-                    {
-                        txtURL.Text = txtURL.Text + "/";
-                    }
+                    this.CheckUrlChanged(false);
+
                     if (SafelyGetText(txtLDAPAuthenticationKey) == string.Empty)
                     {
                         txtLDAPAuthenticationKey.Text = null;
@@ -337,7 +332,7 @@ namespace SuiteCRMAddIn.Dialogs
 
             try
             {
-                CheckUrlChanged();
+                CheckUrlChanged(true);
 
                 string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
                 if (LDAPAuthenticationKey == string.Empty)
@@ -387,18 +382,22 @@ namespace SuiteCRMAddIn.Dialogs
         /// <summary>
         /// Check whether the URL has changed; if it has, offer to clear down existing CRM ids.
         /// </summary>
-        private void CheckUrlChanged()
+        /// <param name="offerToClearCRMIds">
+        /// If true and the URL has changed, offer to clear the CRM ids.
+        /// </param>
+        private void CheckUrlChanged(bool offerToClearCRMIds)
         {
             var newUrl = SafelyGetText(txtURL);
-
-            if (newUrl != oldUrl)
-            {
-                new ClearCrmIdsDialog(this.Log).ShowDialog();
-            }
 
             if (!newUrl.EndsWith(@"/"))
             {
                 txtURL.Text = newUrl + "/";
+                newUrl = SafelyGetText(txtURL);
+            }
+
+            if (offerToClearCRMIds && newUrl != oldUrl)
+            {
+                new ClearCrmIdsDialog(this.Log).ShowDialog();
             }
         }
 
