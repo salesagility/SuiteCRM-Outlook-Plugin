@@ -78,10 +78,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// When my last run ccompleted.
         /// </summary>
         /// <remarks>
-        /// Initialised to 'max value', so that at startup we won't mistakenly
+        /// Initialised to 'now', so that at startup we won't mistakenly
         /// believe that things have happened after it.
         /// </remarks>
-        private DateTime lastIterationCompleted = DateTime.MaxValue;
+        private DateTime lastIterationCompleted = DateTime.Now;
+
+        /// <summary>
+        /// When the preceding run completed.
+        /// </summary>
+        /// <remarks>
+        /// Initialised to 'min value' so that things that have happened since the last
+        /// time Outlook was running don't get missed.
+        /// </remarks>
+        private DateTime previousIterationCompleted = DateTime.MinValue;
 
         public RepeatingProcess(string name, ILogger log)
         {
@@ -96,6 +105,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected DateTime LastRunCompleted
         {
             get { return this.lastIterationCompleted; }
+        }
+
+        /// <summary>
+        /// When the iteration prior to my last run completed.
+        /// </summary>
+        protected DateTime PreviousRunCompleted
+        {
+            get { return this.previousIterationCompleted; }
         }
 
         /// <summary>
@@ -142,6 +159,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 /* deal with any pending Windows messages, which we don't need to know about */
                 System.Windows.Forms.Application.DoEvents();
 
+                this.previousIterationCompleted = this.lastIterationCompleted;
                 this.lastIterationCompleted = DateTime.UtcNow;
 
                 if (this.state == RunState.Running)

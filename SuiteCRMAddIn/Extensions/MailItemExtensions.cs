@@ -29,6 +29,7 @@ namespace SuiteCRMAddIn.Extensions
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using TidyManaged;
     using Outlook = Microsoft.Office.Interop.Outlook;
@@ -169,19 +170,23 @@ namespace SuiteCRMAddIn.Extensions
             mailArchive.From = olItem.GetSenderSMTPAddress();
             mailArchive.To = string.Empty;
 
-            Log.Info($"EmailArchiving.SerialiseEmailObject: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
+            Log.Info($"MailItemExtension.AsArchiveable: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
 
             foreach (Outlook.Recipient recipient in olItem.Recipients)
             {
                 string address = recipient.GetSmtpAddress();
 
-                if (mailArchive.To == string.Empty)
+                switch (recipient.Type)
                 {
-                    mailArchive.To = address;
-                }
-                else
-                {
-                    mailArchive.To += ";" + address;
+                    case (int)Outlook.OlMailRecipientType.olCC:
+                        mailArchive.CC = ExtendRecipientField(mailArchive.CC, address);
+                        break;
+                    case (int)Outlook.OlMailRecipientType.olBCC:
+                        // unlikely to happen and in any case we don't store these
+                        break;
+                    default:
+                        mailArchive.To = ExtendRecipientField(mailArchive.To, address);
+                        break;
                 }
             }
 
@@ -210,6 +215,11 @@ namespace SuiteCRMAddIn.Extensions
             }
 
             return mailArchive;
+        }
+
+        private static string ExtendRecipientField(string fieldContent, string address)
+        {
+            return string.IsNullOrEmpty(fieldContent) ? address : $"{fieldContent};{address}";
         }
 
 
@@ -346,7 +356,7 @@ namespace SuiteCRMAddIn.Extensions
 
         public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason)
         {
-            return Archive(olItem, reason, EmailArchiving.defaultModuleKeys);
+            return Archive(olItem, reason, EmailArchiving.defaultModuleKeys.Select(x => new CrmEntity(x, null)));
         }
 
         /// <summary>
@@ -357,7 +367,7 @@ namespace SuiteCRMAddIn.Extensions
         /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
         /// <param name="excludedEmails">email address(es) which should not be linked.</param>
         /// <returns>A result object indicating success or failure.</returns>
-        public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, IEnumerable<string> moduleKeys, string excludedEmails = "")
+        public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, IEnumerable<CrmEntity> moduleKeys, string excludedEmails = "")
         {
             ArchiveResult result;
             Outlook.UserProperty olProperty = olItem.UserProperties[CrmIdPropertyName];
