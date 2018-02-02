@@ -81,6 +81,7 @@
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\LogEntryType.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />
+    <Compile Include="ModuleToTableResolver.cs" />
     <Compile Include="Objective.cs" />
     <Compile Include="RESTObjects\Documentation.cs" />
     <Compile Include="RESTObjects\ContactDetail.cs" />

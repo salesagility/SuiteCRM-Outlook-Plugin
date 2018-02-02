@@ -176,7 +176,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 try
                 {
-                    olItem.Archive(EmailArchiveReason.Inbound, moduleKeys);
+                    olItem.Archive(EmailArchiveReason.Inbound, moduleKeys.Select(x => new CrmEntity(x, null)));
                 }
                 catch (Exception any)
                 {
@@ -197,7 +197,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (EmailShouldBeArchived(reason, parentFolder.Store))
             {
-                olItem.Archive(reason, defaultModuleKeys, excludedEmails);
+                olItem.Archive(reason, defaultModuleKeys.Select(x => new CrmEntity(x, null)), excludedEmails);
             }
             else
             {
@@ -281,38 +281,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public ArchiveResult ArchiveEmailWithEntityRelationships(Outlook.MailItem olItem, IEnumerable<CrmEntity> selectedCrmEntities, EmailArchiveReason reason)
         {
-
-            var result = olItem.Archive(reason, selectedCrmEntities.Select(x => x.ModuleName));
-
-            if (result.IsSuccess)
-            {
-                var warnings = CreateEmailRelationshipsWithEntities(result.EmailId, selectedCrmEntities);
-                result = ArchiveResult.Success(
-                    result.EmailId,
-                    result.Problems == null ?
-                    warnings :
-                    result.Problems.Concat(warnings));
-            }
-
-            return result;
-        }
-
-        private IList<System.Exception> CreateEmailRelationshipsWithEntities(string crmMailId, IEnumerable<CrmEntity> selectedCrmEntities)
-        {
-            var failures = new List<System.Exception>();
-            foreach (CrmEntity entity in selectedCrmEntities)
-            {
-                try
-                {
-                    CreateEmailRelationshipOrFail(crmMailId, entity);
-                }
-                catch (System.Exception failure)
-                {
-                    Log.Error("CreateEmailRelationshipsWithEntities", failure);
-                    failures.Add(failure);
-                }
-            }
-            return failures;
+            return olItem.Archive(reason, selectedCrmEntities);
         }
 
         private void SaveMailItemIfNecessary(Outlook.MailItem olItem, EmailArchiveReason reason)
