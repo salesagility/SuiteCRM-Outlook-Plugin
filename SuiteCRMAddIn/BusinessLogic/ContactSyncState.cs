@@ -34,6 +34,10 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
+        public ContactSyncState(Outlook.ContactItem oItem, string crmId, DateTime modified) : base(oItem, crmId, modified)
+        {
+        }
+
         public override string CrmType => ContactSyncing.CrmModule;
 
         public override bool ShouldSyncWithCrm => IsPublic;

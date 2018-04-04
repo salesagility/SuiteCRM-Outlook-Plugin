@@ -381,12 +381,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.TaskItem> ConstructSyncState(Outlook.TaskItem olItem)
         {
-            return new TaskSyncState
-            {
-                OutlookItem = olItem,
-                CrmEntryId = olItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
-                OModifiedDate = ParseDateTimeFromUserProperty(olItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()),
-            };
+            return new TaskSyncState(olItem,
+                olItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
+                ParseDateTimeFromUserProperty(olItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()));
         }
 
         internal override string GetOutlookEntryId(Outlook.TaskItem olItem)

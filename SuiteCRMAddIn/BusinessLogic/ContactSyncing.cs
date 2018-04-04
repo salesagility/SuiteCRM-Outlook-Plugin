@@ -480,12 +480,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.ContactItem> ConstructSyncState(Outlook.ContactItem oItem)
         {
-            return new ContactSyncState
-            {
-                OutlookItem = oItem,
-                CrmEntryId = oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
-                OModifiedDate = ParseDateTimeFromUserProperty(oItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()),
-            };
+            return new ContactSyncState(oItem,
+                oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
+                ParseDateTimeFromUserProperty(oItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()));
         }
 
 

@@ -34,7 +34,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
     public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
-        public AppointmentSyncState()
+        public AppointmentSyncState(Outlook.AppointmentItem item, string crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
         {
         }
 

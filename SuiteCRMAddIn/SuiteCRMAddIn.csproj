@@ -244,6 +244,7 @@
     <Compile Include="Exceptions\ActionFailedException.cs" />
     <Compile Include="Exceptions\ActionRetryableException.cs" />
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
+    <Compile Include="Exceptions\BadStateTransition.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
     <Compile Include="Extensions\TaskItemExtension.cs" />
     <Compile Include="Extensions\ContactItemExtension.cs" />

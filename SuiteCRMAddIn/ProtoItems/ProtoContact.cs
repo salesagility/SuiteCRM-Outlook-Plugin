@@ -1,6 +1,7 @@
 ﻿
 namespace SuiteCRMAddIn.ProtoItems
 {
+    using System;
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
@@ -27,6 +28,15 @@ namespace SuiteCRMAddIn.ProtoItems
         private string LastName;
         private string MobileTelephoneNumber;
         private string Title;
+        private bool isPublic;
+
+        public override string Description
+        {
+            get
+            {
+                return $"{FirstName} {LastName} ({Email1Address})";
+            }
+        }
 
         public ProtoContact(Outlook.ContactItem olItem)
         {
@@ -47,6 +57,7 @@ namespace SuiteCRMAddIn.ProtoItems
             this.LastName = olItem.LastName;
             this.MobileTelephoneNumber = olItem.MobileTelephoneNumber;
             this.Title = olItem.Title;
+            this.isPublic = olItem.Sensitivity == Microsoft.Office.Interop.Outlook.OlSensitivity.olNormal;
         }
 
         public override NameValueCollection AsNameValues(string entryId)
@@ -73,6 +84,7 @@ namespace SuiteCRMAddIn.ProtoItems
             data.Add(string.IsNullOrEmpty(entryId) ?
                 RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()) :
                 RestAPIWrapper.SetNameValuePair("id", entryId));
+            data.Add(RestAPIWrapper.SetNameValuePair("sync_contact", this.isPublic));
 
             return data;
         }

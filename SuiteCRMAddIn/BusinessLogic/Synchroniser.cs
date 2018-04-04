@@ -34,6 +34,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Threading;
     using System.Runtime.InteropServices;
+    using Exceptions;
 
     /// <summary>
     /// Synchronise items of the class for which I am responsible.
@@ -326,21 +327,50 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmModule">The type of items to resolve.</param>
         protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve, string crmModule)
         {
-            List<SyncState<OutlookItemType>> itemsCopy = new List<SyncState<OutlookItemType>>();
-            itemsCopy.AddRange(itemsToResolve);
-
-            var toDeleteFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
-            var toCreateOnCrmServer = itemsCopy.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
-            var missingFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.IsDeletedInOutlook && a.CrmType == crmModule).ToList();
-
-            foreach (var syncState in toDeleteFromOutlook)
+            foreach (var unresolved in itemsToResolve)
             {
-                this.RemoveItemAndSyncState(syncState);
+                switch (unresolved.TxState)
+                {
+                    case SyncState<OutlookItemType>.TransmissionState.PendingDeletion:
+                        /* If it's to resolve and marked pending deletion, we delete it 
+                         * (unresolved on two successive iterations): */
+                        this.RemoveItemAndSyncState(unresolved);
+                        break;
+                    case SyncState<OutlookItemType>.TransmissionState.Synced:
+                        if (unresolved.ExistedInCrm)
+                        {
+                            /* if it's unresolved but it used to exist in CRM, it's probably been deleted from
+                             * CRM. Mark it pending deletion and check again next iteration. */
+                            unresolved.SetPendingDeletion();
+                        }
+                        break;
+                    case SyncState<OutlookItemType>.TransmissionState.Pending:
+                        if (unresolved.ShouldSyncWithCrm)
+                        {
+                            try
+                            {
+                                /* if it's unresolved, pending, and should be synced send it. */
+                                unresolved.SetQueued();
+                                AddOrUpdateItemFromOutlookToCrm(unresolved);
+                            }
+                            catch (BadStateTransition)
+                            {
+                                // ignore.
+                            }
+                        }
+                        break;
+                        /* default : ignore */
+                }
             }
 
-            foreach (var syncState in toCreateOnCrmServer)
+            foreach (SyncState resolved in this.ItemsSyncState
+                .Where(s => s is SyncState<OutlookItemType> &&
+                s.TxState == SyncState<OutlookItemType>.TransmissionState.PendingDeletion &&
+                !itemsToResolve.Contains(s)))
             {
-                AddOrUpdateItemFromOutlookToCrm(syncState);
+                /* finally, if there exists an item which had been marked pending deletion, but it has
+                 *  been found in CRM (i.e. not in unresolved), mark it as synced */
+                ((SyncState<OutlookItemType>)resolved).SetSynced();
             }
         }
 
@@ -552,9 +582,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (existingState.OutlookItem != olItem)
                 {
-                    /* if Outlook only holds one item with the same id, then this line MUST be redundant.
-                     * TODO: check logs and simplify this logic if the issue does not occur */
-                    existingState.OutlookItem = olItem;
                     Log.Error($"Should never happen - two Outlook items with same id ({GetOutlookEntryId(olItem)})?");
                 }
                 return existingState;
