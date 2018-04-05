@@ -211,7 +211,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
 
-            return this.AddOrGetSyncState(olItem);
+            var syncState = this.AddOrGetSyncState(olItem);
+            syncState.SetNewFromCRM();
+            return syncState;
         }
 
         /// <summary>
@@ -402,7 +404,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Outlook.Items olItems = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
                 foreach (Outlook.ContactItem oItem in olItems)
                 {
-                    AddOrGetSyncState(oItem);
+                    AddOrGetSyncState(oItem).SetPresentAtStartup();
                 }
             }
             catch (Exception ex)

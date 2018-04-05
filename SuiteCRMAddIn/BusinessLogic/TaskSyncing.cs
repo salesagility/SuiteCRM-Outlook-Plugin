@@ -305,6 +305,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
+                if (olItem != null)
+                {
+                    newState = (TaskSyncState)this.AddOrGetSyncState(olItem);
+                    newState.SetNewFromCRM();
+                }
                 this.SaveItem(olItem);
             }
 
@@ -334,7 +339,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     if (olItem.DueDate >= DateTime.Now.AddDays(-5))
                     {
-                        this.AddOrGetSyncState(olItem);
+                        this.AddOrGetSyncState(olItem).SetPresentAtStartup();
                     }
                 }
             }

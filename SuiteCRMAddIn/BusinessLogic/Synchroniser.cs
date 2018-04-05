@@ -964,7 +964,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             // i.e., the entry was updated...
                             untouched.Remove(state);
-                            state.SetSynced();
+                            /* Because Outlook offers us back items in another thread as we modify them
+                             * they may already be queued for output before we get here. But they should
+                             * ideally not be sent, so we forcibly mark them as synced overriding the 
+                             * normal flow of the state transition engine. */
+                            state.SetSynced(true);
                             LogItemAction(state.OutlookItem, "Synchroniser.AddOrUpdateItemsFromCrmToOutlook, item removed from untouched");
                         }
                     }
