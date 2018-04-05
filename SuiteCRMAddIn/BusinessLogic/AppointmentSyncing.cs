@@ -21,7 +21,6 @@
  * @author SalesAgility <info@salesagility.com>
  */
 
-using System.Diagnostics;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
@@ -35,28 +34,13 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Linq;
     using System.Runtime.InteropServices;
     using System.Text;
-    using System.Text.RegularExpressions;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
     /// Handles the synchronisation of appointments between Outlook and CMS.
     /// </summary>
-    public class AppointmentSyncing: Synchroniser<Outlook.AppointmentItem>
+    public abstract class AppointmentSyncing: Synchroniser<Outlook.AppointmentItem>
     {
-        /// <summary>
-        /// The (primary) module I synchronise with.
-        /// </summary>
-        public const string CrmModule = "Meetings";
-
-        /// <summary>
-        /// The (other) module I synchronise with.
-        /// </summary>
-        /// <remarks>
-        /// This rather makes me thing that there should be two classes here,
-        /// CallsSynchroniser and MeetingsSynchroniser
-        /// </remarks>
-        public const string AltCrmModule = "Calls";
-
         /// <summary>
         /// The name of the organiser synchronisation property
         /// </summary>
@@ -111,9 +95,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
         }
 
-        public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncCalendar;
-
-
         protected override void SaveItem(Outlook.AppointmentItem olItem)
         {
             try
@@ -133,31 +114,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
         }
-
-        /// <summary>
-        /// Action method of the thread.
-        /// </summary>
-        public override void SynchroniseAll()
-        {
-            base.SynchroniseAll();
-            if (this.permissionsCache.HasExportAccess(AppointmentSyncing.AltCrmModule))
-            {
-                SyncFolder(GetDefaultFolder(), AppointmentSyncing.AltCrmModule);
-            }
-            else
-            {
-                Log.Debug($"AppointmentSyncing.SynchroniseAll: not synchronising {AppointmentSyncing.AltCrmModule} because export access is denied");
-            }
-        }
-
-        public override string DefaultCrmModule
-        {
-            get
-            {
-                return AppointmentSyncing.CrmModule;
-            }
-        }
-
 
         /// <summary>
         /// Prefix for meetings which have been canceled.
@@ -284,7 +240,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (meetingId != null && 
                 !string.IsNullOrEmpty(acceptance) && 
-                SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar))
+                SyncDirection.AllowOutbound(this.Direction))
             {
                 foreach (AddressResolutionData resolution in this.ResolveRecipient(meeting, invitee))
                 {
@@ -404,7 +360,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-
         /// <summary>
         /// If a meeting was created in another Outlook we should NOT sync it with CRM because if we do we'll create 
         /// duplicates. Only the Outlook which created it should sync it.
@@ -420,8 +375,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             bool result = crmType == this.DefaultCrmModule;
             /* provided it doesn't already have an Outlook id */
             result &= string.IsNullOrWhiteSpace(outlookId);
-            /* and we're also good if it's an appointment; */
-            result |= crmType == AppointmentSyncing.AltCrmModule;
             /* and we're also good if we've already got it */
             result |= (this.GetExistingSyncState(crmItem) != null);
 
@@ -498,29 +451,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmType">The type of the CRM item.</param>
         /// <param name="crmItem">The CRM item.</param>
         /// <param name="olItem">The Outlook item.</param>
-        private void SetOutlookItemDuration(string crmType, EntryValue crmItem, Outlook.AppointmentItem olItem)
+        protected void SetOutlookItemDuration(string crmType, EntryValue crmItem, Outlook.AppointmentItem olItem)
         {
-            int minutes = 0, hours = 0;
             try
             {
-                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_minutes")))
-                {
-                    minutes = int.Parse(crmItem.GetValueAsString("duration_minutes"));
-                }
-                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_hours")))
-                {
-                    hours = int.Parse(crmItem.GetValueAsString("duration_hours"));
-                }
-
-                int durationMinutes = minutes + hours * 60;
-
-                if (crmType == AppointmentSyncing.CrmModule)
-                {
-                    olItem.Location = crmItem.GetValueAsString("location");
-                    olItem.End = olItem.Start.AddMinutes(durationMinutes);
-                }
-
-                olItem.Duration = durationMinutes;
+                SetOutlookItemDuration(crmItem, olItem);
             }
             catch (Exception any)
             {
@@ -530,6 +465,30 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 this.SaveItem(olItem);
             }
+        }
+
+        /// <summary>
+        /// Set this outlook item's duration from this CRM item.
+        /// </summary>
+        /// <param name="crmType">The type of the CRM item.</param>
+        /// <param name="crmItem">The CRM item.</param>
+        /// <param name="olItem">The Outlook item.</param>
+        protected virtual void SetOutlookItemDuration(EntryValue crmItem, Outlook.AppointmentItem olItem)
+        {
+            int minutes = 0, hours = 0;
+
+            if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_minutes")))
+            {
+                minutes = int.Parse(crmItem.GetValueAsString("duration_minutes"));
+            }
+            if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("duration_hours")))
+            {
+                hours = int.Parse(crmItem.GetValueAsString("duration_hours"));
+            }
+
+            int durationMinutes = minutes + hours * 60;
+
+            olItem.Duration = durationMinutes;
         }
 
         /// <summary>
@@ -729,6 +688,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     .Append($"\n\tSubject     : '{olItem.Subject}'")
                     .Append($"\n\tSensitivity : {olItem.Sensitivity}")
                     .Append($"\n\tStatus      : {olItem.MeetingStatus}")
+                    .Append($"\n\tReminder set: {olItem.ReminderSet}")
                     .Append($"\n\tOrganiser   : {olItem.Organizer}")
                     .Append($"\n\tOutlook User: {clsGlobals.GetCurrentUsername()}")
                     .Append($"\n\tRecipients  :\n");
@@ -813,7 +773,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         internal override void HandleItemMissingFromOutlook(SyncState<Outlook.AppointmentItem> syncState)
         {
-            if (syncState.CrmType == AppointmentSyncing.CrmModule)
+            if (syncState.CrmType == MeetingsSynchroniser.CrmModule)
             {
                 /* typically, when this method is called, the Outlook Item will already be invalid, and if it is not,
                  * it may become invalid during the execution of this method. So this method CANNOT depend on any
@@ -838,7 +798,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="state"></param>
         protected override void RemoveFromCrm(SyncState state)
         {
-            if (state.CrmType == AppointmentSyncing.CrmModule)
+            if (state.CrmType == MeetingsSynchroniser.CrmModule)
             {
                 this.AddOrUpdateItemFromOutlookToCrm((SyncState<Outlook.AppointmentItem>)state);
             }
@@ -860,7 +820,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                if (record.GetValueAsDateTime("date_start") > DateTime.Now && crmModule == AppointmentSyncing.CrmModule)
+                if (record.GetValueAsDateTime("date_start") > DateTime.Now && crmModule == MeetingsSynchroniser.CrmModule)
                 {
                     /* meeting in the future: mark it as canceled, do not delete it */
                     record.GetBinding("status").value = "NotHeld";
@@ -1025,7 +985,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 SetRelationshipParams info = new SetRelationshipParams
                 {
-                    module2 = AppointmentSyncing.CrmModule,
+                    module2 = MeetingsSynchroniser.CrmModule,
                     module2_id = meetingId,
                     module1 = foreignModule,
                     module1_id = foreignId
@@ -1061,7 +1021,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             string phone_work = relationship.GetValueAsString("phone_work");
                             string email1 = relationship.GetValueAsString("email1");
-                            string identifier = (sModule == AppointmentSyncing.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
+                            string identifier = (sModule == MeetingsSynchroniser.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
                                     email1 :
                                     $"{email1} : {phone_work}";
 
@@ -1101,7 +1061,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true iff settings.SyncCalendar is true, the item is not null, and it is not private (normal sensitivity)</returns>
         private bool ShouldDespatchToCrm(Outlook.AppointmentItem olItem)
         {
-            var syncConfigured = SyncDirection.AllowOutbound(Properties.Settings.Default.SyncCalendar);
+            var syncConfigured = SyncDirection.AllowOutbound(Direction);
             string organiser = olItem.Organizer;
             var currentUser = Application.Session.CurrentUser;
             var exchangeUser = currentUser.AddressEntry.GetExchangeUser();
@@ -1228,7 +1188,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 int minutes = string.IsNullOrWhiteSpace(minutesString) ? 0 : int.Parse(minutesString);
                 int hours = string.IsNullOrWhiteSpace(hoursString) ? 0 : int.Parse(hoursString);
 
-                if (crmType == AppointmentSyncing.CrmModule)
+                if (crmType == MeetingsSynchroniser.CrmModule)
                 {
                     olItem.Location = crmItem.GetValueAsString("location");
                     olItem.End = olItem.Start;

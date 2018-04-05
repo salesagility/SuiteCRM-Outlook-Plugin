@@ -209,6 +209,8 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="BusinessLogic\CallsSynchroniser.cs" />
+    <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
     <Compile Include="Daemon\UpdateMeetingAcceptancesAction.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
@@ -323,6 +325,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Robustness.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="WaitCursor.cs" />
     <Compile Include="Dialogs\WithCustomModulesSelectorForm.cs">
       <SubType>Form</SubType>

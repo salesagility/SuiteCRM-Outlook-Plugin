@@ -89,8 +89,10 @@ namespace SuiteCRMAddIn.Dialogs
             this.label1 = new System.Windows.Forms.Label();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.synchronisationTab = new System.Windows.Forms.TabPage();
-            this.syncCalendarMenu = new System.Windows.Forms.ComboBox();
-            this.syncCalendarLabel = new System.Windows.Forms.Label();
+            this.syncMeetingsMenu = new System.Windows.Forms.ComboBox();
+            this.syncMeetingsLabel = new System.Windows.Forms.Label();
+            this.syncCallsMenu = new System.Windows.Forms.ComboBox();
+            this.syncCallsLabel = new System.Windows.Forms.Label();
             this.syncContactsMenu = new System.Windows.Forms.ComboBox();
             this.syncContactsLabel = new System.Windows.Forms.Label();
             this.syncLabel = new System.Windows.Forms.Label();
@@ -105,6 +107,8 @@ namespace SuiteCRMAddIn.Dialogs
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
+            this.syncTasksMenu = new System.Windows.Forms.ComboBox();
+            this.syncTasksLabel = new System.Windows.Forms.Label();
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -493,8 +497,12 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // synchronisationTab
             // 
-            this.synchronisationTab.Controls.Add(this.syncCalendarMenu);
-            this.synchronisationTab.Controls.Add(this.syncCalendarLabel);
+            this.synchronisationTab.Controls.Add(this.syncTasksMenu);
+            this.synchronisationTab.Controls.Add(this.syncTasksLabel);
+            this.synchronisationTab.Controls.Add(this.syncMeetingsMenu);
+            this.synchronisationTab.Controls.Add(this.syncMeetingsLabel);
+            this.synchronisationTab.Controls.Add(this.syncCallsMenu);
+            this.synchronisationTab.Controls.Add(this.syncCallsLabel);
             this.synchronisationTab.Controls.Add(this.syncContactsMenu);
             this.synchronisationTab.Controls.Add(this.syncContactsLabel);
             this.synchronisationTab.Controls.Add(this.syncLabel);
@@ -506,22 +514,39 @@ namespace SuiteCRMAddIn.Dialogs
             this.synchronisationTab.Text = "Synchronisation";
             this.synchronisationTab.UseVisualStyleBackColor = true;
             // 
-            // syncCalendarMenu
+            // syncMeetingsMenu
             // 
-            this.syncCalendarMenu.FormattingEnabled = true;
-            this.syncCalendarMenu.Location = new System.Drawing.Point(126, 76);
-            this.syncCalendarMenu.Name = "syncCalendarMenu";
-            this.syncCalendarMenu.Size = new System.Drawing.Size(228, 21);
-            this.syncCalendarMenu.TabIndex = 4;
+            this.syncMeetingsMenu.FormattingEnabled = true;
+            this.syncMeetingsMenu.Location = new System.Drawing.Point(126, 103);
+            this.syncMeetingsMenu.Name = "syncMeetingsMenu";
+            this.syncMeetingsMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncMeetingsMenu.TabIndex = 6;
             // 
-            // syncCalendarLabel
+            // syncMeetingsLabel
             // 
-            this.syncCalendarLabel.AutoSize = true;
-            this.syncCalendarLabel.Location = new System.Drawing.Point(38, 79);
-            this.syncCalendarLabel.Name = "syncCalendarLabel";
-            this.syncCalendarLabel.Size = new System.Drawing.Size(52, 13);
-            this.syncCalendarLabel.TabIndex = 3;
-            this.syncCalendarLabel.Text = "Calendar:";
+            this.syncMeetingsLabel.AutoSize = true;
+            this.syncMeetingsLabel.Location = new System.Drawing.Point(38, 106);
+            this.syncMeetingsLabel.Name = "syncMeetingsLabel";
+            this.syncMeetingsLabel.Size = new System.Drawing.Size(53, 13);
+            this.syncMeetingsLabel.TabIndex = 5;
+            this.syncMeetingsLabel.Text = "Meetings:";
+            // 
+            // syncCallsMenu
+            // 
+            this.syncCallsMenu.FormattingEnabled = true;
+            this.syncCallsMenu.Location = new System.Drawing.Point(126, 76);
+            this.syncCallsMenu.Name = "syncCallsMenu";
+            this.syncCallsMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncCallsMenu.TabIndex = 4;
+            // 
+            // syncCallsLabel
+            // 
+            this.syncCallsLabel.AutoSize = true;
+            this.syncCallsLabel.Location = new System.Drawing.Point(38, 79);
+            this.syncCallsLabel.Name = "syncCallsLabel";
+            this.syncCallsLabel.Size = new System.Drawing.Size(32, 13);
+            this.syncCallsLabel.TabIndex = 3;
+            this.syncCallsLabel.Text = "Calls:";
             // 
             // syncContactsMenu
             // 
@@ -665,6 +690,23 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
+            // syncTasksMenu
+            // 
+            this.syncTasksMenu.FormattingEnabled = true;
+            this.syncTasksMenu.Location = new System.Drawing.Point(126, 130);
+            this.syncTasksMenu.Name = "syncTasksMenu";
+            this.syncTasksMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncTasksMenu.TabIndex = 8;
+            // 
+            // syncTasksLabel
+            // 
+            this.syncTasksLabel.AutoSize = true;
+            this.syncTasksLabel.Location = new System.Drawing.Point(38, 133);
+            this.syncTasksLabel.Name = "syncTasksLabel";
+            this.syncTasksLabel.Size = new System.Drawing.Size(39, 13);
+            this.syncTasksLabel.TabIndex = 7;
+            this.syncTasksLabel.Text = "Tasks:";
+            // 
             // SettingsDialog
             // 
             this.AcceptButton = this.btnSave;
@@ -764,10 +806,14 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.ComboBox logLevelSelector;
         private System.Windows.Forms.Label logLevelHelp;
         private System.Windows.Forms.TabPage synchronisationTab;
-        private System.Windows.Forms.ComboBox syncCalendarMenu;
-        private System.Windows.Forms.Label syncCalendarLabel;
+        private System.Windows.Forms.ComboBox syncCallsMenu;
+        private System.Windows.Forms.Label syncCallsLabel;
         private System.Windows.Forms.ComboBox syncContactsMenu;
         private System.Windows.Forms.Label syncContactsLabel;
         private System.Windows.Forms.Label syncLabel;
+        private System.Windows.Forms.ComboBox syncMeetingsMenu;
+        private System.Windows.Forms.Label syncMeetingsLabel;
+        private System.Windows.Forms.ComboBox syncTasksMenu;
+        private System.Windows.Forms.Label syncTasksLabel;
     }
 }

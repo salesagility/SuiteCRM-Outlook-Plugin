@@ -225,18 +225,6 @@ namespace SuiteCRMAddIn.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncCalendar {
-            get {
-                return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncCalendar"]));
-            }
-            set {
-                this["SyncCalendar"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
         public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncContacts {
             get {
                 return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncContacts"]));
@@ -339,6 +327,42 @@ namespace SuiteCRMAddIn.Properties {
             }
             set {
                 this["NeedsUpgrade"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncCalls {
+            get {
+                return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncCalls"]));
+            }
+            set {
+                this["SyncCalls"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncMeetings {
+            get {
+                return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncMeetings"]));
+            }
+            set {
+                this["SyncMeetings"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncTasks {
+            get {
+                return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncTasks"]));
+            }
+            set {
+                this["SyncTasks"] = value;
             }
         }
     }

@@ -67,14 +67,9 @@ namespace SuiteCRMAddIn.BusinessLogic
     public abstract class SyncState<ItemType> : SyncState
     {
         /// <summary>
-        /// Backing store for the OutlookItem property.
-        /// </summary>
-        protected ItemType olItem;
-
-        /// <summary>
         /// The outlook item for which I maintain the synchronisation state.
         /// </summary>
-        public ItemType OutlookItem { get; protected set; }
+        public ItemType OutlookItem { get; private set; }
 
         /// <summary>
         /// A lock that should be obtained before operations which operate on the TxState or the

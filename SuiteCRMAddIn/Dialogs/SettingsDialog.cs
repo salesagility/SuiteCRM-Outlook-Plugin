@@ -159,18 +159,18 @@ namespace SuiteCRMAddIn.Dialogs
             logLevelSelector.ValueMember = "Key";
             logLevelSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.LogLevel);
 
-            this.PopulateDirectionsMenu(syncCalendarMenu);
-            this.PopulateDirectionsMenu(syncContactsMenu);
-
-            this.syncCalendarMenu.SelectedValue = Convert.ToInt32(Properties.Settings.Default.SyncCalendar);
-            this.syncContactsMenu.SelectedValue = Convert.ToInt32(Properties.Settings.Default.SyncContacts);
+            this.PopulateDirectionsMenu(syncCallsMenu, Properties.Settings.Default.SyncCalls);
+            this.PopulateDirectionsMenu(syncContactsMenu, Properties.Settings.Default.SyncContacts);
+            this.PopulateDirectionsMenu(syncMeetingsMenu, Properties.Settings.Default.SyncMeetings);
+            this.PopulateDirectionsMenu(syncTasksMenu, Properties.Settings.Default.SyncTasks);
         }
 
         /// <summary>
-        /// Populate one of the two synchronisation direction menus.
+        /// Populate one of the synchronisation direction menus.
         /// </summary>
         /// <param name="directionMenu">The menu to populate.</param>
-        private void PopulateDirectionsMenu(ComboBox directionMenu)
+        /// <param name="setting">The value of the setting to set the menu value from.</param>
+        private void PopulateDirectionsMenu(ComboBox directionMenu, SyncDirection.Direction setting)
         {
             var syncDirectionItems = Enum.GetValues(typeof(SyncDirection.Direction))
                     .Cast<SyncDirection.Direction>()
@@ -181,6 +181,7 @@ namespace SuiteCRMAddIn.Dialogs
             directionMenu.ValueMember = "Key";
             directionMenu.DisplayMember = "Value";
             directionMenu.DataSource = syncDirectionItems;
+            directionMenu.SelectedValue = Convert.ToInt32(setting);
         }
 
         private void GetAccountAutoArchivingSettings()
@@ -446,7 +447,9 @@ namespace SuiteCRMAddIn.Dialogs
 
             SaveAccountAutoArchivingSettings();
 
-            Properties.Settings.Default.SyncCalendar = (SyncDirection.Direction)this.syncCalendarMenu.SelectedValue;
+            Properties.Settings.Default.SyncCalls = (SyncDirection.Direction)this.syncCallsMenu.SelectedValue;
+            Properties.Settings.Default.SyncMeetings = (SyncDirection.Direction)this.syncMeetingsMenu.SelectedValue;
+            Properties.Settings.Default.SyncTasks = (SyncDirection.Direction)this.syncTasksMenu.SelectedValue;
             Properties.Settings.Default.SyncContacts = (SyncDirection.Direction)this.syncContactsMenu.SelectedValue;
 
             Properties.Settings.Default.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked;
