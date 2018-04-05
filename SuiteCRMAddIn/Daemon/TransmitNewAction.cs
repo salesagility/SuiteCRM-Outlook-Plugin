@@ -41,6 +41,9 @@ namespace SuiteCRMAddIn.Daemon
 
         public TransmitNewAction(Synchroniser<OutlookItemType> synchroniser, SyncState<OutlookItemType> state, string crmType) : base(1)
         {
+            /* step the state transition engine forward to queued */
+            state.SetPending();
+            state.SetQueued();
             this.syncState = state;
             this.crmType = crmType;
             this.synchroniser = synchroniser;

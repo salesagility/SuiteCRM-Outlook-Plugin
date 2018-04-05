@@ -223,8 +223,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 switch (this.TxState)
                 {
                     case TransmissionState.NewFromOutlook:
+                        /* we OUGHT to get syncstates as soon as they're added, but because
+                         * of asynchronous processing sometimes we don't, and in practice they
+                         * may get as far as Queued. */
                     case TransmissionState.Pending:
-                        this.LogAndSetTxState(TransmissionState.NewFromOutlook);
+                    case TransmissionState.Queued:
+                        this.LogAndSetTxState(TransmissionState.NewFromCRM);
                         break;
                     default:
                         throw new BadStateTransition($"{this.TxState} => NewFromCRM");

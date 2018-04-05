@@ -437,7 +437,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (olItem != null)
                 {
-                    this.AddOrGetSyncState(olItem);
+                    newState = (AppointmentSyncState)this.AddOrGetSyncState(olItem);
+                    newState.SetNewFromCRM();
                 }
             }
 
@@ -658,7 +659,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             LogItemAction(olItem, "AppointmentSyncing.GetOutlookItems: Adding unknown item to queue");
                         }
 
-                        this.AddOrGetSyncState(olItem);
+                        this.AddOrGetSyncState(olItem).SetPresentAtStartup();
                     }
                 }                
             }
@@ -744,9 +745,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     /* found it, so update it from the CRM item */
                     result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, syncState);
-
-                    result?.OutlookItem.Save();
                 }
+
+                result?.OutlookItem.Save();
 
                 if (crmItem?.relationships?.link_list != null)
                 {
@@ -1163,7 +1164,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                         this.SaveItem(olItem);
                     }
                 }
-                Log.Warn((string)("Not default dResult.date_modified= " + crmItem.GetValueAsString("date_modified")));
                 syncState.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
             }
 
