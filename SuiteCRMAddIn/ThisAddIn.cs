@@ -149,8 +149,8 @@ namespace SuiteCRMAddIn
             synchronisationContext = new SyncContext(outlookApp);
             callSynchroniser = new CallsSynchroniser("AS", synchronisationContext);
             contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
+            meetingSynchroniser = new MeetingsSynchroniser("MS", synchronisationContext);
             taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
-            meetingSynchroniser = new MeetingsSynchroniser("AS", synchronisationContext);
             EmailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
 
             var outlookExplorer = outlookApp.ActiveExplorer();
