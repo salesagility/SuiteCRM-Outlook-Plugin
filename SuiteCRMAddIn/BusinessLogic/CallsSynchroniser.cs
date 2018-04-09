@@ -25,7 +25,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     public class CallsSynchroniser : AppointmentSyncing
     {
-        public const string CrmModule = "Meetings";
+        public const string CrmModule = "Calls";
 
         public CallsSynchroniser(string name, SyncContext context) : base(name, context)
         {
