@@ -40,6 +40,12 @@ namespace SuiteCRMAddIn.Extensions
     public static class MailItemExtensions
     {
         /// <summary>
+        /// A cache of SMTP addresses, so we're not continually fetching them from a remote 
+        /// Exchange server.
+        /// </summary>
+        private static Dictionary<Outlook.MailItem, string> senderAddressCache = new Dictionary<Outlook.MailItem, string>();
+
+        /// <summary>
         /// Magic property tag to get the email address from an Outlook Recipient object.
         /// </summary>
         const string PR_SMTP_ADDRESS = "http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
@@ -106,52 +112,62 @@ namespace SuiteCRMAddIn.Extensions
         {
             string result = string.Empty;
 
-            try
+            if (senderAddressCache.ContainsKey(olItem))
             {
-                switch (olItem.SenderEmailType)
-                {
-                    case "SMTP": /* an SMTP address; easy */
-                        result = olItem.SenderEmailAddress;
-                        break;
-                    case "EX": /* an Exchange address */
-                        var sender = olItem.Sender;
-                        if (sender != null)
-                        {
-                            var exchangeUser = sender.GetExchangeUser();
-                            if (exchangeUser != null)
-                            {
-                                result = exchangeUser.PrimarySmtpAddress;
-                            }
-                        }
-                        break;
-                    case "":
-                    case null:
-                        /* happens, is coped with in the final clause, don't worry about it */
-                        break;
-                    default:
-                        Log.Warn($"Unknown email type {olItem.SenderEmailType}");
-                        break;
-                }
-            }
-            catch (Exception any)
-            {
-                Log.Error(
-                    $"MailItemExtensions.GetSenderSMTPAddress: unexpected error {any.GetType().Name} '{any.Message}'", any);
+                result = senderAddressCache[olItem];
             }
 
-            try
+            if (string.IsNullOrEmpty(result))
             {
-                if (string.IsNullOrEmpty(result))
+                try
                 {
-                    var currentUser = Globals.ThisAddIn.Application.ActiveExplorer().Session.CurrentUser.PropertyAccessor;
-                    result = currentUser.GetProperty(PR_SMTP_ADDRESS).ToString();
+                    switch (olItem.SenderEmailType)
+                    {
+                        case "SMTP": /* an SMTP address; easy */
+                            result = olItem.SenderEmailAddress;
+                            break;
+                        case "EX": /* an Exchange address */
+                            var sender = olItem.Sender;
+                            if (sender != null)
+                            {
+                                var exchangeUser = sender.GetExchangeUser();
+                                if (exchangeUser != null)
+                                {
+                                    result = exchangeUser.PrimarySmtpAddress;
+                                }
+                            }
+                            break;
+                        case "":
+                        case null:
+                            /* happens, is coped with in the final clause, don't worry about it */
+                            break;
+                        default:
+                            Log.Warn($"Unknown email type {olItem.SenderEmailType}");
+                            break;
+                    }
                 }
-            }
-            catch (Exception any)
-            {
-                Log.Error(
-                    $"MailItemExtensions.GetSenderSMTPAddress: failed to get email address of current user: {any.GetType().Name} '{any.Message}'",
-                    any);
+                catch (Exception any)
+                {
+                    Log.Error(
+                        $"MailItemExtensions.GetSenderSMTPAddress: unexpected error {any.GetType().Name} '{any.Message}'", any);
+                }
+
+                try
+                {
+                    if (string.IsNullOrEmpty(result))
+                    {
+                        var currentUser = Globals.ThisAddIn.Application.ActiveExplorer().Session.CurrentUser.PropertyAccessor;
+                        result = currentUser.GetProperty(PR_SMTP_ADDRESS).ToString();
+                    }
+                }
+                catch (Exception any)
+                {
+                    Log.Error(
+                        $"MailItemExtensions.GetSenderSMTPAddress: failed to get email address of current user: {any.GetType().Name} '{any.Message}'",
+                        any);
+                }
+
+                senderAddressCache[olItem] = result;
             }
 
             return result;

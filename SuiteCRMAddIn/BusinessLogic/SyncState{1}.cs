@@ -214,7 +214,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Set the transmission state of this SyncState object to <see cref="TransmissionState.PresentAtStartup"/>.
+        /// Set the transmission state of this SyncState object to <see cref="TransmissionState.NewFromCRM"/>.
         /// </summary>
         internal void SetNewFromCRM()
         {

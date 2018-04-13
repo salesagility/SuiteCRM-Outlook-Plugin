@@ -254,7 +254,11 @@ namespace SuiteCRMClient
                     {
                         @session = SuiteCRMUserSession.id
                     };
-                    userId = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_user_id", data);
+                    /* OK, so this has definitely NEVER worked, but because of the swallowed
+                     * exception we didn't notice it wasn't working. However, if it does work
+                     * it causes 500 errors server side. So (having made it work) I've 
+                     * deliberately broken it again. To make it work, uncomment the line below. */
+                    //userId = SuiteCRMUserSession.RestServer.GetCrmStringResponse("get_user_id", data);
                 }
                 catch (Exception)
                 {

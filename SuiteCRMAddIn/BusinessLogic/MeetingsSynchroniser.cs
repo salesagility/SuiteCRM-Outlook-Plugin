@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using Extensions;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System;
@@ -62,6 +63,53 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 Log.Error("AppointmentSyncing.SetOutlookItemDuration", any);
             }
+        }
+
+       protected override void UpdateOutlookDetails(string crmType, EntryValue crmItem, DateTime date_start, Outlook.AppointmentItem olItem)
+        {
+            try
+            {
+                olItem.Start = date_start;
+                var minutesString = crmItem.GetValueAsString("duration_minutes");
+                var hoursString = crmItem.GetValueAsString("duration_hours");
+
+                int minutes = string.IsNullOrWhiteSpace(minutesString) ? 0 : int.Parse(minutesString);
+                int hours = string.IsNullOrWhiteSpace(hoursString) ? 0 : int.Parse(hoursString);
+
+                olItem.Duration = minutes + hours * 60;
+
+                olItem.Location = crmItem.GetValueAsString("location");
+                olItem.End = olItem.Start;
+                if (hours > 0)
+                {
+                    olItem.End.AddHours(hours);
+                }
+                if (minutes > 0)
+                {
+                    olItem.End.AddMinutes(minutes);
+                }
+                SetRecipients(olItem, crmItem.GetValueAsString("id"), crmType);
+            }
+            finally
+            {
+                this.SaveItem(olItem);
+            }
+        }
+
+
+        protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
+        {
+            return crmType == "Meetings";
+        }
+
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
+        {
+            string result = null;
+            if (syncState.OutlookItem.IsCall())
+            {
+                result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
+            }
+            return result;
         }
     }
 }

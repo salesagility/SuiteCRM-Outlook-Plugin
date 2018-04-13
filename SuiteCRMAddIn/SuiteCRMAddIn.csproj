@@ -248,9 +248,10 @@
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
     <Compile Include="Exceptions\BadStateTransition.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
-    <Compile Include="Extensions\TaskItemExtension.cs" />
-    <Compile Include="Extensions\ContactItemExtension.cs" />
-    <Compile Include="Extensions\AppointmentItemExtension.cs" />
+    <Compile Include="Extensions\AddressEntryExtensions.cs" />
+    <Compile Include="Extensions\TaskItemExtensions.cs" />
+    <Compile Include="Extensions\ContactItemExtensions.cs" />
+    <Compile Include="Extensions\AppointmentItemExtensions.cs" />
     <Compile Include="Extensions\Documentation.cs" />
     <Compile Include="Extensions\MailItemExtensions.cs" />
     <Compile Include="Extensions\RecipientExtensions.cs" />

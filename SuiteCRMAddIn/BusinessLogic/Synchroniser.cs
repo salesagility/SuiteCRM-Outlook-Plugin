@@ -359,7 +359,24 @@ namespace SuiteCRMAddIn.BusinessLogic
                             }
                         }
                         break;
-                        /* default : ignore */
+                    case SyncState<OutlookItemType>.TransmissionState.Queued:
+                        if (unresolved.ShouldSyncWithCrm)
+                        {
+                            try
+                            {
+                                /* if it's queued and should be synced send it. */
+                                AddOrUpdateItemFromOutlookToCrm(unresolved);
+                            }
+                            catch (BadStateTransition bst)
+                            {
+                                Log.Error($"Transition exception in ResolveUnmatchedItems", bst);
+                            }
+                        }
+                        break;
+
+                    default:
+                        unresolved.SetPending();
+                        break;
                 }
             }
 

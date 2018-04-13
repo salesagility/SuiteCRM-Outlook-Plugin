@@ -244,8 +244,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 foreach (AddressResolutionData resolution in this.ResolveRecipient(meeting, invitee))
                 {
-                    RestAPIWrapper.SetMeetingAcceptance(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
-                    count++;
+                    try
+                    {
+                        RestAPIWrapper.SetMeetingAcceptance(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
+                        count++;
+                    }
+                    catch (Exception any)
+                    {
+                        this.Log.Error($"{this.GetType().Name}.AddOrUpdateMeetingAcceptanceFromOutlookToCRM: Failed to resolve invitee {smtpAddress}:", any);
+                    }
                 }
             }
 
@@ -998,7 +1005,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        private void SetRecipients(Outlook.AppointmentItem olItem, string sMeetingID, string sModule)
+        protected void SetRecipients(Outlook.AppointmentItem olItem, string sMeetingID, string sModule)
         {
             this.LogItemAction(olItem, "SetRecipients");
 
@@ -1028,7 +1035,10 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                             if (!String.IsNullOrWhiteSpace(identifier))
                             {
-                                olItem.Recipients.Add(identifier);
+                                if (olItem.GetOrganizer().GetSmtpAddress() != email1)
+                                {
+                                    olItem.EnsureRecipient(email1, identifier);
+                                }
                             }
                         }
                     }
@@ -1153,7 +1163,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         olItem.Body = crmItem.GetValueAsString("description");
                         if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
                         {
-                            UpdateOutlookStartAndDuration(crmType, crmItem, date_start, olItem);
+                            UpdateOutlookDetails(crmType, crmItem, date_start, olItem);
                         }
 
                         EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
@@ -1177,7 +1187,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
         /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
         /// <param name="olItem">The outlook item assumed to correspond with the CRM item.</param>
-        private void UpdateOutlookStartAndDuration(string crmType, EntryValue crmItem, DateTime date_start, Outlook.AppointmentItem olItem)
+        protected virtual void UpdateOutlookDetails(string crmType, EntryValue crmItem, DateTime date_start, Outlook.AppointmentItem olItem)
         {
             try
             {
@@ -1188,20 +1198,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                 int minutes = string.IsNullOrWhiteSpace(minutesString) ? 0 : int.Parse(minutesString);
                 int hours = string.IsNullOrWhiteSpace(hoursString) ? 0 : int.Parse(hoursString);
 
-                if (crmType == MeetingsSynchroniser.CrmModule)
-                {
-                    olItem.Location = crmItem.GetValueAsString("location");
-                    olItem.End = olItem.Start;
-                    if (hours > 0)
-                    {
-                        olItem.End.AddHours(hours);
-                    }
-                    if (minutes > 0)
-                    {
-                        olItem.End.AddMinutes(minutes);
-                    }
-                    SetRecipients(olItem, crmItem.GetValueAsString("id"), crmType);
-                }
                 olItem.Duration = minutes + hours * 60;
             }
             finally
