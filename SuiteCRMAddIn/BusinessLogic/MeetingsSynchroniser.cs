@@ -88,7 +88,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     olItem.End.AddMinutes(minutes);
                 }
-                SetRecipients(olItem, crmItem.GetValueAsString("id"), crmType);
+                SetRecipients(olItem, crmItem, crmItem.GetValueAsString("id"), crmType);
             }
             finally
             {

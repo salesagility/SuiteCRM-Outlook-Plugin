@@ -63,7 +63,16 @@ namespace SuiteCRMAddIn.Extensions
         /// <returns>The SMTP address, if it can be recovered, else the empty string.</returns>
         public static string GetSmtpAddress(this Outlook.AddressEntry entry)
         {
-            string result = smtpAddressCache[entry];
+            string result;
+
+            try
+            {
+                result = smtpAddressCache[entry];
+            }
+            catch (KeyNotFoundException)
+            {
+                result = string.Empty;
+            }
 
             if (string.IsNullOrEmpty(result))
             {

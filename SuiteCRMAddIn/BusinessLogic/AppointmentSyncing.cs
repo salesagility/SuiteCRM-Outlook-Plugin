@@ -437,7 +437,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     SetOutlookItemDuration(crmType, crmItem, olItem);
 
                     Log.Info("\tdefault SetRecepients");
-                    SetRecipients(olItem, crmId, crmType);
+                    SetRecipients(olItem, crmItem, crmId, crmType); // TODO: the relationships WERE THERE when the data came up from CRM, but got lost in RestAPIWrapper.GetEntryList(). Fix it there then fix here.
                 }
             }
             finally
@@ -1005,7 +1005,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        protected void SetRecipients(Outlook.AppointmentItem olItem, string sMeetingID, string sModule)
+        protected void SetRecipients(Outlook.AppointmentItem olItem, EntryValue crmItem, string sMeetingID, string sModule)
         {
             this.LogItemAction(olItem, "SetRecipients");
 
@@ -1018,27 +1018,21 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olItem.Recipients.Remove(1);
                 }
 
-                string[] invitee_categories = { "users", ContactSyncing.CrmModule, "leads" };
-                foreach (string invitee_category in invitee_categories)
+                foreach (var relationship in crmItem.relationships.link_list)
                 {
-                    EntryValue[] relationships = RestAPIWrapper.GetRelationships(sModule, sMeetingID, invitee_category, new string[] { "id", "email1", "phone_work" });
-                    if (relationships != null)
+                    foreach (LinkRecord record in relationship.records)
                     {
+                        string email1 = record.data.GetValueAsString("email1");
+                        string phone_work = record.data.GetValueAsString("phone_work");
+                        string identifier = (sModule == MeetingsSynchroniser.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
+                                email1 :
+                                $"{email1} : {phone_work}";
 
-                        foreach (var relationship in relationships)
+                        if (!String.IsNullOrWhiteSpace(identifier))
                         {
-                            string phone_work = relationship.GetValueAsString("phone_work");
-                            string email1 = relationship.GetValueAsString("email1");
-                            string identifier = (sModule == MeetingsSynchroniser.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
-                                    email1 :
-                                    $"{email1} : {phone_work}";
-
-                            if (!String.IsNullOrWhiteSpace(identifier))
+                            if (olItem.GetOrganizer().GetSmtpAddress() != email1)
                             {
-                                if (olItem.GetOrganizer().GetSmtpAddress() != email1)
-                                {
-                                    olItem.EnsureRecipient(email1, identifier);
-                                }
+                                olItem.EnsureRecipient(email1, identifier);
                             }
                         }
                     }
