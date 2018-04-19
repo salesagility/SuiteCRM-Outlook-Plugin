@@ -77,6 +77,11 @@ namespace SuiteCRMClient
 #endif
                 CheckForCrmError(response, this.CreatePayload(method, input));
 
+                if (response.StartsWith("\"") && response.EndsWith("\""))
+                {
+                    response = response.Substring(1, response.Length - 2);
+                }
+
                 return response;
             }
             catch (Exception ex)

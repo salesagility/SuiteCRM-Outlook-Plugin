@@ -309,7 +309,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         if (!string.IsNullOrEmpty(moduleId))
                         {
                             moduleIds[moduleName] = moduleId;
-                            AddressResolutionData data = new AddressResolutionData(moduleName, meetingId, smtpAddress);
+                            AddressResolutionData data = new AddressResolutionData(moduleName, moduleId, smtpAddress);
                             this.CacheAddressResolutionData(data);
                             result.Add(data);
                         }

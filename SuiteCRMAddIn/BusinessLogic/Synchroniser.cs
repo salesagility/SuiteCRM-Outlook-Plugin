@@ -345,6 +345,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                         break;
                     case SyncState<OutlookItemType>.TransmissionState.Pending:
+                    case SyncState<OutlookItemType>.TransmissionState.PresentAtStartup:
                         if (unresolved.ShouldSyncWithCrm)
                         {
                             try
@@ -373,7 +374,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                             }
                         }
                         break;
-
                     default:
                         unresolved.SetPending();
                         break;
@@ -563,7 +563,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 catch (Exception ex)
                 {
                     Log.Error("Synchroniser.AddOrUpdateItemFromOutlookToCrm", ex);
-                    syncState.SetPending();
+                    syncState.SetPending(true);
                 }
                 finally
                 {

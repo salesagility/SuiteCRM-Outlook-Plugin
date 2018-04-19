@@ -102,14 +102,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             return crmType == "Meetings";
         }
 
-        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
-        {
-            string result = null;
-            if (syncState.OutlookItem.IsCall())
-            {
-                result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
-            }
-            return result;
-        }
+        //internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
+        //{
+        //    string result = null;
+        //    if (syncState.OutlookItem.IsCall())
+        //    {
+        //        result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
+        //    }
+        //    return result;
+        //}
     }
 }
