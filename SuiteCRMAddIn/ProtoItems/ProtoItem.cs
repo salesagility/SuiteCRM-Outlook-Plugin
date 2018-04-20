@@ -19,5 +19,10 @@
         /// <param name="entryId">The entry id of the object I represent in CRM, if known</param>
         /// <returns>The name-value collection constructed.</returns>
         public abstract NameValueCollection AsNameValues(string entryId);
+
+        /// <summary>
+        /// Get a description of the item.
+        /// </summary>
+        public abstract string Description { get; }
     }
 }

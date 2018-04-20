@@ -254,7 +254,7 @@ namespace SuiteCRMClient
                     {
                         @session = SuiteCRMUserSession.id
                     };
-                    userId = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_user_id", data);
+                    userId = SuiteCRMUserSession.RestServer.GetCrmStringResponse("get_user_id", data);
                 }
                 catch (Exception)
                 {
@@ -564,9 +564,9 @@ namespace SuiteCRMClient
                     @select_fields = fields,
                     @link_names_to_fields_array = module == "Meetings" ?
                     new[] {
-                    new { @name = "users", @value = new[] {"id", "email1" } },
-                    new { @name = "contacts", @value = new[] {"id", "account_id", "email1" } },
-                    new { @name = "leads", @value = new[] {"id", "email1" } }
+                    new { @name = "users", @value = new[] {"id", "email1", "phone_work" } },
+                    new { @name = "contacts", @value = new[] {"id", "account_id", "email1", "phone_work" } },
+                    new { @name = "leads", @value = new[] {"id", "email1", "phone_work" } }
                     } :
                     null,
                     @max_results = $"{limit}",
@@ -583,27 +583,10 @@ namespace SuiteCRMClient
                 {
                     try
                     {
-                        result.resolveLinks();
-                        Hashtable hashtable = new Hashtable();
-                        int index = 0;
-                        foreach (EntryValue _value in result.entry_list)
-                        {
-                            if (!hashtable.Contains(_value.id))
-                            {
-                                hashtable.Add(_value.id, _value);
-                            }
-                            result.entry_list[index] = null;
-                            index++;
-                        }
-                        int num2 = 0;
-                        result.entry_list = null;
-                        result.entry_list = new EntryValue[hashtable.Count];
-                        result.result_count = hashtable.Count;
-                        foreach (DictionaryEntry entry in hashtable)
-                        {
-                            result.entry_list[num2] = (EntryValue)entry.Value;
-                            num2++;
-                        }
+                        result.ResolveLinks();
+
+                        result.entry_list = result.entry_list.OrderBy(x => x.id).GroupBy(x => x.id).Select(g=> g.First()).ToArray();
+                        result.result_count = result.entry_list.Count();
                     }
                     catch (System.Exception)
                     {

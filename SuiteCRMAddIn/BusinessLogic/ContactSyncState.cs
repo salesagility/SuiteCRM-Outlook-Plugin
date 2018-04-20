@@ -34,6 +34,10 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
+        public ContactSyncState(Outlook.ContactItem oItem, string crmId, DateTime modified) : base(oItem, crmId, modified)
+        {
+        }
+
         public override string CrmType => ContactSyncing.CrmModule;
 
         public override bool ShouldSyncWithCrm => IsPublic;
@@ -48,11 +52,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[Synchroniser<Outlook.ContactItem>.CrmIdPropertyName];
+                Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[Synchroniser<Outlook.ContactItem>.CrmIdPropertyName];
                 string crmId = olPropertyEntryId == null ?
                     "[not present]" :
                     olPropertyEntryId.Value;
-                return $"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tFull name   : '{olItem.FullName}'\n\tSensitivity : {olItem.Sensitivity}";
+                return $"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tFull name   : '{OutlookItem.FullName}'\n\tSensitivity : {OutlookItem.Sensitivity}";
             }
         }
 
@@ -76,7 +80,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override void RemoveSynchronisationProperties()
         {
-            olItem.ClearSynchronisationProperties();
+            OutlookItem.ClearSynchronisationProperties();
         }
 
     }

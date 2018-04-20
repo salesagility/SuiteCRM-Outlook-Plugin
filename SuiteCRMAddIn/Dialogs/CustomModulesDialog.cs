@@ -60,7 +60,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.IgnoreModules.Add("KBDocuments");
             this.IgnoreModules.Add("Trackers");
             this.IgnoreModules.Add("Emails");
-            this.IgnoreModules.Add(AppointmentSyncing.AltCrmModule);
+            this.IgnoreModules.Add(CallsSynchroniser.CrmModule);
             this.IgnoreModules.Add(TaskSyncing.CrmModule);
             this.IgnoreModules.Add("UserPrefs");
             this.IgnoreModules.Add("Contracts");
@@ -129,7 +129,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.IgnoreModules.Add("SavedSearch");
             this.IgnoreModules.Add("SugarFeed");
             this.IgnoreModules.Add("SugarFavorites");
-            this.IgnoreModules.Add(AppointmentSyncing.CrmModule);
+            this.IgnoreModules.Add(MeetingsSynchroniser.CrmModule);
             this.IgnoreModules.Add("Notes");
             this.IgnoreModules.Add("TrackerPerfs");
             this.IgnoreModules.Add("TrackerQueries");

@@ -65,6 +65,33 @@ namespace SuiteCRMClient
 
         public Uri SuiteCRMURL { get; set; }
 
+        public string GetCrmStringResponse(string method, object input)
+        {
+            try
+            {
+                HttpWebRequest request = CreateCrmRestRequest(method, input);
+                string response = GetResponseString(request);
+#if DEBUG
+                LogRequest(request, method, input);
+                LogResponse(response);
+#endif
+                CheckForCrmError(response, this.CreatePayload(method, input));
+
+                if (response.StartsWith("\"") && response.EndsWith("\""))
+                {
+                    response = response.Substring(1, response.Length - 2);
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                log.Warn($"Tried calling '{method}' with parameter '{input}', timeout is {this.timeout}ms");
+                log.Error($"Failed calling '{method}'", ex);
+                throw;
+            }
+        }
+
         public T GetCrmResponse<T>(string method, object input)
         {
             try

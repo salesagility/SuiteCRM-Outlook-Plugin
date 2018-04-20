@@ -209,6 +209,8 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="BusinessLogic\CallsSynchroniser.cs" />
+    <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
     <Compile Include="Daemon\UpdateMeetingAcceptancesAction.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
@@ -244,10 +246,12 @@
     <Compile Include="Exceptions\ActionFailedException.cs" />
     <Compile Include="Exceptions\ActionRetryableException.cs" />
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
+    <Compile Include="Exceptions\BadStateTransition.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
-    <Compile Include="Extensions\TaskItemExtension.cs" />
-    <Compile Include="Extensions\ContactItemExtension.cs" />
-    <Compile Include="Extensions\AppointmentItemExtension.cs" />
+    <Compile Include="Extensions\AddressEntryExtensions.cs" />
+    <Compile Include="Extensions\TaskItemExtensions.cs" />
+    <Compile Include="Extensions\ContactItemExtensions.cs" />
+    <Compile Include="Extensions\AppointmentItemExtensions.cs" />
     <Compile Include="Extensions\Documentation.cs" />
     <Compile Include="Extensions\MailItemExtensions.cs" />
     <Compile Include="Extensions\RecipientExtensions.cs" />
@@ -322,6 +326,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Robustness.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="WaitCursor.cs" />
     <Compile Include="Dialogs\WithCustomModulesSelectorForm.cs">
       <SubType>Form</SubType>

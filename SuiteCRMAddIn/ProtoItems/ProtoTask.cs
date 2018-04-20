@@ -44,6 +44,14 @@ namespace SuiteCRMAddIn.ProtoItems
         private string status;
         private string subject;
 
+        public override string Description
+        {
+            get
+            {
+                return $"{this.subject} ({this.status})";
+            }
+        }
+
         public ProtoTask(Outlook.TaskItem oItem)
         {
             this.oItem = oItem;

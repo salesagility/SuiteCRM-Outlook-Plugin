@@ -66,6 +66,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CrmRestException.cs" />
     <Compile Include="CrmRestServer.cs" />
     <Compile Include="Exceptions\CrmServerErrorException.cs" />
     <Compile Include="Documentation.cs" />

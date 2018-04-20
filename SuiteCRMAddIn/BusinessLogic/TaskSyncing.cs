@@ -56,7 +56,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncCalendar;
+        public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncTasks;
 
         private Outlook.OlImportance GetImportance(string sImportance)
         {
@@ -116,7 +116,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 var untouched = new HashSet<SyncState<Outlook.TaskItem>>(ItemsSyncState);
 
-                MergeRecordsFromCrm(folder, crmModule, untouched);
+                IList<EntryValue> records = MergeRecordsFromCrm(folder, crmModule, untouched);
+                this.AddOrUpdateItemsFromCrmToOutlook(records, folder, untouched, crmModule);
 
                 try
                 {
@@ -305,6 +306,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             finally
             {
+                if (olItem != null)
+                {
+                    newState = (TaskSyncState)this.AddOrGetSyncState(olItem);
+                    newState.SetNewFromCRM();
+                }
                 this.SaveItem(olItem);
             }
 
@@ -334,7 +340,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     if (olItem.DueDate >= DateTime.Now.AddDays(-5))
                     {
-                        this.AddOrGetSyncState(olItem);
+                        this.AddOrGetSyncState(olItem).SetPresentAtStartup();
                     }
                 }
             }
@@ -381,12 +387,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.TaskItem> ConstructSyncState(Outlook.TaskItem olItem)
         {
-            return new TaskSyncState
-            {
-                OutlookItem = olItem,
-                CrmEntryId = olItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
-                OModifiedDate = ParseDateTimeFromUserProperty(olItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()),
-            };
+            return new TaskSyncState(olItem,
+                olItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
+                ParseDateTimeFromUserProperty(olItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()));
         }
 
         internal override string GetOutlookEntryId(Outlook.TaskItem olItem)

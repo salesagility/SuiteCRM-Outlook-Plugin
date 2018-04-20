@@ -34,11 +34,19 @@ namespace SuiteCRMAddIn.ProtoItems
         /// <summary>
         /// Readonly access to an ordered list of my recipient addresses.
         /// </summary>
-        public IEnumerable<string> RecipientAddresses
+        public List<string> RecipientAddresses
         {
             get
             {
-                return recipientAddresses.AsEnumerable().OrderBy(x => x);
+                return recipientAddresses.AsEnumerable().OrderBy(x => x).ToList();
+            }
+        }
+
+        public override string Description
+        {
+            get
+            {
+                return $"{subject} ({start})";
             }
         }
 
@@ -56,6 +64,7 @@ namespace SuiteCRMAddIn.ProtoItems
             this.start = olItem.Start;
             this.subject = olItem.Subject;
             this.globalId = olItem.GlobalAppointmentID;
+            // this is resolved to the correct string in AsNameValues().
             this.status = olItem.MeetingStatus;
 
             var organiserProperty = olItem.UserProperties[AppointmentSyncing.OrganiserPropertyName];

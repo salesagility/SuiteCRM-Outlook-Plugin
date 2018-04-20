@@ -59,7 +59,8 @@ namespace SuiteCRMAddIn
         private SyncContext synchronisationContext;
         private ContactSyncing contactSynchroniser;
         private TaskSyncing taskSynchroniser;
-        private AppointmentSyncing appointmentSynchroniser;
+        private MeetingsSynchroniser meetingSynchroniser;
+        private CallsSynchroniser callSynchroniser;
 
         /// <summary>
         /// Internationalisation (118n) strings dictionary
@@ -146,9 +147,10 @@ namespace SuiteCRMAddIn
             StartLogging();
 
             synchronisationContext = new SyncContext(outlookApp);
+            callSynchroniser = new CallsSynchroniser("AS", synchronisationContext);
             contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
+            meetingSynchroniser = new MeetingsSynchroniser("MS", synchronisationContext);
             taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
-            appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
             EmailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
 
             var outlookExplorer = outlookApp.ActiveExplorer();
@@ -414,8 +416,9 @@ namespace SuiteCRMAddIn
 
         public void StartSynchronisationProcesses()
         {
-            DoOrLogError(() => this.appointmentSynchroniser.Start(), catalogue.GetString("Starting appointments synchroniser"));
+            DoOrLogError(() => this.callSynchroniser.Start(), catalogue.GetString("Starting call synchroniser"));
             DoOrLogError(() => this.contactSynchroniser.Start(), catalogue.GetString("Starting contacts synchroniser"));
+            DoOrLogError(() => this.meetingSynchroniser.Start(), catalogue.GetString("Starting meeting synchroniser"));
             DoOrLogError(() => this.taskSynchroniser.Start(), catalogue.GetString("Starting tasks synchroniser"));
             DoOrLogError(() => this.EmailArchiver.Start(), catalogue.GetString("Starting email archiver"));
         }
@@ -537,8 +540,9 @@ namespace SuiteCRMAddIn
                     SuiteCRMUserSession.LogOut();
                 }
 
-                DisposeOf(appointmentSynchroniser);
+                DisposeOf(callSynchroniser);
                 DisposeOf(contactSynchroniser);
+                DisposeOf(meetingSynchroniser);
                 DisposeOf(taskSynchroniser);
             }
             catch (Exception ex)
@@ -736,7 +740,7 @@ namespace SuiteCRMAddIn
                     {
                         DaemonWorker.Instance.AddTask(
                             new UpdateMeetingAcceptancesAction(
-                                appointmentSynchroniser, 
+                                meetingSynchroniser, 
                                 item as Outlook.MeetingItem));
                     }
                 }
@@ -930,8 +934,9 @@ namespace SuiteCRMAddIn
         /// <returns>The number of items I am monitoring.</returns>
         internal int CountItems()
         {
-            int result = this.appointmentSynchroniser != null ? this.appointmentSynchroniser.ItemsCount : 0;
+            int result = this.callSynchroniser != null ? this.callSynchroniser.ItemsCount : 0;
             result += this.contactSynchroniser != null ? this.contactSynchroniser.ItemsCount : 0;
+            result += this.meetingSynchroniser != null ? this.meetingSynchroniser.ItemsCount : 0;
             result += this.taskSynchroniser != null ? this.taskSynchroniser.ItemsCount : 0;
 
             return result;
@@ -946,13 +951,17 @@ namespace SuiteCRMAddIn
         {
             List<WithRemovableSynchronisationProperties> result = new List<WithRemovableSynchronisationProperties>();
 
-            if (this.appointmentSynchroniser != null)
+            if (this.callSynchroniser != null)
             {
-                result.AddRange(this.appointmentSynchroniser.GetSynchronisedItems());
+                result.AddRange(this.callSynchroniser.GetSynchronisedItems());
             }
             if (this.contactSynchroniser != null)
             {
                 result.AddRange(this.contactSynchroniser.GetSynchronisedItems());
+            }
+            if (this.meetingSynchroniser != null)
+            {
+                result.AddRange(this.meetingSynchroniser.GetSynchronisedItems());
             }
             if (this.taskSynchroniser != null)
             {

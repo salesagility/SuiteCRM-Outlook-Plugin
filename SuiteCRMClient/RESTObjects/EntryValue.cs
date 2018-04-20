@@ -63,7 +63,10 @@ namespace SuiteCRMClient.RESTObjects
 
             try
             {
-                result = this.map == null ? null : this.map[key];
+                if (this.map != null && this.map.ContainsKey(key))
+                {
+                    result = this.map[key];
+                }
             }
             catch (Exception)
             {

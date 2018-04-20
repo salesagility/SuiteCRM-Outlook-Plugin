@@ -33,6 +33,10 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class TaskSyncState: SyncState<Outlook.TaskItem>
     {
+        public TaskSyncState(Outlook.TaskItem item, string crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
+        {
+        }
+
         public override string CrmType => TaskSyncing.CrmModule;
 
         public override string OutlookItemEntryId => OutlookItem.EntryID;
@@ -45,11 +49,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[Synchroniser<Outlook.TaskItem>.CrmIdPropertyName];
-                string crmId = olPropertyEntryId == null ?
-                    "[not present]" :
-                    olPropertyEntryId.Value;
-                return $"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject    : '{olItem.Subject}'\n\tStatus      : {olItem.Status}";
+                if (OutlookItem == null)
+                {
+                    return "[OutlookItem not set]";
+                }
+                else
+                {
+                    Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[Synchroniser<Outlook.TaskItem>.CrmIdPropertyName];
+                    string crmId = olPropertyEntryId == null ?
+                        "[not present]" :
+                        olPropertyEntryId.Value;
+                    return $"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject    : '{OutlookItem.Subject}'\n\tStatus      : {OutlookItem.Status}";
+                }
             }
         }
 
@@ -69,7 +80,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override void RemoveSynchronisationProperties()
         {
-            olItem.ClearSynchronisationProperties();
+            OutlookItem.ClearSynchronisationProperties();
         }
     }
 }

@@ -34,6 +34,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Threading;
     using System.Runtime.InteropServices;
+    using Exceptions;
 
     /// <summary>
     /// Synchronise items of the class for which I am responsible.
@@ -323,24 +324,69 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// how to handle them.
         /// </summary>
         /// <param name="itemsToResolve">The list of items to resolve.</param>
-        /// <param name="crmModule">The type of items to resolve.</param>
-        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve, string crmModule)
+        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve)
         {
-            List<SyncState<OutlookItemType>> itemsCopy = new List<SyncState<OutlookItemType>>();
-            itemsCopy.AddRange(itemsToResolve);
-
-            var toDeleteFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.CrmType == crmModule).ToList();
-            var toCreateOnCrmServer = itemsCopy.Where(a => !a.ExistedInCrm && a.CrmType == crmModule).ToList();
-            var missingFromOutlook = itemsCopy.Where(a => a.ExistedInCrm && a.IsDeletedInOutlook && a.CrmType == crmModule).ToList();
-
-            foreach (var syncState in toDeleteFromOutlook)
+            foreach (var unresolved in itemsToResolve)
             {
-                this.RemoveItemAndSyncState(syncState);
+                switch (unresolved.TxState)
+                {
+                    case SyncState<OutlookItemType>.TransmissionState.PendingDeletion:
+                        /* If it's to resolve and marked pending deletion, we delete it 
+                         * (unresolved on two successive iterations): */
+                        this.RemoveItemAndSyncState(unresolved);
+                        break;
+                    case SyncState<OutlookItemType>.TransmissionState.Synced:
+                        if (unresolved.ExistedInCrm)
+                        {
+                            /* if it's unresolved but it used to exist in CRM, it's probably been deleted from
+                             * CRM. Mark it pending deletion and check again next iteration. */
+                            unresolved.SetPendingDeletion();
+                        }
+                        break;
+                    case SyncState<OutlookItemType>.TransmissionState.Pending:
+                    case SyncState<OutlookItemType>.TransmissionState.PresentAtStartup:
+                        if (unresolved.ShouldSyncWithCrm)
+                        {
+                            try
+                            {
+                                /* if it's unresolved, pending, and should be synced send it. */
+                                unresolved.SetQueued();
+                                AddOrUpdateItemFromOutlookToCrm(unresolved);
+                            }
+                            catch (BadStateTransition)
+                            {
+                                // ignore.
+                            }
+                        }
+                        break;
+                    case SyncState<OutlookItemType>.TransmissionState.Queued:
+                        if (unresolved.ShouldSyncWithCrm)
+                        {
+                            try
+                            {
+                                /* if it's queued and should be synced send it. */
+                                AddOrUpdateItemFromOutlookToCrm(unresolved);
+                            }
+                            catch (BadStateTransition bst)
+                            {
+                                Log.Error($"Transition exception in ResolveUnmatchedItems", bst);
+                            }
+                        }
+                        break;
+                    default:
+                        unresolved.SetPending();
+                        break;
+                }
             }
 
-            foreach (var syncState in toCreateOnCrmServer)
+            foreach (SyncState resolved in this.ItemsSyncState
+                .Where(s => s is SyncState<OutlookItemType> &&
+                s.TxState == SyncState<OutlookItemType>.TransmissionState.PendingDeletion &&
+                !itemsToResolve.Contains(s)))
             {
-                AddOrUpdateItemFromOutlookToCrm(syncState);
+                /* finally, if there exists an item which had been marked pending deletion, but it has
+                 *  been found in CRM (i.e. not in unresolved), mark it as synced */
+                ((SyncState<OutlookItemType>)resolved).SetSynced();
             }
         }
 
@@ -438,17 +484,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>the sensitivity of the item.</returns>
         internal abstract Outlook.OlSensitivity GetSensitivity(OutlookItemType olItem);
 
-        /// <summary>
-        /// Given a list of items which exist in Outlook but are missing from CRM, resolve
-        /// how to handle them.
-        /// </summary>
-        /// <param name="itemsToResolve">The list of items to resolve.</param>
-        /// <param name="crmModule">The type of items to resolve.</param>
-        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve)
-        {
-            this.ResolveUnmatchedItems(itemsToResolve, DefaultCrmModule);
-        }
-
 
         /// <summary>
         /// Add the item implied by this SyncState, which may not exist in CRM, to CRM.
@@ -516,7 +551,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 catch (Exception ex)
                 {
                     Log.Error("Synchroniser.AddOrUpdateItemFromOutlookToCrm", ex);
-                    syncState.SetPending();
+                    syncState.SetPending(true);
                 }
                 finally
                 {
@@ -552,9 +587,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (existingState.OutlookItem != olItem)
                 {
-                    /* if Outlook only holds one item with the same id, then this line MUST be redundant.
-                     * TODO: check logs and simplify this logic if the issue does not occur */
-                    existingState.OutlookItem = olItem;
                     Log.Error($"Should never happen - two Outlook items with same id ({GetOutlookEntryId(olItem)})?");
                 }
                 return existingState;
@@ -883,10 +915,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="folder">The folder to be synchronised.</param>
         /// <param name="crmModule">The name of the CRM module to synchronise with.</param>
         /// <param name="untouched">A list of all known Outlook items, from which those modified by this method are removed.</param>
-        protected virtual void MergeRecordsFromCrm(Outlook.MAPIFolder folder, string crmModule, HashSet<SyncState<OutlookItemType>> untouched)
+        protected virtual IList<EntryValue> MergeRecordsFromCrm(Outlook.MAPIFolder folder, string crmModule, HashSet<SyncState<OutlookItemType>> untouched)
         {
             int thisOffset = 0; // offset of current page of entries
             int nextOffset = 0; // offset of the next page of entries, if any.
+            List<EntryValue> result = new List<EntryValue>();
 
             /* get candidates for syncrhonisation from SuiteCRM one page at a time */
             do
@@ -905,15 +938,23 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 /* when there are no more entries, we'll get a zero-length entry list and nextOffset
                  * will have the same value as thisOffset */
-                AddOrUpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
+                // AddOrUpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
+
+                result.AddRange(entriesPage.entry_list);
             }
             while (thisOffset != nextOffset);
+
+            return result;
         }
 
 
         /// <summary>
         /// Update these items, which may or may not already exist in Outlook.
         /// </summary>
+        /// <remarks>
+        /// TODO: It would be much better if, rather than taking `untouched` as a mutable argument,
+        /// this method returned a list of items which weren't identified.
+        /// </remarks>
         /// <param name="crmItems">The items to be synchronised.</param>
         /// <param name="folder">The outlook folder to synchronise into.</param>
         /// <param name="untouched">A list of sync states of existing items which have
@@ -921,7 +962,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// by the action of this method.</param>
         /// <param name="crmType">The CRM record type ('module') to be fetched.</param>
         protected virtual void AddOrUpdateItemsFromCrmToOutlook(
-            EntryValue[] crmItems,
+            IList<EntryValue> crmItems,
             Outlook.MAPIFolder folder,
             HashSet<SyncState<OutlookItemType>> untouched,
             string crmType)
@@ -935,11 +976,19 @@ namespace SuiteCRMAddIn.BusinessLogic
                         var state = AddOrUpdateItemFromCrmToOutlook(folder, crmType, crmItem);
                         if (state != null)
                         {
-                            // i.e., the entry was updated...
                             untouched.Remove(state);
-                            state.SetSynced();
+                            /* Because Outlook offers us back items in another thread as we modify them
+                             * they may already be queued for output before we get here. But they should
+                             * ideally not be sent, so we forcibly mark them as synced overriding the 
+                             * normal flow of the state transition engine. */
+                            state.SetSynced(true);
                             LogItemAction(state.OutlookItem, "Synchroniser.AddOrUpdateItemsFromCrmToOutlook, item removed from untouched");
                         }
+                    }
+                    else
+                    {
+                        /* even if we shouldn't update it, we should remove it from untouched. */
+                        untouched.Remove(this.GetExistingSyncState(crmItem));
                     }
                 }
                 catch (Exception ex)

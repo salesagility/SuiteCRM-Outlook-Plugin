@@ -86,12 +86,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     var untouched = new HashSet<SyncState<Outlook.ContactItem>>(ItemsSyncState);
 
-                    MergeRecordsFromCrm(folder, crmModule, untouched);
+                    IList<EntryValue> records = MergeRecordsFromCrm(folder, crmModule, untouched);
+
+                    this.AddOrUpdateItemsFromCrmToOutlook(records, folder, untouched, crmModule);
 
                     try
                     {
-                        var syncableButNotOnCrm = untouched.Where(s => s.ShouldSyncWithCrm);
-                        ResolveUnmatchedItems(syncableButNotOnCrm);
+                        ResolveUnmatchedItems(untouched);
                     }
                     catch (Exception ex)
                     {
@@ -211,7 +212,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
 
-            return this.AddOrGetSyncState(olItem);
+            var syncState = this.AddOrGetSyncState(olItem);
+            syncState.SetNewFromCRM();
+            return syncState;
         }
 
         /// <summary>
@@ -402,7 +405,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Outlook.Items olItems = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
                 foreach (Outlook.ContactItem oItem in olItems)
                 {
-                    AddOrGetSyncState(oItem);
+                    AddOrGetSyncState(oItem).SetPresentAtStartup();
                 }
             }
             catch (Exception ex)
@@ -480,12 +483,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override SyncState<Outlook.ContactItem> ConstructSyncState(Outlook.ContactItem oItem)
         {
-            return new ContactSyncState
-            {
-                OutlookItem = oItem,
-                CrmEntryId = oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
-                OModifiedDate = ParseDateTimeFromUserProperty(oItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()),
-            };
+            return new ContactSyncState(oItem,
+                oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
+                ParseDateTimeFromUserProperty(oItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()));
         }
 
 
