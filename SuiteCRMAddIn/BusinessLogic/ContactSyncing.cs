@@ -86,12 +86,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     var untouched = new HashSet<SyncState<Outlook.ContactItem>>(ItemsSyncState);
 
-                    MergeRecordsFromCrm(folder, crmModule, untouched);
+                    IList<EntryValue> records = MergeRecordsFromCrm(folder, crmModule, untouched);
+
+                    this.AddOrUpdateItemsFromCrmToOutlook(records, folder, untouched, crmModule);
 
                     try
                     {
-                        var syncableButNotOnCrm = untouched.Where(s => s.ShouldSyncWithCrm);
-                        ResolveUnmatchedItems(syncableButNotOnCrm);
+                        ResolveUnmatchedItems(untouched);
                     }
                     catch (Exception ex)
                     {

@@ -116,7 +116,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 var untouched = new HashSet<SyncState<Outlook.TaskItem>>(ItemsSyncState);
 
-                MergeRecordsFromCrm(folder, crmModule, untouched);
+                IList<EntryValue> records = MergeRecordsFromCrm(folder, crmModule, untouched);
+                this.AddOrUpdateItemsFromCrmToOutlook(records, folder, untouched, crmModule);
 
                 try
                 {

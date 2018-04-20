@@ -22,6 +22,7 @@
 */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System;
     using Extensions;
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
@@ -47,6 +48,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
             return crmType == "Calls";
+        }
+
+        protected override void SetMeetingStatus(Outlook.AppointmentItem olItem, EntryValue crmItem)
+        {
+            olItem.MeetingStatus = Microsoft.Office.Interop.Outlook.OlMeetingStatus.olNonMeeting;
         }
     }
 }

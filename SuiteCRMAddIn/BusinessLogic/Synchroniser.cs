@@ -324,8 +324,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// how to handle them.
         /// </summary>
         /// <param name="itemsToResolve">The list of items to resolve.</param>
-        /// <param name="crmModule">The type of items to resolve.</param>
-        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve, string crmModule)
+        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve)
         {
             foreach (var unresolved in itemsToResolve)
             {
@@ -484,17 +483,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The outlook item whose sensitivity is required.</param>
         /// <returns>the sensitivity of the item.</returns>
         internal abstract Outlook.OlSensitivity GetSensitivity(OutlookItemType olItem);
-
-        /// <summary>
-        /// Given a list of items which exist in Outlook but are missing from CRM, resolve
-        /// how to handle them.
-        /// </summary>
-        /// <param name="itemsToResolve">The list of items to resolve.</param>
-        /// <param name="crmModule">The type of items to resolve.</param>
-        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve)
-        {
-            this.ResolveUnmatchedItems(itemsToResolve, DefaultCrmModule);
-        }
 
 
         /// <summary>
@@ -927,10 +915,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="folder">The folder to be synchronised.</param>
         /// <param name="crmModule">The name of the CRM module to synchronise with.</param>
         /// <param name="untouched">A list of all known Outlook items, from which those modified by this method are removed.</param>
-        protected virtual void MergeRecordsFromCrm(Outlook.MAPIFolder folder, string crmModule, HashSet<SyncState<OutlookItemType>> untouched)
+        protected virtual IList<EntryValue> MergeRecordsFromCrm(Outlook.MAPIFolder folder, string crmModule, HashSet<SyncState<OutlookItemType>> untouched)
         {
             int thisOffset = 0; // offset of current page of entries
             int nextOffset = 0; // offset of the next page of entries, if any.
+            List<EntryValue> result = new List<EntryValue>();
 
             /* get candidates for syncrhonisation from SuiteCRM one page at a time */
             do
@@ -949,15 +938,23 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 /* when there are no more entries, we'll get a zero-length entry list and nextOffset
                  * will have the same value as thisOffset */
-                AddOrUpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
+                // AddOrUpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
+
+                result.AddRange(entriesPage.entry_list);
             }
             while (thisOffset != nextOffset);
+
+            return result;
         }
 
 
         /// <summary>
         /// Update these items, which may or may not already exist in Outlook.
         /// </summary>
+        /// <remarks>
+        /// TODO: It would be much better if, rather than taking `untouched` as a mutable argument,
+        /// this method returned a list of items which weren't identified.
+        /// </remarks>
         /// <param name="crmItems">The items to be synchronised.</param>
         /// <param name="folder">The outlook folder to synchronise into.</param>
         /// <param name="untouched">A list of sync states of existing items which have
@@ -965,7 +962,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// by the action of this method.</param>
         /// <param name="crmType">The CRM record type ('module') to be fetched.</param>
         protected virtual void AddOrUpdateItemsFromCrmToOutlook(
-            EntryValue[] crmItems,
+            IList<EntryValue> crmItems,
             Outlook.MAPIFolder folder,
             HashSet<SyncState<OutlookItemType>> untouched,
             string crmType)
@@ -979,7 +976,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                         var state = AddOrUpdateItemFromCrmToOutlook(folder, crmType, crmItem);
                         if (state != null)
                         {
-                            // i.e., the entry was updated...
                             untouched.Remove(state);
                             /* Because Outlook offers us back items in another thread as we modify them
                              * they may already be queued for output before we get here. But they should
@@ -988,6 +984,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                             state.SetSynced(true);
                             LogItemAction(state.OutlookItem, "Synchroniser.AddOrUpdateItemsFromCrmToOutlook, item removed from untouched");
                         }
+                    }
+                    else
+                    {
+                        /* even if we shouldn't update it, we should remove it from untouched. */
+                        untouched.Remove(this.GetExistingSyncState(crmItem));
                     }
                 }
                 catch (Exception ex)

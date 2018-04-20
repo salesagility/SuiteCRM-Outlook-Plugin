@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using Extensions;
+    using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System;
@@ -100,6 +101,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
             return crmType == "Meetings";
+        }
+
+        protected override void SetMeetingStatus(Outlook.AppointmentItem olItem, EntryValue crmItem)
+        {
+            olItem.MeetingStatus = crmItem.GetValueAsString("assigned_user_id") == RestAPIWrapper.GetUserId() ?
+                Outlook.OlMeetingStatus.olMeeting :
+                Outlook.OlMeetingStatus.olMeetingReceived;
         }
 
         //internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)

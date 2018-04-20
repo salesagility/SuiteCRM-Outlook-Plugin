@@ -726,14 +726,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             string crmType,
             EntryValue crmItem)
         {
-            SyncState<Outlook.AppointmentItem> result = null;
+            SyncState<Outlook.AppointmentItem> result = this.GetExistingSyncState(crmItem);
             DateTime dateStart = crmItem.GetValueAsDateTime("date_start");
 
             if (dateStart >= GetStartDate())
             {
                 /* search for the item among the sync states I already know about */
-                var syncState = this.GetExistingSyncState(crmItem);
-                if (syncState == null)
+                if (result == null)
                 {
                     /* check for howlaround */
                     var matches = this.FindMatches(crmItem);
@@ -751,32 +750,37 @@ namespace SuiteCRMAddIn.BusinessLogic
                 else
                 {
                     /* found it, so update it from the CRM item */
-                    result = UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, syncState);
+                    UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, result);
                 }
 
                 result?.OutlookItem.Save();
 
                 if (crmItem?.relationships?.link_list != null)
                 {
-                    foreach (var list in crmItem.relationships.link_list)
-                    {
-                        foreach (var record in list.records)
-                        {
-                            var data = record.data.AsDictionary();
-                            try
-                            {
-                                this.CacheAddressResolutionData(list.name, record);
-                            }
-                            catch (KeyNotFoundException kex)
-                            {
-                                Log.Error($"Key not found while caching meeting recipients.", kex);
-                            }
-                        }
-                    }
+                    CacheAddressResolutionData(crmItem);
                 }
             }
 
             return result;
+        }
+
+        private void CacheAddressResolutionData(EntryValue crmItem)
+        {
+            foreach (var list in crmItem.relationships.link_list)
+            {
+                foreach (var record in list.records)
+                {
+                    var data = record.data.AsDictionary();
+                    try
+                    {
+                        this.CacheAddressResolutionData(list.name, record);
+                    }
+                    catch (KeyNotFoundException kex)
+                    {
+                        Log.Error($"Key not found while caching meeting recipients.", kex);
+                    }
+                }
+            }
         }
 
         internal override void HandleItemMissingFromOutlook(SyncState<Outlook.AppointmentItem> syncState)
@@ -1011,7 +1015,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             try
             {
-                olItem.MeetingStatus = Outlook.OlMeetingStatus.olMeeting;
+                SetMeetingStatus(olItem, crmItem);
                 int iCount = olItem.Recipients.Count;
                 for (int iItr = 1; iItr <= iCount; iItr++)
                 {
@@ -1043,6 +1047,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 this.SaveItem(olItem);
             }
         }
+
+        protected abstract void SetMeetingStatus(Outlook.AppointmentItem olItem, EntryValue crmItem);
 
         /// <summary>
         /// We should delete an item from CRM if it already exists in CRM, but it is now private.
@@ -1102,7 +1108,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* this.ItemsSyncState already contains items to be synced. */
                 var untouched = new HashSet<SyncState<Outlook.AppointmentItem>>(this.ItemsSyncState);
-                MergeRecordsFromCrm(folder, crmModule, untouched);
+                IList<EntryValue> records = MergeRecordsFromCrm(folder, crmModule, untouched);
+
+                AddOrUpdateItemsFromCrmToOutlook(records, folder, untouched, crmModule);
 
                 EntryValue[] invited = RestAPIWrapper.GetRelationships("Users",
                     RestAPIWrapper.GetUserId(), crmModule.ToLower(),
@@ -1110,15 +1118,15 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (invited != null)
                 {
                     AddOrUpdateItemsFromCrmToOutlook(invited, folder, untouched, crmModule);
-                }
 
-                try
-                {
-                    this.ResolveUnmatchedItems(untouched, crmModule);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("AppointmentSyncing.SyncFolder: Exception", ex);
+                    try
+                    {
+                        this.ResolveUnmatchedItems(untouched);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("AppointmentSyncing.SyncFolder: Exception", ex);
+                    }
                 }
             }
             catch (Exception ex)
