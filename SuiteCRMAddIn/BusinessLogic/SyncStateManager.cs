@@ -31,6 +31,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -139,23 +140,31 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Get all the syncstates I am holding.
         /// </summary>
-        /// <remarks>Possibly dodgy, as it returns the actual items.</remarks>
         /// <returns>A collection of the items which I hold which are of the specified type.</returns>
         internal ICollection<SyncState> GetSynchronisedItems()
         {
-            return this.byOutlookId.Values;
+            return this.byOutlookId.Values.ToList().AsReadOnly();
         }
 
 
         /// <summary>
         /// Get all the syncstates I am holding which are of this type.
         /// </summary>
-        /// <remarks>Possibly dodgy, as it returns the actual items.</remarks>
         /// <typeparam name="SyncStateType">The type which is requested.</typeparam>
         /// <returns>A collection of the items which I hold which are of the specified type.</returns>
         internal ICollection<SyncStateType> GetSynchronisedItems<SyncStateType>() where SyncStateType : SyncState
         {
-            return this.byOutlookId.Values.Select(x => x as SyncStateType).Where(x => x != null).ToList<SyncStateType>();
+            return this.byOutlookId.Values.Select(x => x as SyncStateType).Where(x => x != null).ToList<SyncStateType>().AsReadOnly();
+        }
+
+
+        /// <summary>
+        /// Count the number of items I monitor.
+        /// </summary>
+        /// <returns>A count of the number of items I monitor.</returns>
+        public int CountItems()
+        {
+            return byOutlookId.Values.Count();
         }
 
 
@@ -381,13 +390,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                 case CallsSynchroniser.CrmModule:
                     result = CallSyncState.GetDistinctFields(crmItem);
                     break;
-                case ContactSyncing.CrmModule:
+                case ContactSynchroniser.CrmModule:
                     result = ContactSyncState.GetDistinctFields(crmItem);
                     break;
                 case MeetingsSynchroniser.CrmModule:
                     result = MeetingSyncState.GetDistinctFields(crmItem);
                     break;
-                case TaskSyncing.CrmModule:
+                case TaskSynchroniser.CrmModule:
                     result = TaskSyncState.GetDistinctFields(crmItem);
                     break;
                 default:
@@ -579,11 +588,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (result == null)
                 {
-                    throw new Exception($"Unexpected state type found.");
+                    throw new Exception($"Unexpected state type found: {state.GetType().Name}.");
                 }
                 else if (!result.OutlookItem.Equals(olItem))
                 {
-                    throw new ProbableDuplicateItemException<ItemType>(olItem, $"Probable duplicate Outlook item.");
+                    throw new ProbableDuplicateItemException<ItemType>(olItem, $"Probable duplicate Outlook item; crmId is {crmId}; identifying fields are {result.IdentifyingFields}");
                 }
             }
 
@@ -671,6 +680,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                 }
                 catch (KeyNotFoundException) { }
+                catch (COMException) { }
                 try
                 {
                     if (!string.IsNullOrEmpty(state.CrmEntryId) && this.byCrmId[state.CrmEntryId] == state)

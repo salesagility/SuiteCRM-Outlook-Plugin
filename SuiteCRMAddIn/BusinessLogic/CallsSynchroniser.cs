@@ -57,10 +57,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             olItem.MeetingStatus = Microsoft.Office.Interop.Outlook.OlMeetingStatus.olNonMeeting;
         }
 
-        protected override void ResolveUnmatchedItems(IEnumerable<SyncState<Microsoft.Office.Interop.Outlook.AppointmentItem>> itemsToResolve)
+        protected override void InstallEventHandlers()
         {
-            IEnumerable<SyncState<Microsoft.Office.Interop.Outlook.AppointmentItem>> items = itemsToResolve.Where(x => x.OutlookItem.IsCall()).ToList();
-            base.ResolveUnmatchedItems(items);
+            /* arbitrarily, one AppointmentSyncing subclass should NOT handle events. */
+        }
+
+        protected override void RemoveEventHandlers()
+        {
+            /* arbitrarily, one AppointmentSyncing subclass should NOT handle events. */
         }
     }
 }

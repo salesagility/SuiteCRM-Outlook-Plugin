@@ -57,7 +57,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The modules to which we'll try to save if no more specific list of modules is specified.
         /// </summary>
-        public static readonly List<string> defaultModuleKeys = new List<string>() { ContactSyncing.CrmModule, "Leads" };
+        public static readonly List<string> defaultModuleKeys = new List<string>() { ContactSynchroniser.CrmModule, "Leads" };
 
         public EmailArchiving(string name, ILogger log) : base(name, log)
         {

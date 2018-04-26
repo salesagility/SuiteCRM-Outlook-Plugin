@@ -1,8 +1,4 @@
 ﻿
-using System;
-using Microsoft.Office.Interop.Outlook;
-using SuiteCRMAddIn.ProtoItems;
-using SuiteCRMClient.RESTObjects;
 /**
 * Outlook integration for SuiteCRM.
 * @package Outlook integration for SuiteCRM
@@ -27,6 +23,11 @@ using SuiteCRMClient.RESTObjects;
 */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System;
+    using Microsoft.Office.Interop.Outlook;
+    using SuiteCRMAddIn.ProtoItems;
+    using SuiteCRMClient.RESTObjects;
+
     /// <summary>
     /// A sync state which syncs an appointment which is a meeting.
     /// </summary>

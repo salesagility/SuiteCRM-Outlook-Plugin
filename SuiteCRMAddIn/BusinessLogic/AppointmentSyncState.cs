@@ -80,7 +80,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[AppointmentSyncing<CallSyncState>.CrmIdPropertyName];
+                Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[SyncStateManager.CrmIdPropertyName];
                 string crmId = olPropertyEntryId == null ?
                     "[not present]" :
                     olPropertyEntryId.Value;
@@ -106,18 +106,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.OutlookItem.Delete();
         }
 
-        /// <summary>
-        /// Construct a JSON-serialisable representation of my appointment item.
-        /// </summary>
-        internal override ProtoItem<Outlook.AppointmentItem> CreateProtoItem(Outlook.AppointmentItem outlookItem)
-        {
-            return new ProtoAppointment(outlookItem);
-        }
-
         public override void RemoveSynchronisationProperties()
         {
             OutlookItem.ClearSynchronisationProperties();
         }
 
+        internal override void SaveItem()
+        {
+            this.OutlookItem?.Save();
+        }
     }
 }

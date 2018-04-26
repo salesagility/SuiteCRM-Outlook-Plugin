@@ -98,6 +98,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+
+        /// <summary>
+        /// Save my Outlook item.
+        /// </summary>
+        internal abstract void SaveItem();
+
         /// <summary>
         /// Remove all synchronisation properties from this object.
         /// </summary>

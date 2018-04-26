@@ -47,22 +47,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         where OutlookItemType : class
         where SyncStateType : SyncState<OutlookItemType>
     {
-        /// <summary>
-        /// The name of the modified date synchronisation property.
-        /// </summary>
-        public const string ModifiedDatePropertyName = "SOModifiedDate";
-
-        /// <summary>
-        /// The name of the type synchronisation property.
-        /// </summary>
-        public const string TypePropertyName = "SType";
-
-        /// <summary>
-        /// The name of the CRM ID synchronisation property.
-        /// </summary>
-        /// <see cref="SuiteCRMAddIn.Extensions.MailItemExtensions.CrmIdPropertyName"/> 
-        public const string CrmIdPropertyName = "SEntryID";
-
         private readonly SyncContext context;
 
         /// <summary>
@@ -203,31 +187,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             get;
         }
 
-        /// <summary>
-        /// A count of the number of items I am responsible for synchronising.
-        /// </summary>
-        public int ItemsCount
-        {
-            get
-            {
-                return this.ItemsSyncState.Count();
-            }
-        }
-
         protected SyncContext Context => context;
 
         protected Outlook.Application Application => Context.Application;
 
-        /// <summary>
-        /// Getting this shutdown cleanly, while updating the shutting down dialog, is 
-        /// tricky; we need to track it.
-        /// </summary>
-        private ShutdownState shutdownState = ShutdownState.NotStarted;
-
-        /// <summary>
-        /// List of the synchronisation state of all items which may require synchronisation.
-        /// </summary>
-        protected ThreadSafeList<SyncState<OutlookItemType>> ItemsSyncState { get; set; } = new ThreadSafeList<SyncState<OutlookItemType>>();
 
         /// <summary>
         /// The direction(s) in which I sync
@@ -276,48 +239,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override int PrepareShutdown()
         {
-            int result;
-
-            var shutdownState = this.shutdownState;
-
-            switch (shutdownState)
-            {
-                case ShutdownState.NotStarted:
-                    this.shutdownState = ShutdownState.ShuttingDown;
-                    /* remove event handlers when preparing shutdown, to prevent recursive issues */
-                    this.RemoveEventHandlers();
-                    new Thread(BruteForceSaveAll).Start();
-                    result = 1;
-                    break;
-                case ShutdownState.ShuttingDown:
-                    result = 1;
-                    break;
-                default:
-                    result = base.PrepareShutdown();
-                    break;
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// This is part of an attempt to stop the 'do you want to save' popups; save
-        /// everything we've touched, whether or not we've set anything on it.
-        /// </summary>
-        private void BruteForceSaveAll()
-        {
-            try
-            {
-                /* brute force save everything. Not happy about this... */
-                foreach (var syncState in this.ItemsSyncState)
-                {
-                    this.SaveItem(syncState.OutlookItem);
-                }
-            }
-            finally
-            {
-                this.shutdownState = ShutdownState.Completed;
-            }
+            this.RemoveEventHandlers();
+            return 0;
         }
 
         /// <summary>
@@ -380,9 +303,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
             }
 
-            foreach (SyncState resolved in this.ItemsSyncState
-                .Where(s => s is SyncState<OutlookItemType> &&
-                s.TxState == SyncState<OutlookItemType>.TransmissionState.PendingDeletion &&
+            foreach (SyncState resolved in SyncStateManager.Instance.GetSynchronisedItems<SyncStateType>()
+                .Where(s => s.TxState == SyncState<OutlookItemType>.TransmissionState.PendingDeletion &&
                 !itemsToResolve.Contains(s)))
             {
                 /* finally, if there exists an item which had been marked pending deletion, but it has
@@ -576,159 +498,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Find the SyncState whose item is this item; if it does not already exist, construct and return it.
-        /// </summary>
-        /// <param name="olItem">The item to find.</param>
-        /// <returns>the SyncState whose item is this item</returns>
-        public SyncStateType AddOrGetSyncState(OutlookItemType olItem)
-        {
-            var existingState = GetExistingSyncState(olItem);
-
-            if (existingState != null)
-            {
-                if (existingState.OutlookItem != olItem)
-                {
-                    Log.Error($"Should never happen - two Outlook items with same id ({GetOutlookEntryId(olItem)})?");
-                }
-                return existingState;
-            }
-            else
-            {
-                return ConstructAndAddSyncState(olItem);
-            }
-        }
-
-        /// <summary>
-        /// Constructs a new SyncState object for this Outlook item and adds it to my
-        /// collection of sync states.
-        /// </summary>
-        /// <param name="olItem">The Outlook item to wrap</param>
-        /// <returns>The sync state added.</returns>
-        private SyncStateType ConstructAndAddSyncState(OutlookItemType olItem)
-        {
-            try
-            {
-                SyncStateType newState = ConstructSyncState(olItem);
-                ItemsSyncState.Add(newState);
-                return newState;
-            }
-            finally
-            {
-                this.SaveItem(olItem);
-            }
-        }
-    
-
-        /// <summary>
-        /// Construct and return a new sync state representing this item.
-        /// </summary>
-        /// <param name="olItem">The item</param>
-        /// <returns>a new sync state representing this item.</returns>
-//        protected abstract SyncState<OutlookItemType> ConstructSyncState(OutlookItemType olItem);
-
-        /// <summary>
-        /// Get the existing sync state representing this item, if it exists, else null.
-        /// </summary>
-        /// <param name="olItem">The item</param>
-        /// <returns>the existing sync state representing this item, if it exists, else null.</returns>
-        //protected SyncStateType GetExistingSyncState(OutlookItemType olItem)
-        //{
-        //    SyncStateType result;
-
-        //    if (olItem == null)
-        //    {
-        //        result = null;
-        //    }
-        //    else
-        //    {
-        //        try {
-        //            var olItemEntryId = GetOutlookEntryId(olItem);
-        //            try
-        //            {
-        //                /* if there are duplicate entries I want them logged */
-        //                result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
-        //                    .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-        //                    .Where(a => !a.IsDeletedInOutlook)
-        //                    .SingleOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
-        //            }
-        //            catch (InvalidOperationException notUnique)
-        //            {
-        //                Log.Error(
-        //                    $"Synchroniser.GetExistingSyncState: Outlook Id {olItemEntryId} was not unique in this.ItemsSyncState?",
-        //                    notUnique);
-
-        //                /* but if it isn't unique, the first will actually do for now */
-        //                result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
-        //                    .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-        //                    .Where(a => !a.IsDeletedInOutlook)
-        //                    .FirstOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
-        //            }
-        //        }
-        //        catch (COMException comx)
-        //        {
-        //            Log.Debug($"Synchroniser.GetExistingSyncState: Object has probably been deleted: {comx.ErrorCode}, {comx.Message}");
-        //            result = null;
-        //        }
-        //    }
-
-        //    if (result != null && result.CrmEntryId == null)
-        //    {
-        //        result.CrmEntryId = this.GetCrmEntryId(olItem);
-        //    }
-
-
-
-        //    return result;
-        //}
-
-
-        /// <summary>
         /// Get the CRM entry id of this item, if it has one and is known.
         /// </summary>
         /// <param name="olItem">The item whose id is saught.</param>
         /// <returns>The id, or null if it is not known.</returns>
         protected abstract string GetCrmEntryId(OutlookItemType olItem);
-
-
-        ///// <summary>
-        ///// Get the existing sync state representing this item, if it exists, else null.
-        ///// </summary>
-        ///// <param name="crmItem">The item</param>
-        ///// <returns>the existing sync state representing this item, if it exists, else null.</returns>
-        //protected SyncState<OutlookItemType> GetExistingSyncState(EntryValue crmItem)
-        //{
-        //    return crmItem == null ?
-        //        null :
-        //        this.GetExistingSyncState(crmItem.GetValueAsString("id"));
-        //}
-
-        /// <summary>
-        /// Get the existing sync state representing the item with this CRM id, if it exists, else null.
-        /// </summary>
-        /// <param name="crmItemId">The id of a CRM item</param>
-        /// <returns>the existing sync state representing the item with this CRM id, if it exists, else null.</returns>
-        protected SyncState<OutlookItemType> GetExistingSyncState(string crmItemId)
-        {
-            SyncState<OutlookItemType> result;
-            try
-            {
-                /* if there are duplicate entries I want them logged */
-                result = ItemsSyncState.SingleOrDefault(a => a.CrmEntryId == crmItemId);
-            }
-            catch (InvalidOperationException notUnique)
-            {
-                Log.Error(
-                    String.Format(
-                        "AppointmentSyncing.AddItemFromOutlookToCrm: CRM Id {0} was not unique in this.ItemsSyncState?",
-                        crmItemId),
-                    notUnique);
-
-                /* but if it isn't unique, the first will actually do for now */
-                result = ItemsSyncState.FirstOrDefault(a => a.CrmEntryId == crmItemId);
-            }
-
-            return result;
-        }
 
         /// <summary>
         /// Get the entry id of this Outlook item.
@@ -736,22 +510,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The Outlook item from which the entry id should be taken.</param>
         /// <returns>the entry id of this Outlook item.</returns>
         internal abstract string GetOutlookEntryId(OutlookItemType olItem);
-
-        /// <summary>
-        /// Find the SyncState whose item is this item; if it does not already exist, construct and return it.
-        /// </summary>
-        /// <param name="olItem">The item to find.</param>
-        /// <param name="modified">The modified time to set.</param>
-        /// <param name="crmId">The id of this item in CRM.</param>
-        /// <returns>the SyncState whose item is this item</returns>
-        protected SyncState<OutlookItemType> AddOrGetSyncState(OutlookItemType olItem, DateTime modified, string crmId)
-        {
-            var result = this.AddOrGetSyncState(olItem);
-            result.OModifiedDate = DateTime.UtcNow;
-            result.CrmEntryId = crmId;
-
-            return result;
-        }
 
         /// <summary>
         /// Construct a JSON packet representing this Outlook item, and despatch it to CRM.
@@ -781,9 +539,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                EnsureSynchronisationPropertyForOutlookItem(olItem, ModifiedDatePropertyName, modifiedDate);
-                EnsureSynchronisationPropertyForOutlookItem(olItem, TypePropertyName, type);
-                EnsureSynchronisationPropertyForOutlookItem(olItem, CrmIdPropertyName, entryId);
+                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName, modifiedDate);
+                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
+                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
             }
             finally
             {
@@ -821,10 +579,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         internal IEnumerable<WithRemovableSynchronisationProperties> GetSynchronisedItems()
         {
-            var result = new List<WithRemovableSynchronisationProperties>();
-            result.AddRange(this.ItemsSyncState.AsEnumerable<SyncState<OutlookItemType>>());
-
-            return result;
+            return SyncStateManager.Instance.GetSynchronisedItems<SyncStateType>(); ;
         }
 
         /// <summary>
@@ -856,12 +611,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected void RemoveDeletedItems()
         {
             // Make a copy of the list to avoid mutation error while iterating:
-            var syncStatesCopy = new List<SyncState<OutlookItemType>>(ItemsSyncState);
+            var syncStatesCopy = SyncStateManager.Instance.GetSynchronisedItems<SyncStateType>();
             foreach (var syncState in syncStatesCopy)
             {
                 var shouldDeleteFromCrm = syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm;
-                if (shouldDeleteFromCrm) RemoveFromCrm(syncState);
-                if (syncState.IsDeletedInOutlook) ItemsSyncState.Remove(syncState);
+                if (shouldDeleteFromCrm) { RemoveFromCrm(syncState); }
+                if (syncState.IsDeletedInOutlook) { SyncStateManager.Instance.RemoveSyncState(syncState); }
             }
         }
 
@@ -989,7 +744,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     else
                     {
                         /* even if we shouldn't update it, we should remove it from untouched. */
-                        untouched.Remove(this.GetExistingSyncState(crmItem));
+                        untouched.Remove(SyncStateManager.Instance.GetExistingSyncState(crmItem) as SyncStateType);
                     }
                 }
                 catch (Exception ex)
@@ -1012,6 +767,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return true;
         }
 
+
         /// <summary>
         /// Update a single item in the specified Outlook folder with changes from CRM. If the item
         /// does not exist, create it.
@@ -1033,7 +789,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             try
             {
-                result = ItemsSyncState.Where(a => this.IsMatch(a.OutlookItem, crmItem))
+                result = SyncStateManager.Instance.GetSynchronisedItems<SyncState<OutlookItemType>>().Where(a => this.IsMatch(a.OutlookItem, crmItem))
                     .ToList<SyncState<OutlookItemType>>();
             }
             catch (Exception any)
@@ -1069,7 +825,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             // RemoveEventHandlers();
         }
 
-        protected void InstallEventHandlers()
+        protected virtual void InstallEventHandlers()
         {
             if (_itemsCollection == null)
             {
@@ -1083,7 +839,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        private void RemoveEventHandlers()
+        protected virtual void RemoveEventHandlers()
         {
             if (_itemsCollection != null)
             {
@@ -1139,30 +895,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Entry point from event handler when an item is added in Outlook.
         /// </summary>
         /// <remarks>Should always run in the 'VSTA_main' thread.</remarks>
+        /// <remarks>Shouldn't happen here.</remarks>
         /// <param name="olItem">The item that has been added.</param>
         protected virtual void OutlookItemAdded(OutlookItemType olItem)
         {
-            LogItemAction(olItem, "Synchroniser.OutlookItemAdded");
-
             if (Globals.ThisAddIn.IsLicensed)
             {
                 try
                 {
-                    if (olItem != null)
-                    {
-                        lock (enqueueingLock)
-                        {
-                            if (this.GetExistingSyncState(olItem) == null)
-                            {
-                                SyncState<OutlookItemType> state = this.AddOrGetSyncState(olItem);
-                                DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType, SyncStateType>(this, state, this.DefaultCrmModule));
-                            }
-                            else
-                            {
-                                Log.Warn($"Synchroniser.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
-                            }
-                        }
-                    }
+                    OutlookItemAdded<SyncStateType>(olItem, this);
                 }
                 finally
                 {
@@ -1180,37 +921,55 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Entry point from event handler, called when an Outlook item of class AppointmentItem
-        /// is believed to have changed.
+        /// #2246: Nasty workaround for the fact that Outlook 'Appointments' and 'Meetings' are actually the same class.
         /// </summary>
-        /// <param name="olItem">The item which has changed.</param>
-        protected void OutlookItemChanged(OutlookItemType olItem)
+        /// <typeparam name="T">The type of sync state to use.</typeparam>
+        /// <param name="olItem">The Outlook item which has been added.</param>
+        /// <param name="synchroniser">A synchroniser which can handle the item.</param>
+        protected void OutlookItemAdded<T>(OutlookItemType olItem, Synchroniser<OutlookItemType, T> synchroniser)
+            where T : SyncState<OutlookItemType>
         {
-            LogItemAction(olItem, "Syncroniser.OutlookItemChanged");
+            LogItemAction(olItem, $"{this.GetType().Name}.OutlookItemAdded: {this.GetOutlookEntryId(olItem)}");
 
-            if (Globals.ThisAddIn.IsLicensed)
+            if (olItem != null)
             {
-                try
+                lock (enqueueingLock)
                 {
-                    var syncStateForItem = GetExistingSyncState(olItem);
-                    if (syncStateForItem != null)
+                    if (SyncStateManager.Instance.GetExistingSyncState(olItem) == null)
                     {
-                        if (this.ShouldPerformSyncNow(syncStateForItem))
+                        T state = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as T;
+                        if (state != null)
                         {
-                            DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType,SyncStateType>(this, syncStateForItem));
+                            DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType, T>(synchroniser, state, this.DefaultCrmModule));
                         }
-                        else if (!syncStateForItem.ShouldSyncWithCrm)
+                        else
                         {
-                            this.RemoveFromCrm(syncStateForItem);
+                            Log.Warn("Should never happen: unexpected sync state type");
                         }
                     }
                     else
                     {
-                        /* we don't have a sync state for this item (presumably formerly private);
-                         * that's OK, treat it as new */
-                        OutlookItemAdded(olItem);
+                        Log.Warn($"{this.GetType().Name}.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} had already been added");
                     }
                 }
+            }
+        }
+
+
+        /// <summary>
+        /// Entry point from event handler, called when an Outlook item of class AppointmentItem
+        /// is believed to have changed.
+        /// </summary>
+        /// <param name="olItem">The item which has changed.</param>
+        protected virtual void OutlookItemChanged(OutlookItemType olItem)
+        {
+            if (Globals.ThisAddIn.IsLicensed)
+            {
+                try
+                {
+                    OutlookItemChanged<SyncStateType>(olItem, this);
+                }
+                catch (BadStateTransition) { /* couldn't set pending -> transmission is in progress */ }
                 finally
                 {
                     this.SaveItem(olItem);
@@ -1219,6 +978,41 @@ namespace SuiteCRMAddIn.BusinessLogic
             else
             {
                 Log.Warn($"Synchroniser.OutlookItemAdded: item {this.GetOutlookEntryId(olItem)} not updated because not licensed");
+            }
+        }
+
+        /// <summary>
+        /// #2246: Nasty workaround for the fact that Outlook 'Appointments' and 'Meetings' are actually the same class.
+        /// </summary>
+        /// <typeparam name="T">The type of sync state to use.</typeparam>
+        /// <param name="olItem">The Outlook item which has been changed.</param>
+        /// <param name="synchroniser">A synchroniser which can handle the item.</param>
+        protected void OutlookItemChanged<T>(OutlookItemType olItem, Synchroniser<OutlookItemType, T> synchroniser)
+            where T : SyncState<OutlookItemType>
+        {
+            LogItemAction(olItem, $"{this.GetType().Name}.OutlookItemChanged: {this.GetOutlookEntryId(olItem)}");
+
+            SyncState state = SyncStateManager.Instance.GetExistingSyncState(olItem);
+            T syncStateForItem = state as T;
+
+            if (syncStateForItem != null)
+            {
+                syncStateForItem.SetPending();
+
+                if (this.ShouldPerformSyncNow(syncStateForItem))
+                {
+                    DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType, T>(synchroniser, syncStateForItem));
+                }
+                else if (!syncStateForItem.ShouldSyncWithCrm)
+                {
+                    this.RemoveFromCrm(syncStateForItem);
+                }
+            }
+            else
+            {
+                /* we don't have a sync state for this item (presumably formerly private);
+                 * that's OK, treat it as new */
+                OutlookItemAdded(olItem);
             }
         }
 
@@ -1250,7 +1044,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected void RemoveItemSyncState(SyncState<OutlookItemType> item)
         {
             this.LogItemAction(item.OutlookItem, "Synchroniser.RemoveItemSyncState, removed item from queue");
-            this.ItemsSyncState.Remove(item);
+            SyncStateManager.Instance.RemoveSyncState(item);
         }
 
         /// <summary>
@@ -1262,12 +1056,5 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return (syncState.ShouldPerformSyncNow());
         }
-    }
-
-    enum ShutdownState
-    {
-        NotStarted = 0,
-        ShuttingDown = 1,
-        Completed = 2
     }
 }

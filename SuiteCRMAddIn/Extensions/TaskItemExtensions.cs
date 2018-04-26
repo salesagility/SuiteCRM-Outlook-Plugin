@@ -44,9 +44,9 @@ namespace SuiteCRMAddIn.Extensions
         /// <param name="olItem">The item from which the property should be removed.</param>
         public static void ClearSynchronisationProperties(this Outlook.TaskItem olItem)
         {
-            olItem.ClearUserProperty(TaskSyncing.CrmIdPropertyName);
-            olItem.ClearUserProperty(TaskSyncing.ModifiedDatePropertyName);
-            olItem.ClearUserProperty(TaskSyncing.TypePropertyName);
+            olItem.ClearUserProperty(SyncStateManager.CrmIdPropertyName);
+            olItem.ClearUserProperty(SyncStateManager.ModifiedDatePropertyName);
+            olItem.ClearUserProperty(SyncStateManager.TypePropertyName);
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace SuiteCRMAddIn.Extensions
         public static string GetCrmId(this Outlook.TaskItem olItem)
         {
             string result;
-            Outlook.UserProperty property = olItem.UserProperties[TaskSyncing.CrmIdPropertyName];
+            Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
             if (property != null)
             {
                 result = property.Value;

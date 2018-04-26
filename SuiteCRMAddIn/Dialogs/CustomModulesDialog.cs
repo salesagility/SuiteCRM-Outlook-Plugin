@@ -48,7 +48,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.txtDisplay.Visible = false;
             base.Controls.Add(this.txtDisplay);
             this.IgnoreModules.Add("iFrames");
-            this.IgnoreModules.Add(ContactSyncing.CrmModule);
+            this.IgnoreModules.Add(ContactSynchroniser.CrmModule);
             this.IgnoreModules.Add("Accounts");
             this.IgnoreModules.Add("Projects");
             this.IgnoreModules.Add("Bugs");
@@ -61,7 +61,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.IgnoreModules.Add("Trackers");
             this.IgnoreModules.Add("Emails");
             this.IgnoreModules.Add(CallsSynchroniser.CrmModule);
-            this.IgnoreModules.Add(TaskSyncing.CrmModule);
+            this.IgnoreModules.Add(TaskSynchroniser.CrmModule);
             this.IgnoreModules.Add("UserPrefs");
             this.IgnoreModules.Add("Contracts");
             this.IgnoreModules.Add("Campaigns");

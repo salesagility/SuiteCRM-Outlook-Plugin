@@ -57,9 +57,9 @@ namespace SuiteCRMAddIn.Extensions
         {
             /* it doesn't actually matter whether we use CallSyncState or MeetingSyncState here,
              * since the constants are stored on Synchroniser */
-            olItem.ClearUserProperty(AppointmentSyncing<CallSyncState>.CrmIdPropertyName);
-            olItem.ClearUserProperty(AppointmentSyncing<CallSyncState>.ModifiedDatePropertyName);
-            olItem.ClearUserProperty(AppointmentSyncing<CallSyncState>.TypePropertyName);
+            olItem.ClearUserProperty(SyncStateManager.CrmIdPropertyName);
+            olItem.ClearUserProperty(SyncStateManager.ModifiedDatePropertyName);
+            olItem.ClearUserProperty(SyncStateManager.TypePropertyName);
         }
 
 
@@ -71,7 +71,7 @@ namespace SuiteCRMAddIn.Extensions
         public static string GetCrmId(this Outlook.AppointmentItem olItem)
         {
             string result;
-            Outlook.UserProperty property = olItem.UserProperties[AppointmentSyncing<CallSyncState>.CrmIdPropertyName];
+            Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
             if (property != null)
             {
                 result = property.Value;

@@ -278,7 +278,7 @@
     <Compile Include="BusinessLogic\RunState.cs" />
     <Compile Include="BusinessLogic\LicenceValidation.cs" />
     <Compile Include="BusinessLogic\LicenceValidationHelper.cs" />
-    <Compile Include="BusinessLogic\ContactSyncing.cs" />
+    <Compile Include="BusinessLogic\ContactSynchroniser.cs" />
     <Compile Include="BusinessLogic\ContactSyncState.cs" />
     <Compile Include="BusinessLogic\EmailAccountsArchiveSettings.cs" />
     <Compile Include="BusinessLogic\EmailArchiving.cs" />
@@ -287,7 +287,7 @@
     <Compile Include="BusinessLogic\Synchroniser.cs" />
     <Compile Include="BusinessLogic\SyncState.cs" />
     <Compile Include="BusinessLogic\SyncState{1}.cs" />
-    <Compile Include="BusinessLogic\TaskSyncing.cs" />
+    <Compile Include="BusinessLogic\TaskSynchroniser.cs" />
     <Compile Include="BusinessLogic\TaskSyncState.cs" />
     <Compile Include="BusinessLogic\ThreadSafeList.cs" />
     <Compile Include="clsGlobals.cs" />

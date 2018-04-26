@@ -43,8 +43,11 @@ namespace SuiteCRMAddIn.Daemon
         public TransmitNewAction(Synchroniser<OutlookItemType, SyncStateType> synchroniser, SyncStateType state, string crmType) : base(1)
         {
             /* step the state transition engine forward to queued */
-            state.SetPending();
-            state.SetQueued();
+            if (state.TxState == SyncState<OutlookItemType>.TransmissionState.NewFromOutlook)
+            {
+                state.SetPending();
+                state.SetQueued();
+            }
             this.syncState = state;
             this.crmType = crmType;
             this.synchroniser = synchroniser;
@@ -60,40 +63,52 @@ namespace SuiteCRMAddIn.Daemon
 
         public override string Perform()
         {
-            /* #223: ensure that the state has a crmId is null or empty.
+            string result;
+
+            /* #223: ensure that the state has a crmId that is null or empty.
              * If not null or empty then this is not a new item: do nothing and exit. */
             if (string.IsNullOrEmpty(syncState.CrmEntryId))
             {
-                try {
-                    string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType);
-                    return $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
-                }
-                catch (WebException wex)
+                if (syncState.TxState == SyncState<OutlookItemType>.TransmissionState.Queued)
                 {
-                    if (wex.Status == WebExceptionStatus.ProtocolError)
+                    try
                     {
-                        using (HttpWebResponse response = wex.Response as HttpWebResponse)
+                        string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType);
+                        result = $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
+                    }
+                    catch (WebException wex)
+                    {
+                        if (wex.Status == WebExceptionStatus.ProtocolError)
                         {
-                            switch (response.StatusCode)
+                            using (HttpWebResponse response = wex.Response as HttpWebResponse)
                             {
-                                case HttpStatusCode.RequestTimeout:
-                                case HttpStatusCode.ServiceUnavailable:
-                                    throw new ActionRetryableException($"Temporary error ({response.StatusCode})", wex);
-                                default:
-                                    throw new ActionFailedException($"Permanent error ({response.StatusCode})", wex);
+                                switch (response.StatusCode)
+                                {
+                                    case HttpStatusCode.RequestTimeout:
+                                    case HttpStatusCode.ServiceUnavailable:
+                                        throw new ActionRetryableException($"Temporary error ({response.StatusCode})", wex);
+                                    default:
+                                        throw new ActionFailedException($"Permanent error ({response.StatusCode})", wex);
+                                }
                             }
                         }
+                        else
+                        {
+                            throw new ActionRetryableException("Temporary network error", wex);
+                        }
                     }
-                    else
-                    {
-                        throw new ActionRetryableException("Temporary network error", wex);
-                    }
+                }
+                else
+                {
+                    result = $"State is {syncState.TxState}; not retransmitting";
                 }
             }
             else
             {
-                return $"item was already synced as {syncState.CrmEntryId}; aborted.\n{this.syncState.Description}";
+                result = $"item was already synced as {syncState.CrmEntryId}; aborted.\n{this.syncState.Description}";
             }
+
+            return result;
         }
     }
 }

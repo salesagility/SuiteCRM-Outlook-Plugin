@@ -103,7 +103,7 @@ namespace SuiteCRMAddIn.Dialogs
             else
             {
                 this.lstViewResults.Items.Clear();
-                string[] strArray2 = new string[] { "Leads", ContactSyncing.CrmModule };
+                string[] strArray2 = new string[] { "Leads", ContactSynchroniser.CrmModule };
                 if (this.txtSearch.Text.Contains<char>(' '))
                 {
                     strArray = this.txtSearch.Text.Split(new char[] { ' ' });
@@ -120,7 +120,7 @@ namespace SuiteCRMAddIn.Dialogs
                 foreach (string str2 in strArray2)
                 {
                     string query = "(" + str2.ToLower() + ".first_name LIKE '%" + strArray[0] + "%' " + str + " " + str2.ToLower() + ".last_name LIKE '%" + strArray[1] + "%')";
-                    bool flag1 = str2 == ContactSyncing.CrmModule;
+                    bool flag1 = str2 == ContactSynchroniser.CrmModule;
                     if (this.cbMyItems.Checked)
                     {
                         string str8 = query;
