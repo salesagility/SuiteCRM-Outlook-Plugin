@@ -43,8 +43,9 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// It's arguable that specialisations of this class ought to be singletons, but currently they are not.
     /// </remarks>
     /// <typeparam name="OutlookItemType">The class of item that I am responsible for synchronising.</typeparam>
-    public abstract class Synchroniser<OutlookItemType> : RepeatingProcess, IDisposable
+    public abstract class Synchroniser<OutlookItemType, SyncStateType> : RepeatingProcess, IDisposable
         where OutlookItemType : class
+        where SyncStateType : SyncState<OutlookItemType>
     {
         /// <summary>
         /// The name of the modified date synchronisation property.
@@ -103,7 +104,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// A cache for CRM premissions to prevent continually asking for them.
         /// </summary>
-        protected readonly CRMPermissionsCache<OutlookItemType> permissionsCache;
+        protected readonly CRMPermissionsCache<OutlookItemType, SyncStateType> permissionsCache;
 
         /// <summary>
         /// Construct a new instance of a synchroniser with this thread name and context.
@@ -115,7 +116,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.context = context;
             this.InstallEventHandlers();
             this.AddSuiteCrmOutlookCategory();
-            this.permissionsCache = new CRMPermissionsCache<OutlookItemType>(this, context.Log);
+            this.permissionsCache = new CRMPermissionsCache<OutlookItemType, SyncStateType>(this, context.Log);
             this.GetOutlookItems(this.GetDefaultFolder());
         }
 
@@ -324,7 +325,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// how to handle them.
         /// </summary>
         /// <param name="itemsToResolve">The list of items to resolve.</param>
-        protected void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve)
+        protected virtual void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve)
         {
             foreach (var unresolved in itemsToResolve)
             {
@@ -579,7 +580,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The item to find.</param>
         /// <returns>the SyncState whose item is this item</returns>
-        public SyncState<OutlookItemType> AddOrGetSyncState(OutlookItemType olItem)
+        public SyncStateType AddOrGetSyncState(OutlookItemType olItem)
         {
             var existingState = GetExistingSyncState(olItem);
 
@@ -603,11 +604,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The Outlook item to wrap</param>
         /// <returns>The sync state added.</returns>
-        private SyncState<OutlookItemType> ConstructAndAddSyncState(OutlookItemType olItem)
+        private SyncStateType ConstructAndAddSyncState(OutlookItemType olItem)
         {
             try
             {
-                SyncState<OutlookItemType> newState = ConstructSyncState(olItem);
+                SyncStateType newState = ConstructSyncState(olItem);
                 ItemsSyncState.Add(newState);
                 return newState;
             }
@@ -623,62 +624,62 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The item</param>
         /// <returns>a new sync state representing this item.</returns>
-        protected abstract SyncState<OutlookItemType> ConstructSyncState(OutlookItemType olItem);
+//        protected abstract SyncState<OutlookItemType> ConstructSyncState(OutlookItemType olItem);
 
         /// <summary>
         /// Get the existing sync state representing this item, if it exists, else null.
         /// </summary>
         /// <param name="olItem">The item</param>
         /// <returns>the existing sync state representing this item, if it exists, else null.</returns>
-        protected SyncState<OutlookItemType> GetExistingSyncState(OutlookItemType olItem)
-        {
-            SyncState<OutlookItemType> result;
+        //protected SyncStateType GetExistingSyncState(OutlookItemType olItem)
+        //{
+        //    SyncStateType result;
 
-            if (olItem == null)
-            {
-                result = null;
-            }
-            else
-            {
-                try {
-                    var olItemEntryId = GetOutlookEntryId(olItem);
-                    try
-                    {
-                        /* if there are duplicate entries I want them logged */
-                        result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
-                            .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-                            .Where(a => !a.IsDeletedInOutlook)
-                            .SingleOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
-                    }
-                    catch (InvalidOperationException notUnique)
-                    {
-                        Log.Error(
-                            $"Synchroniser.GetExistingSyncState: Outlook Id {olItemEntryId} was not unique in this.ItemsSyncState?",
-                            notUnique);
+        //    if (olItem == null)
+        //    {
+        //        result = null;
+        //    }
+        //    else
+        //    {
+        //        try {
+        //            var olItemEntryId = GetOutlookEntryId(olItem);
+        //            try
+        //            {
+        //                /* if there are duplicate entries I want them logged */
+        //                result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
+        //                    .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
+        //                    .Where(a => !a.IsDeletedInOutlook)
+        //                    .SingleOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
+        //            }
+        //            catch (InvalidOperationException notUnique)
+        //            {
+        //                Log.Error(
+        //                    $"Synchroniser.GetExistingSyncState: Outlook Id {olItemEntryId} was not unique in this.ItemsSyncState?",
+        //                    notUnique);
 
-                        /* but if it isn't unique, the first will actually do for now */
-                        result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
-                            .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
-                            .Where(a => !a.IsDeletedInOutlook)
-                            .FirstOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
-                    }
-                }
-                catch (COMException comx)
-                {
-                    Log.Debug($"Synchroniser.GetExistingSyncState: Object has probably been deleted: {comx.ErrorCode}, {comx.Message}");
-                    result = null;
-                }
-            }
+        //                /* but if it isn't unique, the first will actually do for now */
+        //                result = this.ItemsSyncState.Where(a => a.OutlookItem != null)
+        //                    .Where(a => !string.IsNullOrEmpty(this.GetOutlookEntryId(a.OutlookItem)))
+        //                    .Where(a => !a.IsDeletedInOutlook)
+        //                    .FirstOrDefault(a => this.GetOutlookEntryId(a.OutlookItem).Equals(olItemEntryId));
+        //            }
+        //        }
+        //        catch (COMException comx)
+        //        {
+        //            Log.Debug($"Synchroniser.GetExistingSyncState: Object has probably been deleted: {comx.ErrorCode}, {comx.Message}");
+        //            result = null;
+        //        }
+        //    }
 
-            if (result != null && result.CrmEntryId == null)
-            {
-                result.CrmEntryId = this.GetCrmEntryId(olItem);
-            }
+        //    if (result != null && result.CrmEntryId == null)
+        //    {
+        //        result.CrmEntryId = this.GetCrmEntryId(olItem);
+        //    }
 
 
 
-            return result;
-        }
+        //    return result;
+        //}
 
 
         /// <summary>
@@ -689,17 +690,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected abstract string GetCrmEntryId(OutlookItemType olItem);
 
 
-        /// <summary>
-        /// Get the existing sync state representing this item, if it exists, else null.
-        /// </summary>
-        /// <param name="crmItem">The item</param>
-        /// <returns>the existing sync state representing this item, if it exists, else null.</returns>
-        protected SyncState<OutlookItemType> GetExistingSyncState(EntryValue crmItem)
-        {
-            return crmItem == null ?
-                null :
-                this.GetExistingSyncState(crmItem.GetValueAsString("id"));
-        }
+        ///// <summary>
+        ///// Get the existing sync state representing this item, if it exists, else null.
+        ///// </summary>
+        ///// <param name="crmItem">The item</param>
+        ///// <returns>the existing sync state representing this item, if it exists, else null.</returns>
+        //protected SyncState<OutlookItemType> GetExistingSyncState(EntryValue crmItem)
+        //{
+        //    return crmItem == null ?
+        //        null :
+        //        this.GetExistingSyncState(crmItem.GetValueAsString("id"));
+        //}
 
         /// <summary>
         /// Get the existing sync state representing the item with this CRM id, if it exists, else null.
@@ -1154,7 +1155,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             if (this.GetExistingSyncState(olItem) == null)
                             {
                                 SyncState<OutlookItemType> state = this.AddOrGetSyncState(olItem);
-                                DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType>(this, state, this.DefaultCrmModule));
+                                DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType, SyncStateType>(this, state, this.DefaultCrmModule));
                             }
                             else
                             {
@@ -1196,7 +1197,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         if (this.ShouldPerformSyncNow(syncStateForItem))
                         {
-                            DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType>(this, syncStateForItem));
+                            DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType,SyncStateType>(this, syncStateForItem));
                         }
                         else if (!syncStateForItem.ShouldSyncWithCrm)
                         {

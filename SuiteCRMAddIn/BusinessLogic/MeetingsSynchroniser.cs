@@ -27,9 +27,11 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
-    public class MeetingsSynchroniser : AppointmentSyncing
+    public class MeetingsSynchroniser : AppointmentSyncing<MeetingSyncState>
     {
         public const string CrmModule = "Meetings";
 
@@ -119,5 +121,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         //    }
         //    return result;
         //}
+
+        protected override void ResolveUnmatchedItems(IEnumerable<SyncState<Outlook.AppointmentItem>> itemsToResolve)
+        {
+            IEnumerable<SyncState<Outlook.AppointmentItem>> items = itemsToResolve.Where(x => ! x.OutlookItem.IsCall()).ToList();
+            base.ResolveUnmatchedItems(items);
+        }
     }
 }

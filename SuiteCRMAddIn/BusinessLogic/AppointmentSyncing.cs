@@ -39,7 +39,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// <summary>
     /// Handles the synchronisation of appointments between Outlook and CMS.
     /// </summary>
-    public abstract class AppointmentSyncing: Synchroniser<Outlook.AppointmentItem>
+    public abstract class AppointmentSyncing<SyncStateType> : Synchroniser<Outlook.AppointmentItem, SyncStateType>
+        where SyncStateType : SyncState<Outlook.AppointmentItem>
     {
         /// <summary>
         /// The name of the organiser synchronisation property
@@ -298,7 +299,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             else
             {
-                string meetingId = olItem.UserProperties[AppointmentSyncing.CrmIdPropertyName]?.Value;
+                string meetingId = olItem.UserProperties[AppointmentSyncing<SyncStateType>.CrmIdPropertyName]?.Value;
                 Dictionary<string, string> moduleIds = new Dictionary<string, string>();
 
                 if (!string.IsNullOrEmpty(meetingId))
@@ -401,13 +402,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
         /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
         /// <returns>A sync state object for the new item.</returns>
-        private SyncState<Outlook.AppointmentItem> AddNewItemFromCrmToOutlook(
+        private SyncStateType AddNewItemFromCrmToOutlook(
             Outlook.MAPIFolder appointmentsFolder,
             string crmType,
             EntryValue crmItem,
             DateTime date_start)
         {
-            AppointmentSyncState newState = null;
+            SyncStateType newState = null;
             Outlook.AppointmentItem olItem = null;
             try
             {
@@ -444,7 +445,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (olItem != null)
                 {
-                    newState = (AppointmentSyncState)this.AddOrGetSyncState(olItem);
+                    newState = (SyncStateType)this.AddOrGetSyncState(olItem);
                     newState.SetNewFromCRM();
                 }
             }
@@ -613,7 +614,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override string ConstructAndDespatchCrmItem(Outlook.AppointmentItem olItem, string crmType, string entryId)
         {
-            return RestAPIWrapper.SetEntryUnsafe(new ProtoAppointment(olItem).AsNameValues(entryId), crmType);
+            return RestAPIWrapper.SetEntryUnsafe(new ProtoAppointment<SyncStateType>(olItem).AsNameValues(entryId), crmType);
         }
 
 
@@ -838,9 +839,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                     record.GetBinding("status").value = "NotHeld";
 
                     string description = record.GetValue("description").ToString();
-                    if (!description.StartsWith(AppointmentSyncing.CanceledPrefix))
+                    if (!description.StartsWith(AppointmentSyncing<SyncStateType>.CanceledPrefix))
                     {
-                        record.GetBinding("description").value = $"{AppointmentSyncing.CanceledPrefix}: {description}";
+                        record.GetBinding("description").value = $"{AppointmentSyncing<SyncStateType>.CanceledPrefix}: {description}";
                         RestAPIWrapper.SetEntry(record.nameValueList, crmModule);
                     }
                 }
@@ -1118,15 +1119,15 @@ namespace SuiteCRMAddIn.BusinessLogic
                 if (invited != null)
                 {
                     AddOrUpdateItemsFromCrmToOutlook(invited, folder, untouched, crmModule);
+                }
 
-                    try
-                    {
-                        this.ResolveUnmatchedItems(untouched);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("AppointmentSyncing.SyncFolder: Exception", ex);
-                    }
+                try
+                {
+                    this.ResolveUnmatchedItems(untouched);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("AppointmentSyncing.SyncFolder: Exception", ex);
                 }
             }
             catch (Exception ex)
@@ -1208,12 +1209,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        protected override SyncState<Outlook.AppointmentItem> ConstructSyncState(Outlook.AppointmentItem oItem)
-        {
-            return new AppointmentSyncState(oItem,
-                oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
-                ParseDateTimeFromUserProperty(oItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()));
-        }
 
         internal override string GetOutlookEntryId(Outlook.AppointmentItem olItem)
         {

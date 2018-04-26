@@ -32,14 +32,15 @@ namespace SuiteCRMAddIn.Daemon
     /// does not already have a valid CRM id.
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of item I transmit.</typeparam>
-    public class TransmitNewAction<OutlookItemType> : AbstractDaemonAction
+    public class TransmitNewAction<OutlookItemType, SyncStateType> : AbstractDaemonAction
         where OutlookItemType : class
+        where SyncStateType : SyncState<OutlookItemType>
     {
         private string crmType;
         private SyncState<OutlookItemType> syncState;
-        private Synchroniser<OutlookItemType> synchroniser;
+        private Synchroniser<OutlookItemType, SyncStateType> synchroniser;
 
-        public TransmitNewAction(Synchroniser<OutlookItemType> synchroniser, SyncState<OutlookItemType> state, string crmType) : base(1)
+        public TransmitNewAction(Synchroniser<OutlookItemType, SyncStateType> synchroniser, SyncStateType state, string crmType) : base(1)
         {
             /* step the state transition engine forward to queued */
             state.SetPending();

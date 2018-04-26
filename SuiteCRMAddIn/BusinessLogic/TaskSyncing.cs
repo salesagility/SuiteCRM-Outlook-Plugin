@@ -34,7 +34,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// <summary>
     /// An agent which synchronises Outlook Task items with CRM.
     /// </summary>
-    public class TaskSyncing: Synchroniser<Outlook.TaskItem>
+    public class TaskSyncing: Synchroniser<Outlook.TaskItem, TaskSyncState>
     {
         /// <summary>
         /// The module I synchronise with.
@@ -383,13 +383,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override Outlook.MAPIFolder GetDefaultFolder()
         {
             return Application.Session.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderTasks);
-        }
-
-        protected override SyncState<Outlook.TaskItem> ConstructSyncState(Outlook.TaskItem olItem)
-        {
-            return new TaskSyncState(olItem,
-                olItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
-                ParseDateTimeFromUserProperty(olItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()));
         }
 
         internal override string GetOutlookEntryId(Outlook.TaskItem olItem)

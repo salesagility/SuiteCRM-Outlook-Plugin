@@ -210,7 +210,11 @@
   -->
   <ItemGroup>
     <Compile Include="BusinessLogic\CallsSynchroniser.cs" />
+    <Compile Include="BusinessLogic\CallSyncState.cs" />
     <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
+    <Compile Include="BusinessLogic\MeetingSyncState.cs" />
+    <Compile Include="Exceptions\ProbableDuplicateItemException.cs" />
+    <Compile Include="BusinessLogic\SyncStateManager.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
     <Compile Include="Daemon\UpdateMeetingAcceptancesAction.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
@@ -248,6 +252,8 @@
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
     <Compile Include="Exceptions\BadStateTransition.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
+    <Compile Include="Exceptions\DuplicateSyncStateException.cs" />
+    <Compile Include="Exceptions\UnexpectedSyncStateClassException.cs" />
     <Compile Include="Extensions\AddressEntryExtensions.cs" />
     <Compile Include="Extensions\TaskItemExtensions.cs" />
     <Compile Include="Extensions\ContactItemExtensions.cs" />

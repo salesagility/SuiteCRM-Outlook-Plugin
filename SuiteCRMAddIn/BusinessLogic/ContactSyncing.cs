@@ -36,7 +36,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// <summary>
     /// An agent which synchronises Outlook Contact items with CRM.
     /// </summary>
-    public class ContactSyncing: Synchroniser<Outlook.ContactItem>
+    public class ContactSyncing: Synchroniser<Outlook.ContactItem, ContactSyncState>
     {
         /// <summary>
         /// The module I synchronise with.
@@ -479,13 +479,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected override string ConstructAndDespatchCrmItem(Outlook.ContactItem olItem, string crmType, string entryId)
         {
             return RestAPIWrapper.SetEntryUnsafe(new ProtoContact(olItem).AsNameValues(entryId), crmType);
-        }
-
-        protected override SyncState<Outlook.ContactItem> ConstructSyncState(Outlook.ContactItem oItem)
-        {
-            return new ContactSyncState(oItem,
-                oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
-                ParseDateTimeFromUserProperty(oItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()));
         }
 
 

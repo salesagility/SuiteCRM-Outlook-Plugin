@@ -96,6 +96,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public ProtoItem<ItemType> Cache { get; protected set; }
 
+
+        /// <summary>
+        /// A string constructed from fields which uniquely describe my item.
+        /// </summary>
+        public abstract string IdentifyingFields { get; }
+
+
         /// <summary>
         /// Delete the Outlook item associated with this SyncState.
         /// </summary>
@@ -280,6 +287,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 switch (this.TxState)
                 {
                     case TransmissionState.Pending:
+                    case TransmissionState.PresentAtStartup:
                         this.LogAndSetTxState(TransmissionState.Queued);
                         break;
                     default:
