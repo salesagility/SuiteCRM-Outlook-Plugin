@@ -425,27 +425,22 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else if (ShouldDespatchToCrm(olItem))
                 {
-                    lock (enqueueingLock)
+                    result = base.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, entryId);
+
+                    if (String.IsNullOrEmpty(result))
                     {
-                        result = base.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, entryId);
-
-                        if (String.IsNullOrEmpty(result))
+                        Log.Warn("AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
+                    }
+                    else if (string.IsNullOrEmpty(entryId))
+                    {
+                        /* i.e. this was a new item saved to CRM for the first time */
+                        if (syncState.OutlookItem.IsCall())
                         {
-                            Log.Warn("AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
+                            SetCrmRelationshipFromOutlook(Globals.ThisAddIn.CallsSynchroniser, result, "Users", RestAPIWrapper.GetUserId());
                         }
-                        else if (string.IsNullOrEmpty(entryId))
+                        else
                         {
-                            /* i.e. this was a new item saved to CRM for the first time */
-                            if (syncState.OutlookItem.IsCall())
-                            {
-                                SetCrmRelationshipFromOutlook(Globals.ThisAddIn.CallsSynchroniser, result, "Users", RestAPIWrapper.GetUserId());
-                            }
-                            else
-                            {
-                                SetCrmRelationshipFromOutlook(Globals.ThisAddIn.MeetingsSynchroniser, result, "Users", RestAPIWrapper.GetUserId());
-                            }
-
-
+                            SetCrmRelationshipFromOutlook(Globals.ThisAddIn.MeetingsSynchroniser, result, "Users", RestAPIWrapper.GetUserId());
                         }
                     }
                 }

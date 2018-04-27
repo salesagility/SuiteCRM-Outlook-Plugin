@@ -204,25 +204,28 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>A sync state object for the new item.</returns>
         private SyncState<Outlook.ContactItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder folder, EntryValue crmItem)
         {
-            Outlook.ContactItem olItem = folder.Items.Add(Outlook.OlItemType.olContactItem);
             ContactSyncState result = null;
 
             Log.Debug(
                 (string)string.Format(
                     $"{this.GetType().Name}.AddNewItemFromCrmToOutlook, entry id is '{crmItem.GetValueAsString("id")}', creating in Outlook."));
 
-            if (olItem != null)
+            lock (enqueueingLock)
             {
-                try
+                Outlook.ContactItem olItem = folder.Items.Add(Outlook.OlItemType.olContactItem);
+                if (olItem != null)
                 {
-                    this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
-                }
-                finally
-                {
-                    result = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as ContactSyncState;
-                    result.SetNewFromCRM();
+                    try
+                    {
+                        this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
+                    }
+                    finally
+                    {
+                        result = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as ContactSyncState;
+                        result.SetNewFromCRM();
 
-                    this.SaveItem(olItem);
+                        this.SaveItem(olItem);
+                    }
                 }
             }
 

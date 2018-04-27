@@ -152,7 +152,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
                     .Append($"\n\tCRM Id      : {crmId}")
-                    .Append($"\n\ttSubject    : '{olItem.Subject}'")
+                    .Append($"\n\tSubject     : '{olItem.Subject}'")
                     .Append($"\n\tStatus      : {olItem.Status}")
                     .Append($"\n\tSensitivity : {olItem.Sensitivity}")
                     .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
@@ -303,25 +303,33 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private SyncState<Outlook.TaskItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, EntryValue crmItem)
         {
-            Outlook.TaskItem olItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
             TaskSyncState result = null;
-
             Log.Debug(
                 (string)string.Format(
                     $"{this.GetType().Name}.AddNewItemFromCrmToOutlook, entry id is '{crmItem.GetValueAsString("id")}', creating in Outlook."));
 
-            if (olItem != null)
+            /*
+             * There's a nasty little bug (#223) where Outlook offers us back in a different thread
+             * the item we're creating, before we're able to set up the sync state which marks it
+             * as already known. By locking on the enqueueing lock here, we should prevent that.
+             */
+            lock (enqueueingLock)
             {
-                try
-                {
-                    this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
-                }
-                finally
-                {
-                    result = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as TaskSyncState;
-                    result.SetNewFromCRM();
+                Outlook.TaskItem olItem = tasksFolder.Items.Add(Outlook.OlItemType.olTaskItem);
 
-                    this.SaveItem(olItem);
+                if (olItem != null)
+                {
+                    try
+                    {
+                        this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
+                    }
+                    finally
+                    {
+                        result = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as TaskSyncState;
+                        result.SetNewFromCRM();
+
+                        this.SaveItem(olItem);
+                    }
                 }
             }
 
