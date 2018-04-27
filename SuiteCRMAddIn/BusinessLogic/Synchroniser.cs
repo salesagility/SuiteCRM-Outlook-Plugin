@@ -62,11 +62,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected object creationLock = new object();
 
         /// <summary>
-        /// The actual transmission lock object of this synchroniser.
-        /// </summary>
-        protected object transmissionLock = new object();
-
-        /// <summary>
         /// The prefix for the fetch query, used in FetchRecordsFromCrm, q.v.
         /// </summary>
         protected string fetchQueryPrefix;
@@ -196,21 +191,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// The direction(s) in which I sync
         /// </summary>
         public abstract SyncDirection.Direction Direction { get; }
-
-        /// <summary>
-        /// We need to prevent two simultaneous transmissions of the same object, so it's probably unsafe
-        /// to have two threads transmitting contact items at the same time. But there's no reason why
-        /// we should not transmit contact items and task items at the same time, for example. So each
-        /// Synchroniser instance will have its own transmission lock.
-        /// </summary>
-        /// <returns>A transmission lock.</returns>
-        protected object TransmissionLock
-        {
-            get
-            {
-                return transmissionLock;
-            }
-        }
 
 
         /// <summary>
@@ -449,7 +429,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 try
                 {
-                    lock (this.TransmissionLock)
+                    lock (this.enqueueingLock)
                     {
                         LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
 
@@ -460,7 +440,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             var utcNow = DateTime.UtcNow;
                             EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), crmType, result);
-                            this.SaveItem(olItem);
 
                             syncState.SetSynced(result);
                         }
