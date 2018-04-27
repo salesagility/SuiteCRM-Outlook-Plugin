@@ -7,11 +7,11 @@
 
     public class UpdateMeetingAcceptancesAction : AbstractDaemonAction
     {
-        private readonly AppointmentSyncing synchroniser;
+        private readonly MeetingsSynchroniser synchroniser;
         private readonly Outlook.MeetingItem meeting;
 
         public UpdateMeetingAcceptancesAction(
-            AppointmentSyncing synchroniser,
+            MeetingsSynchroniser synchroniser,
             Outlook.MeetingItem meeting) : base(5)
         {
             this.synchroniser = synchroniser;

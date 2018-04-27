@@ -40,7 +40,7 @@ namespace SuiteCRMAddIn.Dialogs
 
     public partial class ArchiveDialog : Form
     {
-        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSyncing.CrmModule, "Leads", "Opportunities", "Project", "Users" };
+        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSynchroniser.CrmModule, "Leads", "Opportunities", "Project", "Users" };
 
         public ArchiveDialog()
         {
@@ -414,7 +414,7 @@ namespace SuiteCRMAddIn.Dialogs
 
             switch (moduleName)
             {
-                case ContactSyncing.CrmModule:
+                case ContactSynchroniser.CrmModule:
                     queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
                     AddFirstLastAndAccountNames(fields);
                     break;

@@ -32,7 +32,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Runtime.InteropServices;
     using SuiteCRMClient.Logging;
 
-    public class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
+    public abstract class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
         public AppointmentSyncState(Outlook.AppointmentItem item, string crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
         {
@@ -80,12 +80,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[AppointmentSyncing.CrmIdPropertyName];
+                Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[SyncStateManager.CrmIdPropertyName];
                 string crmId = olPropertyEntryId == null ?
                     "[not present]" :
                     olPropertyEntryId.Value;
                 StringBuilder bob = new StringBuilder();
-                bob.Append($"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{OutlookItem.Subject}'\n\tSensitivity : {OutlookItem.Sensitivity}\n\tStatus     : {OutlookItem.MeetingStatus}\n\tReminder set {OutlookItem.ReminderSet}\n\tRecipients:\n");
+                bob.Append($"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{OutlookItem.Subject}'\n\tSensitivity : {OutlookItem.Sensitivity}\n\tStatus     : {OutlookItem.MeetingStatus}\n\tReminder set {OutlookItem.ReminderSet}\n\tState      : {this.TxState}\n\tRecipients:\n");
                 foreach (Outlook.Recipient recipient in OutlookItem.Recipients)
                 {
                     bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()} - ({recipient.MeetingResponseStatus})\n");
@@ -106,18 +106,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.OutlookItem.Delete();
         }
 
-        /// <summary>
-        /// Construct a JSON-serialisable representation of my appointment item.
-        /// </summary>
-        internal override ProtoItem<Outlook.AppointmentItem> CreateProtoItem(Outlook.AppointmentItem outlookItem)
-        {
-            return new ProtoAppointment(outlookItem);
-        }
-
         public override void RemoveSynchronisationProperties()
         {
             OutlookItem.ClearSynchronisationProperties();
         }
 
+        internal override void SaveItem()
+        {
+            this.OutlookItem?.Save();
+        }
     }
 }

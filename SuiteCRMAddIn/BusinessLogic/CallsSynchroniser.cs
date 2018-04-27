@@ -23,11 +23,13 @@
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using Extensions;
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
-    public class CallsSynchroniser : AppointmentSyncing
+    public class CallsSynchroniser : AppointmentsSynchroniser<CallSyncState>
     {
         public const string CrmModule = "Calls";
 
@@ -53,6 +55,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected override void SetMeetingStatus(Outlook.AppointmentItem olItem, EntryValue crmItem)
         {
             olItem.MeetingStatus = Microsoft.Office.Interop.Outlook.OlMeetingStatus.olNonMeeting;
+        }
+
+        protected override void InstallEventHandlers()
+        {
+            /* arbitrarily, one AppointmentSyncing subclass should NOT handle events. */
+        }
+
+        protected override void RemoveEventHandlers()
+        {
+            /* arbitrarily, one AppointmentSyncing subclass should NOT handle events. */
         }
     }
 }

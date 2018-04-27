@@ -30,20 +30,21 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Collections.Generic;
     using System.Linq;
     using System.Runtime.InteropServices;
+    using System.Text;
     using System.Windows.Forms;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
     /// An agent which synchronises Outlook Contact items with CRM.
     /// </summary>
-    public class ContactSyncing: Synchroniser<Outlook.ContactItem>
+    public class ContactSynchroniser: Synchroniser<Outlook.ContactItem, ContactSyncState>
     {
         /// <summary>
         /// The module I synchronise with.
         /// </summary>
         public const string CrmModule = "Contacts";
 
-        public ContactSyncing(string name, SyncContext context)
+        public ContactSynchroniser(string name, SyncContext context)
             : base(name, context)
         {
             this.fetchQueryPrefix = "contacts.assigned_user_id = '{0}'";
@@ -56,7 +57,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                return ContactSyncing.CrmModule;
+                return ContactSynchroniser.CrmModule;
             }
         }
 
@@ -84,7 +85,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (this.permissionsCache.HasExportAccess())
                 {
-                    var untouched = new HashSet<SyncState<Outlook.ContactItem>>(ItemsSyncState);
+                    var untouched = new HashSet<SyncState<Outlook.ContactItem>>(SyncStateManager.Instance.GetSynchronisedItems<ContactSyncState>());
 
                     IList<EntryValue> records = MergeRecordsFromCrm(folder, crmModule, untouched);
 
@@ -116,7 +117,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             SyncState<Outlook.ContactItem> result = null;
 
             String id = crmItem.GetValueAsString("id");
-            SyncState<Outlook.ContactItem> syncStateForItem = GetExistingSyncState(crmItem);
+            SyncState<Outlook.ContactItem> syncStateForItem = SyncStateManager.Instance.GetExistingSyncState(crmItem) as SyncState<Outlook.ContactItem>;
 
             if (ShouldSyncContact(crmItem))
             {
@@ -198,23 +199,34 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Add an item existing in CRM but not found in Outlook to Outlook.
         /// </summary>
-        /// <param name="contactFolder">The Outlook folder in which the item should be stored.</param>
+        /// <param name="folder">The Outlook folder in which the item should be stored.</param>
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
         /// <returns>A sync state object for the new item.</returns>
-        private SyncState<Outlook.ContactItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder contactFolder, EntryValue crmItem)
+        private SyncState<Outlook.ContactItem> AddNewItemFromCrmToOutlook(Outlook.MAPIFolder folder, EntryValue crmItem)
         {
-            Log.Info(
+            Outlook.ContactItem olItem = folder.Items.Add(Outlook.OlItemType.olContactItem);
+            ContactSyncState result = null;
+
+            Log.Debug(
                 (string)string.Format(
-                    "ContactSyncing.AddNewItemFromCrmToOutlook, entry id is '{0}', creating in Outlook.",
-                    crmItem.GetValueAsString("id")));
+                    $"{this.GetType().Name}.AddNewItemFromCrmToOutlook, entry id is '{crmItem.GetValueAsString("id")}', creating in Outlook."));
 
-            Outlook.ContactItem olItem = contactFolder.Items.Add(Outlook.OlItemType.olContactItem);
+            if (olItem != null)
+            {
+                try
+                {
+                    this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
+                }
+                finally
+                {
+                    result = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as ContactSyncState;
+                    result.SetNewFromCRM();
 
-            this.SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
+                    this.SaveItem(olItem);
+                }
+            }
 
-            var syncState = this.AddOrGetSyncState(olItem);
-            syncState.SetNewFromCRM();
-            return syncState;
+            return result;
         }
 
         /// <summary>
@@ -226,13 +238,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[CrmIdPropertyName];
+                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
                 string crmId = olPropertyEntryId == null ?
                     "[not present]" :
                     olPropertyEntryId.Value;
-                Log.Info(
-                    String.Format("{0}:\n\tOutlook Id  : {1}\n\tCRM Id      : {2}\n\tFull name   : '{3}'\n\tSensitivity : {4}",
-                    message, olItem.EntryID, crmId, olItem.FullName, olItem.Sensitivity));
+                StringBuilder bob = new StringBuilder();
+                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
+                    .Append($"\n\tCRM Id      : {crmId}")
+                    .Append($"\n\tFull name   : '{olItem.FullName}'")
+                    .Append($"\n\tSensitivity : {olItem.Sensitivity}")
+                    .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
+
+                Log.Info(bob.ToString());
             }
             catch (COMException)
             {
@@ -265,7 +282,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if either of these propertyies differ between the representations.</returns>
         private bool CrmItemChanged(EntryValue crmItem, Outlook.ContactItem olItem)
         {
-            Outlook.UserProperty dateModifiedProp = olItem.UserProperties[ModifiedDatePropertyName];
+            Outlook.UserProperty dateModifiedProp = olItem.UserProperties[SyncStateManager.ModifiedDatePropertyName];
 
             return (dateModifiedProp.Value != crmItem.GetValueAsString("date_modified") ||
                 ShouldSyncFlagChanged(olItem, crmItem));
@@ -283,7 +300,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (!itemSyncState.IsDeletedInOutlook)
             {
                 Outlook.ContactItem olItem = itemSyncState.OutlookItem;
-                Outlook.UserProperty dateModifiedProp = olItem.UserProperties[ModifiedDatePropertyName];
+                Outlook.UserProperty dateModifiedProp = olItem.UserProperties[SyncStateManager.ModifiedDatePropertyName];
                 Outlook.UserProperty shouldSyncProp = olItem.UserProperties["SShouldSync"];
                 this.LogItemAction(olItem, "ContactSyncing.UpdateExistingOutlookItemFromCrm");
 
@@ -405,7 +422,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Outlook.Items olItems = taskFolder.Items.Restrict("[MessageClass] = 'IPM.Contact'");
                 foreach (Outlook.ContactItem oItem in olItems)
                 {
-                    AddOrGetSyncState(oItem).SetPresentAtStartup();
+                    SyncStateManager.Instance.GetOrCreateSyncState(oItem).SetPresentAtStartup();
                 }
             }
             catch (Exception ex)
@@ -481,13 +498,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             return RestAPIWrapper.SetEntryUnsafe(new ProtoContact(olItem).AsNameValues(entryId), crmType);
         }
 
-        protected override SyncState<Outlook.ContactItem> ConstructSyncState(Outlook.ContactItem oItem)
-        {
-            return new ContactSyncState(oItem,
-                oItem.UserProperties[CrmIdPropertyName]?.Value.ToString(),
-                ParseDateTimeFromUserProperty(oItem.UserProperties[ModifiedDatePropertyName]?.Value.ToString()));
-        }
-
 
         /// <summary>
         /// If it was created in Outlook and doesn't exist in CRM,  (in which case it won't yet have a
@@ -525,7 +535,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override string GetCrmEntryId(Outlook.ContactItem olItem)
         {
-            return olItem?.UserProperties[CrmIdPropertyName]?.Value.ToString();
+            return olItem?.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value.ToString();
         }
 
 

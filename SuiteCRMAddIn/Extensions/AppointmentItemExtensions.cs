@@ -55,9 +55,33 @@ namespace SuiteCRMAddIn.Extensions
         /// <param name="olItem">The item from which the property should be removed.</param>
         public static void ClearSynchronisationProperties(this Outlook.AppointmentItem olItem)
         {
-            olItem.ClearUserProperty(Synchroniser<Outlook.AppointmentItem>.CrmIdPropertyName);
-            olItem.ClearUserProperty(Synchroniser<Outlook.AppointmentItem>.ModifiedDatePropertyName);
-            olItem.ClearUserProperty(Synchroniser<Outlook.AppointmentItem>.TypePropertyName);
+            /* it doesn't actually matter whether we use CallSyncState or MeetingSyncState here,
+             * since the constants are stored on Synchroniser */
+            olItem.ClearUserProperty(SyncStateManager.CrmIdPropertyName);
+            olItem.ClearUserProperty(SyncStateManager.ModifiedDatePropertyName);
+            olItem.ClearUserProperty(SyncStateManager.TypePropertyName);
+        }
+
+
+        /// <summary>
+        /// Get the CRM id for this item, if known, else the empty string.
+        /// </summary>
+        /// <param name="olItem">The Outlook item under consideration.</param>
+        /// <returns>the CRM id for this item, if known, else the empty string.</returns>
+        public static string GetCrmId(this Outlook.AppointmentItem olItem)
+        {
+            string result;
+            Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+            if (property != null)
+            {
+                result = property.Value;
+            }
+            else
+            {
+                result = string.Empty;
+            }
+
+            return result;
         }
 
         /// <summary>

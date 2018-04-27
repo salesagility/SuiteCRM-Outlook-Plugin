@@ -57,10 +57,19 @@ namespace SuiteCRMAddIn
         public OutlookMajorVersion OutlookVersion;
 
         private SyncContext synchronisationContext;
-        private ContactSyncing contactSynchroniser;
-        private TaskSyncing taskSynchroniser;
+        private ContactSynchroniser contactSynchroniser;
+        private TaskSynchroniser taskSynchroniser;
         private MeetingsSynchroniser meetingSynchroniser;
         private CallsSynchroniser callSynchroniser;
+
+        /// <summary>
+        /// #2246: Discriminate between calls and meetings when adding and updating.
+        /// </summary>
+        internal CallsSynchroniser CallsSynchroniser { get { return callSynchroniser; } }
+        /// <summary>
+        /// #2246: Discriminate between calls and meetings when adding and updating.
+        /// </summary>
+        internal MeetingsSynchroniser MeetingsSynchroniser { get { return meetingSynchroniser; } }
 
         /// <summary>
         /// Internationalisation (118n) strings dictionary
@@ -148,9 +157,9 @@ namespace SuiteCRMAddIn
 
             synchronisationContext = new SyncContext(outlookApp);
             callSynchroniser = new CallsSynchroniser("AS", synchronisationContext);
-            contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
+            contactSynchroniser = new ContactSynchroniser("CS", synchronisationContext);
             meetingSynchroniser = new MeetingsSynchroniser("MS", synchronisationContext);
-            taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
+            taskSynchroniser = new TaskSynchroniser("TS", synchronisationContext);
             EmailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
 
             var outlookExplorer = outlookApp.ActiveExplorer();
@@ -533,6 +542,7 @@ namespace SuiteCRMAddIn
                 }
 
                 this.UnregisterEvents();
+                SyncStateManager.Instance.BruteForceSaveAll();
                 this.ShutdownProcesses();
 
                 if (SuiteCRMUserSession != null)
@@ -934,12 +944,7 @@ namespace SuiteCRMAddIn
         /// <returns>The number of items I am monitoring.</returns>
         internal int CountItems()
         {
-            int result = this.callSynchroniser != null ? this.callSynchroniser.ItemsCount : 0;
-            result += this.contactSynchroniser != null ? this.contactSynchroniser.ItemsCount : 0;
-            result += this.meetingSynchroniser != null ? this.meetingSynchroniser.ItemsCount : 0;
-            result += this.taskSynchroniser != null ? this.taskSynchroniser.ItemsCount : 0;
-
-            return result;
+            return SyncStateManager.Instance.CountItems();
         }
 
 
