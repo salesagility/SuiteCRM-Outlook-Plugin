@@ -68,7 +68,7 @@ namespace SuiteCRMAddIn.ProtoItems
             // this is resolved to the correct string in AsNameValues().
             this.status = olItem.MeetingStatus;
 
-            var organiserProperty = olItem.UserProperties[AppointmentSyncing<SyncStateType>.OrganiserPropertyName];
+            var organiserProperty = olItem.UserProperties[AppointmentsSynchroniser<SyncStateType>.OrganiserPropertyName];
 
             if (organiserProperty == null || string.IsNullOrWhiteSpace(organiserProperty.Value))
             {

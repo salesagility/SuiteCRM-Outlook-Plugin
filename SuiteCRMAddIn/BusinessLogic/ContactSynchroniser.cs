@@ -30,6 +30,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Collections.Generic;
     using System.Linq;
     using System.Runtime.InteropServices;
+    using System.Text;
     using System.Windows.Forms;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -241,9 +242,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 string crmId = olPropertyEntryId == null ?
                     "[not present]" :
                     olPropertyEntryId.Value;
-                Log.Info(
-                    String.Format("{0}:\n\tOutlook Id  : {1}\n\tCRM Id      : {2}\n\tFull name   : '{3}'\n\tSensitivity : {4}",
-                    message, olItem.EntryID, crmId, olItem.FullName, olItem.Sensitivity));
+                StringBuilder bob = new StringBuilder();
+                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
+                    .Append($"\n\tCRM Id      : {crmId}")
+                    .Append($"\n\tFull name   : '{olItem.FullName}'")
+                    .Append($"\n\tSensitivity : {olItem.Sensitivity}")
+                    .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
+
+                Log.Info(bob.ToString());
             }
             catch (COMException)
             {

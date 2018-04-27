@@ -36,11 +36,10 @@ namespace SuiteCRMAddIn.Daemon
         where OutlookItemType : class
         where SyncStateType : SyncState<OutlookItemType>
     {
-        private string crmType;
         private SyncState<OutlookItemType> syncState;
         private Synchroniser<OutlookItemType, SyncStateType> synchroniser;
 
-        public TransmitNewAction(Synchroniser<OutlookItemType, SyncStateType> synchroniser, SyncStateType state, string crmType) : base(1)
+        public TransmitNewAction(Synchroniser<OutlookItemType, SyncStateType> synchroniser, SyncStateType state) : base(1)
         {
             /* step the state transition engine forward to queued */
             if (state.TxState == SyncState<OutlookItemType>.TransmissionState.NewFromOutlook)
@@ -49,7 +48,6 @@ namespace SuiteCRMAddIn.Daemon
                 state.SetQueued();
             }
             this.syncState = state;
-            this.crmType = crmType;
             this.synchroniser = synchroniser;
         }
 
@@ -57,7 +55,7 @@ namespace SuiteCRMAddIn.Daemon
         {
             get
             {
-                return $"{this.GetType().Name} ({this.crmType})";
+                return $"{this.GetType().Name} ({this.synchroniser.DefaultCrmModule})";
             }
         }
 
@@ -73,7 +71,7 @@ namespace SuiteCRMAddIn.Daemon
                 {
                     try
                     {
-                        string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType);
+                        string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.synchroniser.DefaultCrmModule);
                         result = $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
                     }
                     catch (WebException wex)

@@ -228,7 +228,7 @@
     <Compile Include="BusinessLogic\EmailCategoriesCollection.cs" />
     <Compile Include="Daemon\AbstractDaemonAction.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
-    <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
+    <Compile Include="BusinessLogic\AppointmentsSynchroniser.cs" />
     <Compile Include="Daemon\documentation.cs" />
     <Compile Include="Daemon\FetchEmailCategoriesAction.cs" />
     <Compile Include="Daemon\TransmitNewAction.cs" />

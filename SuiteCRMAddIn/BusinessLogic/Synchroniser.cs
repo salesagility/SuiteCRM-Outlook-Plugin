@@ -940,7 +940,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         T state = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as T;
                         if (state != null)
                         {
-                            DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType, T>(synchroniser, state, this.DefaultCrmModule));
+                            DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType, T>(synchroniser, state));
                         }
                         else
                         {

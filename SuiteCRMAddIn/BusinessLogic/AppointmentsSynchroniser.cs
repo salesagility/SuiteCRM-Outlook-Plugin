@@ -40,7 +40,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// <summary>
     /// Handles the synchronisation of appointments between Outlook and CMS.
     /// </summary>
-    public abstract class AppointmentSyncing<SyncStateType> : Synchroniser<Outlook.AppointmentItem, SyncStateType>
+    public abstract class AppointmentsSynchroniser<SyncStateType> : Synchroniser<Outlook.AppointmentItem, SyncStateType>
         where SyncStateType : SyncState<Outlook.AppointmentItem>
     {
         /// <summary>
@@ -54,7 +54,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public const string MSConfTmpSubjectPrefix = "PLEASE IGNORE";
 
-        public AppointmentSyncing(string name, SyncContext context)
+        /// <summary>
+        /// A cache of email addresses to CRM modules and identities
+        /// </summary>
+        protected Dictionary<String, List<AddressResolutionData>> meetingRecipientsCache =
+            new Dictionary<string, List<AddressResolutionData>>();
+
+
+        public AppointmentsSynchroniser(string name, SyncContext context)
             : base(name, context)
         {
             this.fetchQueryPrefix = "assigned_user_id = '{0}'";
@@ -426,6 +433,20 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             Log.Warn("AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
                         }
+                        else if (string.IsNullOrEmpty(entryId))
+                        {
+                            /* i.e. this was a new item saved to CRM for the first time */
+                            if (syncState.OutlookItem.IsCall())
+                            {
+                                SetCrmRelationshipFromOutlook(Globals.ThisAddIn.CallsSynchroniser, result, "Users", RestAPIWrapper.GetUserId());
+                            }
+                            else
+                            {
+                                SetCrmRelationshipFromOutlook(Globals.ThisAddIn.MeetingsSynchroniser, result, "Users", RestAPIWrapper.GetUserId());
+                            }
+
+
+                        }
                     }
                 }
                 else
@@ -550,6 +571,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     .Append($"\n\tReminder set: {olItem.ReminderSet}")
                     .Append($"\n\tOrganiser   : {olItem.Organizer}")
                     .Append($"\n\tOutlook User: {clsGlobals.GetCurrentUsername()}")
+                    .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}")
                     .Append($"\n\tRecipients  :\n");
 
                 foreach (Outlook.Recipient recipient in olItem.Recipients)
@@ -637,6 +659,70 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
+
+        /// <summary>
+        /// Sets up a CRM relationship to mimic an Outlook relationship
+        /// </summary>
+        /// <param name="meetingId">The ID of the meeting</param>
+        /// <param name="recipient">The outlook recipient representing the person to link with.</param>
+        /// <param name="foreignModule">the name of the module we're seeking to link with.</param>
+        /// <returns>True if a relationship was created.</returns>
+        protected string SetCrmRelationshipFromOutlook<T, S>(Synchroniser<T, S> sync, string meetingId, Outlook.Recipient recipient, string foreignModule)
+            where T : class
+            where S : SyncState<T>
+        {
+            string foreignId = GetInviteeIdBySmtpAddress(recipient.GetSmtpAddress(), foreignModule);
+
+            return !string.IsNullOrWhiteSpace(foreignId) &&
+                SetCrmRelationshipFromOutlook(sync, meetingId, foreignModule, foreignId) ?
+                foreignId :
+                string.Empty;
+        }
+
+
+        /// <summary>
+        /// Sets up a CRM relationship to mimic an Outlook relationship
+        /// </summary>
+        /// <param name="meetingId">The meeting id.</param>
+        /// <param name="resolution">Address resolution data from the cache.</param>
+        /// <returns>True if a relationship was created.</returns>
+        protected bool SetCrmRelationshipFromOutlook<T, S>(Synchroniser<T, S> sync, string meetingId, AddressResolutionData resolution)
+            where T : class
+            where S : SyncState<T>
+        {
+            return this.SetCrmRelationshipFromOutlook<T, S>(sync, meetingId, resolution.moduleName, resolution.moduleId);
+        }
+
+
+        /// <summary>
+        /// Sets up a CRM relationship to mimic an Outlook relationship
+        /// </summary>
+        /// <param name="meetingId">The ID of the meeting</param>
+        /// <param name="foreignModule">the name of the module we're seeking to link with.</param>
+        /// <param name="foreignId">The id in the foreign module of the record we're linking to.</param>
+        /// <returns>True if a relationship was created.</returns>
+        protected bool SetCrmRelationshipFromOutlook<T, S>(Synchroniser<T, S> sync, string meetingId, string foreignModule, string foreignId)
+            where T : class
+            where S : SyncState<T>
+        {
+            bool result = false;
+
+            if (foreignId != String.Empty)
+            {
+                SetRelationshipParams info = new SetRelationshipParams
+                {
+                    module2 = sync.DefaultCrmModule,
+                    module2_id = meetingId,
+                    module1 = foreignModule,
+                    module1_id = foreignId
+                };
+                result = RestAPIWrapper.SetRelationshipUnsafe(info);
+            }
+
+            return result;
+        }
+
+
         /// <summary>
         /// Override: we get notified of a removal, for a Meeting item, when the meeting is
         /// cancelled. We do NOT want to remove such an item; instead, we want to update it.
@@ -672,9 +758,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                     record.GetBinding("status").value = "NotHeld";
 
                     string description = record.GetValue("description").ToString();
-                    if (!description.StartsWith(AppointmentSyncing<SyncStateType>.CanceledPrefix))
+                    if (!description.StartsWith(AppointmentsSynchroniser<SyncStateType>.CanceledPrefix))
                     {
-                        record.GetBinding("description").value = $"{AppointmentSyncing<SyncStateType>.CanceledPrefix}: {description}";
+                        record.GetBinding("description").value = $"{AppointmentsSynchroniser<SyncStateType>.CanceledPrefix}: {description}";
                         RestAPIWrapper.SetEntry(record.nameValueList, crmModule);
                     }
                 }
@@ -746,6 +832,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+
+        /// <summary>
+        /// Set the meeting status of this `olItem` from this `crmItem`.
+        /// </summary>
+        /// <param name="olItem">The Outlook item to update.</param>
+        /// <param name="crmItem">The CRM item to use as source.</param>
         protected abstract void SetMeetingStatus(Outlook.AppointmentItem olItem, EntryValue crmItem);
 
         /// <summary>
@@ -929,6 +1021,131 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override Outlook.OlSensitivity GetSensitivity(Outlook.AppointmentItem item)
         {
             return item.Sensitivity;
+        }
+
+
+        /// <summary>
+        /// Add an address resolution composed from this module name and record to the cache.
+        /// </summary>
+        /// <param name="moduleName">The name of the module in which the record was found</param>
+        /// <param name="record">The record.</param>
+        protected void CacheAddressResolutionData(string moduleName, LinkRecord record)
+        {
+            Dictionary<string, object> data = record.data.AsDictionary();
+            string smtpAddress = data[AddressResolutionData.EmailAddressFieldName].ToString();
+            AddressResolutionData resolution = new AddressResolutionData(moduleName, data);
+
+            CacheAddressResolutionData(resolution);
+        }
+
+        /// <summary>
+        /// Add this resolution to the cache.
+        /// </summary>
+        /// <param name="resolution">The resolution to add.</param>
+        protected void CacheAddressResolutionData(AddressResolutionData resolution)
+        {
+            List<AddressResolutionData> resolutions;
+
+            if (this.meetingRecipientsCache.ContainsKey(resolution.emailAddress))
+            {
+                resolutions = this.meetingRecipientsCache[resolution.emailAddress];
+            }
+            else
+            {
+                resolutions = new List<AddressResolutionData>();
+                this.meetingRecipientsCache[resolution.emailAddress] = resolutions;
+            }
+
+            if (!resolutions.Any(x => x.moduleId == resolution.moduleId && x.moduleName == resolution.moduleName))
+            {
+                resolutions.Add(resolution);
+            }
+
+            Log.Debug($"Successfully cached recipient {resolution.emailAddress} => {resolution.moduleName}, {resolution.moduleId}.");
+        }
+
+
+        protected void CacheAddressResolutionData(EntryValue crmItem)
+        {
+            foreach (var list in crmItem.relationships.link_list)
+            {
+                foreach (var record in list.records)
+                {
+                    var data = record.data.AsDictionary();
+                    try
+                    {
+                        this.CacheAddressResolutionData(list.name, record);
+                    }
+                    catch (KeyNotFoundException kex)
+                    {
+                        Log.Error($"Key not found while caching meeting recipients.", kex);
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Used for caching data for resolving email addresses to CRM records.
+        /// </summary>
+        protected class AddressResolutionData
+        {
+            /// <summary>
+            /// Expected name in the input map of the email address field.
+            /// </summary>
+            public const string EmailAddressFieldName = "email1";
+
+            /// <summary>
+            /// Expected name in the input map of the field containing the id in 
+            /// the specified module.
+            /// </summary>
+            public const string ModuleIdFieldName = "id";
+
+            /// <summary>
+            /// Expected name in the input map of the field containing an associated id in 
+            /// the `Accounts` module, if any.
+            /// </summary>
+            public const string AccountIdFieldName = "account_id";
+
+            /// <summary>
+            /// The email address resolved by this data.
+            /// </summary>
+            public readonly string emailAddress;
+            /// <summary>
+            /// The name of the CRM module to which it resolves.
+            /// </summary>
+            public readonly string moduleName;
+            /// <summary>
+            /// The id within that module of the record to which it resolves.
+            /// </summary>
+            public readonly string moduleId;
+
+            /// <summary>
+            /// The id within the `Accounts` module of a related record, if any.
+            /// </summary>
+            private readonly object accountId;
+
+            public AddressResolutionData(string moduleName, string moduleId, string emailAddress)
+            {
+                this.moduleName = moduleName;
+                this.moduleId = moduleId;
+                this.emailAddress = emailAddress;
+            }
+
+            public AddressResolutionData(string moduleName, Dictionary<string, object> data)
+            {
+                this.moduleName = moduleName;
+                this.moduleId = data[ModuleIdFieldName]?.ToString();
+                this.emailAddress = data[EmailAddressFieldName]?.ToString();
+                try
+                {
+                    this.accountId = data[AccountIdFieldName]?.ToString();
+                }
+                catch (KeyNotFoundException)
+                {
+                    // and ignore it; that key often won't be there.
+                }
+            }
         }
     }
 }

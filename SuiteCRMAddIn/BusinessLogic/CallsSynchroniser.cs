@@ -29,7 +29,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
-    public class CallsSynchroniser : AppointmentSyncing<CallSyncState>
+    public class CallsSynchroniser : AppointmentsSynchroniser<CallSyncState>
     {
         public const string CrmModule = "Calls";
 
