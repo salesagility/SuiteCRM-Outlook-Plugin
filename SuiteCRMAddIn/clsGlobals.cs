@@ -22,9 +22,7 @@
  */
 namespace SuiteCRMAddIn
 {
-    using Extensions;
     using Outlook = Microsoft.Office.Interop.Outlook;
-    using System.Text.RegularExpressions;
 
 
     public static class clsGlobals

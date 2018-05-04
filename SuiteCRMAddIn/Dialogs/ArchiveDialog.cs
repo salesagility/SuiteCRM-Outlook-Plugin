@@ -642,26 +642,23 @@ namespace SuiteCRMAddIn.Dialogs
                     };
                     parent.Nodes.Add(node);
 
-                    if (searchResult.relationship_list != null)
+                    foreach (var relationship in entry.relationships.link_list)
                     {
-                        foreach (var relationship in searchResult.relationship_list[i].link_list)
+                        LinkSpec link = links.Where(x => x.LinkName == relationship.name).FirstOrDefault();
+
+                        TreeNode chainNode = new TreeNode(link != null ? link.TargetName : relationship.name);
+                        node.Nodes.Add(chainNode);
+
+                        foreach (LinkRecord member in relationship.records)
                         {
-                            LinkSpec link = links.Where(x => x.LinkName == relationship.name).FirstOrDefault();
+                            var targetId = link != null ? link.TargetId : "id";
 
-                            TreeNode chainNode = new TreeNode(link != null ? link.TargetName : relationship.name);
-                            node.Nodes.Add(chainNode);
-
-                            foreach (LinkRecord member in relationship.records)
+                            TreeNode memberNode = new TreeNode(member.data.GetValueAsString(link != null ? link.Label : "name"))
                             {
-                                var targetId = link != null ? link.TargetId : "id";
-
-                                TreeNode memberNode = new TreeNode(member.data.GetValueAsString(link != null ? link.Label : "name"))
-                                {
-                                    Name = member.data.GetValueAsString(targetId),
-                                    Tag = member.data.GetValueAsString(targetId)
-                                };
-                                chainNode.Nodes.Add(memberNode);
-                            }
+                                Name = member.data.GetValueAsString(targetId),
+                                Tag = member.data.GetValueAsString(targetId)
+                            };
+                            chainNode.Nodes.Add(memberNode);
                         }
                     }
                 }
