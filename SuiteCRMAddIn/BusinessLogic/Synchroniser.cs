@@ -446,7 +446,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         else
                         {
                             Log.Warn("AppointmentSyncing.AddItemFromOutlookToCrm: Invalid CRM Id returned; item may not be stored.");
-                            syncState.SetPending();
+                            syncState.SetPending(true);
                         }
                     }
                 }
@@ -662,24 +662,32 @@ namespace SuiteCRMAddIn.BusinessLogic
                 /* update the offset to the offset of the next page */
                 thisOffset = nextOffset;
 
-                /* fetch the page of entries starting at thisOffset */
-                EntryList entriesPage = RestAPIWrapper.GetEntryList(crmModule,
-                    String.Format(fetchQueryPrefix, RestAPIWrapper.GetUserId()),
-                    0, "date_start DESC", thisOffset, false,
-                    RestAPIWrapper.GetSugarFields(crmModule));
+                EntryList entriesPage = GetEntriesPage(thisOffset);
 
                 /* get the offset of the next page */
                 nextOffset = entriesPage.next_offset;
 
-                /* when there are no more entries, we'll get a zero-length entry list and nextOffset
-                 * will have the same value as thisOffset */
-                // AddOrUpdateItemsFromCrmToOutlook(entriesPage.entry_list, folder, untouched, crmModule);
-
                 result.AddRange(entriesPage.entry_list);
             }
+            /* when there are no more entries, we'll get a zero-length entry list and nextOffset
+             * will have the same value as thisOffset */
             while (thisOffset != nextOffset);
 
             return result;
+        }
+
+
+        /// <summary>
+        /// Fetch the page of entries from this module starting at this offset.
+        /// </summary>
+        /// <param name="offset">The offset into the resultset at which the page begins.</param>
+        /// <returns>A set of entries.</returns>
+        protected virtual EntryList GetEntriesPage(int offset)
+        {
+            return RestAPIWrapper.GetEntryList(this.DefaultCrmModule,
+                String.Format(fetchQueryPrefix, RestAPIWrapper.GetUserId()),
+                Properties.Settings.Default.SyncMaxRecords, "date_start DESC", offset, false,
+                RestAPIWrapper.GetSugarFields(this.DefaultCrmModule));
         }
 
 

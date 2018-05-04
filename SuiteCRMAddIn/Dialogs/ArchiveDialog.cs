@@ -52,6 +52,14 @@ namespace SuiteCRMAddIn.Dialogs
         private ILogger Log => Globals.ThisAddIn.Log;
 
         /// <summary>
+        /// Chains of modules to expand in the search tree.
+        /// </summary>
+        private IDictionary<string, ICollection<string>> moduleChains = new Dictionary<string, ICollection<string>>()
+        {
+            { "Contacts", new List<string>() { "accounts_contacts_1" } }
+        };
+
+        /// <summary>
         /// Add any selected custom modules to the list view
         /// </summary>
         private void AddCustomModules()
@@ -204,6 +212,7 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 this.Search(this.txtSearch.Text);
             }
+            this.AcceptButton = btnArchive;
         }
 
         private bool UnallowedNumber(string strText)
@@ -339,7 +348,14 @@ namespace SuiteCRMAddIn.Dialogs
             string queryText = ConstructQueryTextForModuleName(searchText, moduleName, fieldsToSeek);
             try
             {
-                queryResult = RestAPIWrapper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+                queryResult = RestAPIWrapper.GetEntryList(moduleName, 
+                    queryText, 
+                    Properties.Settings.Default.SyncMaxRecords, 
+                    "date_entered DESC", 
+                    0, 
+                    false, 
+                    fieldsToSeek.ToArray(), 
+                    ConstructLinkNamesToFieldsArray(moduleName));
             }
             catch (System.Exception any)
             {
@@ -348,7 +364,14 @@ namespace SuiteCRMAddIn.Dialogs
                 queryText = queryText.Replace("%", string.Empty);
                 try
                 {
-                    queryResult = RestAPIWrapper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+                    queryResult = RestAPIWrapper.GetEntryList(moduleName, 
+                        queryText, 
+                        Properties.Settings.Default.SyncMaxRecords, 
+                        "date_entered DESC", 
+                        0, 
+                        false, 
+                        fieldsToSeek.ToArray(), 
+                        ConstructLinkNamesToFieldsArray(moduleName));
                 }
                 catch (Exception secondFail)
                 {
@@ -363,6 +386,29 @@ namespace SuiteCRMAddIn.Dialogs
             }
 
             return queryResult;
+        }
+
+        private object ConstructLinkNamesToFieldsArray(string moduleName)
+        {
+            object result;
+            try
+            {
+                ICollection<string> chain = this.moduleChains[moduleName];
+                ICollection<object> links = new List<object>();
+
+                foreach (var elt in chain)
+                {
+                    links.Add(new { @name = elt, @value = new[] { "id", "name" } });
+                }
+
+                result = links.ToArray();
+            }
+            catch (KeyNotFoundException)
+            {
+                result = null;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -550,8 +596,8 @@ namespace SuiteCRMAddIn.Dialogs
 
             if (fieldNames.Contains("first_name") && fieldNames.Contains("last_name"))
             {
-                string lowerName = moduleName.ToLower();
-                result = $"({lowerName}.first_name LIKE '%{firstName}%' {logicalOperator} {lowerName}.last_name LIKE '%{lastName}%') OR ({lowerName}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{emailAddress}%'))"; ;
+                string moduleLower = moduleName.ToLower();
+                result = $"({moduleLower}.first_name LIKE '%{firstName}%' {logicalOperator} {moduleLower}.last_name LIKE '%{lastName}%') OR ({moduleLower}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{emailAddress}%'))"; ;
             }
 
             return result;
@@ -565,8 +611,9 @@ namespace SuiteCRMAddIn.Dialogs
         /// <param name="parent">The parent node beneath which the new node should be added.</param>
         private void PopulateTree(EntryList searchResult, string module, TreeNode parent)
         {
-            foreach (EntryValue entry in searchResult.entry_list)
+            for (int i = 0; i < searchResult.entry_list.Count(); i++)
             {
+                EntryValue entry = searchResult.entry_list[i];
                 string key = RestAPIWrapper.GetValueByKey(entry, "id");
                 if (!parent.Nodes.ContainsKey(key))
                 {
@@ -576,6 +623,25 @@ namespace SuiteCRMAddIn.Dialogs
                         Tag = key
                     };
                     parent.Nodes.Add(node);
+
+                    if (searchResult.relationship_list != null)
+                    {
+                        foreach (var relationship in searchResult.relationship_list[i].link_list)
+                        {
+                            TreeNode chainNode = new TreeNode(relationship.name);
+                            node.Nodes.Add(chainNode);
+
+                            foreach (LinkRecord member in relationship.records)
+                            {
+                                TreeNode memberNode = new TreeNode(member.data.GetValueAsString("name"))
+                                {
+                                    Name = member.data.GetValueAsString("id"),
+                                    Tag = member.data.GetValueAsString("id")
+                                };
+                                chainNode.Nodes.Add(memberNode);
+                            }
+                        }
+                    }
                 }
             }
             if (searchResult.result_count <= 3)
@@ -713,6 +779,8 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void txtSearch_KeyDown(object sender, KeyEventArgs e)
         {
+            this.AcceptButton = btnSearch;
+
             if (e.KeyCode == Keys.Enter)
             {
                 e.Handled = true;
@@ -832,12 +900,6 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 this.AcceptButton = btnSearch;
             }
-        }
-
-        private void txtSearch_Leave(object sender, EventArgs e)
-        {
-            btnSearch_Click(sender, e);
-            this.AcceptButton = btnArchive;
         }
 
         /// <summary>

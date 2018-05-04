@@ -252,7 +252,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             lock (this.txStateLock)
             {
-                if (iSwearThatTransmissionHasFailed && this.TxState == TransmissionState.Transmitted)
+                if (iSwearThatTransmissionHasFailed)
                 {
                     this.LogAndSetTxState(TransmissionState.Pending);
                 }
@@ -444,7 +444,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         private void LogAndSetTxState(TransmissionState newState)
         {
 #if DEBUG
-            Globals.ThisAddIn.Log.Debug($"{this.Cache?.Description}: transition {this.TxState} => {newState}");
+            if (this.Cache == null)
+            {
+                this.Cache = this.CreateProtoItem(this.OutlookItem);
+            }
+            Globals.ThisAddIn.Log.Debug($"{this.GetType().Name} '{this.Cache?.Description}': transition {this.TxState} => {newState}");
 #endif
             this.TxState = newState;
         }

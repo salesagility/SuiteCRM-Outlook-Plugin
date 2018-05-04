@@ -51,6 +51,23 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncMeetings;
 
         /// <summary>
+        /// Specialisation: also fetch names and email ids of recipients.
+        /// </summary>
+        /// <param name="offset">The offset into the resultset at which the page begins.</param>
+        /// <returns>A set of entries.</returns>
+        protected override EntryList GetEntriesPage(int offset)
+        {
+            return RestAPIWrapper.GetEntryList(this.DefaultCrmModule,
+                String.Format(fetchQueryPrefix, RestAPIWrapper.GetUserId()),
+                Properties.Settings.Default.SyncMaxRecords, "date_start DESC", offset, false,
+                RestAPIWrapper.GetSugarFields(this.DefaultCrmModule), new[] {
+                    new { @name = "users", @value = new[] {"id", "email1", "phone_work" } },
+                    new { @name = "contacts", @value = new[] {"id", "account_id", "email1", "phone_work" } },
+                    new { @name = "leads", @value = new[] {"id", "email1", "phone_work" } }
+                    });
+        }
+
+        /// <summary>
         /// Specialisation: also set end time and location.
         /// </summary>
         /// <param name="crmItem">The CRM item.</param>

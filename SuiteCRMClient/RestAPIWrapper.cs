@@ -547,8 +547,23 @@ namespace SuiteCRMClient
 
             return SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.ServerInfo>("get_server_info", data);
         }
-        
-        public static EntryList GetEntryList(string module, string query, int limit, string order_by, int offset, bool GetDeleted, string[] fields)
+
+        /// <summary>
+        /// Get specified entries from the specified module.
+        /// </summary>
+        /// <remarks>
+        /// This is a hack and is unsafe. The special handling of "Meetings" should be pushed back upstream to MeetingsSynchroniser.
+        /// </remarks>
+        /// <param name="module">The module to be queried.</param>
+        /// <param name="query">The query to filter by.</param>
+        /// <param name="limit">The limit to the number of fields to return in a page.</param>
+        /// <param name="order_by">The field(s) to order by.</param>
+        /// <param name="offset">The offset of the start of the page to return in the result set.</param>
+        /// <param name="getDeleted">If true, include deleted records in the result.</param>
+        /// <param name="fields">The fields to return.</param>
+        /// <param name="linkNamesToFieldsArray">A link object to return associated records in other modules.</param>
+        /// <returns>A list of entries in the module matching the query.</returns>
+        public static EntryList GetEntryList(string module, string query, int limit, string order_by, int offset, bool getDeleted, string[] fields, object linkNamesToFieldsArray = null)
         {
             EntryList result = new EntryList();
 
@@ -562,15 +577,9 @@ namespace SuiteCRMClient
                     @order_by = order_by,
                     @offset = offset,
                     @select_fields = fields,
-                    @link_names_to_fields_array = module == "Meetings" ?
-                    new[] {
-                    new { @name = "users", @value = new[] {"id", "email1", "phone_work" } },
-                    new { @name = "contacts", @value = new[] {"id", "account_id", "email1", "phone_work" } },
-                    new { @name = "leads", @value = new[] {"id", "email1", "phone_work" } }
-                    } :
-                    null,
+                    @link_names_to_fields_array = linkNamesToFieldsArray,
                     @max_results = $"{limit}",
-                    @deleted = GetDeleted,
+                    @deleted = getDeleted,
                     @favorites = false
                 };
                 result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.EntryList>("get_entry_list", data);
