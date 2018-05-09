@@ -481,5 +481,10 @@ namespace SuiteCRMAddIn.Dialogs
         {
             Process.Start(ThisAddIn.LogDirPath);
         }
+
+        private void advancedButton_Click(object sender, EventArgs e)
+        {
+            new AdvancedArchiveSettingsDialog().ShowDialog();
+        }
     }
 }

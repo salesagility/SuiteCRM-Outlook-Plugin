@@ -89,6 +89,8 @@ namespace SuiteCRMAddIn.Dialogs
             this.label1 = new System.Windows.Forms.Label();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.synchronisationTab = new System.Windows.Forms.TabPage();
+            this.syncTasksMenu = new System.Windows.Forms.ComboBox();
+            this.syncTasksLabel = new System.Windows.Forms.Label();
             this.syncMeetingsMenu = new System.Windows.Forms.ComboBox();
             this.syncMeetingsLabel = new System.Windows.Forms.Label();
             this.syncCallsMenu = new System.Windows.Forms.ComboBox();
@@ -107,8 +109,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.syncTasksMenu = new System.Windows.Forms.ComboBox();
-            this.syncTasksLabel = new System.Windows.Forms.Label();
+            this.advancedArchiveSettingsButton = new System.Windows.Forms.Button();
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -195,6 +196,7 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // tabPage2
             // 
+            this.tabPage2.Controls.Add(this.advancedArchiveSettingsButton);
             this.tabPage2.Controls.Add(this.groupBox2);
             this.tabPage2.Location = new System.Drawing.Point(23, 4);
             this.tabPage2.Name = "tabPage2";
@@ -514,6 +516,23 @@ namespace SuiteCRMAddIn.Dialogs
             this.synchronisationTab.Text = "Synchronisation";
             this.synchronisationTab.UseVisualStyleBackColor = true;
             // 
+            // syncTasksMenu
+            // 
+            this.syncTasksMenu.FormattingEnabled = true;
+            this.syncTasksMenu.Location = new System.Drawing.Point(126, 130);
+            this.syncTasksMenu.Name = "syncTasksMenu";
+            this.syncTasksMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncTasksMenu.TabIndex = 8;
+            // 
+            // syncTasksLabel
+            // 
+            this.syncTasksLabel.AutoSize = true;
+            this.syncTasksLabel.Location = new System.Drawing.Point(38, 133);
+            this.syncTasksLabel.Name = "syncTasksLabel";
+            this.syncTasksLabel.Size = new System.Drawing.Size(39, 13);
+            this.syncTasksLabel.TabIndex = 7;
+            this.syncTasksLabel.Text = "Tasks:";
+            // 
             // syncMeetingsMenu
             // 
             this.syncMeetingsMenu.FormattingEnabled = true;
@@ -690,22 +709,15 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // syncTasksMenu
+            // advancedArchiveSettingsButton
             // 
-            this.syncTasksMenu.FormattingEnabled = true;
-            this.syncTasksMenu.Location = new System.Drawing.Point(126, 130);
-            this.syncTasksMenu.Name = "syncTasksMenu";
-            this.syncTasksMenu.Size = new System.Drawing.Size(228, 21);
-            this.syncTasksMenu.TabIndex = 8;
-            // 
-            // syncTasksLabel
-            // 
-            this.syncTasksLabel.AutoSize = true;
-            this.syncTasksLabel.Location = new System.Drawing.Point(38, 133);
-            this.syncTasksLabel.Name = "syncTasksLabel";
-            this.syncTasksLabel.Size = new System.Drawing.Size(39, 13);
-            this.syncTasksLabel.TabIndex = 7;
-            this.syncTasksLabel.Text = "Tasks:";
+            this.advancedArchiveSettingsButton.Location = new System.Drawing.Point(265, 306);
+            this.advancedArchiveSettingsButton.Name = "advancedArchiveSettingsButton";
+            this.advancedArchiveSettingsButton.Size = new System.Drawing.Size(75, 23);
+            this.advancedArchiveSettingsButton.TabIndex = 1;
+            this.advancedArchiveSettingsButton.Text = "Advanced";
+            this.advancedArchiveSettingsButton.UseVisualStyleBackColor = true;
+            this.advancedArchiveSettingsButton.Click += new System.EventHandler(this.advancedButton_Click);
             // 
             // SettingsDialog
             // 
@@ -815,5 +827,6 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.Label syncMeetingsLabel;
         private System.Windows.Forms.ComboBox syncTasksMenu;
         private System.Windows.Forms.Label syncTasksLabel;
+        private System.Windows.Forms.Button advancedArchiveSettingsButton;
     }
 }
