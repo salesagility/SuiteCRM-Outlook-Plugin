@@ -70,6 +70,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.txtSearch.Name = "txtSearch";
             this.txtSearch.Size = new System.Drawing.Size(370, 20);
             this.txtSearch.TabIndex = 0;
+            this.txtSearch.UseWaitCursor = true;
             this.txtSearch.TextChanged += new System.EventHandler(this.txtSearch_TextChanged);
             this.txtSearch.Enter += new System.EventHandler(this.txtSearch_Enter);
             this.txtSearch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtSearch_KeyDown);
@@ -83,6 +84,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnSearch.TabIndex = 1;
             this.btnSearch.Text = "&Search";
             this.btnSearch.UseVisualStyleBackColor = true;
+            this.btnSearch.UseWaitCursor = true;
             this.btnSearch.Click += new System.EventHandler(this.btnSearch_Click);
             // 
             // label1
@@ -93,6 +95,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.label1.Size = new System.Drawing.Size(230, 13);
             this.label1.TabIndex = 2;
             this.label1.Text = "Use the form below to find records in SuiteCRM";
+            this.label1.UseWaitCursor = true;
             // 
             // lstViewSearchModules
             // 
@@ -104,6 +107,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.lstViewSearchModules.Size = new System.Drawing.Size(156, 262);
             this.lstViewSearchModules.TabIndex = 3;
             this.lstViewSearchModules.UseCompatibleStateImageBehavior = false;
+            this.lstViewSearchModules.UseWaitCursor = true;
             this.lstViewSearchModules.View = System.Windows.Forms.View.Details;
             this.lstViewSearchModules.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
             // 
@@ -121,6 +125,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.tsResults.Size = new System.Drawing.Size(289, 262);
             this.tsResults.TabIndex = 4;
             this.tsResults.Tag = "tree_search_results";
+            this.tsResults.UseWaitCursor = true;
             this.tsResults.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.tsResults_AfterCheck);
             this.tsResults.AfterExpand += new System.Windows.Forms.TreeViewEventHandler(this.tsResults_AfterExpand);
             this.tsResults.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.tsResults_NodeMouseClick);
@@ -135,6 +140,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnArchive.TabIndex = 5;
             this.btnArchive.Text = "&Archive";
             this.btnArchive.UseVisualStyleBackColor = true;
+            this.btnArchive.UseWaitCursor = true;
             this.btnArchive.Click += new System.EventHandler(this.btnArchive_Click);
             // 
             // btnCancel
@@ -147,6 +153,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnCancel.TabIndex = 6;
             this.btnCancel.Text = "&Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.UseWaitCursor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
             // categoryLabel
@@ -157,6 +164,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.categoryLabel.Size = new System.Drawing.Size(49, 13);
             this.categoryLabel.TabIndex = 7;
             this.categoryLabel.Text = "Category";
+            this.categoryLabel.UseWaitCursor = true;
             // 
             // categoryInput
             // 
@@ -165,6 +173,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.categoryInput.Name = "categoryInput";
             this.categoryInput.Size = new System.Drawing.Size(230, 21);
             this.categoryInput.TabIndex = 8;
+            this.categoryInput.UseWaitCursor = true;
             this.categoryInput.SelectedIndexChanged += new System.EventHandler(this.categoryInput_SelectedIndexChanged);
             // 
             // ArchiveDialog
@@ -193,6 +202,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Archive to SuiteCRM";
+            this.UseWaitCursor = true;
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.frmArchive_FormClosed);
             this.Load += new System.EventHandler(this.frmArchive_Load);
             this.ResumeLayout(false);

@@ -89,5 +89,8 @@
     <Setting Name="SyncTasks" Type="SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
+    <Setting Name="ArchivingSearchChains" Type="System.String" Scope="User">
+      <Value Profile="(Default)">{ "Contacts": [ { "linkName": "accounts_contacts_1", "targetName": "accounts", "fields": ["id", "name" ]}]}</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

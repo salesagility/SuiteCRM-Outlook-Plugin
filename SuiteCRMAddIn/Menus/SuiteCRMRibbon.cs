@@ -28,6 +28,7 @@ using SuiteCRMClient.Logging;
 using SuiteCRMAddIn.Extensions;
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -138,6 +139,11 @@ namespace SuiteCRMAddIn
         }
 
         #endregion
+
+        public bool btnArchive_Enabled()
+        {
+            return Globals.ThisAddIn.SelectedEmails.Select(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null).ToList().Count() > 0;
+        }
 
         #region Click Events
         public void btnArchive_Action(IRibbonControl control)

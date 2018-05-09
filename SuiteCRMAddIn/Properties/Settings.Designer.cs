@@ -365,5 +365,18 @@ namespace SuiteCRMAddIn.Properties {
                 this["SyncTasks"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("{ \"Contacts\": [ { \"linkName\": \"accounts_contacts_1\", \"targetName\": \"accounts\", \"f" +
+            "ields\": [\"id\", \"name\" ]}]}")]
+        public string ArchivingSearchChains {
+            get {
+                return ((string)(this["ArchivingSearchChains"]));
+            }
+            set {
+                this["ArchivingSearchChains"] = value;
+            }
+        }
     }
 }

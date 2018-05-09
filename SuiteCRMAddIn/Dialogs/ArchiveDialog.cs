@@ -26,6 +26,7 @@ namespace SuiteCRMAddIn.Dialogs
     using Exceptions;
     using Extensions;
     using Microsoft.Office.Interop.Outlook;
+    using Newtonsoft.Json.Linq;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
@@ -53,10 +54,10 @@ namespace SuiteCRMAddIn.Dialogs
         /// <summary>
         /// Chains of modules to expand in the search tree.
         /// </summary>
-        private IDictionary<string, ICollection<LinkSpec>> moduleChains = new Dictionary<string, ICollection<LinkSpec>>()
-        {
-            { "Contacts", new List<LinkSpec>() { new LinkSpec( "accounts_contacts_1", "accounts", new string[] {"id", "name" }) } }
-        };
+        private IDictionary<string, ICollection<LinkSpec>> moduleChains = new Dictionary<string, ICollection<LinkSpec>>();
+        //{
+        //    { "Contacts", new List<LinkSpec>() { new LinkSpec( "accounts_contacts_1", "accounts", new string[] {"id", "name" }) } }
+        //};
 
         /// <summary>
         /// The reason for archiving.
@@ -69,10 +70,29 @@ namespace SuiteCRMAddIn.Dialogs
 
         public ArchiveDialog(IEnumerable<MailItem> selectedEmails, EmailArchiveReason reason)
         {
-            this.archivableEmails = selectedEmails;
-            this.reason = reason;
-            InitializeComponent();
+            try
+            {
+                this.UseWaitCursor = true;
+
+                try
+                {
+                    this.moduleChains = AdvancedArchiveSettingsDialog.SetupSearchChains();
+                }
+                catch (Exception any)
+                {
+                    Log.Error($"Failed to parse ArchivingSearchChains value '{Properties.Settings.Default.ArchivingSearchChains}':", any);
+                }
+
+                this.archivableEmails = selectedEmails;
+                this.reason = reason;
+                InitializeComponent();
+            }
+            finally
+            {
+                this.UseWaitCursor = false;
+            }
         }
+
 
         /// <summary>
         /// Add any selected custom modules to the list view
@@ -214,20 +234,29 @@ namespace SuiteCRMAddIn.Dialogs
 
         public void btnSearch_Click(object sender, EventArgs e)
         {
-            this.tsResults.Nodes.Clear();
+            try
+            {
+                this.UseWaitCursor = true;
 
-            if (this.txtSearch.Text.Replace(';', ',').Contains<char>(','))
-            {
-                foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }).OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
+                this.tsResults.Nodes.Clear();
+
+                if (this.txtSearch.Text.Replace(';', ',').Contains<char>(','))
                 {
-                    this.Search(str);
+                    foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }).OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
+                    {
+                        this.Search(str);
+                    }
                 }
+                else
+                {
+                    this.Search(this.txtSearch.Text);
+                }
+                this.AcceptButton = btnArchive;
             }
-            else
+            finally
             {
-                this.Search(this.txtSearch.Text);
+                this.UseWaitCursor = false;
             }
-            this.AcceptButton = btnArchive;
         }
 
         private bool UnallowedNumber(string strText)
@@ -947,7 +976,7 @@ namespace SuiteCRMAddIn.Dialogs
             }
         }
 
-        private class LinkSpec
+        internal class LinkSpec
         {
             /// <summary>
             /// The name of the linking module

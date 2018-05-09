@@ -213,6 +213,12 @@
     <Compile Include="BusinessLogic\CallSyncState.cs" />
     <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
     <Compile Include="BusinessLogic\MeetingSyncState.cs" />
+    <Compile Include="Dialogs\AdvancedArchiveSettingsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\AdvancedArchiveSettingsDialog.Designer.cs">
+      <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Exceptions\ProbableDuplicateItemException.cs" />
     <Compile Include="BusinessLogic\SyncStateManager.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
@@ -339,6 +345,9 @@
     </Compile>
     <EmbeddedResource Include="Dialogs\AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\AdvancedArchiveSettingsDialog.resx">
+      <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ClearCrmIdsDialog.resx">
       <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
