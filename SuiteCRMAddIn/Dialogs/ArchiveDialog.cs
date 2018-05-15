@@ -37,6 +37,7 @@ namespace SuiteCRMAddIn.Dialogs
     using System.Linq;
     using System.Runtime.InteropServices;
     using System.Text;
+    using System.Threading;
     using System.Windows.Forms;
     using Exception = System.Exception;
 
@@ -149,7 +150,10 @@ namespace SuiteCRMAddIn.Dialogs
 
                 if (Properties.Settings.Default.AutomaticSearch)
                 {
-                    this.btnSearch_Click(null, null);
+                    this.BeginInvoke((MethodInvoker)delegate
+                   {
+                       this.Search(this.txtSearch.Text);
+                   });
                 }
             }
         }
@@ -234,29 +238,20 @@ namespace SuiteCRMAddIn.Dialogs
 
         public void btnSearch_Click(object sender, EventArgs e)
         {
-            try
-            {
-                this.UseWaitCursor = true;
+            this.tsResults.Nodes.Clear();
 
-                this.tsResults.Nodes.Clear();
-
-                if (this.txtSearch.Text.Replace(';', ',').Contains<char>(','))
-                {
-                    foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }).OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
-                    {
-                        this.Search(str);
-                    }
-                }
-                else
-                {
-                    this.Search(this.txtSearch.Text);
-                }
-                this.AcceptButton = btnArchive;
-            }
-            finally
+            if (this.txtSearch.Text.Replace(';', ',').Contains<char>(','))
             {
-                this.UseWaitCursor = false;
+                foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }).OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
+                {
+                    this.Search(str);
+                }
             }
+            else
+            {
+                this.Search(this.txtSearch.Text);
+            }
+            this.AcceptButton = btnArchive;
         }
 
         private bool UnallowedNumber(string strText)
@@ -851,40 +846,46 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void btnArchive_Click(object sender, EventArgs e)
         {
-            try
+            using (WaitCursor.For(this))
             {
-                if (this.tsResults.Nodes.Count == 0)
+                try
                 {
-                    MessageBox.Show("There are no search results.", "Error");
-                    return;
-                }
+                    if (this.tsResults.Nodes.Count == 0)
+                    {
+                        MessageBox.Show("There are no search results.", "Error");
+                        return;
+                    }
 
-                var selectedCrmEntities = GetSelectedCrmEntities(this.tsResults);
-                if (!selectedCrmEntities.Any())
+                    var selectedCrmEntities = GetSelectedCrmEntities(this.tsResults);
+                    if (!selectedCrmEntities.Any())
+                    {
+                        MessageBox.Show("No selected CRM entities", "Error");
+                        return;
+                    }
+
+                    var selectedEmailsCount = this.archivableEmails.Count();
+                    if (selectedEmailsCount == 0)
+                    {
+                        MessageBox.Show("No emails selected", "Error");
+                        return;
+                    }
+
+                    Log.Debug($"ArchiveDialog: About to manually archive {this.archivableEmails.Count()} emails");
+                    var archiver = Globals.ThisAddIn.EmailArchiver;
+                    bool success = this.ReportOnEmailArchiveSuccess(
+                        this.archivableEmails.Select(mailItem =>
+                                archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.reason))
+                            .ToList());
+                    string prefix = success ? "S" : "Uns";
+                    Log.Debug($"ArchiveDialog: {prefix}uccessfully archived {this.archivableEmails.Count()} emails");
+
+                    Close();
+                }
+                catch (System.Exception exception)
                 {
-                    MessageBox.Show("No selected CRM entities", "Error");
-                    return;
+                    Log.Error("btnArchive_Click", exception);
+                    MessageBox.Show("There was an error while archiving", "Error");
                 }
-
-                var selectedEmailsCount = this.archivableEmails.Count();
-                if (selectedEmailsCount == 0)
-                {
-                    MessageBox.Show("No emails selected", "Error");
-                    return;
-                }
-
-                var archiver = Globals.ThisAddIn.EmailArchiver;
-                this.ReportOnEmailArchiveSuccess(
-                    this.archivableEmails.Select(mailItem =>
-                            archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.reason))
-                        .ToList());
-
-                Close();
-            }
-            catch (System.Exception exception)
-            {
-                Log.Error("btnArchive_Click", exception);
-                MessageBox.Show("There was an error while archiving", "Error");
             }
         }
 

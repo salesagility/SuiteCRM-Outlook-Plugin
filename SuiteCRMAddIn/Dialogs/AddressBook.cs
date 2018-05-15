@@ -95,52 +95,53 @@ namespace SuiteCRMAddIn.Dialogs
         {
             string[] strArray = new string[2];
             string str = "OR";
-            Cursor.Current = Cursors.WaitCursor;
-            if (this.txtSearch.Text == string.Empty)
+            using (WaitCursor.For(this))
             {
-                MessageBox.Show("Please enter something to search for", "Error");
-            }
-            else
-            {
-                this.lstViewResults.Items.Clear();
-                string[] strArray2 = new string[] { "Leads", ContactSynchroniser.CrmModule };
-                if (this.txtSearch.Text.Contains<char>(' '))
+                if (this.txtSearch.Text == string.Empty)
                 {
-                    strArray = this.txtSearch.Text.Split(new char[] { ' ' });
+                    MessageBox.Show("Please enter something to search for", "Error");
                 }
                 else
                 {
-                    strArray[0] = this.txtSearch.Text;
-                    strArray[1] = this.txtSearch.Text;
-                }
-                if ((strArray[1] != string.Empty) && (strArray[0] != strArray[1]))
-                {
-                    str = "AND";
-                }
-                foreach (string str2 in strArray2)
-                {
-                    string query = "(" + str2.ToLower() + ".first_name LIKE '%" + strArray[0] + "%' " + str + " " + str2.ToLower() + ".last_name LIKE '%" + strArray[1] + "%')";
-                    bool flag1 = str2 == ContactSynchroniser.CrmModule;
-                    if (this.cbMyItems.Checked)
+                    this.lstViewResults.Items.Clear();
+                    string[] strArray2 = new string[] { "Leads", ContactSynchroniser.CrmModule };
+                    if (this.txtSearch.Text.Contains<char>(' '))
                     {
-                        string str8 = query;
-                        query = str8 + "AND " + str2.ToLower() + ".assigned_user_id = '" + Globals.ThisAddIn.SuiteCRMUserSession.id + "'";
+                        strArray = this.txtSearch.Text.Split(new char[] { ' ' });
                     }
-                    foreach (EntryValue _value in RestAPIWrapper.GetEntryList(str2, query, 0, "date_entered DESC", 0, false, new string[] { "first_name", "last_name", "email1" }).entry_list)
+                    else
                     {
-                        string str4 = string.Empty;
-                        string str5 = string.Empty;
-                        string valueByKey = string.Empty;
-                        string str7 = string.Empty;
-                        valueByKey = RestAPIWrapper.GetValueByKey(_value, "first_name");
-                        str7 = RestAPIWrapper.GetValueByKey(_value, "last_name");
-                        RestAPIWrapper.GetValueByKey(_value, "id");
-                        str5 = RestAPIWrapper.GetValueByKey(_value, "email1");
-                        str4 = valueByKey + " " + str7;
-                        this.lstViewResults.Items.Add(new ListViewItem(new string[] { str4, str5, str2 }));
+                        strArray[0] = this.txtSearch.Text;
+                        strArray[1] = this.txtSearch.Text;
+                    }
+                    if ((strArray[1] != string.Empty) && (strArray[0] != strArray[1]))
+                    {
+                        str = "AND";
+                    }
+                    foreach (string str2 in strArray2)
+                    {
+                        string query = "(" + str2.ToLower() + ".first_name LIKE '%" + strArray[0] + "%' " + str + " " + str2.ToLower() + ".last_name LIKE '%" + strArray[1] + "%')";
+                        bool flag1 = str2 == ContactSynchroniser.CrmModule;
+                        if (this.cbMyItems.Checked)
+                        {
+                            string str8 = query;
+                            query = str8 + "AND " + str2.ToLower() + ".assigned_user_id = '" + Globals.ThisAddIn.SuiteCRMUserSession.id + "'";
+                        }
+                        foreach (EntryValue _value in RestAPIWrapper.GetEntryList(str2, query, 0, "date_entered DESC", 0, false, new string[] { "first_name", "last_name", "email1" }).entry_list)
+                        {
+                            string str4 = string.Empty;
+                            string str5 = string.Empty;
+                            string valueByKey = string.Empty;
+                            string str7 = string.Empty;
+                            valueByKey = RestAPIWrapper.GetValueByKey(_value, "first_name");
+                            str7 = RestAPIWrapper.GetValueByKey(_value, "last_name");
+                            RestAPIWrapper.GetValueByKey(_value, "id");
+                            str5 = RestAPIWrapper.GetValueByKey(_value, "email1");
+                            str4 = valueByKey + " " + str7;
+                            this.lstViewResults.Items.Add(new ListViewItem(new string[] { str4, str5, str2 }));
+                        }
                     }
                 }
-                Cursor.Current = Cursors.Default;
             }
         }
 

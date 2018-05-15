@@ -67,17 +67,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (Globals.ThisAddIn.HasCrmUserSession)
             {
-                Log.Debug("Auto-Archive iteration started");
-
                 var minReceivedDateTime = DateTime.UtcNow.AddDays(0 - Properties.Settings.Default.DaysOldEmailToAutoArchive);
                 var foldersToBeArchived = GetMailFolders(Globals.ThisAddIn.Application.Session.Folders)
                     .Where(FolderShouldBeAutoArchived);
 
-                foreach (var folder in foldersToBeArchived)
+                if (foldersToBeArchived.Count() > 0)
                 {
-                    ArchiveFolderItems(folder, minReceivedDateTime);
+                    Log.Debug("Auto-Archive iteration started");
+
+                    foreach (var folder in foldersToBeArchived)
+                    {
+                        ArchiveFolderItems(folder, minReceivedDateTime);
+                    }
+                    Log.Debug("Auto-Archive iteration completed");
                 }
-                Log.Debug("Auto-Archive iteration completed");
+                else
+                {
+                    Log.Debug("No folders to auto-archive.");
+                }
             }
             else
             {

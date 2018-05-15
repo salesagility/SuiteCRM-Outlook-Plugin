@@ -397,7 +397,7 @@ namespace SuiteCRMAddIn.Extensions
                 Log.Error("Could not get property while archiving email", cex);
             }
 
-            if (olProperty == null)
+            if (olProperty == null || string.IsNullOrEmpty(olProperty.Value))
             {
                 result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
                 
