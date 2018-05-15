@@ -720,6 +720,9 @@ namespace SuiteCRMAddIn.Dialogs
                 case "Cases":
                     keyValue = RestAPIWrapper.GetValueByKey(entry, "case_number");
                     break;
+                case "Contacts":
+                    keyValue = string.Empty;
+                    break;
                 default:
                     keyValue = RestAPIWrapper.GetValueByKey(entry, "account_name");
                     break;
