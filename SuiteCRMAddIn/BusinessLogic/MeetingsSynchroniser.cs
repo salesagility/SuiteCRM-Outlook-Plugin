@@ -117,6 +117,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        protected override bool ShouldAddOrUpdateItemFromOutlookToCrm(Outlook.AppointmentItem olItem)
+        {
+            bool result =  base.ShouldAddOrUpdateItemFromOutlookToCrm(olItem);
+
+            foreach (Outlook.ItemProperty p in olItem.ItemProperties)
+            {
+                Log.Debug($"Meeting property '{p.Name}' => '{p.Value}'");
+            }
+
+            return result;
+        }
 
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
@@ -178,9 +189,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState, string crmType, string entryId = "")
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState, string entryId = "")
         {
-            string result = base.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, entryId);
+            string result = base.AddOrUpdateItemFromOutlookToCrm(syncState, entryId);
 
             if (!string.IsNullOrEmpty(result))
             {

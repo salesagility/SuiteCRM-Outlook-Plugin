@@ -222,7 +222,6 @@
     <Compile Include="Exceptions\ProbableDuplicateItemException.cs" />
     <Compile Include="BusinessLogic\SyncStateManager.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
-    <Compile Include="Daemon\UpdateMeetingAcceptancesAction.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
       <SubType>Form</SubType>
     </Compile>

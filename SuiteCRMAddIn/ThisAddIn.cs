@@ -39,6 +39,7 @@ namespace SuiteCRMAddIn
     using System.Linq;
     using System.Reflection;
     using System.Runtime.InteropServices;
+    using System.Text;
     using System.Threading;
     using System.Windows.Forms;
     using Office = Microsoft.Office.Core;
@@ -748,10 +749,39 @@ namespace SuiteCRMAddIn
                     }
                     else if (item is Outlook.MeetingItem)
                     {
-                        DaemonWorker.Instance.AddTask(
-                            new UpdateMeetingAcceptancesAction(
-                                meetingSynchroniser, 
-                                item as Outlook.MeetingItem));
+                        Outlook.MeetingItem mItem = item as Outlook.MeetingItem;
+
+                       var appt = item.GetAssociatedAppointment(false);
+                       var oPA = appt.PropertyAccessor;
+
+                        //This parses the Global Appointment ID to a byte array. We need to retrieve    the "UID" from it (if available).
+                        byte[] bytes = (byte[])oPA.StringToBinary(appt.GlobalAppointmentID);
+
+                        //According to https://msdn.microsoft.com/en-us/library/ee157690(v=exchg.80).aspx we don't need first 40 bytes            
+                        if (bytes.Length >= 40)
+                        {
+                            byte[] bytesThatContainData = new byte[bytes.Length - 40];
+                            Array.Copy(bytes, 40, bytesThatContainData, 0, bytesThatContainData.Length);
+
+                            //In some cases, there won't be a UID.
+                            var test = Encoding.UTF8.GetString(bytesThatContainData, 0, bytesThatContainData.Length);
+
+                            if (test.StartsWith("vCal-Uid"))
+                            {
+                                //remove vCal-Uid from start string and special symbols
+                                test = test.Replace("vCal-Uid", string.Empty);
+                                test = test.Replace("\u0001", string.Empty);
+                                test = test.Replace("\0", string.Empty);
+
+                                //Here is the result
+                                var uid = test;
+                            }
+                            else
+                            {
+                                // Bad format!!!
+                            }
+                        }
+                        // this.MeetingsSynchroniser.MarkAsReceivedByEmail(item as Outlook.MeetingItem);
                     }
                 }
             }

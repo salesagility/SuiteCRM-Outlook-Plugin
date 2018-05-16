@@ -60,6 +60,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         public const string CrmIdPropertyName = "SEntryID";
 
         /// <summary>
+        /// If set, don't sync with CRM.
+        /// </summary>
+        public const string CRMShouldNotSyncPropertyName = "ShouldNotSyncWithCRM";
+
+        /// <summary>
         /// My underlying instance.
         /// </summary>
         private static readonly Lazy<SyncStateManager> lazy =
