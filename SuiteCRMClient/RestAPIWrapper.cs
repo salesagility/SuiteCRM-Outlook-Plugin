@@ -548,12 +548,39 @@ namespace SuiteCRMClient
             return SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.ServerInfo>("get_server_info", data);
         }
 
+
         /// <summary>
-        /// Get specified entries from the specified module.
+        /// Get the specified entry from the specified module.
         /// </summary>
-        /// <remarks>
-        /// This is a hack and is unsafe. The special handling of "Meetings" should be pushed back upstream to MeetingsSynchroniser.
-        /// </remarks>
+        /// <param name="module">The module to be queried.</param>
+        /// <param name="id">The id of the entry to return.</param>
+        /// <param name="fields">The fields to return.</param>
+        /// <param name="linkNamesToFieldsArray">A link object to return associated records in other modules.</param>
+        /// <returns>A list of entries in the module matching the query.</returns>
+        public static Entry GetEntry(string module, string id, string[] fields, object linkNamesToFieldsArray = null)
+        {
+            Entry result = new Entry();
+
+            if (EnsureLoggedIn())
+            {
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = module,
+                    @id = id,
+                    @select_fields = fields,
+                    @link_names_to_fields_array = linkNamesToFieldsArray,
+                    @track_view = false
+                };
+                result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.Entry>("get_entry", data);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get the specified entries from the specified module.
+        /// </summary>
         /// <param name="module">The module to be queried.</param>
         /// <param name="query">The query to filter by.</param>
         /// <param name="limit">The limit to the number of fields to return in a page.</param>

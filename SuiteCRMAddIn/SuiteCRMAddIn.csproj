@@ -222,7 +222,6 @@
     <Compile Include="Exceptions\ProbableDuplicateItemException.cs" />
     <Compile Include="BusinessLogic\SyncStateManager.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
-    <Compile Include="Daemon\UpdateMeetingAcceptancesAction.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -261,6 +260,7 @@
     <Compile Include="Exceptions\DuplicateSyncStateException.cs" />
     <Compile Include="Exceptions\UnexpectedSyncStateClassException.cs" />
     <Compile Include="Extensions\AddressEntryExtensions.cs" />
+    <Compile Include="Extensions\MeetingItemExtensions.cs" />
     <Compile Include="Extensions\TaskItemExtensions.cs" />
     <Compile Include="Extensions\ContactItemExtensions.cs" />
     <Compile Include="Extensions\AppointmentItemExtensions.cs" />

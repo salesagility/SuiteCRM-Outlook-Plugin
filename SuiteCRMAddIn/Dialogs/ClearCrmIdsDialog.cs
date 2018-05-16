@@ -92,7 +92,7 @@
 
         private void ShowProgressOrClose()
         {
-            if (this.remaining >= 0)
+            if (this.remaining <= 0)
             {
                 this.log.Debug("ClearCrmIdsDialog: completed, closing.");
                 base.Close();

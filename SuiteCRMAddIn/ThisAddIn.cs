@@ -27,6 +27,7 @@ namespace SuiteCRMAddIn
     using BusinessLogic;
     using Daemon;
     using Dialogs;
+    using Extensions;
     using Microsoft.Office.Core;
     using NGettext;
     using Properties;
@@ -39,6 +40,7 @@ namespace SuiteCRMAddIn
     using System.Linq;
     using System.Reflection;
     using System.Runtime.InteropServices;
+    using System.Text;
     using System.Threading;
     using System.Windows.Forms;
     using Office = Microsoft.Office.Core;
@@ -746,18 +748,31 @@ namespace SuiteCRMAddIn
                                             item as Outlook.MailItem,
                                             Settings.Default.ExcludedEmails);
                     }
-                    else if (item is Outlook.MeetingItem)
+                    else if (item is Outlook.MeetingItem && SyncDirection.AllowOutbound(Properties.Settings.Default.SyncMeetings))
                     {
-                        DaemonWorker.Instance.AddTask(
-                            new UpdateMeetingAcceptancesAction(
-                                meetingSynchroniser, 
-                                item as Outlook.MeetingItem));
+                        ProcessNewMeetingItem(item as Outlook.MeetingItem);
                     }
                 }
             }
             catch (Exception ex)
             {
                 log.Error(catalogue.GetString("ThisAddIn.Application_NewMail"), ex);
+            }
+        }
+
+        private void ProcessNewMeetingItem(Outlook.MeetingItem meetingItem)
+        {
+            string vCalId = meetingItem.GetVCalId();
+
+            if (!string.IsNullOrEmpty(vCalId) && RestAPIWrapper.GetEntry(MeetingsSynchroniser.DefaultCrmModule, vCalId, new string[] { "id" }) != null)
+            {
+                Outlook.AppointmentItem apptItem = meetingItem.GetAssociatedAppointment(false);
+                Outlook.UserProperty idProperty = apptItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+                if (idProperty == null)
+                {
+                    idProperty = apptItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, Outlook.OlUserPropertyType.olText);
+                }
+                idProperty.Value = vCalId;
             }
         }
 

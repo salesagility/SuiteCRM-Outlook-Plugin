@@ -390,9 +390,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 olPropertyType = olItem.UserProperties[SyncStateManager.TypePropertyName];
 
-                var itemType = olPropertyType != null ? olPropertyType.Value.ToString() : this.DefaultCrmModule;
-
-                return this.AddOrUpdateItemFromOutlookToCrm(syncState, itemType, syncState.CrmEntryId);
+                return this.AddOrUpdateItemFromOutlookToCrm(syncState, syncState.CrmEntryId);
             }
             catch (COMException)
             {
@@ -405,17 +403,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Add the Outlook item referenced by this sync state, which may not exist in CRM, to CRM.
         /// </summary>
         /// <param name="syncState">The sync state referencing the outlook item to add.</param>
-        /// <param name="crmType">The CRM type ('module') to which it should be added</param>
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
         /// <returns>The id of the entry added o</returns>
-        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState, string crmType, string entryId = "")
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState, string entryId = "")
         {
             string result = entryId;
 
             Outlook.AppointmentItem olItem = syncState.OutlookItem;
 
-            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem, crmType))
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem))
             {
                 if (ShouldDeleteFromCrm(olItem))
                 {
@@ -425,7 +422,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else if (ShouldDespatchToCrm(olItem))
                 {
-                    result = base.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, entryId);
+                    result = base.AddOrUpdateItemFromOutlookToCrm(syncState, entryId);
 
                     if (String.IsNullOrEmpty(result))
                     {

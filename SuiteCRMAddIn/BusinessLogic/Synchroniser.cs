@@ -309,25 +309,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Perform all the necessary checking before adding or updating an item on CRM.
         /// </summary>
-        /// <param name="olItem">The item we may seek to add or update, presumed to be of
-        /// my default item type.</param>
-        /// <returns>true if we may attempt to add or update that item.</returns>
-        protected bool ShouldAddOrUpdateItemFromOutlookToCrm(OutlookItemType olItem)
-        {
-            return this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem, this.DefaultCrmModule);
-        }
-
-        /// <summary>
-        /// Perform all the necessary checking before adding or updating an item on CRM.
-        /// </summary>
         /// <remarks>
         /// TODO TODO TODO: This does NOT actually do all the checking. Checking is also
         /// done in SyncState.ShouldSyncWithCRM, and possibly other places. Fix.
         /// </remarks>
-        /// <param name="olItem">The item we may seek to add or update.</param>
-        /// <param name="crmType">The CRM type of that item.</param>
+        /// <param name="olItem">The item we may seek to add or update, presumed to be of
+        /// my default item type.</param>
         /// <returns>true if we may attempt to add or update that item.</returns>
-        protected bool ShouldAddOrUpdateItemFromOutlookToCrm(OutlookItemType olItem, string crmType)
+        protected virtual bool ShouldAddOrUpdateItemFromOutlookToCrm(OutlookItemType olItem)
         {
             bool result;
             string prefix = "Synchoniser.ShouldAddOrUpdateItemFromOutlookToCrm";
@@ -336,14 +325,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (olItem == null)
                 {
-                    Log.Warn($"{prefix}: attempt to send null {crmType}?");
+                    Log.Warn($"{prefix}: attempt to send null {this.DefaultCrmModule}?");
                     result = false;
                 }
                 else
                 {
                     if (SyncDirection.AllowOutbound(Direction))
                     {
-                        if (this.permissionsCache.HasImportAccess(crmType))
+                        if (this.permissionsCache.HasImportAccess(this.DefaultCrmModule))
                         {
                             if (this.GetSensitivity(olItem) == Outlook.OlSensitivity.olNormal)
                             {
@@ -351,26 +340,26 @@ namespace SuiteCRMAddIn.BusinessLogic
                             }
                             else
                             {
-                                Log.Info($"{prefix}: {crmType} not added to CRM because its sensitivity is not public.");
+                                Log.Info($"{prefix}: {this.DefaultCrmModule} not added to CRM because its sensitivity is not public.");
                                 result = false;
                             }
                         }
                         else
                         {
-                            Log.Info($"{prefix}: {crmType} not added to CRM because import access is not granted.");
+                            Log.Info($"{prefix}: {this.DefaultCrmModule} not added to CRM because import access is not granted.");
                             result = false;
                         }
                     }
                     else
                     {
-                        Log.Info($"{prefix}: {crmType} not added to CRM because synchronisation is not enabled.");
+                        Log.Info($"{prefix}: {this.DefaultCrmModule} not added to CRM because synchronisation is not enabled.");
                         result = false;
                     }
                 }
             }
             catch (Exception any)
             {
-                Log.Error($"{prefix}: unexpected failure while checking {crmType}.", any);
+                Log.Error($"{prefix}: unexpected failure while checking {this.DefaultCrmModule}.", any);
                 result = false;
             }
 
@@ -405,25 +394,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="syncState">The sync state.</param>
         /// <param name="crmType">The CRM type (name of CRM module) of the item.</param>
         /// <returns>The id of the entry added or updated.</returns>
-        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState, string crmType)
-        {
-            return this.AddOrUpdateItemFromOutlookToCrm(syncState, crmType, syncState.CrmEntryId);
-        }
-
-
-        /// <summary>
-        /// Add the Outlook item referenced by this sync state, which may not exist in CRM, to CRM.
-        /// </summary>
-        /// <param name="syncState">The sync state referencing the outlook item to add.</param>
-        /// <param name="crmType">The CRM type ('module') to which it should be added</param>
-        /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
-        /// an update, not an add).</param>
-        /// <returns>The id of the entry added o</returns>
-        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState, string crmType, string entryId = "")
+        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState, string entryId = "")
         {
             string result = entryId;
 
-            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem, crmType))
+            if (this.ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem))
             {
                 OutlookItemType olItem = syncState.OutlookItem;
 
@@ -435,11 +410,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                         syncState.SetTransmitted();
 
-                        result = ConstructAndDespatchCrmItem(olItem, crmType, entryId);
+                        result = ConstructAndDespatchCrmItem(olItem, this.DefaultCrmModule, entryId);
                         if (!string.IsNullOrEmpty(result))
                         {
                             var utcNow = DateTime.UtcNow;
-                            EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), crmType, result);
+                            EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), this.DefaultCrmModule, result);
 
                             syncState.SetSynced(result);
                         }
@@ -918,7 +893,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             LogItemAction(olItem, $"{this.GetType().Name}.OutlookItemAdded: {this.GetOutlookEntryId(olItem)}");
 
-            if (olItem != null)
             {
                 lock (enqueueingLock)
                 {
@@ -927,7 +901,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                         T state = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as T;
                         if (state != null)
                         {
-                            DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType, T>(synchroniser, state));
+                            if (olItem != null && this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem))
+                            {
+                                DaemonWorker.Instance.AddTask(new TransmitNewAction<OutlookItemType, T>(synchroniser, state));
+                            }
                         }
                         else
                         {
