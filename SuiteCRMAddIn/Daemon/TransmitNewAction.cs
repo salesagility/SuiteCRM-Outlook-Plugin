@@ -71,7 +71,7 @@ namespace SuiteCRMAddIn.Daemon
                 {
                     try
                     {
-                        string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.synchroniser.DefaultCrmModule);
+                        string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState);
                         result = $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
                     }
                     catch (WebException wex)

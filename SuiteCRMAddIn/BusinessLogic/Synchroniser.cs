@@ -382,18 +382,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="syncState">The sync state.</param>
         /// <returns>The id of the entry added or updated.</returns>
-        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState)
-        {
-            return this.AddOrUpdateItemFromOutlookToCrm(syncState, DefaultCrmModule);
-        }
-
-
-        /// <summary>
-        /// Add the item implied by this SyncState, which may not exist in CRM, to CRM.
-        /// </summary>
-        /// <param name="syncState">The sync state.</param>
-        /// <param name="crmType">The CRM type (name of CRM module) of the item.</param>
-        /// <returns>The id of the entry added or updated.</returns>
         internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState, string entryId = "")
         {
             string result = entryId;
@@ -410,7 +398,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                         syncState.SetTransmitted();
 
-                        result = ConstructAndDespatchCrmItem(olItem, this.DefaultCrmModule, entryId);
+                        result = ConstructAndDespatchCrmItem(olItem, entryId);
                         if (!string.IsNullOrEmpty(result))
                         {
                             var utcNow = DateTime.UtcNow;
@@ -474,10 +462,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// superclass you can't. So it has to be implemented in subclasses.
         /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
-        /// <param name="crmType">The type within CRM to which the item should be added.</param>
         /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected abstract string ConstructAndDespatchCrmItem(OutlookItemType olItem, string crmType, string entryId);
+        protected abstract string ConstructAndDespatchCrmItem(OutlookItemType olItem, string entryId);
 
         /// <summary>
         /// Every Outlook item which is to be synchronised must have a property SOModifiedDate,
@@ -496,6 +483,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName, modifiedDate);
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
+            }
+            catch (Exception any)
+            {
+                Log.Warn($"Unexpected error in EnsureSynchronisationPropertiesForOutlookItem", any);
             }
             finally
             {
@@ -867,6 +858,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     OutlookItemAdded<SyncStateType>(olItem, this);
                 }
+                catch (Exception any)
+                {
+                    Log.Warn($"Unexpected error in OutlookItemAdded", any);
+                }
                 finally
                 {
                     if (olItem != null)
@@ -933,7 +928,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     OutlookItemChanged<SyncStateType>(olItem, this);
                 }
-                catch (BadStateTransition) { /* couldn't set pending -> transmission is in progress */ }
+                catch (BadStateTransition bst)
+                {
+                    Log.Warn("Bad state transition in OutlookItemChanged - if transition Transmitted => Pending fails that's OK", bst);
+                    /* couldn't set pending -> transmission is in progress */
+                }
                 finally
                 {
                     this.SaveItem(olItem);

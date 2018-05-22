@@ -207,8 +207,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                         break;
                 }
             }
-            catch (KeyNotFoundException)
+            catch (KeyNotFoundException kex)
             {
+                log.Warn("KeyNotFoundException in GetExistingSyncState", kex);
                 result = null;
             }
 
@@ -227,14 +228,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <exception cref="UnexpectedSyncStateClassException">if the sync state found is not of the expected class (shouldn't happen).</exception>
         public AppointmentSyncState GetSyncState(Outlook.AppointmentItem appointment)
         {
-            SyncState result = this.byOutlookId[appointment.EntryID];
+            SyncState result = this.byOutlookId.ContainsKey(appointment.EntryID) ? this.byOutlookId[appointment.EntryID] : null;
             string crmId = CheckForDuplicateSyncState(result, appointment.GetCrmId());
 
-            if (result == null)
+            if (result == null && string.IsNullOrEmpty(crmId))
             {
-                result = string.IsNullOrEmpty(crmId) ? null : this.byCrmId[crmId];
+                result = null;
             }
-            else if (crmId != null && this.byCrmId[crmId] == null)
+            else if (result == null && this.byCrmId.ContainsKey(crmId))
+            {
+                result = this.byCrmId[crmId];
+            }
+            else if (crmId != null && this.byCrmId.ContainsKey(crmId) == false)
             {
                 this.byCrmId[crmId] = result;
                 result.CrmEntryId = crmId;
@@ -260,14 +265,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <exception cref="UnexpectedSyncStateClassException">if the sync state found is not of the expected class (shouldn't happen).</exception>
         public ContactSyncState GetSyncState(Outlook.ContactItem contact)
         {
-            SyncState result = this.byOutlookId[contact.EntryID];
+            SyncState result = this.byOutlookId.ContainsKey(contact.EntryID) ? this.byOutlookId[contact.EntryID] : null;
             string crmId = CheckForDuplicateSyncState(result, contact.GetCrmId());
 
-            if (result == null)
+            if (result == null && string.IsNullOrEmpty(crmId))
             {
-                result = string.IsNullOrEmpty(crmId) ? null : this.byCrmId[crmId];
+                result = null;
             }
-            else if (crmId != null && this.byCrmId[crmId] == null)
+            else if (result == null && this.byCrmId.ContainsKey(crmId))
+            {
+                result = this.byCrmId[crmId];
+            }
+            else if (crmId != null && this.byCrmId.ContainsKey(crmId) == false)
             {
                 this.byCrmId[crmId] = result;
                 result.CrmEntryId = crmId;
@@ -293,14 +302,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <exception cref="UnexpectedSyncStateClassException">if the sync state found is not of the expected class (shouldn't happen).</exception>
         public TaskSyncState GetSyncState(Outlook.TaskItem task)
         {
-            SyncState result =  this.byOutlookId[task.EntryID];
+            SyncState result = this.byOutlookId.ContainsKey(task.EntryID) ? this.byOutlookId[task.EntryID] : null;
             string crmId = CheckForDuplicateSyncState(result, task.GetCrmId());
 
-            if (result == null)
+            if (result == null && string.IsNullOrEmpty(crmId))
             {
-                result = string.IsNullOrEmpty(crmId) ? null : this.byCrmId[crmId];
+                result = null;  
             }
-            else if (crmId != null && this.byCrmId[crmId] == null)
+            else if (result == null && this.byCrmId.ContainsKey(crmId))
+            {
+                result = this.byCrmId[crmId];
+            }
+            else if (crmId != null && this.byCrmId.ContainsKey(crmId) == false)
             {
                 this.byCrmId[crmId] = result;
                 result.CrmEntryId = crmId;
@@ -326,7 +339,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string CheckForDuplicateSyncState(SyncState state, string crmId)
         {
             string result = string.IsNullOrEmpty(crmId) ? state.CrmEntryId : crmId;
-            SyncState byCrmState = this.byCrmId[crmId];
+            SyncState byCrmState = this.byCrmId.ContainsKey(crmId) ? this.byCrmId[crmId] : null;
 
             if (state != null && byCrmState != null && state != byCrmState)
             {
@@ -424,44 +437,51 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <exception cref="UnexpectedSyncStateClassException">if the sync state found is not of the expected class (shouldn't happen).</exception>
         public SyncState<ItemType> GetOrCreateSyncState<ItemType>(ItemType item)
         {
-            string outlookId;
             lock (this.creationLock)
             {
                 SyncState<ItemType> result = this.GetExistingSyncState(item);
 
                 if (result == null)
-                {
-                    var typeName = Microsoft.VisualBasic.Information.TypeName(item);
-                    switch (typeName)
-                    {
-                        // TODO: there's almost certainly a cleaner and safer way of despatching this.
-                        case "AppointmentItem":
-                            outlookId = ((Outlook.AppointmentItem)item).EntryID;
-                            result = this.CreateSyncState(item as Outlook.AppointmentItem) as SyncState<ItemType>;
-                            break;
-                        case "ContactItem":
-                            outlookId = ((Outlook.ContactItem)item).EntryID;
-                            result = this.CreateSyncState(item as Outlook.ContactItem) as SyncState<ItemType>;
-                            break;
-                        case "TaskItem":
-                            outlookId = ((Outlook.TaskItem)item).EntryID;
-                            result = this.CreateSyncState(item as Outlook.TaskItem) as SyncState<ItemType>;
-                            break;
-                        default:
-                            Globals.ThisAddIn.Log.AddEntry($"Unexpected type {typeName} in GetOrCreateSyncState",
-                                SuiteCRMClient.Logging.LogEntryType.Error);
-                            result = null;
-                            break;
-                    }
-
-                    if (result != null)
-                    {
-                        this.byDistinctFields[result.IdentifyingFields] = result;
-                    }
-                }
+                result = CreateSyncStateForItem(item);
 
                 return result;
             }
+        }
+
+        private SyncState<ItemType> CreateSyncStateForItem<ItemType>(ItemType item)
+        {
+            SyncState<ItemType> result;
+            string outlookId;
+            var typeName = Microsoft.VisualBasic.Information.TypeName(item);
+
+            switch (typeName)
+            {
+                // TODO: there's almost certainly a cleaner and safer way of despatching this.
+                case "AppointmentItem":
+                    outlookId = ((Outlook.AppointmentItem)item).EntryID;
+                    result = this.CreateSyncState(item as Outlook.AppointmentItem) as SyncState<ItemType>;
+                    break;
+                case "ContactItem":
+                    outlookId = ((Outlook.ContactItem)item).EntryID;
+                    result = this.CreateSyncState(item as Outlook.ContactItem) as SyncState<ItemType>;
+                    break;
+                case "TaskItem":
+                    outlookId = ((Outlook.TaskItem)item).EntryID;
+                    result = this.CreateSyncState(item as Outlook.TaskItem) as SyncState<ItemType>;
+                    break;
+                default:
+                    Globals.ThisAddIn.Log.AddEntry($"Unexpected type {typeName} in GetOrCreateSyncState",
+                        SuiteCRMClient.Logging.LogEntryType.Error);
+                    result = null;
+                    break;
+            }
+
+            if (result != null)
+            {
+                this.byDistinctFields[result.IdentifyingFields] = result;
+            }
+
+            return result;
         }
 
 
@@ -477,7 +497,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             string crmId = appointment.UserProperties[CrmIdPropertyName]?.Value.ToString();
             AppointmentSyncState result;
 
-            if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId))
+            if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
             {
                 result = CheckUnexpectedFoundState<Outlook.AppointmentItem, AppointmentSyncState>(appointment, crmId);
             }
@@ -517,7 +537,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             string crmId = contact.UserProperties[CrmIdPropertyName]?.Value.ToString();
             ContactSyncState result;
 
-            if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId))
+            if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
             {
                 result = CheckUnexpectedFoundState<Outlook.ContactItem, ContactSyncState>(contact, crmId);
             }
@@ -550,7 +570,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             TaskSyncState result;
 
-            if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId))
+            if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
             {
                 result = CheckUnexpectedFoundState<Outlook.TaskItem, TaskSyncState>(task, crmId);
             }
@@ -586,11 +606,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             where StateType : SyncState<ItemType>
         {
             StateType result;
-            var state = this.byCrmId[crmId];
-            result = state as StateType;
+            var state = this.byCrmId.ContainsKey(crmId) ? this.byCrmId[crmId] : null;
 
             if (state != null)
             {
+                result = state as StateType;
+
                 if (result == null)
                 {
                     throw new Exception($"Unexpected state type found: {state.GetType().Name}.");
@@ -599,6 +620,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     throw new ProbableDuplicateItemException<ItemType>(olItem, $"Probable duplicate Outlook item; crmId is {crmId}; identifying fields are {result.IdentifyingFields}");
                 }
+            }
+            else
+            {
+                result = this.CreateSyncStateForItem(olItem) as StateType;
             }
 
             return result;

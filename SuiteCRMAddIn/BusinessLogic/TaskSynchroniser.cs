@@ -344,9 +344,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmType">The type within CRM to which the item should be added.</param>
         /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem, string crmType, string entryId)
+        protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem, string entryId)
         {
-            return RestAPIWrapper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), crmType);
+            return RestAPIWrapper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), this.DefaultCrmModule);
         }
 
 
