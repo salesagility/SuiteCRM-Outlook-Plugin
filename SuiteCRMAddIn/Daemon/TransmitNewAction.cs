@@ -42,7 +42,7 @@ namespace SuiteCRMAddIn.Daemon
         public TransmitNewAction(Synchroniser<OutlookItemType, SyncStateType> synchroniser, SyncStateType state) : base(1)
         {
             /* step the state transition engine forward to queued */
-            if (state.TxState == SyncState<OutlookItemType>.TransmissionState.NewFromOutlook)
+            if (state.TxState == TransmissionState.NewFromOutlook)
             {
                 state.SetPending();
                 state.SetQueued();
@@ -67,7 +67,7 @@ namespace SuiteCRMAddIn.Daemon
              * If not null or empty then this is not a new item: do nothing and exit. */
             if (string.IsNullOrEmpty(syncState.CrmEntryId))
             {
-                if (syncState.TxState == SyncState<OutlookItemType>.TransmissionState.Queued)
+                if (syncState.TxState == TransmissionState.Queued)
                 {
                     try
                     {

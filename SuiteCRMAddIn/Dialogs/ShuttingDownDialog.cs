@@ -79,21 +79,18 @@ namespace SuiteCRMAddIn.Dialogs
                 Thread.CurrentThread.Name = "Shutdown";
             }
 
-            using (WaitCursor.For(this))
+            if (worker != null)
             {
-                if (worker != null)
+                while (remaining > 0)
                 {
-                    while (remaining > 0)
-                    {
-                        this.remaining = RepeatingProcess.PrepareShutdownAll(this.log);
-                        double percentageRemaining = (100.0 * this.remaining) / this.tasks;
-                        worker.ReportProgress((int)(100.0 - percentageRemaining));
+                    this.remaining = RepeatingProcess.PrepareShutdownAll(this.log);
+                    double percentageRemaining = (100.0 * this.remaining) / this.tasks;
+                    worker.ReportProgress((int)(100.0 - percentageRemaining));
 
-                        /* deal with any pending Windows messages, which we don't need to know about */
-                        Application.DoEvents();
+                    /* deal with any pending Windows messages, which we don't need to know about */
+                    Application.DoEvents();
 
-                        Thread.Sleep(1000);
-                    }
+                    Thread.Sleep(1000);
                 }
             }
         }

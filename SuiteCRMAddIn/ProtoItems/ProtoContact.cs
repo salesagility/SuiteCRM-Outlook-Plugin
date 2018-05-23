@@ -2,6 +2,7 @@
 namespace SuiteCRMAddIn.ProtoItems
 {
     using System;
+    using Extensions;
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
@@ -29,6 +30,7 @@ namespace SuiteCRMAddIn.ProtoItems
         private string MobileTelephoneNumber;
         private string Title;
         private bool isPublic;
+        private string CrmEntryId;
 
         public override string Description
         {
@@ -51,6 +53,7 @@ namespace SuiteCRMAddIn.ProtoItems
             this.CompanyName = olItem.CompanyName;
             this.Department = olItem.Department;
             this.Email1Address = olItem.Email1Address;
+            this.CrmEntryId = olItem.GetCrmId();
             this.FirstName = olItem.FirstName;
             this.HomeTelephoneNumber = olItem.HomeTelephoneNumber;
             this.JobTitle = olItem.JobTitle;
@@ -60,7 +63,7 @@ namespace SuiteCRMAddIn.ProtoItems
             this.isPublic = olItem.Sensitivity == Microsoft.Office.Interop.Outlook.OlSensitivity.olNormal;
         }
 
-        public override NameValueCollection AsNameValues(string entryId)
+        public override NameValueCollection AsNameValues()
         {
             var data = new NameValueCollection();
 
@@ -81,9 +84,9 @@ namespace SuiteCRMAddIn.ProtoItems
             data.Add(RestAPIWrapper.SetNameValuePair("first_name", FirstName));
             data.Add(RestAPIWrapper.SetNameValuePair("account_name", CompanyName));
             data.Add(RestAPIWrapper.SetNameValuePair("salutation", Title));
-            data.Add(string.IsNullOrEmpty(entryId) ?
+            data.Add(string.IsNullOrEmpty(CrmEntryId) ?
                 RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()) :
-                RestAPIWrapper.SetNameValuePair("id", entryId));
+                RestAPIWrapper.SetNameValuePair("id", CrmEntryId));
             data.Add(RestAPIWrapper.SetNameValuePair("sync_contact", this.isPublic));
 
             return data;

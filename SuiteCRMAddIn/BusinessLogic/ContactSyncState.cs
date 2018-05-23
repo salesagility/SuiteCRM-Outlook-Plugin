@@ -39,6 +39,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
         }
 
+        public override Outlook.OlDefaultFolders DefaultFolder
+        {
+            get
+            {
+                return Outlook.OlDefaultFolders.olFolderContacts;
+            }
+        }
+
+
         public override string CrmType => ContactSynchroniser.CrmModule;
 
         public override bool ShouldSyncWithCrm => IsPublic;

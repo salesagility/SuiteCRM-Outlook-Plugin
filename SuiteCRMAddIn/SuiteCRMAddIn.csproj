@@ -213,6 +213,7 @@
     <Compile Include="BusinessLogic\CallSyncState.cs" />
     <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
     <Compile Include="BusinessLogic\MeetingSyncState.cs" />
+    <Compile Include="BusinessLogic\TransmissionState.cs" />
     <Compile Include="Dialogs\AdvancedArchiveSettingsDialog.cs">
       <SubType>Form</SubType>
     </Compile>

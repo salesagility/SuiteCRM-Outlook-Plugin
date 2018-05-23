@@ -181,6 +181,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The appropriate sync state, or null if none.</returns>
         /// <exception cref="UnexpectedSyncStateClassException">if the sync state found is not of the expected class (shouldn't happen).</exception>
         public SyncState<ItemType> GetExistingSyncState<ItemType>(ItemType item)
+            where ItemType : class
         {
             SyncState<ItemType> result;
 
@@ -239,7 +240,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 result = this.byCrmId[crmId];
             }
-            else if (crmId != null && this.byCrmId.ContainsKey(crmId) == false)
+            else if (result != null && crmId != null && this.byCrmId.ContainsKey(crmId) == false)
             {
                 this.byCrmId[crmId] = result;
                 result.CrmEntryId = crmId;
@@ -276,7 +277,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 result = this.byCrmId[crmId];
             }
-            else if (crmId != null && this.byCrmId.ContainsKey(crmId) == false)
+            else if (result != null && crmId != null && this.byCrmId.ContainsKey(crmId) == false)
             {
                 this.byCrmId[crmId] = result;
                 result.CrmEntryId = crmId;
@@ -303,7 +304,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public TaskSyncState GetSyncState(Outlook.TaskItem task)
         {
             SyncState result = this.byOutlookId.ContainsKey(task.EntryID) ? this.byOutlookId[task.EntryID] : null;
-            string crmId = CheckForDuplicateSyncState(result, task.GetCrmId());
+            string crmId = result == null ? task.GetCrmId() : CheckForDuplicateSyncState(result, task.GetCrmId());
 
             if (result == null && string.IsNullOrEmpty(crmId))
             {
@@ -313,7 +314,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 result = this.byCrmId[crmId];
             }
-            else if (crmId != null && this.byCrmId.ContainsKey(crmId) == false)
+            else if (result != null && crmId != null && this.byCrmId.ContainsKey(crmId) == false)
             {
                 this.byCrmId[crmId] = result;
                 result.CrmEntryId = crmId;
@@ -338,7 +339,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <exception cref="DuplicateSyncStateException">If a duplicate is detected.</exception>
         private string CheckForDuplicateSyncState(SyncState state, string crmId)
         {
-            string result = string.IsNullOrEmpty(crmId) ? state.CrmEntryId : crmId;
+            string result = string.IsNullOrEmpty(crmId) && state != null ? state.CrmEntryId : crmId;
             SyncState byCrmState = this.byCrmId.ContainsKey(crmId) ? this.byCrmId[crmId] : null;
 
             if (state != null && byCrmState != null && state != byCrmState)
@@ -436,6 +437,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>an appropriate sync state.</returns>
         /// <exception cref="UnexpectedSyncStateClassException">if the sync state found is not of the expected class (shouldn't happen).</exception>
         public SyncState<ItemType> GetOrCreateSyncState<ItemType>(ItemType item)
+            where ItemType : class
         {
             lock (this.creationLock)
             {
@@ -449,6 +451,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         private SyncState<ItemType> CreateSyncStateForItem<ItemType>(ItemType item)
+            where ItemType : class
         {
             SyncState<ItemType> result;
             string outlookId;
@@ -603,6 +606,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state</returns>
         /// <exception cref="Exception">If the sync state doesn't exactly match what we would expect.</exception>
         private StateType CheckUnexpectedFoundState<ItemType, StateType>(ItemType olItem, string crmId)
+            where ItemType : class
             where StateType : SyncState<ItemType>
         {
             StateType result;

@@ -36,6 +36,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     {
         public AppointmentSyncState(Outlook.AppointmentItem item, string crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
         {
+            this.outlookItemId = item.EntryID;
         }
 
         /// <summary>
@@ -43,6 +44,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// exist - so cache it!
         /// </summary>
         private string crmType;
+
+
+        public override Outlook.OlDefaultFolders DefaultFolder
+        {
+            get
+            {
+                return Outlook.OlDefaultFolders.olFolderCalendar;
+            }
+        }
 
 
         /// <summary>

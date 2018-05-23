@@ -117,18 +117,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        protected override bool ShouldAddOrUpdateItemFromOutlookToCrm(Outlook.AppointmentItem olItem)
-        {
-            bool result =  base.ShouldAddOrUpdateItemFromOutlookToCrm(olItem);
-
-            foreach (Outlook.ItemProperty p in olItem.ItemProperties)
-            {
-                Log.Debug($"Meeting property '{p.Name}' => '{p.Value}'");
-            }
-
-            return result;
-        }
-
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
             return crmType == "Meetings";
@@ -189,13 +177,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState, string entryId = "")
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
         {
-            string result = base.AddOrUpdateItemFromOutlookToCrm(syncState, entryId);
+            string previousCrmId = syncState.OutlookItem.GetCrmId();
+            string result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
 
             if (!string.IsNullOrEmpty(result))
             {
-                if (string.IsNullOrEmpty(entryId))
+                if (string.IsNullOrEmpty(previousCrmId)) /* i.e., it's new */
                 {
                     if (syncState.OutlookItem.Recipients != null)
                     {
@@ -312,21 +301,24 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olItem.Recipients.Remove(1);
                 }
 
-                foreach (var relationship in crmItem.relationships.link_list)
+                if (crmItem != null && crmItem.relationships != null && crmItem.relationships.link_list != null)
                 {
-                    foreach (LinkRecord record in relationship.records)
+                    foreach (var relationship in crmItem.relationships.link_list)
                     {
-                        string email1 = record.data.GetValueAsString("email1");
-                        string phone_work = record.data.GetValueAsString("phone_work");
-                        string identifier = (crmModule == MeetingsSynchroniser.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
-                                email1 :
-                                $"{email1} : {phone_work}";
-
-                        if (!String.IsNullOrWhiteSpace(identifier))
+                        foreach (LinkRecord record in relationship.records)
                         {
-                            if (olItem.GetOrganizer().GetSmtpAddress() != email1)
+                            string email1 = record.data.GetValueAsString("email1");
+                            string phone_work = record.data.GetValueAsString("phone_work");
+                            string identifier = (crmModule == MeetingsSynchroniser.CrmModule) || string.IsNullOrWhiteSpace(phone_work) ?
+                                    email1 :
+                                    $"{email1} : {phone_work}";
+
+                            if (!String.IsNullOrWhiteSpace(identifier))
                             {
-                                olItem.EnsureRecipient(email1, identifier);
+                                if (olItem.GetOrganizer().GetSmtpAddress() != email1)
+                                {
+                                    olItem.EnsureRecipient(email1, identifier);
+                                }
                             }
                         }
                     }

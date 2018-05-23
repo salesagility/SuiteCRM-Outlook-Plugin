@@ -194,7 +194,7 @@ namespace SuiteCRMClient
                 false, 
                 new string[] { "id" });
             
-            if (list.entry_list.Count<EntryValue>() > 0)
+            if (list.entry_list != null && list.entry_list.Count<EntryValue>() > 0)
             {
                 result = list.entry_list[0].id;
             }
@@ -265,41 +265,41 @@ namespace SuiteCRMClient
             return userId;
         }
 
-        /// <summary>
-        /// Sets an entry in CRM and returns the id. 'Unsafe' because if it fails (for 
-        /// whatever reason), it returns the empty string. Most code which uses it fails
-        /// to check for the 'empty string' return result. Use 'SetEntry' instead (which
-        /// throws an exception on failure).
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="moduleName"></param>
-        /// <returns>the CRM id of the object created or modified.</returns>
-        public static string SetEntryUnsafe(NameValue[] data, string moduleName = "Emails")
-        {
-            try
-            {
-                return SetEntry(data, moduleName);
-            }
-            catch (System.Exception)
-            {
-                // Swallow exception(!)
-                return string.Empty;
-            }
-        }
+        ///// <summary>
+        ///// Sets an entry in CRM and returns the id. 'Unsafe' because if it fails (for 
+        ///// whatever reason), it returns the empty string. Most code which uses it fails
+        ///// to check for the 'empty string' return result. Use 'SetEntry' instead (which
+        ///// throws an exception on failure).
+        ///// </summary>
+        ///// <param name="data"></param>
+        ///// <param name="moduleName"></param>
+        ///// <returns>the CRM id of the object created or modified.</returns>
+        //public static string SetEntryUnsafe(NameValue[] data, string moduleName = "Emails")
+        //{
+        //    try
+        //    {
+        //        return SetEntry(data, moduleName);
+        //    }
+        //    catch (System.Exception)
+        //    {
+        //        // Swallow exception(!)
+        //        return string.Empty;
+        //    }
+        //}
 
-        /// <summary>
-        /// Sets an entry in CRM and returns the id. 'Unsafe' because if it fails (for 
-        /// whatever reason), it returns the empty string. Most code which uses it fails
-        /// to check for the 'empty string' return result. Use 'SetEntry' instead (which
-        /// throws an exception on failure).
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="moduleName"></param>
-        /// <returns>the CRM id of the object created or modified.</returns>
-        public static string SetEntryUnsafe(NameValueCollection data, string moduleName = "Emails")
-        {
-            return SetEntryUnsafe(data.ToArray(), moduleName);
-        }
+        ///// <summary>
+        ///// Sets an entry in CRM and returns the id. 'Unsafe' because if it fails (for 
+        ///// whatever reason), it returns the empty string. Most code which uses it fails
+        ///// to check for the 'empty string' return result. Use 'SetEntry' instead (which
+        ///// throws an exception on failure).
+        ///// </summary>
+        ///// <param name="data"></param>
+        ///// <param name="moduleName"></param>
+        ///// <returns>the CRM id of the object created or modified.</returns>
+        //public static string SetEntryUnsafe(NameValueCollection data, string moduleName = "Emails")
+        //{
+        //    return SetEntryUnsafe(data.ToArray(), moduleName);
+        //}
 
         /// <summary>
         /// Sets an entry in CRM and returns the id. 

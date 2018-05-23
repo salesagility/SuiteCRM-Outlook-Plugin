@@ -467,14 +467,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
         /// <returns>The id of the entry added o</returns>
-        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.ContactItem> syncState, string entryId = "")
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.ContactItem> syncState)
         {
-            string result = entryId;
+            string result = string.Empty;
             var olItem = syncState.OutlookItem;
 
             if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem))
             {
-                result = base.AddOrUpdateItemFromOutlookToCrm(syncState, entryId);
+                result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
 
                 Outlook.UserProperty syncProperty = olItem.UserProperties["SShouldSync"];
                 string shouldSync = syncProperty == null ?
@@ -494,9 +494,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override string ConstructAndDespatchCrmItem(Outlook.ContactItem olItem, string entryId)
+        protected override string ConstructAndDespatchCrmItem(Outlook.ContactItem olItem)
         {
-            return RestAPIWrapper.SetEntryUnsafe(new ProtoContact(olItem).AsNameValues(entryId), this.DefaultCrmModule);
+            return RestAPIWrapper.SetEntry(new ProtoContact(olItem).AsNameValues(), this.DefaultCrmModule);
         }
 
 

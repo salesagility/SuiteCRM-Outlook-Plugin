@@ -341,12 +341,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Construct a JSON packet representing this Outlook item, and despatch it to CRM.
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
-        /// <param name="crmType">The type within CRM to which the item should be added.</param>
-        /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem, string entryId)
+        protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem)
         {
-            return RestAPIWrapper.SetEntryUnsafe(new ProtoTask(olItem).AsNameValues(entryId), this.DefaultCrmModule);
+            return RestAPIWrapper.SetEntry(new ProtoTask(olItem).AsNameValues(), this.DefaultCrmModule);
         }
 
 

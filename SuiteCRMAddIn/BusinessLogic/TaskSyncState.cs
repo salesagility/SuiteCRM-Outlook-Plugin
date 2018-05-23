@@ -73,6 +73,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        public override Outlook.OlDefaultFolders DefaultFolder
+        {
+            get
+            {
+                return Outlook.OlDefaultFolders.olFolderTasks;
+            }
+        }
+
         public override void DeleteItem()
         {
             this.OutlookItem.Delete();

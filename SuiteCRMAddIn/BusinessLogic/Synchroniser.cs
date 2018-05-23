@@ -234,12 +234,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 switch (unresolved.TxState)
                 {
-                    case SyncState<OutlookItemType>.TransmissionState.PendingDeletion:
+                    case TransmissionState.PendingDeletion:
                         /* If it's to resolve and marked pending deletion, we delete it 
                          * (unresolved on two successive iterations): */
                         this.RemoveItemAndSyncState(unresolved);
                         break;
-                    case SyncState<OutlookItemType>.TransmissionState.Synced:
+                    case TransmissionState.Synced:
                         if (unresolved.ExistedInCrm)
                         {
                             /* if it's unresolved but it used to exist in CRM, it's probably been deleted from
@@ -247,8 +247,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                             unresolved.SetPendingDeletion();
                         }
                         break;
-                    case SyncState<OutlookItemType>.TransmissionState.Pending:
-                    case SyncState<OutlookItemType>.TransmissionState.PresentAtStartup:
+                    case TransmissionState.Pending:
+                    case TransmissionState.PresentAtStartup:
                         if (unresolved.ShouldSyncWithCrm)
                         {
                             try
@@ -263,7 +263,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             }
                         }
                         break;
-                    case SyncState<OutlookItemType>.TransmissionState.Queued:
+                    case TransmissionState.Queued:
                         if (unresolved.ShouldSyncWithCrm)
                         {
                             try
@@ -284,7 +284,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             foreach (SyncState resolved in SyncStateManager.Instance.GetSynchronisedItems<SyncStateType>()
-                .Where(s => s.TxState == SyncState<OutlookItemType>.TransmissionState.PendingDeletion &&
+                .Where(s => s.TxState == TransmissionState.PendingDeletion &&
                 !itemsToResolve.Contains(s)))
             {
                 /* finally, if there exists an item which had been marked pending deletion, but it has
@@ -382,9 +382,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="syncState">The sync state.</param>
         /// <returns>The id of the entry added or updated.</returns>
-        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState, string entryId = "")
+        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState)
         {
-            string result = entryId;
+            string result = string.Empty;
 
             if (this.ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem))
             {
@@ -396,20 +396,36 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
 
-                        syncState.SetTransmitted();
-
-                        result = ConstructAndDespatchCrmItem(olItem, entryId);
-                        if (!string.IsNullOrEmpty(result))
+                        try
                         {
-                            var utcNow = DateTime.UtcNow;
-                            EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), this.DefaultCrmModule, result);
+                            syncState.SetTransmitted();
 
-                            syncState.SetSynced(result);
+                            result = ConstructAndDespatchCrmItem(olItem);
+                            if (!string.IsNullOrEmpty(result))
+                            {
+                                var utcNow = DateTime.UtcNow;
+                                EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), this.DefaultCrmModule, result);
+
+                                syncState.SetSynced(result);
+                            }
+                            else
+                            {
+                                Log.Warn("AppointmentSyncing.AddItemFromOutlookToCrm: Invalid CRM Id returned; item may not be stored.");
+                                syncState.SetPending(true);
+                            }
                         }
-                        else
+                        catch (BadStateTransition bst)
                         {
-                            Log.Warn("AppointmentSyncing.AddItemFromOutlookToCrm: Invalid CRM Id returned; item may not be stored.");
-                            syncState.SetPending(true);
+                            /* almost certainly the item had been taken out of the queue because 
+                             * it had changed, and that's OK */
+                            if (bst.From != TransmissionState.Pending)
+                            {
+                                Log.Warn($"Unexpected error while transmitting {this.DefaultCrmModule}.", bst);
+                            }
+                        }
+                        catch (Exception any)
+                        {
+                            Log.Warn($"Unexpected error while transmitting {this.DefaultCrmModule}.", any);
                         }
                     }
                 }
@@ -462,9 +478,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// superclass you can't. So it has to be implemented in subclasses.
         /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
-        /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected abstract string ConstructAndDespatchCrmItem(OutlookItemType olItem, string entryId);
+        protected abstract string ConstructAndDespatchCrmItem(OutlookItemType olItem);
 
         /// <summary>
         /// Every Outlook item which is to be synchronised must have a property SOModifiedDate,
@@ -580,7 +595,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     NameValue[] data = new NameValue[2];
                     data[0] = RestAPIWrapper.SetNameValuePair("id", crmEntryId);
                     data[1] = RestAPIWrapper.SetNameValuePair("deleted", "1");
-                    RestAPIWrapper.SetEntryUnsafe(data, state.CrmType);
+                    RestAPIWrapper.SetEntry(data, state.CrmType);
                 }
 
                 state.RemoveCrmLink();
@@ -930,7 +945,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (BadStateTransition bst)
                 {
-                    Log.Warn("Bad state transition in OutlookItemChanged - if transition Transmitted => Pending fails that's OK", bst);
+                    if (bst.From != TransmissionState.Transmitted)
+                    {
+                        throw;
+                    }
                     /* couldn't set pending -> transmission is in progress */
                 }
                 finally
@@ -960,15 +978,25 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (syncStateForItem != null)
             {
-                syncStateForItem.SetPending();
+                try
+                {
+                    syncStateForItem.SetPending();
 
-                if (this.ShouldPerformSyncNow(syncStateForItem))
-                {
-                    DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType, T>(synchroniser, syncStateForItem));
+                    if (this.ShouldPerformSyncNow(syncStateForItem))
+                    {
+                        DaemonWorker.Instance.AddTask(new TransmitUpdateAction<OutlookItemType, T>(synchroniser, syncStateForItem));
+                    }
+                    else if (!syncStateForItem.ShouldSyncWithCrm)
+                    {
+                        this.RemoveFromCrm(syncStateForItem);
+                    }
                 }
-                else if (!syncStateForItem.ShouldSyncWithCrm)
+                catch (BadStateTransition bst)
                 {
-                    this.RemoveFromCrm(syncStateForItem);
+                    if (bst.From != TransmissionState.Transmitted)
+                    {
+                        throw;
+                    }
                 }
             }
             else

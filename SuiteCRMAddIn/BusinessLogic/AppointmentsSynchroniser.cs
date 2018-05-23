@@ -150,8 +150,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (BadStateTransition bst)
                 {
-                    Log.Warn("Bad state transition in OutlookItemChanged - if transition Transmitted => Pending fails that's OK", bst);
-                    /* couldn't set pending -> transmission is in progress */
+                    if (bst.To != TransmissionState.Transmitted)
+                    {
+                        Log.Warn("Bad state transition in OutlookItemChanged", bst);
+                    }
                 }
                 finally
                 {
@@ -393,7 +395,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="syncState">The sync state.</param>
         /// <returns>The id of the entry added or updated.</returns>
-        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState, string entryId = "")
+        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
         {
             Outlook.AppointmentItem olItem = syncState.OutlookItem;
 
@@ -459,9 +461,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="olItem">The Outlook item.</param>
         /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override string ConstructAndDespatchCrmItem(Outlook.AppointmentItem olItem, string entryId)
+        protected override string ConstructAndDespatchCrmItem(Outlook.AppointmentItem olItem)
         {
-            return RestAPIWrapper.SetEntryUnsafe(new ProtoAppointment<SyncStateType>(olItem).AsNameValues(entryId), this.DefaultCrmModule);
+            return RestAPIWrapper.SetEntry(new ProtoAppointment<SyncStateType>(olItem).AsNameValues(), this.DefaultCrmModule);
         }
 
 

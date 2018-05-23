@@ -22,6 +22,7 @@
 */
 namespace SuiteCRMAddIn.Exceptions
 {
+    using BusinessLogic;
     using System;
     using System.Runtime.Serialization;
 
@@ -31,20 +32,17 @@ namespace SuiteCRMAddIn.Exceptions
     [Serializable]
     internal class BadStateTransition : Exception
     {
+        public TransmissionState From { get; private set; } = TransmissionState.Invalid;
+
+        public TransmissionState To { get; private set; } = TransmissionState.Invalid;
+
         public BadStateTransition()
         {
         }
 
-        public BadStateTransition(string message) : base(message)
-        {
-        }
-
-        public BadStateTransition(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected BadStateTransition(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
+        public BadStateTransition(SyncState state, TransmissionState from, TransmissionState to) : base($"{state.GetType().Name}: failed transition {from} => {to}") {
+            this.To = to;
+            this.From = from;
         }
     }
 }

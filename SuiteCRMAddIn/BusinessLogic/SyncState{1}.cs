@@ -26,7 +26,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using ProtoItems;
     using SuiteCRMClient.Logging;
     using System;
-    using Microsoft.Office.Interop.Outlook;
+    using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Collections.Generic;
 
     /// <summary>
@@ -65,11 +65,87 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </para>
     /// <typeparam name="ItemType">The type of the item to be/being synced.</typeparam>
     public abstract class SyncState<ItemType> : SyncState
+        where ItemType : class
     {
+        /// <summary>
+        /// Underlying store for my <see cref="OutlookItem"/> property. 
+        /// </summary>
+        private ItemType item;
+
+        public abstract Outlook.OlDefaultFolders DefaultFolder { get; }
+
+        int getItemFails = 0, getItemSuccesses = 0;
+
         /// <summary>
         /// The outlook item for which I maintain the synchronisation state.
         /// </summary>
-        public ItemType OutlookItem { get; private set; }
+        public ItemType OutlookItem {
+            get
+            {
+                ItemType result;
+
+                if (this.HasValidItem())
+                {
+                    result = this.item;
+                    getItemSuccesses++;
+                }
+                else
+                {
+                    object o;
+                    var mAPIFolder = MapiNS.GetDefaultFolder(DefaultFolder);
+
+                    try
+                    {
+                        o = MapiNS.GetItemFromID(this.outlookItemId); //, mAPIFolder.EntryID);
+                            // mAPIFolder.Items.Find($"[EntryId] = '{this.outlookItemId}'");
+                        try
+                        {
+                            result = (ItemType)o;
+                            getItemSuccesses++;
+                        }
+                        catch (InvalidCastException ice)
+                        {
+                            Globals.ThisAddIn.Log.Warn($"Unexpected item type in OutlookItem {o.GetType().Name} '{this.outlookItemId}' [{getItemFails}/{getItemSuccesses}]", ice);
+                            result = this.item;
+                            getItemFails++;
+                        }
+                    }
+                    catch (Exception problem)
+                    {
+                        Globals.ThisAddIn.Log.Warn($"Unexpected error seeking OutlookItem in {mAPIFolder.FullFolderPath} [{getItemFails}/{getItemSuccesses}]", problem);
+                        result = this.item;
+                        getItemFails++;
+                    }
+                }
+
+                return result;
+
+            }
+            private set
+            {
+                this.item = value;
+            }
+        }
+
+        /// <summary>
+        /// True if my Outlook item appears to be valid.
+        /// </summary>
+        /// <returns>True if my Outlook item appears to be valid.</returns>
+        protected virtual bool HasValidItem()
+        {
+            bool result = false;
+
+            try
+            {
+                result = this.item as ItemType != null;
+            }
+            catch (Exception)
+            {
+                /* deliberately ignored */
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// A lock that should be obtained before operations which operate on the TxState or the
@@ -77,6 +153,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         private object txStateLock = new object();
 
+        /// <summary>
+        /// The id of my Outlook item, so I can recover it if it becomes invalid.
+        /// </summary>
+        protected string outlookItemId;
 
         public SyncState(ItemType item, string crmId, DateTime modifiedDate)
         {
@@ -84,6 +164,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.CrmEntryId = crmId;
             this.OModifiedDate = modifiedDate;
         }
+
+
 
         /// <remarks>
         /// The state transition engine.
@@ -127,11 +209,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             else
             {
-                var older = this.Cache.AsNameValues(this.CrmEntryId)
+                var older = this.Cache.AsNameValues()
                     .AsDictionary();
 
                 var current = this.CreateProtoItem(this.OutlookItem)
-                    .AsNameValues(this.CrmEntryId)
+                    .AsNameValues()
                     .AsDictionary();
                 unchanged = older.Keys.Count.Equals(current.Keys.Count);
 
@@ -209,11 +291,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 switch (this.TxState)
                 {
                     case TransmissionState.NewFromOutlook:
+                    case TransmissionState.PresentAtStartup:
                     case TransmissionState.Pending:
                         this.LogAndSetTxState(TransmissionState.PresentAtStartup);
                         break;
                     default:
-                        throw new BadStateTransition($"{this.TxState} => PresentAtStartup");
+                        throw new BadStateTransition(this, this.TxState, TransmissionState.PresentAtStartup);
                 }
             }
         }
@@ -237,7 +320,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         this.LogAndSetTxState(TransmissionState.NewFromCRM);
                         break;
                     default:
-                        throw new BadStateTransition($"{this.TxState} => NewFromCRM");
+                        throw new BadStateTransition(this, this.TxState, TransmissionState.NewFromCRM);
                 }
             }
         }
@@ -256,21 +339,28 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     this.LogAndSetTxState(TransmissionState.Pending);
                 }
-                switch (this.TxState)
+                else
                 {
-                    case TransmissionState.NewFromOutlook:
-                    case TransmissionState.PresentAtStartup:
-                        /* a new item may, and often will, be set to 'Pending'. */
-                    case TransmissionState.Pending:
+                    switch (this.TxState)
+                    {
+                        case TransmissionState.NewFromOutlook:
+                        case TransmissionState.NewFromCRM:
+                        case TransmissionState.PresentAtStartup:
+                        /* any new item may, and often will, be set to 'Pending'. */
+                        case TransmissionState.Pending:
                         /* If 'Pending', may remain 'Pending'. */
-                    case TransmissionState.Synced:
+                        case TransmissionState.Queued:
+                        /* If it's in the queue and is modified, it's probably best to
+                         * go back to pending, because other modifications are likely */
+                        case TransmissionState.Synced:
                         /* a synced item, if edited in Outlook, should be set to 'Pending'. */
-                    case TransmissionState.PendingDeletion:
-                        /* a pending deletion item should be treated like a 'Synced' item */
-                        this.LogAndSetTxState(TransmissionState.Pending);
-                        break;
-                    default:
-                        throw new BadStateTransition($"{this.TxState} => Pending");
+                        case TransmissionState.PendingDeletion:
+                            /* a pending deletion item should be treated like a 'Synced' item */
+                            this.LogAndSetTxState(TransmissionState.Pending);
+                            break;
+                        default:
+                            throw new BadStateTransition(this, this.TxState, TransmissionState.Pending);
+                    }
                 }
             }
         }
@@ -290,7 +380,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         this.LogAndSetTxState(TransmissionState.Queued);
                         break;
                     default:
-                        throw new BadStateTransition($"{this.TxState} => Queued");
+                        throw new BadStateTransition(this, this.TxState, TransmissionState.Queued);
                 }
             }
         }
@@ -309,7 +399,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         this.LogAndSetTxState(TransmissionState.Transmitted);
                         break;
                     default:
-                        throw new BadStateTransition($"{this.TxState} => Transmitted");
+                        throw new BadStateTransition(this, this.TxState, TransmissionState.Transmitted);
                 }
             }
         }
@@ -350,7 +440,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             this.OModifiedDate = DateTime.UtcNow;
                             break;
                         default:
-                            throw new BadStateTransition($"{this.TxState} => Synced");
+                            throw new BadStateTransition(this, this.TxState, TransmissionState.Synced);
                     }
                 }
             }
@@ -385,7 +475,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         this.LogAndSetTxState(TransmissionState.PendingDeletion);
                         break;
                     default:
-                        throw new BadStateTransition($"{this.TxState} => PendingDeletion");
+                        throw new BadStateTransition(this, this.TxState, TransmissionState.PendingDeletion);
                 }
             }
         }
@@ -451,58 +541,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             Globals.ThisAddIn.Log.Debug($"{this.GetType().Name} '{this.Cache?.Description}': transition {this.TxState} => {newState}");
 #endif
             this.TxState = newState;
-        }
-
-        /// <summary>
-        /// States a SyncState object can be in with regard to transmission and synchronisation
-        /// with CRM. See TxState.
-        /// </summary>
-        public enum TransmissionState
-        {
-            /// <summary>
-            /// This is a new SyncState object which has not yet been transmitted.
-            /// </summary>
-            NewFromOutlook,
-            /// <summary>
-            /// This is a SyncState representing an outlook item which was present when 
-            /// Outlook was started.
-            /// </summary>
-            PresentAtStartup,
-            /// <summary>
-            /// This is a SyncState object representing a outlook item which has just been 
-            /// created from a CRM item.
-            /// </summary>
-            NewFromCRM,
-            /// <summary>
-            /// A change has been registered on this SyncState object but it has
-            /// not been transmitted.
-            /// </summary>
-            Pending,
-            /// <summary>
-            /// This SyncState has been queued for transmission but has not yet been
-            /// transmitted.
-            /// </summary>
-            Queued,
-            /// <summary>
-            /// The Outlook item associated with this SyncState has been transmitted,
-            /// but no confirmation has yet been received that it has been accepted.
-            /// </summary>
-            Transmitted,
-            /// <summary>
-            /// The Outlook item associated with this SyncState has been transmitted
-            /// and accepted by CRM.
-            /// </summary>
-            Synced,
-            /// <summary>
-            /// A state is put into state PendingDeletion if it is not found in CRM at 
-            /// one synchronisation run; if it is not found in the subsequent run and is
-            /// still in state PendingDeletion, then it should be deleted.
-            /// </summary>
-            PendingDeletion,
-            /// <summary>
-            /// The sync state is in an invalid state and should never be synced.
-            /// </summary>
-            Invalid
         }
     }
 }
