@@ -611,6 +611,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     else
                     {
+                        result = matches.ElementAt(0) as SyncStateType;
                         this.Log.Warn($"Howlaround detected? Appointment '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
                     }
                 }

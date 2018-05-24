@@ -185,12 +185,6 @@ namespace SuiteCRMAddIn
                     ConstructOutlook2007MenuBar();
                 }
             }
-            else
-            {
-                //For Outlook version 2010 and greater
-                //var app = this.Application;
-                //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
-            }
         }
 
         /// <summary>
@@ -295,7 +289,7 @@ namespace SuiteCRMAddIn
                 log.Info(catalogue.GetString("Starting normal operations."));
 
                 DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction());
-                StartSynchronisationProcesses();
+                StartConfiguredSynchronisationProcesses();
                 this.IsLicensed = true;
             }
             else if (disable)
@@ -425,14 +419,62 @@ namespace SuiteCRMAddIn
             }
         }
 
-        public void StartSynchronisationProcesses()
+        /// <summary>
+        /// Start all synchronisation processes that are configured, if they 
+        /// are not already running.
+        /// </summary>
+        public void StartConfiguredSynchronisationProcesses()
         {
-            DoOrLogError(() => this.callSynchroniser.Start(), catalogue.GetString("Starting call synchroniser"));
-            DoOrLogError(() => this.contactSynchroniser.Start(), catalogue.GetString("Starting contacts synchroniser"));
-            DoOrLogError(() => this.meetingSynchroniser.Start(), catalogue.GetString("Starting meeting synchroniser"));
-            DoOrLogError(() => this.taskSynchroniser.Start(), catalogue.GetString("Starting tasks synchroniser"));
-            DoOrLogError(() => this.EmailArchiver.Start(), catalogue.GetString("Starting email archiver"));
+            StartSynchroniserIfConfigured(this.callSynchroniser);
+            StartSynchroniserIfConfigured(this.contactSynchroniser);
+            StartSynchroniserIfConfigured(this.meetingSynchroniser);
+            StartSynchroniserIfConfigured(this.taskSynchroniser);
         }
+
+        /// <summary>
+        /// Start all synchronisation processes that are not configured to run,
+        /// if they are already running.
+        /// </summary>
+        public void StopUnconfiguredSynchronisationProcesses()
+        {
+            StopSynchroniserIfUnconfigured(this.callSynchroniser);
+            StopSynchroniserIfUnconfigured(this.contactSynchroniser);
+            StopSynchroniserIfUnconfigured(this.meetingSynchroniser);
+            StopSynchroniserIfUnconfigured(this.taskSynchroniser);
+        }
+
+        /// <summary>
+        /// Start this synchronisation process, if it is configured to run, 
+        /// provided it is not already running.
+        /// </summary>
+        /// <param name="synchroniser">The synchroniser to start.</param>
+        private void StartSynchroniserIfConfigured(Synchroniser synchroniser)
+        {
+            if (synchroniser != null && 
+                synchroniser.Direction != SyncDirection.Direction.Neither &&
+                !synchroniser.IsActive)
+            {
+                DoOrLogError(() => 
+                    synchroniser.Start(), 
+                    catalogue.GetString("Starting {0}", new object[] { synchroniser.GetType().Name }));
+            }
+        }
+
+        /// <summary>
+        /// Stop this synchroniser if it is active and is configured to be inactive.
+        /// </summary>
+        /// <param name="synchroniser">The synchroniser to stop.</param>
+        private void StopSynchroniserIfUnconfigured(Synchroniser synchroniser)
+        {
+            if (synchroniser != null &&
+                synchroniser.Direction == SyncDirection.Direction.Neither &&
+                synchroniser.IsActive)
+            {
+                synchroniser.Stop();
+            }
+
+        }
+
 
         private void cbtnArchive_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {

@@ -82,44 +82,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public ItemType OutlookItem {
             get
             {
-                ItemType result;
-
-                if (this.HasValidItem())
-                {
-                    result = this.item;
-                    getItemSuccesses++;
-                }
-                else
-                {
-                    object o;
-                    var mAPIFolder = MapiNS.GetDefaultFolder(DefaultFolder);
-
-                    try
-                    {
-                        o = MapiNS.GetItemFromID(this.outlookItemId); //, mAPIFolder.EntryID);
-                            // mAPIFolder.Items.Find($"[EntryId] = '{this.outlookItemId}'");
-                        try
-                        {
-                            result = (ItemType)o;
-                            getItemSuccesses++;
-                        }
-                        catch (InvalidCastException ice)
-                        {
-                            Globals.ThisAddIn.Log.Warn($"Unexpected item type in OutlookItem {o.GetType().Name} '{this.outlookItemId}' [{getItemFails}/{getItemSuccesses}]", ice);
-                            result = this.item;
-                            getItemFails++;
-                        }
-                    }
-                    catch (Exception problem)
-                    {
-                        Globals.ThisAddIn.Log.Warn($"Unexpected error seeking OutlookItem in {mAPIFolder.FullFolderPath} [{getItemFails}/{getItemSuccesses}]", problem);
-                        result = this.item;
-                        getItemFails++;
-                    }
-                }
-
-                return result;
-
+                return this.item;
             }
             private set
             {
@@ -127,25 +90,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        /// <summary>
-        /// True if my Outlook item appears to be valid.
-        /// </summary>
-        /// <returns>True if my Outlook item appears to be valid.</returns>
-        protected virtual bool HasValidItem()
-        {
-            bool result = false;
-
-            try
-            {
-                result = this.item as ItemType != null;
-            }
-            catch (Exception)
-            {
-                /* deliberately ignored */
-            }
-
-            return result;
-        }
 
         /// <summary>
         /// A lock that should be obtained before operations which operate on the TxState or the
