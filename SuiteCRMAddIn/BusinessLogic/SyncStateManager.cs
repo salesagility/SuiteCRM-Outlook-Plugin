@@ -497,7 +497,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state.</returns>
         private AppointmentSyncState CreateSyncState(Outlook.AppointmentItem appointment)
         {
-            string crmId = appointment.UserProperties[CrmIdPropertyName]?.Value.ToString();
+            string crmId = appointment.GetCrmId();
+
             AppointmentSyncState result;
 
             if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
@@ -515,7 +516,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 else
                 {
                     result = this.SetByOutlookId<AppointmentSyncState>(appointment.EntryID,
-                        new MeetingSyncState(appointment, crmId, modifiedDate)); ;
+                        new MeetingSyncState(appointment, crmId, modifiedDate));
                 }
             }
 
