@@ -413,9 +413,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             try
             {
-                Outlook.UserProperty olPropertyType = olItem.UserProperties[SyncStateManager.TypePropertyName];
-                Outlook.UserProperty olPropertyCrmId = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-
                 string result = string.Empty;
 
                 if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem))
@@ -434,7 +431,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             Log.Warn("AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
                         }
-                        else if (olPropertyCrmId == null || string.IsNullOrEmpty(olPropertyCrmId.Value))
+                        else if (string.IsNullOrEmpty(olItem.GetCrmId()))
                         {
                             /* i.e. this was a new item saved to CRM for the first time */
                             if (syncState.OutlookItem.IsCall())
@@ -560,10 +557,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-                string crmId = olPropertyEntryId == null ?
-                    "[not present]" :
-                    olPropertyEntryId.Value;
+                string crmId = olItem.GetCrmId(); 
+                if (string.IsNullOrEmpty(crmId)) { crmId = "[not present]"; }
+
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
                     .Append($"\n\tGlobal Id   : {olItem.GlobalAppointmentID}")
@@ -855,8 +851,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true if the Outlook item should be deleted from CRM.</returns>
         private bool ShouldDeleteFromCrm(Outlook.AppointmentItem olItem)
         {
-            Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-            bool result = (olPropertyEntryId != null && olItem.Sensitivity != Outlook.OlSensitivity.olNormal);
+            bool result = (!string.IsNullOrEmpty(olItem.GetCrmId()) && olItem.Sensitivity != Outlook.OlSensitivity.olNormal);
 
             LogItemAction(olItem, $"ShouldDeleteFromCrm returning {result}");
 
@@ -877,7 +872,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             var currentUserName = exchangeUser == null ? 
                 Application.Session.CurrentUser.Name:
                 exchangeUser.Name;
-            string crmId = olItem.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value;
+            string crmId = olItem.GetCrmId();
 
             return olItem != null &&
                 syncConfigured && 
@@ -1020,7 +1015,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override string GetCrmEntryId(Outlook.AppointmentItem olItem)
         {
-            return olItem?.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value.ToString();
+            return olItem.GetCrmId();
         }
 
         /// <summary>

@@ -22,13 +22,13 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using Extensions;
     using ProtoItems;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Runtime.InteropServices;
     using System.Text;
     using System.Windows.Forms;
@@ -241,10 +241,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-                string crmId = olPropertyEntryId == null ?
-                    "[not present]" :
-                    olPropertyEntryId.Value;
+                string crmId = olItem.GetCrmId();
+                if (string.IsNullOrEmpty(crmId)) { crmId = "[not present]"; }
+
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
                     .Append($"\n\tCRM Id      : {crmId}")
@@ -536,7 +535,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override string GetCrmEntryId(Outlook.ContactItem olItem)
         {
-            return olItem?.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value.ToString();
+            return olItem.GetCrmId();
         }
 
 

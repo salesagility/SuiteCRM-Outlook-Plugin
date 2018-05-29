@@ -62,10 +62,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-                string crmId = olPropertyEntryId == null ?
-                    "[not present]" :
-                    olPropertyEntryId.Value;
+                string crmId = OutlookItem.GetCrmId();
+                if (string.IsNullOrEmpty(crmId)) { crmId = "[not present]"; }
+
                 return $"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tFull name   : '{OutlookItem.FullName}'\n\tSensitivity : {OutlookItem.Sensitivity}";
             }
         }

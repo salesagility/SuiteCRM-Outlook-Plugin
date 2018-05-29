@@ -808,13 +808,7 @@ namespace SuiteCRMAddIn
 
             if (!string.IsNullOrEmpty(vCalId) && RestAPIWrapper.GetEntry(MeetingsSynchroniser.DefaultCrmModule, vCalId, new string[] { "id" }) != null)
             {
-                Outlook.AppointmentItem apptItem = meetingItem.GetAssociatedAppointment(false);
-                Outlook.UserProperty idProperty = apptItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-                if (idProperty == null)
-                {
-                    idProperty = apptItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, Outlook.OlUserPropertyType.olText);
-                }
-                idProperty.Value = vCalId;
+                meetingItem.GetAssociatedAppointment(false).SetCrmId(vCalId);
             }
         }
 

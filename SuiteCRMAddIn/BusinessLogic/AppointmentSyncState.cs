@@ -90,10 +90,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-                string crmId = olPropertyEntryId == null ?
-                    "[not present]" :
-                    olPropertyEntryId.Value;
+                string crmId = OutlookItem.GetCrmId();
+                if (string.IsNullOrEmpty(crmId)) { crmId = "[not present]"; }
+
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{OutlookItem.Subject}'\n\tSensitivity : {OutlookItem.Sensitivity}\n\tStatus     : {OutlookItem.MeetingStatus}\n\tReminder set {OutlookItem.ReminderSet}\n\tState      : {this.TxState}\n\tRecipients:\n");
                 foreach (Outlook.Recipient recipient in OutlookItem.Recipients)

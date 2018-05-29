@@ -85,6 +85,29 @@ namespace SuiteCRMAddIn.Extensions
         }
 
         /// <summary>
+        /// Set the CRM id for this item to this value.
+        /// </summary>
+        /// <param name="olItem">The Outlook item under consideration.</param>
+        /// <param name="crmId">The value to set.</param>
+        public static void SetCrmId(this Outlook.AppointmentItem olItem, string crmId)
+        {
+            Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+
+            if (property == null)
+            {
+                olItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, Outlook.OlUserPropertyType.olText);
+            }
+            if (string.IsNullOrEmpty(crmId))
+            {
+                property.Delete();
+            }
+            else
+            {
+                property.Value = crmId;
+            }
+        }
+
+        /// <summary>
         /// Removed the specified user property from this item.
         /// </summary>
         /// <param name="olItem">The item from which the property should be removed.</param>
