@@ -230,7 +230,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public AppointmentSyncState GetSyncState(Outlook.AppointmentItem appointment)
         {
             SyncState result = this.byOutlookId.ContainsKey(appointment.EntryID) ? this.byOutlookId[appointment.EntryID] : null;
-            string crmId = CheckForDuplicateSyncState(result, appointment.GetCrmId());
+            string crmId = result == null ? appointment.GetCrmId() : CheckForDuplicateSyncState(result, appointment.GetCrmId());
 
             if (result == null && string.IsNullOrEmpty(crmId))
             {
@@ -340,11 +340,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string CheckForDuplicateSyncState(SyncState state, string crmId)
         {
             string result = string.IsNullOrEmpty(crmId) && state != null ? state.CrmEntryId : crmId;
-            SyncState byCrmState = this.byCrmId.ContainsKey(crmId) ? this.byCrmId[crmId] : null;
 
-            if (state != null && byCrmState != null && state != byCrmState)
+            if (result != null)
             {
-                throw new DuplicateSyncStateException(state);
+                SyncState byCrmState = string.IsNullOrEmpty(crmId) ?
+                    null :
+                    this.byCrmId.ContainsKey(crmId) ? this.byCrmId[crmId] : null;
+
+                if (state != null && byCrmState != null && state != byCrmState)
+                {
+                    throw new DuplicateSyncStateException(state);
+                }
             }
 
             return result;

@@ -107,6 +107,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 try
                 {
+                    var crmId = olItem.GetCrmId();
+                    Log.Debug($"OutlookItemAdded, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
                     if (olItem != null && olItem.IsCall())
                     {
                         base.OutlookItemAdded<CallSyncState>(olItem, Globals.ThisAddIn.CallsSynchroniser);
@@ -139,6 +141,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 try
                 {
+                    var crmId = olItem.GetCrmId();
+                    Log.Debug($"OutlookItemChanged, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
+
                     if (olItem != null && olItem.IsCall())
                     {
                         base.OutlookItemChanged<CallSyncState>(olItem, Globals.ThisAddIn.CallsSynchroniser);
@@ -211,8 +216,15 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     try
                     {
-                        olProperty.Value = value ?? string.Empty;
-                        Log.Debug($"AppointmentSyncing.EnsureSynchronisationPropertyForOutlookItem: Set property {name} to value {value} on item {olItem.Subject}");
+                        if (string.IsNullOrEmpty(value))
+                        {
+                            olProperty.Delete();
+                        }
+                        else
+                        {
+                            olProperty.Value = value;
+                            Log.Debug($"AppointmentSyncing.EnsureSynchronisationPropertyForOutlookItem: Set property {name} to value {value} on item {olItem.Subject}");
+                        }
                     }
                     catch (Exception any)
                     {
