@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
     using Extensions;
+    using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -95,7 +96,7 @@ namespace SuiteCRMAddIn.Extensions
 
             if (property == null)
             {
-                olItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, Outlook.OlUserPropertyType.olText);
+                property = olItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, Outlook.OlUserPropertyType.olText);
                 SyncStateManager.Instance.SetByCrmId(crmId, SyncStateManager.Instance.GetOrCreateSyncState(olItem));
             }
             if (string.IsNullOrEmpty(crmId))
@@ -187,7 +188,12 @@ namespace SuiteCRMAddIn.Extensions
                 else
                 {
                     // Bad format!!!
+                    Globals.ThisAddIn.Log.Warn($"Failed to find vCal-Uid in GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
                 }
+            }
+            else
+            {
+                Globals.ThisAddIn.Log.Warn($"Failed to find vCal-Uid in short GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
             }
 
             return result;

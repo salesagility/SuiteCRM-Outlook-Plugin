@@ -619,8 +619,20 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     else
                     {
-                        result = matches.ElementAt(0) as SyncStateType;
-                        this.Log.Warn($"Howlaround detected? Appointment '{crmItem.GetValueAsString("name")}' offered with id {crmItem.GetValueAsString("id")}, expected {matches[0].OutlookItem.GetCrmId()}, {matches.Count} duplicates");
+                        var withoutCrmId = matches.Where(x => string.IsNullOrEmpty(x.CrmEntryId)).ToList();
+                        var crmId = crmItem.GetValueAsString("id");
+                        if (withoutCrmId.Count() > 0)
+                        {
+                            result = withoutCrmId.ElementAt(0) as SyncStateType;
+                            result.CrmEntryId = crmId;
+                            result.OutlookItem.SetCrmId(crmId);
+                            this.UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, result);
+                        }
+                        else
+                        {
+                            result = matches.ElementAt(0) as SyncStateType;
+                            this.Log.Warn($"Howlaround detected? Appointment '{crmItem.GetValueAsString("name")}' offered with id {crmId}, expected {matches[0].CrmEntryId}, {matches.Count} duplicates");
+                        }
                     }
                 }
                 else if (result != null)
@@ -951,7 +963,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 Outlook.AppointmentItem olItem = syncState.OutlookItem;
                 Outlook.UserProperty olPropertyModifiedDate = olItem.UserProperties[SyncStateManager.ModifiedDatePropertyName];
 
-                if (olPropertyModifiedDate.Value != crmItem.GetValueAsString("date_modified"))
+                if (olPropertyModifiedDate == null || olPropertyModifiedDate.Value != crmItem.GetValueAsString("date_modified"))
                 {
                     try
                     {
