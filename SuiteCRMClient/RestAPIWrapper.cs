@@ -284,6 +284,10 @@ namespace SuiteCRMClient
         /// <returns>the CRM id of the object created or modified.</returns>
         public static string SetEntry(NameValue[] values, string moduleName)
         {
+            if (values == null || values.Count() == 0)
+            {
+                throw new MissingValuesException($"Missing values when storing an instance of '{moduleName}'");
+            }
             EnsureLoggedIn();
             object data = new
             {

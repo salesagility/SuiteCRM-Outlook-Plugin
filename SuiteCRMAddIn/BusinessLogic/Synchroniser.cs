@@ -408,6 +408,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName, modifiedDate);
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
+
+                if (!string.IsNullOrEmpty(entryId))
+                {
+                    SyncStateManager.Instance.SetByCrmId(entryId, SyncStateManager.Instance.GetOrCreateSyncState(olItem));
+                }
             }
             catch (Exception any)
             {

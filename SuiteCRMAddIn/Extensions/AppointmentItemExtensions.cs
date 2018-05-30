@@ -96,6 +96,7 @@ namespace SuiteCRMAddIn.Extensions
             if (property == null)
             {
                 olItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, Outlook.OlUserPropertyType.olText);
+                SyncStateManager.Instance.SetByCrmId(crmId, SyncStateManager.Instance.GetOrCreateSyncState(olItem));
             }
             if (string.IsNullOrEmpty(crmId))
             {

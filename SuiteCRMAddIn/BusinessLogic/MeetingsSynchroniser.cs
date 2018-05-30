@@ -240,7 +240,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             int count = 0;
             string smtpAddress = invitee.GetSmtpAddress();
-            var meetingId = meeting.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value;
+            var meetingId = meeting.GetCrmId();
 
             if (meetingId != null &&
                 !string.IsNullOrEmpty(acceptance) &&
@@ -352,7 +352,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             else
             {
-                string meetingId = olItem.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value;
+                string meetingId = olItem.GetCrmId();
                 Dictionary<string, string> moduleIds = new Dictionary<string, string>();
 
                 if (!string.IsNullOrEmpty(meetingId))

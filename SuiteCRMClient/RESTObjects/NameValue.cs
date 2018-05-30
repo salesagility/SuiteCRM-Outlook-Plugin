@@ -56,7 +56,9 @@ namespace SuiteCRMClient.RESTObjects
             }
             set
             {
-                v = value;
+                // v = value;
+                // This might be better: 
+                v = value == null ? string.Empty : value;
             }
         }
 

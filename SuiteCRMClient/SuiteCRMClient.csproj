@@ -82,6 +82,7 @@
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\LogEntryType.cs" />
     <Compile Include="Logging\LoggerExtensions.cs" />
+    <Compile Include="Exceptions\MissingValuesException.cs" />
     <Compile Include="ModuleToTableResolver.cs" />
     <Compile Include="Objective.cs" />
     <Compile Include="RESTObjects\Documentation.cs" />

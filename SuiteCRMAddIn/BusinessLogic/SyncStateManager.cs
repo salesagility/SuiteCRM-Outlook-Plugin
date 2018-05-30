@@ -544,7 +544,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state.</returns>
         private ContactSyncState CreateSyncState(Outlook.ContactItem contact)
         {
-            string crmId = contact.UserProperties[CrmIdPropertyName]?.Value.ToString();
+            string crmId = contact.GetCrmId();
             ContactSyncState result;
 
             if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
@@ -576,7 +576,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state.</returns>
         private TaskSyncState CreateSyncState(Outlook.TaskItem task)
         {
-            string crmId = task.UserProperties[CrmIdPropertyName]?.Value.ToString();
+            string crmId = task.GetCrmId();
 
             TaskSyncState result;
 
