@@ -383,20 +383,21 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of outlook item for which I manage 
     /// permissions (may be stored in more than one module).</typeparam>
-    public class CRMPermissionsCache<OutlookItemType> : CRMPermissionsCache
+    public class CRMPermissionsCache<OutlookItemType, SyncStateType> : CRMPermissionsCache
         where OutlookItemType : class
+        where SyncStateType : SyncState<OutlookItemType>
     {
         /// <summary>
         /// The synchroniser on whose behalf I work.
         /// </summary>
-        private Synchroniser<OutlookItemType> synchroniser;
+        private Synchroniser<OutlookItemType, SyncStateType> synchroniser;
 
         /// <summary>
         /// Construct a new instance of a permissions cache for this syncrhoniser using this log.
         /// </summary>
         /// <param name="synchroniser">The synchroniser on whose behalf I shall work.</param>
         /// <param name="log">The logger I shall log to.</param>
-        public CRMPermissionsCache(Synchroniser<OutlookItemType> synchroniser, ILogger log) : 
+        public CRMPermissionsCache(Synchroniser<OutlookItemType,SyncStateType> synchroniser, ILogger log) : 
             base($"PC Permissions cache ${synchroniser.GetType().Name}", log)
         {
             this.synchroniser = synchroniser;

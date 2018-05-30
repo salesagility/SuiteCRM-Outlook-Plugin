@@ -20,35 +20,25 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Extensions
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
-
-    public static class clsGlobals
+    public static class MeetingItemExtensions
     {
         /// <summary>
-        /// Get a best approximation of the username of the current user.
+        /// Extract the vCal uid from this MeetingItem, if available.
         /// </summary>
-        /// <returns>a best approximation of the username of the current user</returns>
-        public static string GetCurrentUsername()
+        /// <param name="item">A meeting item, which may relate to a meeting in CRM.</param>
+        /// <returns>The vCal id if present, else the empty string.</returns>
+        public static string GetVCalId(this Outlook.MeetingItem item)
         {
-            string result;
-            Outlook.Recipient currentUser = Globals.ThisAddIn.Application.Session.CurrentUser;
-            Outlook.AddressEntry addressEntry = currentUser.AddressEntry;
-
-            if (addressEntry.Type == "EX")
-            {
-                result = addressEntry.GetExchangeUser().Name;
-            }
-            else
-            {
-
-                result = currentUser.Name;
-                // result = addressEntry.Address.Substring(0, addressEntry.Address.IndexOf('@'));
-            }
-
-            return result;
+            return item.GetAssociatedAppointment(false).GetVCalId();
         }
     }
 }

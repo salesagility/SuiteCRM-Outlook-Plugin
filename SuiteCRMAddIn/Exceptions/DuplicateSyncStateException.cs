@@ -20,35 +20,26 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+namespace SuiteCRMAddIn.Exceptions
 {
-    using Outlook = Microsoft.Office.Interop.Outlook;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using BusinessLogic;
 
-
-    public static class clsGlobals
+    /// <summary>
+    /// An exception thrown if more than one sync state appears to describe one item.
+    /// </summary>
+    public class DuplicateSyncStateException : Exception
     {
-        /// <summary>
-        /// Get a best approximation of the username of the current user.
-        /// </summary>
-        /// <returns>a best approximation of the username of the current user</returns>
-        public static string GetCurrentUsername()
+        public DuplicateSyncStateException(SyncState result) : base($"Duplicate Outlook item? {result.OutlookItemEntryId}")
         {
-            string result;
-            Outlook.Recipient currentUser = Globals.ThisAddIn.Application.Session.CurrentUser;
-            Outlook.AddressEntry addressEntry = currentUser.AddressEntry;
+        }
 
-            if (addressEntry.Type == "EX")
-            {
-                result = addressEntry.GetExchangeUser().Name;
-            }
-            else
-            {
-
-                result = currentUser.Name;
-                // result = addressEntry.Address.Substring(0, addressEntry.Address.IndexOf('@'));
-            }
-
-            return result;
+        public DuplicateSyncStateException(SyncState result, SyncState duplicate) : base($"Duplicate Outlook item? {result.OutlookItemEntryId}, {duplicate.OutlookItemEntryId}")
+        {
         }
     }
 }

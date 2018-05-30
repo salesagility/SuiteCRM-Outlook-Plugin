@@ -386,18 +386,34 @@ namespace SuiteCRMAddIn.Extensions
         public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, IEnumerable<CrmEntity> moduleKeys, string excludedEmails = "")
         {
             ArchiveResult result;
-            Outlook.UserProperty olProperty = olItem.UserProperties[CrmIdPropertyName];
+            Outlook.UserProperty olProperty = null;
 
-            if (olProperty == null)
+            try
+            {
+                olProperty = olItem.UserProperties[CrmIdPropertyName];
+            }
+            catch (COMException cex)
+            {
+                Log.Error("Could not get property while archiving email", cex);
+            }
+
+            if (olProperty == null || string.IsNullOrEmpty(olProperty.Value))
             {
                 result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
                 
                 if (result.IsSuccess)
                 {
-                    olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
-                        SuiteCRMCategoryName :
-                        $"{olItem.Categories},{SuiteCRMCategoryName}";
-                    olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
+                    try
+                    {
+                        olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
+                            SuiteCRMCategoryName :
+                            $"{olItem.Categories},{SuiteCRMCategoryName}";
+                        olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
+                    }
+                    catch (COMException cex)
+                    {
+                        Log.Error("Could not set property while archiving email", cex);
+                    }
                 }
             }
             else

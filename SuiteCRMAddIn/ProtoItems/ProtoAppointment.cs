@@ -16,7 +16,8 @@ namespace SuiteCRMAddIn.ProtoItems
     /// <summary>
     /// Broadly, a C# representation of a CRM appointment.
     /// </summary>
-    public class ProtoAppointment : ProtoItem<Outlook.AppointmentItem>
+    public class ProtoAppointment<SyncStateType> : ProtoItem<Outlook.AppointmentItem>
+        where SyncStateType : SyncState<Outlook.AppointmentItem>
     {
         private readonly string body;
         private readonly int duration;
@@ -29,6 +30,7 @@ namespace SuiteCRMAddIn.ProtoItems
         private readonly Outlook.OlMeetingStatus status;
         private readonly string CancelledPrefix = "CANCELLED";
         private readonly ISet<string> recipientAddresses = new HashSet<string>();
+        private string CrmEntryId;
 
 
         /// <summary>
@@ -58,6 +60,7 @@ namespace SuiteCRMAddIn.ProtoItems
         public ProtoAppointment(Outlook.AppointmentItem olItem)
         {
             this.body = olItem.Body;
+            this.CrmEntryId = olItem.GetCrmId();
             this.duration = olItem.Duration;
             this.end = olItem.End;
             this.location = olItem.Location;
@@ -67,7 +70,7 @@ namespace SuiteCRMAddIn.ProtoItems
             // this is resolved to the correct string in AsNameValues().
             this.status = olItem.MeetingStatus;
 
-            var organiserProperty = olItem.UserProperties[AppointmentSyncing.OrganiserPropertyName];
+            var organiserProperty = olItem.UserProperties[AppointmentsSynchroniser<SyncStateType>.OrganiserPropertyName];
 
             if (organiserProperty == null || string.IsNullOrWhiteSpace(organiserProperty.Value))
             {
@@ -143,7 +146,7 @@ namespace SuiteCRMAddIn.ProtoItems
         /// </summary>
         /// <param name="entryId">The CRM entry Id of the object represented.</param>
         /// <returns>A set of name/value pairs suitable for transmitting to CRM.</returns>
-        public override NameValueCollection AsNameValues(string entryId)
+        public override NameValueCollection AsNameValues()
         {
             NameValueCollection data = new NameValueCollection();
             string statusString;
@@ -177,17 +180,17 @@ namespace SuiteCRMAddIn.ProtoItems
             data.Add(RestAPIWrapper.SetNameValuePair("outlook_id", this.globalId));
             data.Add(RestAPIWrapper.SetNameValuePair("status", statusString));
 
-            if (string.IsNullOrEmpty(entryId))
+            if (string.IsNullOrEmpty(CrmEntryId))
             {
                 /* A Guid can be constructed from a 32 digit hex string. The globalId is a
                  * 112 digit hex string. It appears from inspection that the least significant
                  * bytes are those that vary between examples, with the most significant bytes 
                  * being invariant in the samples we have to hand. */
-                entryId = new Guid(this.globalId.Substring(this.globalId.Length - 32)).ToString();
+                CrmEntryId = new Guid(this.globalId.Substring(this.globalId.Length - 32)).ToString();
                 data.Add(RestAPIWrapper.SetNameValuePair("new_with_id", true));
             }
 
-            data.Add(RestAPIWrapper.SetNameValuePair("id", entryId));
+            data.Add(RestAPIWrapper.SetNameValuePair("id", CrmEntryId));
 
             return data;
         }

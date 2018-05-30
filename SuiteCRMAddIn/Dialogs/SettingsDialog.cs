@@ -469,6 +469,9 @@ namespace SuiteCRMAddIn.Dialogs
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
 
             Properties.Settings.Default.Save();
+
+            Globals.ThisAddIn.StopUnconfiguredSynchronisationProcesses();
+            Globals.ThisAddIn.StartConfiguredSynchronisationProcesses();
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
@@ -480,6 +483,11 @@ namespace SuiteCRMAddIn.Dialogs
         private void LinkToLogFileDir_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             Process.Start(ThisAddIn.LogDirPath);
+        }
+
+        private void advancedButton_Click(object sender, EventArgs e)
+        {
+            new AdvancedArchiveSettingsDialog().ShowDialog();
         }
     }
 }

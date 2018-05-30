@@ -23,6 +23,7 @@
 
 namespace SuiteCRMAddIn.ProtoItems
 {
+    using Extensions;
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
     using System;
@@ -43,6 +44,7 @@ namespace SuiteCRMAddIn.ProtoItems
 
         private string status;
         private string subject;
+        private string crmEntryId;
 
         public override string Description
         {
@@ -56,6 +58,7 @@ namespace SuiteCRMAddIn.ProtoItems
         {
             this.oItem = oItem;
             this.subject = this.oItem.Subject;
+            this.crmEntryId = oItem.GetCrmId();
 
             if (oItem.Body != null)
             {
@@ -159,8 +162,8 @@ namespace SuiteCRMAddIn.ProtoItems
 
             if (task != null)
             {
-                Dictionary<string, object> myContents = this.AsNameValues(string.Empty).AsDictionary();
-                Dictionary<string, object> theirContents = task.AsNameValues(string.Empty).AsDictionary();
+                Dictionary<string, object> myContents = this.AsNameValues().AsDictionary();
+                Dictionary<string, object> theirContents = task.AsNameValues().AsDictionary();
 
                 result = myContents.Keys.Count == theirContents.Keys.Count;
                 foreach (string key in myContents.Keys)
@@ -178,15 +181,14 @@ namespace SuiteCRMAddIn.ProtoItems
         /// <returns>A hash code </returns>
         public override int GetHashCode()
         {
-            return this.AsNameValues(string.Empty).AsDictionary().GetHashCode() + 1;
+            return this.AsNameValues().AsDictionary().GetHashCode() + 1;
         }
 
         /// <summary>
         /// Construct a name value list (to be serialised as JSON) representing this task.
         /// </summary>
-        /// <param name="entryId">The presumed id of this task in CRM, if known.</param>
         /// <returns>a name value list representing this task</returns>
-        public override NameValueCollection AsNameValues(string entryId)
+        public override NameValueCollection AsNameValues()
         {
             var data = new NameValueCollection();
             data.Add(RestAPIWrapper.SetNameValuePair("name", this.subject));
@@ -196,9 +198,9 @@ namespace SuiteCRMAddIn.ProtoItems
             data.Add(RestAPIWrapper.SetNameValuePair("date_start", this.dateStart));
             data.Add(RestAPIWrapper.SetNameValuePair("priority", this.priority));
 
-            data.Add(String.IsNullOrEmpty(entryId) ?
+            data.Add(String.IsNullOrEmpty(crmEntryId) ?
                 RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()) :
-                RestAPIWrapper.SetNameValuePair("id", entryId));
+                RestAPIWrapper.SetNameValuePair("id", crmEntryId));
             return data;
         }
 

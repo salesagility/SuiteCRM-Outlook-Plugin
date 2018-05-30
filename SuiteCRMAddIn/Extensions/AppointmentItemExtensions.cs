@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
     using Extensions;
+    using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -55,9 +56,57 @@ namespace SuiteCRMAddIn.Extensions
         /// <param name="olItem">The item from which the property should be removed.</param>
         public static void ClearSynchronisationProperties(this Outlook.AppointmentItem olItem)
         {
-            olItem.ClearUserProperty(Synchroniser<Outlook.AppointmentItem>.CrmIdPropertyName);
-            olItem.ClearUserProperty(Synchroniser<Outlook.AppointmentItem>.ModifiedDatePropertyName);
-            olItem.ClearUserProperty(Synchroniser<Outlook.AppointmentItem>.TypePropertyName);
+            /* it doesn't actually matter whether we use CallSyncState or MeetingSyncState here,
+             * since the constants are stored on Synchroniser */
+            olItem.ClearUserProperty(SyncStateManager.CrmIdPropertyName);
+            olItem.ClearUserProperty(SyncStateManager.ModifiedDatePropertyName);
+            olItem.ClearUserProperty(SyncStateManager.TypePropertyName);
+        }
+
+
+        /// <summary>
+        /// Get the CRM id for this item, if known, else the empty string.
+        /// </summary>
+        /// <param name="olItem">The Outlook item under consideration.</param>
+        /// <returns>the CRM id for this item, if known, else the empty string.</returns>
+        public static string GetCrmId(this Outlook.AppointmentItem olItem)
+        {
+            string result;
+            Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+            if (property != null && !string.IsNullOrEmpty(property.Value))
+            {
+                result = property.Value;
+            }
+            else
+            {
+                result = olItem.GetVCalId();
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Set the CRM id for this item to this value.
+        /// </summary>
+        /// <param name="olItem">The Outlook item under consideration.</param>
+        /// <param name="crmId">The value to set.</param>
+        public static void SetCrmId(this Outlook.AppointmentItem olItem, string crmId)
+        {
+            Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+
+            if (property == null)
+            {
+                property = olItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, Outlook.OlUserPropertyType.olText);
+                SyncStateManager.Instance.SetByCrmId(crmId, SyncStateManager.Instance.GetOrCreateSyncState(olItem));
+            }
+            if (string.IsNullOrEmpty(crmId))
+            {
+                property.Delete();
+            }
+            else
+            {
+                property.Value = crmId;
+            }
         }
 
         /// <summary>
@@ -108,6 +157,46 @@ namespace SuiteCRMAddIn.Extensions
             {
                 olItem.Recipients.Add(identifier);
             }
+        }
+
+        /// <summary>
+        /// Extract the vCal uid from this AppointmentItem, if available.
+        /// </summary>
+        /// <param name="item">An appointment item, which may relate to a meeting in CRM.</param>
+        /// <returns>The vCal id if present, else the empty string.</returns>
+        public static string GetVCalId(this Outlook.AppointmentItem item)
+        {
+            string result = string.Empty;
+
+            //This parses the Global Appointment ID to a byte array. We need to retrieve the "UID" from it (if available).
+            byte[] bytes = (byte[])item.PropertyAccessor.StringToBinary(item.GlobalAppointmentID);
+
+            //According to https://msdn.microsoft.com/en-us/library/ee157690(v=exchg.80).aspx we don't need first 40 bytes            
+            if (bytes.Length >= 40)
+            {
+                byte[] bytesThatContainData = new byte[bytes.Length - 40];
+                Array.Copy(bytes, 40, bytesThatContainData, 0, bytesThatContainData.Length);
+
+                //In some cases, there won't be a UID.
+                var decoded = Encoding.UTF8.GetString(bytesThatContainData, 0, bytesThatContainData.Length);
+
+                if (decoded.StartsWith("vCal-Uid"))
+                {
+                    //remove vCal-Uid from start string and special symbols
+                    result = decoded.Replace("vCal-Uid", string.Empty).Replace("\u0001", string.Empty).Replace("\0", string.Empty);
+                }
+                else
+                {
+                    // Bad format!!!
+                    Globals.ThisAddIn.Log.Warn($"Failed to find vCal-Uid in GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
+                }
+            }
+            else
+            {
+                Globals.ThisAddIn.Log.Warn($"Failed to find vCal-Uid in short GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
+            }
+
+            return result;
         }
     }
 }

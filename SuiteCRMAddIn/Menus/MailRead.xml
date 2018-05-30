@@ -13,8 +13,8 @@
   </ribbon>
   <contextMenus>
     <contextMenu idMso="ContextMenuMailItem">
-      <button id="btnArchive1" getImage="GetImage" label="SuiteCRM Archive" onAction="btnArchive_Action"/>
-    </contextMenu>
+      <button id="btnArchive1" getImage="GetImage" label="SuiteCRM Archive" onAction="btnArchive_Action"/> <!-- getEnabled="btnArchive_Enabled" -->
+  </contextMenu>
     <contextMenu idMso="ContextMenuMultipleItems">
       <button id="btnArchive2" getImage="GetImage" label="SuiteCRM Archive" onAction="btnArchive_Action"/>
     </contextMenu>

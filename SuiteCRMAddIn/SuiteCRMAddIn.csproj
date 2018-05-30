@@ -210,9 +210,19 @@
   -->
   <ItemGroup>
     <Compile Include="BusinessLogic\CallsSynchroniser.cs" />
+    <Compile Include="BusinessLogic\CallSyncState.cs" />
     <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
+    <Compile Include="BusinessLogic\MeetingSyncState.cs" />
+    <Compile Include="BusinessLogic\TransmissionState.cs" />
+    <Compile Include="Dialogs\AdvancedArchiveSettingsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\AdvancedArchiveSettingsDialog.Designer.cs">
+      <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Exceptions\ProbableDuplicateItemException.cs" />
+    <Compile Include="BusinessLogic\SyncStateManager.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
-    <Compile Include="Daemon\UpdateMeetingAcceptancesAction.cs" />
     <Compile Include="Dialogs\AddressBook.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -224,7 +234,7 @@
     <Compile Include="BusinessLogic\EmailCategoriesCollection.cs" />
     <Compile Include="Daemon\AbstractDaemonAction.cs" />
     <Compile Include="BusinessLogic\AppointmentSyncState.cs" />
-    <Compile Include="BusinessLogic\AppointmentSyncing.cs" />
+    <Compile Include="BusinessLogic\AppointmentsSynchroniser.cs" />
     <Compile Include="Daemon\documentation.cs" />
     <Compile Include="Daemon\FetchEmailCategoriesAction.cs" />
     <Compile Include="Daemon\TransmitNewAction.cs" />
@@ -248,7 +258,10 @@
     <Compile Include="Exceptions\AlreadyArchivedException.cs" />
     <Compile Include="Exceptions\BadStateTransition.cs" />
     <Compile Include="Exceptions\Documentation.cs" />
+    <Compile Include="Exceptions\DuplicateSyncStateException.cs" />
+    <Compile Include="Exceptions\UnexpectedSyncStateClassException.cs" />
     <Compile Include="Extensions\AddressEntryExtensions.cs" />
+    <Compile Include="Extensions\MeetingItemExtensions.cs" />
     <Compile Include="Extensions\TaskItemExtensions.cs" />
     <Compile Include="Extensions\ContactItemExtensions.cs" />
     <Compile Include="Extensions\AppointmentItemExtensions.cs" />
@@ -272,7 +285,7 @@
     <Compile Include="BusinessLogic\RunState.cs" />
     <Compile Include="BusinessLogic\LicenceValidation.cs" />
     <Compile Include="BusinessLogic\LicenceValidationHelper.cs" />
-    <Compile Include="BusinessLogic\ContactSyncing.cs" />
+    <Compile Include="BusinessLogic\ContactSynchroniser.cs" />
     <Compile Include="BusinessLogic\ContactSyncState.cs" />
     <Compile Include="BusinessLogic\EmailAccountsArchiveSettings.cs" />
     <Compile Include="BusinessLogic\EmailArchiving.cs" />
@@ -281,7 +294,7 @@
     <Compile Include="BusinessLogic\Synchroniser.cs" />
     <Compile Include="BusinessLogic\SyncState.cs" />
     <Compile Include="BusinessLogic\SyncState{1}.cs" />
-    <Compile Include="BusinessLogic\TaskSyncing.cs" />
+    <Compile Include="BusinessLogic\TaskSynchroniser.cs" />
     <Compile Include="BusinessLogic\TaskSyncState.cs" />
     <Compile Include="BusinessLogic\ThreadSafeList.cs" />
     <Compile Include="clsGlobals.cs" />
@@ -333,6 +346,9 @@
     </Compile>
     <EmbeddedResource Include="Dialogs\AddressBook.resx">
       <DependentUpon>AddressBook.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\AdvancedArchiveSettingsDialog.resx">
+      <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ClearCrmIdsDialog.resx">
       <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>

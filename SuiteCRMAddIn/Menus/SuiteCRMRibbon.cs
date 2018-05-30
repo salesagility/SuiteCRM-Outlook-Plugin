@@ -28,11 +28,14 @@ using SuiteCRMClient.Logging;
 using SuiteCRMAddIn.Extensions;
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Office = Microsoft.Office.Core;
 using Outlook = Microsoft.Office.Interop.Outlook;
+using System.Collections.Generic;
+using SuiteCRMAddIn.Dialogs;
 
 // TODO:  Follow these steps to enable the Ribbon (XML) item:
 
@@ -137,6 +140,11 @@ namespace SuiteCRMAddIn
 
         #endregion
 
+        public bool btnArchive_Enabled()
+        {
+            return Globals.ThisAddIn.SelectedEmails.Select(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null).ToList().Count() > 0;
+        }
+
         #region Click Events
         public void btnArchive_Action(IRibbonControl control)
         {
@@ -172,7 +180,10 @@ namespace SuiteCRMAddIn
                     {
                         try
                         {
-                            olItem.Archive(EmailArchiveReason.SendAndArchive);
+                            List<Outlook.MailItem> items = new List<Outlook.MailItem>();
+                            items.Add(olItem);
+
+                            new ArchiveDialog(items, EmailArchiveReason.SendAndArchive).ShowDialog();
                         }
                         catch (Exception failedToArchve)
                         {

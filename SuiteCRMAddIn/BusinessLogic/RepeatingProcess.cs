@@ -118,7 +118,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// True if I should be active, else false.
         /// </summary>
-        private Boolean IsActive
+        public Boolean IsActive
         {
             get { return this.state == RunState.Running || this.state == RunState.Waiting; }
         }
@@ -126,7 +126,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// True if I am stopped, else false.
         /// </summary>
-        public Boolean Stopped
+        public Boolean IsStopped
         {
             get
             {
@@ -139,9 +139,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         private async void PerformRepeatedly()
         {
+            Robustness.DoOrLogError(
+                this.Log,
+                () => this.PerformStartup(),
+                $"{this.Name} PerformStartup");
+
             do
             {
                 var fred = Thread.CurrentThread;
+
                 if (fred.Name == null)
                 {
                     Log.Warn($"Anonymous thread {fred.ManagedThreadId} running as '{this.Name}'.");
@@ -155,6 +161,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     this.Log,
                     () => this.PerformIteration(),
                     $"{this.Name} PerformIteration");
+                
 
                 /* deal with any pending Windows messages, which we don't need to know about */
                 System.Windows.Forms.Application.DoEvents();
@@ -186,6 +193,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 this.state = RunState.Stopped;
                 this.process = null;
             }
+        }
+
+        /// <summary>
+        /// Override this to perform any special actions in the process thread 
+        /// when the thread is started.
+        /// </summary>
+        public virtual void PerformStartup()
+        {
         }
 
         /// <summary>
@@ -247,17 +262,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>true if I am now stopped.</returns>
         public bool Stop()
         {
-            lock (processLock)
+            lock (this.processLock)
             {
-                if (this.IsActive)
+                if (!this.IsStopped)
                 {
                     this.state = RunState.Stopping;
-                    interrupter.Cancel();
+                    this.Interval = TimeSpan.FromSeconds(5);
                     Log.Debug($"Stopping thread {this.Name} at end of current iteration.");
+                this.interrupter.Cancel();
                 }
             }
 
-            return this.Stopped;
+            return this.IsStopped;
         }
 
         /// <summary>

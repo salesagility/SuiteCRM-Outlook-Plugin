@@ -27,6 +27,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using Extensions;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Runtime.InteropServices;
+    using SuiteCRMClient.RESTObjects;
 
     /// <summary>
     /// A SyncState for Contact items.
@@ -37,7 +38,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
         }
 
-        public override string CrmType => TaskSyncing.CrmModule;
+        public override string CrmType => TaskSynchroniser.CrmModule;
 
         public override string OutlookItemEntryId => OutlookItem.EntryID;
 
@@ -55,7 +56,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else
                 {
-                    Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[Synchroniser<Outlook.TaskItem>.CrmIdPropertyName];
+                    Outlook.UserProperty olPropertyEntryId = OutlookItem.UserProperties[SyncStateManager.CrmIdPropertyName];
                     string crmId = olPropertyEntryId == null ?
                         "[not present]" :
                         olPropertyEntryId.Value;
@@ -64,6 +65,21 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        public override string IdentifyingFields
+        {
+            get
+            {
+                return $"subject: {OutlookItem.Subject}; start {OutlookItem.StartDate}";
+            }
+        }
+
+        public override Outlook.OlDefaultFolders DefaultFolder
+        {
+            get
+            {
+                return Outlook.OlDefaultFolders.olFolderTasks;
+            }
+        }
 
         public override void DeleteItem()
         {
@@ -81,6 +97,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override void RemoveSynchronisationProperties()
         {
             OutlookItem.ClearSynchronisationProperties();
+        }
+
+
+        /// <summary>
+        /// Get a string representing the values of the distinct fields of this crmItem, 
+        /// as a final fallback for identifying an otherwise unidentifiable object.
+        /// </summary>
+        /// <param name="crmItem">An item received from CRM.</param>
+        /// <returns>An identifying string.</returns>
+        /// <see cref="SyncState{ItemType}.IdentifyingFields"/> 
+        internal static string GetDistinctFields(EntryValue crmItem)
+        {
+            return $"subject: '{crmItem.GetValueAsString("name")}'; start: '{crmItem.GetValueAsDateTime("date_start")}'";
+        }
+
+        internal override void SaveItem()
+        {
+            this.OutlookItem?.Save();
         }
     }
 }

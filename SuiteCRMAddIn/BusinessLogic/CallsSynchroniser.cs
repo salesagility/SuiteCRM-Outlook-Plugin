@@ -20,14 +20,13 @@
 *
 * @author SalesAgility <info@salesagility.com>
 */
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using System;
-    using Extensions;
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
-    public class CallsSynchroniser : AppointmentSyncing
+    public class CallsSynchroniser : AppointmentsSynchroniser<CallSyncState>
     {
         public const string CrmModule = "Calls";
 
@@ -45,14 +44,24 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override SyncDirection.Direction Direction => Properties.Settings.Default.SyncCalls;
 
-        protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
+        protected override void InstallEventHandlers()
         {
-            return crmType == "Calls";
+            /* arbitrarily, one AppointmentSyncing subclass should NOT handle events. */
+        }
+
+        protected override void RemoveEventHandlers()
+        {
+            /* arbitrarily, one AppointmentSyncing subclass should NOT handle events. */
         }
 
         protected override void SetMeetingStatus(Outlook.AppointmentItem olItem, EntryValue crmItem)
         {
             olItem.MeetingStatus = Microsoft.Office.Interop.Outlook.OlMeetingStatus.olNonMeeting;
+        }
+
+        protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
+        {
+            return crmType == "Calls";
         }
     }
 }

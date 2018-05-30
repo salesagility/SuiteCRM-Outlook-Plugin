@@ -350,6 +350,9 @@
 		<row><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td>{761371C8-C0DE-4546-ABEF-ED5E3900D48C}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.outlo</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>Newtonsoft.Json.dll</td><td>{8F129954-4BFF-4523-BFD1-9355815F4A5A}</td><td>INSTALLDIR</td><td>2</td><td/><td>newtonsoft.json.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>SuiteCRMAddIn.Primary_output</td><td>{FF8F6348-53B1-4B05-B560-1C33875F375E}</td><td>INSTALLDIR</td><td>2</td><td/><td>suitecrmaddin.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>TidyHTML5Managed.dll</td><td>{8C9B1ED4-7D32-487D-BD61-0AE790E0EEBE}</td><td>INSTALLDIR</td><td>2</td><td/><td>tidyhtml5managed.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>tidy.x64.dll</td><td>{0DA82536-A034-43BB-9971-E81E9C142A80}</td><td>INSTALLDIR</td><td>2</td><td/><td>tidy.x64.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>tidy.x86.dll</td><td>{6A6590E9-D3DA-44EB-8C71-4583B0DFCBDE}</td><td>INSTALLDIR</td><td>2</td><td/><td>tidy.x86.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 	</table>
 
 	<table name="Condition">
@@ -1062,6 +1065,9 @@
 		<row><td>INSTALLDIR</td><td>ISO19770_LocalTag</td></row>
 		<row><td>INSTALLDIR</td><td>ISO19770_SystemTag</td></row>
 		<row><td>INSTALLDIR</td><td>SuiteCRMAddIn.Primary_output</td></row>
+		<row><td>INSTALLDIR</td><td>TidyHTML5Managed.dll</td></row>
+		<row><td>INSTALLDIR</td><td>tidy.x64.dll</td></row>
+		<row><td>INSTALLDIR</td><td>tidy.x86.dll</td></row>
 	</table>
 
 	<table name="CustomAction">
@@ -1882,6 +1888,9 @@
 		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td></row>
 		<row><td>AlwaysInstall</td><td>Newtonsoft.Json.dll</td></row>
 		<row><td>AlwaysInstall</td><td>SuiteCRMAddIn.Primary_output</td></row>
+		<row><td>AlwaysInstall</td><td>TidyHTML5Managed.dll</td></row>
+		<row><td>AlwaysInstall</td><td>tidy.x64.dll</td></row>
+		<row><td>AlwaysInstall</td><td>tidy.x86.dll</td></row>
 	</table>
 
 	<table name="File">
@@ -1902,6 +1911,9 @@
 		<row><td>suitecrmaddin.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.MAN|SuiteCRMAddIn.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\SuiteCRMAddIn.dll.manifest</td><td>1</td><td/></row>
 		<row><td>suitecrmaddin.primary_output</td><td>SuiteCRMAddIn.Primary_output</td><td>SuiteCRMAddIn.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;SuiteCRMAddIn&gt;|Built</td><td>3</td><td/></row>
 		<row><td>suitecrmaddin.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>SUITEC~1.VST|SuiteCRMAddIn.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\SuiteCRMAddIn.vsto</td><td>1</td><td/></row>
+		<row><td>tidy.x64.dll</td><td>tidy.x64.dll</td><td>TIDYX6~1.DLL|tidy.x64.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\tidy.x64.dll</td><td>1</td><td/></row>
+		<row><td>tidy.x86.dll</td><td>tidy.x86.dll</td><td>TIDYX8~1.DLL|tidy.x86.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\tidy.x86.dll</td><td>1</td><td/></row>
+		<row><td>tidyhtml5managed.dll</td><td>TidyHTML5Managed.dll</td><td>TIDYHT~1.DLL|TidyHTML5Managed.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\..\SuiteCRMAddIn\bin\Release\TidyHTML5Managed.dll</td><td>1</td><td/></row>
 	</table>
 
 	<table name="FileSFPCatalog">
@@ -2053,6 +2065,9 @@
 		<row><td>Microsoft.Office.Tools.Outlook.v4.0.Utilities.dll</td><td/><td/><td>_6F591EF1_6819_4279_A964_8C9A9575396E_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>Newtonsoft.Json.dll</td><td/><td/><td>_8B1FE9AB_7FCA_4EB5_BC34_DFD0BAF5FC98_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>SuiteCRMAddIn.Primary_output</td><td/><td/><td>_80CD22B9_9FA5_46A1_95DA_B30A081C0D9C_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>TidyHTML5Managed.dll</td><td/><td/><td>_72B78638_ACC7_49B9_8909_272A2580FDD2_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>tidy.x64.dll</td><td/><td/><td>_A1C9CF28_3335_406F_9DBC_8CCE7F5E42D5_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>tidy.x86.dll</td><td/><td/><td>_BAD62B9E_281D_4CEF_B390_B7D7ED1FD6B5_FILTER</td><td/><td/><td/><td/></row>
 	</table>
 
 	<table name="ISCustomActionReference">
@@ -4408,7 +4423,7 @@ RABlAGIAdQBnAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{3BFCFDAB-2396-46E0-A826-0F142CA288EB}</td><td/></row>
 		<row><td>ProductName</td><td>SuiteCRMAddIn</td><td/></row>
-		<row><td>ProductVersion</td><td>3.0.11.430</td><td/></row>
+		<row><td>ProductVersion</td><td>3.0.11.631</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
