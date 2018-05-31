@@ -109,7 +109,7 @@ namespace SuiteCRMAddIn.Dialogs
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("frmSettings_Load error", ex);
+                    ErrorHandler.Handle("Failed while loading the settings form", ex);
                     // Swallow exception!
                 }
             }
@@ -158,6 +158,15 @@ namespace SuiteCRMAddIn.Dialogs
             logLevelSelector.DisplayMember = "Value";
             logLevelSelector.ValueMember = "Key";
             logLevelSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.LogLevel);
+
+            showErrorsSelector.DataSource = Enum.GetValues(typeof(ErrorHandler.PopupWhen))
+                .Cast<ErrorHandler.PopupWhen>()
+                .Select(p => new { Key = (int)p, Value = p.ToString() })
+                .OrderBy(o => o.Key)
+                .ToList();
+            showErrorsSelector.DisplayMember = "Value";
+            showErrorsSelector.ValueMember = "Key";
+            showErrorsSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.ShowExceptions);
 
             this.PopulateDirectionsMenu(syncCallsMenu, Properties.Settings.Default.SyncCalls);
             this.PopulateDirectionsMenu(syncContactsMenu, Properties.Settings.Default.SyncContacts);
@@ -464,6 +473,8 @@ namespace SuiteCRMAddIn.Dialogs
 
             Properties.Settings.Default.LogLevel = (LogEntryType)logLevelSelector.SelectedValue;
             Globals.ThisAddIn.Log.Level = Properties.Settings.Default.LogLevel;
+
+            Properties.Settings.Default.ShowExceptions = (ErrorHandler.PopupWhen)showErrorsSelector.SelectedValue;
 
             Properties.Settings.Default.DaysOldEmailToAutoArchive =
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));

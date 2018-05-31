@@ -211,6 +211,7 @@
   <ItemGroup>
     <Compile Include="BusinessLogic\CallsSynchroniser.cs" />
     <Compile Include="BusinessLogic\CallSyncState.cs" />
+    <Compile Include="BusinessLogic\ErrorHandler.cs" />
     <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
     <Compile Include="BusinessLogic\MeetingSyncState.cs" />
     <Compile Include="BusinessLogic\TransmissionState.cs" />
@@ -388,6 +389,7 @@
     </None>
     <None Include="Locale\fr_FR\LC_MESSAGES\SuiteCRMAddIn.po" />
     <None Include="packages.config" />
+    <None Include="Properties\DataSources\SuiteCRMAddIn.BusinessLogic.ErrorHandler+PopupWhen.datasource" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

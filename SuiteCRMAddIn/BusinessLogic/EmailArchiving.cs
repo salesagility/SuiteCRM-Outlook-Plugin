@@ -166,7 +166,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error($"EmailArchiving.ArchiveFolderItems; folder {folder.Name}:", ex);
+                ErrorHandler.Handle($"Failed while archiving and email item in folder {folder.Name}:", ex);
             }
         }
 
@@ -187,7 +187,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception any)
                 {
-                    Log.Error($"EmailArchiving.ArchiveFolderItems; Failed to archive MailItem '{olItem.Subject}' from '{olItem.GetSenderSMTPAddress()}", any);
+                    ErrorHandler.Handle($"Failed to archive MailItem '{olItem.Subject}' from '{olItem.GetSenderSMTPAddress()}", any);
                 }
             }
         }
@@ -280,8 +280,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.GetMailFolders", ex);
-                ;
+                ErrorHandler.Handle("Failed while trying to get mail folders", ex);
             }
         }
 

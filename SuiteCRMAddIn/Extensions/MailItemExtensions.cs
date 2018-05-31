@@ -148,8 +148,7 @@ namespace SuiteCRMAddIn.Extensions
                 }
                 catch (Exception any)
                 {
-                    Log.Error(
-                        $"MailItemExtensions.GetSenderSMTPAddress: unexpected error {any.GetType().Name} '{any.Message}'", any);
+                    ErrorHandler.Handle("Failed while trying to get the sender's SMTP address", any);
                 }
 
                 try
@@ -162,8 +161,7 @@ namespace SuiteCRMAddIn.Extensions
                 }
                 catch (Exception any)
                 {
-                    Log.Error(
-                        $"MailItemExtensions.GetSenderSMTPAddress: failed to get email address of current user: {any.GetType().Name} '{any.Message}'",
+                    ErrorHandler.Handle("Failed to get email address of current user",
                         any);
                 }
 
@@ -322,7 +320,7 @@ namespace SuiteCRMAddIn.Extensions
                     }
                     catch (Exception ex1)
                     {
-                        Log.Error("EmailArchiving.GetAttachmentBytes", ex1);
+                        ErrorHandler.Handle("Failed to get data of an email attachment", ex1);
                     }
                 }
                 finally
@@ -394,7 +392,7 @@ namespace SuiteCRMAddIn.Extensions
             }
             catch (COMException cex)
             {
-                Log.Error("Could not get property while archiving email", cex);
+                ErrorHandler.Handle("Could not get property while archiving email", cex);
             }
 
             if (olProperty == null || string.IsNullOrEmpty(olProperty.Value))
@@ -412,7 +410,7 @@ namespace SuiteCRMAddIn.Extensions
                     }
                     catch (COMException cex)
                     {
-                        Log.Error("Could not set property while archiving email", cex);
+                        ErrorHandler.Handle("Could not set property while archiving email", cex);
                     }
                 }
             }

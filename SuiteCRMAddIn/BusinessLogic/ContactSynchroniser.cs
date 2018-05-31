@@ -69,7 +69,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (System.Exception any)
             {
-                Log.Error($"Error while saving contact {olItem?.Email1Address}", any);
+                ErrorHandler.Handle($"Error while saving contact {olItem?.Email1Address}", any);
             }
         }
 
@@ -97,17 +97,17 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     catch (Exception ex)
                     {
-                        Log.Error("ContactSyncing.SyncContacts", ex);
+                        ErrorHandler.Handle("Failure while synchronising contacts", ex);
                     }
                 }
                 else
                 {
-                    Log.Warn("ContactSyncing.SyncContacts: CRM server denied access to export Contacts");
+                    Log.Warn("CRM server denied access to export Contacts");
                 }
             }
             catch (Exception ex)
             {
-                Log.Error("ContactSyncing.SyncContacts", ex);
+                ErrorHandler.Handle("Failure while synchronising contacts", ex);
             }
         }
 
@@ -412,7 +412,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error($"ContactSyncing.EnsureSynchronisationPropertyForOutlookItem: Failed to set property {name} to value {value} on item {olItem.Subject}", any);
+                ErrorHandler.Handle($"Failed to set property {name} to value {value} on Contact {olItem.FullName}", any);
             }
         }
 
@@ -429,7 +429,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.GetOutlookCItems", ex);
+                ErrorHandler.Handle("Failed while trying to index Contacts", ex);
             }
         }
 

@@ -50,6 +50,7 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsDialog));
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.dtpAutoArchiveFrom = new System.Windows.Forms.DateTimePicker();
@@ -59,6 +60,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.label7 = new System.Windows.Forms.Label();
             this.txtAutoSync = new System.Windows.Forms.TextBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.advancedArchiveSettingsButton = new System.Windows.Forms.Button();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.chkShowConfirmationMessageArchive = new System.Windows.Forms.CheckBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
@@ -109,7 +111,9 @@ namespace SuiteCRMAddIn.Dialogs
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.advancedArchiveSettingsButton = new System.Windows.Forms.Button();
+            this.showErrorsLabel = new System.Windows.Forms.Label();
+            this.showErrorsSelector = new System.Windows.Forms.ComboBox();
+            this.popupWhenBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -123,6 +127,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.synchronisationTab.SuspendLayout();
             this.InformationTabPage.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).BeginInit();
             this.SuspendLayout();
             // 
             // tabPage3
@@ -205,6 +210,16 @@ namespace SuiteCRMAddIn.Dialogs
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Archive";
             this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // advancedArchiveSettingsButton
+            // 
+            this.advancedArchiveSettingsButton.Location = new System.Drawing.Point(265, 306);
+            this.advancedArchiveSettingsButton.Name = "advancedArchiveSettingsButton";
+            this.advancedArchiveSettingsButton.Size = new System.Drawing.Size(75, 23);
+            this.advancedArchiveSettingsButton.TabIndex = 1;
+            this.advancedArchiveSettingsButton.Text = "Advanced";
+            this.advancedArchiveSettingsButton.UseVisualStyleBackColor = true;
+            this.advancedArchiveSettingsButton.Click += new System.EventHandler(this.advancedButton_Click);
             // 
             // groupBox2
             // 
@@ -617,6 +632,8 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.showErrorsSelector);
+            this.groupBox4.Controls.Add(this.showErrorsLabel);
             this.groupBox4.Controls.Add(this.logLevelHelp);
             this.groupBox4.Controls.Add(this.logLevelLabel);
             this.groupBox4.Controls.Add(this.logLevelSelector);
@@ -624,7 +641,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.groupBox4.Controls.Add(this.label11);
             this.groupBox4.Location = new System.Drawing.Point(13, 144);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(332, 138);
+            this.groupBox4.Size = new System.Drawing.Size(332, 199);
             this.groupBox4.TabIndex = 5;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Logging";
@@ -709,15 +726,27 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // advancedArchiveSettingsButton
+            // showErrorsLabel
             // 
-            this.advancedArchiveSettingsButton.Location = new System.Drawing.Point(265, 306);
-            this.advancedArchiveSettingsButton.Name = "advancedArchiveSettingsButton";
-            this.advancedArchiveSettingsButton.Size = new System.Drawing.Size(75, 23);
-            this.advancedArchiveSettingsButton.TabIndex = 1;
-            this.advancedArchiveSettingsButton.Text = "Advanced";
-            this.advancedArchiveSettingsButton.UseVisualStyleBackColor = true;
-            this.advancedArchiveSettingsButton.Click += new System.EventHandler(this.advancedButton_Click);
+            this.showErrorsLabel.AutoSize = true;
+            this.showErrorsLabel.Location = new System.Drawing.Point(6, 139);
+            this.showErrorsLabel.Name = "showErrorsLabel";
+            this.showErrorsLabel.Size = new System.Drawing.Size(67, 13);
+            this.showErrorsLabel.TabIndex = 35;
+            this.showErrorsLabel.Text = "Show Errors:";
+            // 
+            // showErrorsSelector
+            // 
+            this.showErrorsSelector.DataSource = this.popupWhenBindingSource;
+            this.showErrorsSelector.FormattingEnabled = true;
+            this.showErrorsSelector.Location = new System.Drawing.Point(186, 136);
+            this.showErrorsSelector.Name = "showErrorsSelector";
+            this.showErrorsSelector.Size = new System.Drawing.Size(140, 21);
+            this.showErrorsSelector.TabIndex = 36;
+            // 
+            // popupWhenBindingSource
+            // 
+            this.popupWhenBindingSource.DataSource = typeof(SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen);
             // 
             // SettingsDialog
             // 
@@ -763,6 +792,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.InformationTabPage.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -828,5 +858,8 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.ComboBox syncTasksMenu;
         private System.Windows.Forms.Label syncTasksLabel;
         private System.Windows.Forms.Button advancedArchiveSettingsButton;
+        private System.Windows.Forms.ComboBox showErrorsSelector;
+        private System.Windows.Forms.Label showErrorsLabel;
+        private System.Windows.Forms.BindingSource popupWhenBindingSource;
     }
 }

@@ -102,7 +102,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (System.Exception any)
             {
-                Log.Error($"Error while saving task {olItem?.Subject}", any);
+                ErrorHandler.Handle($"Failure while saving task {olItem?.Subject}", any);
             }
         }
 
@@ -127,12 +127,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("TaskSyncing.SyncFolder", ex);
+                    ErrorHandler.Handle("Failure while synchronising Tasks", ex);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error("TaskSyncing.SyncFolder", ex);
+                ErrorHandler.Handle("Failure while synchronising Tasks", ex);
             }
         }
 
@@ -293,8 +293,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             catch (Exception fail)
             {
                 /* you (sometimes? always?) can't set the start or due dates of tasks. Investigate. */
-                Log.Error(
-                    $"TaskSyncing.SetOutlookItemPropertiesFromCrmItem: Failed to set {nameOfValue} on task because {fail.Message}",
+                ErrorHandler.Handle(
+                    $"Failed to set {nameOfValue} on task",
                     fail);
             }
 
@@ -363,7 +363,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.GetOutlookTItems", ex);
+                ErrorHandler.Handle("Failed while trying to index Tasks", ex);
             }
         }
 
@@ -392,7 +392,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error($"TaskSyncing.EnsureSynchronisationPropertyForOutlookItem: Failed to set property {name} to value {value} on item {olItem.Subject}", any);
+                ErrorHandler.Handle($"Failed to set property {name} to value {value} on task {olItem.Subject}", any);
             }
         }
 

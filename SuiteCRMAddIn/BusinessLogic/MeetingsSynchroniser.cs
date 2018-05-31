@@ -82,7 +82,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error("AppointmentSyncing.SetOutlookItemDuration", any);
+                ErrorHandler.Handle("Failed while setting Outlook item duration", any);
             }
         }
 
@@ -155,7 +155,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (COMException comx)
                 {
-                    Log.Error($"Item with CRMid {state.CrmEntryId} appears to be invalid (HResult {comx.HResult})", comx);
+                    ErrorHandler.Handle($"Item with CRMid {state.CrmEntryId} appears to be invalid (HResult {comx.HResult})", comx);
                     this.HandleItemMissingFromOutlook(state);
                 }
             }
@@ -255,7 +255,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     catch (Exception any)
                     {
-                        this.Log.Error($"{this.GetType().Name}.AddOrUpdateMeetingAcceptanceFromOutlookToCRM: Failed to resolve invitee {smtpAddress}:", any);
+                        ErrorHandler.Handle($"Failed to resolve meeting invitee {smtpAddress}:", any);
                     }
                 }
             }

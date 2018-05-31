@@ -22,6 +22,7 @@
 */
 namespace SuiteCRMAddIn.Extensions
 {
+    using BusinessLogic;
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Generic;
@@ -94,8 +95,7 @@ namespace SuiteCRMAddIn.Extensions
                 }
                 catch (Exception any)
                 {
-                    Log.Error(
-                        $"MailItemExtensions.GetSenderSMTPAddress: unexpected error {any.GetType().Name} '{any.Message}'", any);
+                    ErrorHandler.Handle("Failed while trying to obtain an SMTP address", any);
                 }
             }
             smtpAddressCache[entry] = result;

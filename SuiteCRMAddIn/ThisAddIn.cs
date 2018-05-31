@@ -220,7 +220,7 @@ namespace SuiteCRMAddIn
                 {
                     /* This will fail in the case of a new installation, but that's OK. 
                      * However, log it, in case it also fails at other times. */
-                    Log.Error($"Caught {any.GetType().Name} '{any.Message}' while attempting to upgrade settings.");
+                    ErrorHandler.Handle("Failure while attempting to upgrade settings.", any);
                 }
             }
         }
@@ -302,7 +302,7 @@ namespace SuiteCRMAddIn
                 /* it's possible for both success AND disable to be true (if login to CRM fails); 
                  * but logically if success is false disable must be true, so this branch should
                  * never be reached. */
-                log.Error(
+                Log.Error(
                     catalogue.GetString(
                         "In {0}: success is {1}; disable is {2}; impossible state, disabling.",
                         "ThisAddIn.Run",
@@ -379,7 +379,7 @@ namespace SuiteCRMAddIn
         {
             foreach (var s in GetKeySettings())
             {
-                log.Error(s);
+                log.Debug(s);
             }
         }
 
@@ -415,7 +415,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.objExplorer_FolderSwitch", ex);
+                ErrorHandler.Handle($"Failure while attempting to change folder to {this.objExplorer.CurrentFolder.FolderPath}", ex);
             }
         }
 
@@ -770,7 +770,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error(catalogue.GetString("ThisAddIn.Application_ItemSend"), ex);
+                ErrorHandler.Handle(catalogue.GetString("Failed while trying to handle a sent email"), ex);
             }
         }
 
@@ -798,7 +798,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error(catalogue.GetString("ThisAddIn.Application_NewMail"), ex);
+                ErrorHandler.Handle(catalogue.GetString("Failed while trying to handle a received email"), ex);
             }
         }
 
@@ -913,7 +913,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.Authenticate", ex);
+                Log.Error("ThisAddIn.Authenticate", ex);
             }
 
             return result;

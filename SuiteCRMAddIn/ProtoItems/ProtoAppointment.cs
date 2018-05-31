@@ -133,7 +133,7 @@ namespace SuiteCRMAddIn.ProtoItems
             }
             catch (Exception any)
             {
-                Globals.ThisAddIn.Log.Error($"Failed to resolve organiser `{olItem.Organizer}` of meeting `{olItem.Subject}`", any);
+                ErrorHandler.Handle($"Failed to resolve organiser `{olItem.Organizer}` of meeting `{olItem.Subject}`", any);
             }
 
             return result;

@@ -123,7 +123,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         protected string fetchQueryPrefix;
 
-        private string _folderName;
+        private string folderName;
 
         // Keep a reference to the COM object on which we have event handlers, otherwise
         // when the reference is garbage-collected, the event-handlers are removed!
@@ -242,7 +242,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Synchroniser.AddOrUpdateItemFromOutlookToCrm", ex);
+                    ErrorHandler.Handle("Failed while trying to add or update an item from Outlook to CRM", ex);
                     syncState.SetPending(true);
                 }
                 finally
@@ -374,7 +374,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Synchroniser.AddOrUpdateItemsFromCrmToOutlook", ex);
+                    ErrorHandler.Handle($"Failed while trying to add or update {this.DefaultCrmModule} from Outlook to CRM", ex);
                 }
             }
         }
@@ -491,7 +491,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                this.Log.Error("Exception while checking for matches", any);
+                ErrorHandler.Handle($"Failure while checking for items matching id '{crmItem.id}'", any);
                 result = new List<SyncState<OutlookItemType>>();
             }
 
@@ -533,8 +533,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 var folder = GetDefaultFolder();
                 _itemsCollection = folder.Items;
-                _folderName = folder.Name;
-                Log.Debug("Adding event handlers for folder " + _folderName);
+                folderName = folder.Name;
+                Log.Debug("Adding event handlers for folder " + folderName);
                 _itemsCollection.ItemAdd += Items_ItemAdd;
                 _itemsCollection.ItemChange += Items_ItemChange;
                 _itemsCollection.ItemRemove += Items_ItemRemove;
@@ -554,40 +554,40 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected void Items_ItemAdd(object olItem)
         {
-            Log.Warn($"Outlook {_folderName} ItemAdd");
+            Log.Warn($"Outlook {folderName} ItemAdd");
             try
             {
                 OutlookItemAdded(olItem as OutlookItemType);
             }
             catch (Exception problem)
             {
-                Log.Error($"{_folderName} ItemAdd failed", problem);
+                ErrorHandler.Handle($"Failed to handle an item added to {folderName}", problem);
             }
         }
 
         protected void Items_ItemChange(object olItem)
         {
-            Log.Debug($"Outlook {_folderName} ItemChange");
+            Log.Debug($"Outlook {folderName} ItemChange");
             try
             {
                 OutlookItemChanged(olItem as OutlookItemType);
             }
             catch (Exception problem)
             {
-                Log.Error($"{_folderName} ItemChange failed", problem);
+                ErrorHandler.Handle($"Failed to handle an item modified in {folderName}", problem);
             }
         }
 
         protected void Items_ItemRemove()
         {
-            Log.Debug($"Outlook {_folderName} ItemRemove");
+            Log.Debug($"Outlook {folderName} ItemRemove");
             try
             {
                 RemoveDeletedItems();
             }
             catch (Exception problem)
             {
-                Log.Error($"{_folderName} ItemRemove failed", problem);
+                ErrorHandler.Handle($"Failed to handle item(s) removed from {folderName}", problem);
             }
         }
 
@@ -817,7 +817,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (_itemsCollection != null)
             {
-                Log.Debug("Removing event handlers for folder " + _folderName);
+                Log.Debug("Removing event handlers for folder " + folderName);
                 _itemsCollection.ItemAdd -= Items_ItemAdd;
                 _itemsCollection.ItemChange -= Items_ItemChange;
                 _itemsCollection.ItemRemove -= Items_ItemRemove;
@@ -859,7 +859,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("Synchroniser.RemoveItemAndSyncState: Exception  oItem.oItem.Delete", ex);
+                ErrorHandler.Handle($"Failed while trying to delete a {this.DefaultCrmModule} item", ex);
             }
             this.RemoveItemSyncState(syncState);
         }
@@ -927,7 +927,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             }
                             catch (BadStateTransition bst)
                             {
-                                Log.Error($"Transition exception in ResolveUnmatchedItems", bst);
+                                ErrorHandler.Handle($"Failure while seeking to resolve unmatched items", bst);
                             }
                         }
                         break;
@@ -1025,7 +1025,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error($"{prefix}: unexpected failure while checking {this.DefaultCrmModule}.", any);
+                ErrorHandler.Handle($"Unexpected failure while checking {this.DefaultCrmModule}.", any);
                 result = false;
             }
 

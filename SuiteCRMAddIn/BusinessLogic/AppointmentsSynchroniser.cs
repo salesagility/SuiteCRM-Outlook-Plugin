@@ -182,11 +182,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 try
                 {
-                    Log.Error($"Error while saving appointment {olItem?.Subject}", any);
+                    ErrorHandler.Handle($"Failure while saving appointment {olItem?.Subject}", any);
                 }
                 catch (COMException comx)
                 {
-                    Log.Error($"COM exception while trying to save appointment, appointment has probably been deleted.", comx);
+                    ErrorHandler.Handle("Failure while trying to save appointment, appointment has probably been deleted.", comx);
                 }
             }
         }
@@ -228,7 +228,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     catch (Exception any)
                     {
-                        Log.Error($"AppointmentSyncing.EnsureSynchronisationPropertyForOutlookItem: Failed to set property {name} to value {value} on item {olItem.Subject}", any);
+                        ErrorHandler.Handle($"Failed to set property {name} to value {value} on item {olItem.Subject}", any);
                     }
                     finally
                     {
@@ -238,7 +238,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error($"AppointmentSyncing.EnsureSynchronisationPropertyForOutlookItem: Failed to set property {name} to value {value} on item {olItem.Subject}", any);
+                ErrorHandler.Handle($"Failed to set property {name} to value {value} on item {olItem.Subject}", any);
             }
         }
 
@@ -355,7 +355,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error("AppointmentSyncing.SetOutlookItemDuration", any);
+                ErrorHandler.Handle("Failed while setting Outlook item duration", any);
             }
             finally
             {
@@ -544,7 +544,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.GetOutlookCalItems", ex);
+                ErrorHandler.Handle($"Failed while trying to index {this.DefaultCrmModule}", ex);
             }
         }
 
@@ -786,7 +786,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             catch (Exception any)
             {
                 /* what could possibly go wrong? */
-                this.Log.Error($"Failed in HandleItemMissingFromOutlook for CRM Id {syncState.CrmEntryId}", any);
+                ErrorHandler.Handle($"Failed while attempting to handle item missing from Outlook; CRM Id is {syncState.CrmEntryId}", any);
             }
         }
 
@@ -932,12 +932,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("AppointmentSyncing.SyncFolder: Exception", ex);
+                    ErrorHandler.Handle($"Failed while synchronising {this.DefaultCrmModule}", ex);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error("AppointmentSyncing.SyncFolder: Exception", ex);
+                ErrorHandler.Handle($"Failed while synchronising {this.DefaultCrmModule}", ex);
             }
         }
 
@@ -1098,7 +1098,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     }
                     catch (KeyNotFoundException kex)
                     {
-                        Log.Error($"Key not found while caching meeting recipients.", kex);
+                        ErrorHandler.Handle($"Email address '{record.data.GetValueAsString(AddressResolutionData.EmailAddressFieldName)}' not recognised while caching meeting recipients.", kex);
                     }
                 }
             }

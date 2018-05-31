@@ -81,7 +81,7 @@ namespace SuiteCRMAddIn.Dialogs
                 }
                 catch (Exception any)
                 {
-                    Log.Error($"Failed to parse ArchivingSearchChains value '{Properties.Settings.Default.ArchivingSearchChains}':", any);
+                    ErrorHandler.Handle($"Failed to parse Archiving Search Chains value '{Properties.Settings.Default.ArchivingSearchChains}':", any);
                 }
 
                 this.archivableEmails = selectedEmails;
@@ -326,7 +326,7 @@ namespace SuiteCRMAddIn.Dialogs
                             }
                             catch (System.Exception any)
                             {
-                                Globals.ThisAddIn.Log.Error("Failure when custom module included (3)", any);
+                                ErrorHandler.Handle("Failure when custom module included (3)", any);
 
                                 MessageBox.Show(
                                     $"An error was encountered while querying module '{item.Tag.ToString()}'. The error ('{any.Message}') has been logged",
@@ -343,10 +343,10 @@ namespace SuiteCRMAddIn.Dialogs
                         }
                     }
                 }
-                catch (System.Exception any)
+                catch (Exception any)
                 {
 #if DEBUG
-                    Log.Error("frmArchive.Search: Unexpected error while populating archive tree", any);
+                    ErrorHandler.Handle("Unexpected error while populating archive tree", any);
 #endif
                     this.tsResults.Nodes.Clear();
                 }
@@ -398,7 +398,7 @@ namespace SuiteCRMAddIn.Dialogs
             }
             catch (System.Exception any)
             {
-                Globals.ThisAddIn.Log.Error($"Failure when custom module included (1)\n\tQuery was '{queryText}'", any);
+                ErrorHandler.Handle($"Failure when custom module included (1); Query was '{queryText}'", any);
 
                 queryText = queryText.Replace("%", string.Empty);
                 try
@@ -414,7 +414,7 @@ namespace SuiteCRMAddIn.Dialogs
                 }
                 catch (Exception secondFail)
                 {
-                    Globals.ThisAddIn.Log.Error($"Failure when custom module included (2)\n\tQuery was '{queryText}'", secondFail);
+                    ErrorHandler.Handle($"Failure when custom module included (2); Query was '{queryText}'", secondFail);
                     queryResult = null;
                     throw;
                 }
