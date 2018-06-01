@@ -211,6 +211,7 @@
   <ItemGroup>
     <Compile Include="BusinessLogic\CallsSynchroniser.cs" />
     <Compile Include="BusinessLogic\CallSyncState.cs" />
+    <Compile Include="Exceptions\DuplicateCrmIdException.cs" />
     <Compile Include="BusinessLogic\ErrorHandler.cs" />
     <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
     <Compile Include="BusinessLogic\MeetingSyncState.cs" />

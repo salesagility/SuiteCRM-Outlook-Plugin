@@ -742,6 +742,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="syncState">the sync state to index.</param>
         internal void SetByCrmId<SyncStateType>(string crmId, SyncStateType syncState) where SyncStateType : SyncState
         {
+            if (this.byCrmId[crmId] != null && this.byCrmId[crmId] != syncState)
+            {
+                throw new DuplicateCrmIdException(syncState, crmId);
+            }
             this.byCrmId[crmId] = syncState;
             string outlookId = syncState?.OutlookItemEntryId;
 

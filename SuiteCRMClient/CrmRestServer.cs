@@ -156,7 +156,7 @@ namespace SuiteCRMClient
 
             if (error != null && error.IsPopulated())
             {
-                throw new CrmServerErrorException(error, payload);
+                throw new CrmServerErrorException(error, HttpUtility.UrlDecode(payload));
             }
         }
 
