@@ -65,7 +65,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             : base(name, context)
         {
             this.fetchQueryPrefix = new StringBuilder("assigned_user_id = '{0}'")
-                .Append($" where date_start > {string.Format("{0:yyyy-MM-dd HH:mm:ss}", GetStartDate())}").ToString();
+                .Append($" and date_start > '{string.Format("{0:yyyy-MM-dd HH:mm:ss}", GetStartDate())}' ") .ToString();
         }
 
         /// <summary>
