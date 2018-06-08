@@ -1,32 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="A784C437-58CF-4495-BE4A-F77657600001" Name="SuiteCRMAddIn" Language="1033" Version="3.0.11.0" Manufacturer="SalesAgility" UpgradeCode="F50E9CEB-D641-4FC6-8E16-483505C3455A">
+	<Product 
+		Id="A784C437-58CF-4495-BE4A-F77657600001" 
+		Name="SuiteCRMAddIn" 
+		Language="1033" 
+		Version="3.0.11.0" 
+		Manufacturer="SalesAgility" 
+		UpgradeCode="F50E9CEB-D641-4FC6-8E16-483505C3455A">
+
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
+		<!-- Icon for Add/Remove Programs - see 
+		http://wixtoolset.org/documentation/manual/v3/howtos/ui_and_localization/configure_arp_appearance.html -->
 		<Icon Id="favicon.ico" SourceFile="Resources\favicon.ico"/>
 		<Property Id="ARPPRODUCTICON" Value="favicon.ico" />
 		
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-
-		<Property Id="VSTORUNTIMEREDISTX32">
+		
+		<!-- Check for Visual Studio for office runtime distributable, check the one supplied with office (v4) as well as
+		the redistributable (v4R) -->
+		<Property Id="VSTORUNTIMEREDIST">
 			<RegistrySearch
-				Id="VSTORuntimeRedistX32"
+				Id="VSTORuntimeRedist"
+				Root="HKLM"
+				Key="SOFTWARE\Microsoft\VSTO Runtime Setup\v4"
+				Name="Version"
+				Type="raw" />
+		</Property>
+		<Property Id="VSTORUNTIMEREDIST_R">
+			<RegistrySearch
+				Id="VSTORuntimeRedist_r"
 				Root="HKLM"
 				Key="SOFTWARE\Microsoft\VSTO Runtime Setup\v4R"
 				Name="Version"
 				Type="raw" />
 		</Property>
-		<Property Id="VSTORUNTIMEREDISTX64">
-			<RegistrySearch
-				Id="VSTORuntimeRedistX64"
-				Root="HKLM"
-				Key="SOFTWARE\Wow6432Node\Microsoft\VSTO Runtime Setup\v4R"
-				Name="Version"
-				Type="raw" />
-		</Property>
 		<Condition Message="This application requires Visual Studio 2010 Tools for Office Runtime. Please install from
 http://www.microsoft.com/en-us/download/details.aspx?id=54251">
-			<![CDATA[Installed OR VSTORUNTIMEREDISTX86>="10.0.30319" OR VSTORUNTIMEREDISTX64>="10.0.30319"]]>
+			<![CDATA[Installed OR VSTORUNTIMEREDIST>="10.0.30319" OR VSTORUNTIMEREDIST_R>="10.0.30319"]]>
 		</Condition>
 
 		<PropertyRef Id="NETFRAMEWORK40FULL"/>
@@ -35,55 +46,63 @@ https://www.microsoft.com/en-us/download/details.aspx?id=55170">
 			<![CDATA[Installed OR NETFRAMEWORK40FULL]]>
 		</Condition>
 
+		<!-- Make sure .cab files are included in the MSI package - see
+		http://wixtoolset.org/documentation/manual/v3/xsd/wix/media.html -->
 		<MediaTemplate EmbedCab="yes"/>
 
+		<!-- Include first fragment (see below) by "ComponentRef" and second fragment by "ComponentGroupRef" -->
 		<Feature Id="ProductFeature" Title="SuiteCRM Outlook AddIn" Level="1">
+			<ComponentRef Id="SuiteCRMAddIn_vsto_Component" />
 			<ComponentGroupRef Id="ProductComponents" />
-			<ComponentRef Id="Registry_FriendlyName" />
-			<ComponentRef Id="Registry_Description" />
-			<ComponentRef Id="Registry_Manifest" />
-			<ComponentRef Id="Registry_LoadBehavior" />
 		</Feature>
 
+		<!-- Use the dialogset WixUI_InstallDir to enable installation in a different folder, see
+		http://wixtoolset.org/documentation/manual/v3/wixui/dialog_reference/wixui_installdir.html -->
 		<Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
 
 		<UIRef Id="WixUI_InstallDir" />
 		<WixVariable Id="WixUILicenseRtf" Value="lgpl-3.0.rtf" />
 		<WixVariable Id="WixUIBannerBmp" Value="Resources\banner.bmp" />
 		<WixVariable Id="WixUIDialogBmp" Value="Resources\welcome.bmp" />
+	
+		<!-- WiX produces a 32-bit installer, to make sure the addin also works for Outlook X64, copy the registry keys
+		to the corresponding X64 registry using a custom action with REG.EXE - see 
+		https://blogs.msdn.microsoft.com/gsmyth/2013/07/12/add-in-for-64-and-32-bit-office/ -->	
+		<Property Id="CopyReg64Key" 
+			Value='"REG.EXE" COPY "HKLM\Software\WoW6432Node\Microsoft\Office\Outlook\Addins\SuiteCRMAddIn" "HKLM\Software\Microsoft\Office\Outlook\Addins\SuiteCRMAddIn" /s /f /reg:64' />
+		<CustomAction Id="CopyReg64Key" Execute="deferred" Return="ignore" Impersonate="no" BinaryKey="WixCA" DllEntry="CAQuietExec" />
 
+		<Property Id="DeleteReg64Key" Value='"REG.EXE" DELETE "HKLM\Software\Microsoft\Office\Outlook\Addins\SuiteCRMAddIn" /f /reg:64' />
+		<CustomAction Id="DeleteReg64Key" Execute="deferred" Return="ignore" Impersonate="no" BinaryKey="WixCA" DllEntry="CAQuietExec" />
+	
+		<InstallExecuteSequence>
+			<Custom Action="CopyReg64Key" Before="InstallFinalize">
+				<![CDATA[$SuiteCRMAddIn_vsto_Component=3]]>
+			</Custom>
+			<Custom Action="DeleteReg64Key" Before="RemoveFiles">
+				<![CDATA[$SuiteCRMAddIn_vsto_Component=2]]>
+			</Custom>
+		</InstallExecuteSequence>
+	
 	</Product>
 
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">
-				<Directory Id="INSTALLFOLDER" Name="SuiteCRMAddIn" />
-				<Component Id="Registry_FriendlyName">
-					<RegistryValue Id="RegKey_FriendlyName" Root="HKCU"
-						Key="Software\Microsoft\Office\Outlook\AddIns\SuiteCRMAddIn"
-						Name="FriendlyName"
-						Value="SuiteCRM Outlook AddIn"
-						Type="string" KeyPath="yes" />
-				</Component>
-				<Component Id="Registry_Description">
-					<RegistryValue Id="RegKey_Description" Root="HKCU"
-						Key="Software\Microsoft\Office\Outlook\AddIns\SuiteCRMAddIn"
-						Name="Description"
-						Value="SuiteCRM Outlook AddIn"
-						Type="string" KeyPath="yes" />
-				</Component>
-				<Component Id="Registry_Manifest">
-					<RegistryValue Id="RegKey_Manifest" Root="HKCU"
-						Key="Software\Microsoft\Office\Outlook\AddIns\SuiteCRMAddIn"
-						Name="Manifest" Value="file:///[INSTALLFOLDER]SuiteCRMAddIn.vsto|vstolocal"
-						Type="string" KeyPath="yes" />
-				</Component>
-				<Component Id="Registry_LoadBehavior">
-					<RegistryValue Id="RegKey_LoadBehavior" Root="HKCU"
-						Key="Software\Microsoft\Office\Outlook\AddIns\SuiteCRMAddIn"
-						Name="LoadBehavior" Value="3"
-						Type="integer" KeyPath="yes" />
-				</Component>
+				<Directory Id="INSTALLFOLDER" Name="SuiteCRMAddIn">
+					<Component Id="SuiteCRMAddIn_vsto_Component">
+						<File Id="SuiteCRMAddIn_vsto" KeyPath="yes" Name="SuiteCRMAddIn.vsto" Source="$(var.AddinFiles)"></File>
+						<RegistryKey Root="HKLM" Key="Software\Microsoft\Office\Outlook\Addins\SuiteCRMAddIn">
+							<RegistryValue Name="FriendlyName" Value="SuiteCRM Outlook AddIn" Type="string" />
+							<RegistryValue Name="Description" Value="SuiteCRM Outlook AddIn" Type="string" />
+							<!-- Registry key for Manifest requires "file:///" - see
+							https://docs.microsoft.com/en-us/visualstudio/vsto/registry-entries-for-vsto-add-ins -->
+							<RegistryValue Name="Manifest" Value="file:///[INSTALLFOLDER]SuiteCRMAddIn.vsto|vstolocal"
+							Type="string" />
+							<RegistryValue Name="LoadBehavior" Value="3" Type="integer" />
+						</RegistryKey>
+					</Component>
+				</Directory>
 			</Directory>
 		</Directory>
 	</Fragment>
@@ -111,9 +130,6 @@ https://www.microsoft.com/en-us/download/details.aspx?id=55170">
 			<Component Id="SuiteCRMClient_dll_Component">
 				<File Id="SuiteCRMClient_dll" KeyPath="yes" Name="SuiteCRMClient.dll" Source="$(var.AddinFiles)"></File>
 			</Component>
-			<Component Id="SuiteCRMAddIn_vsto_Component">
-				<File Id="SuiteCRMAddIn_vsto" KeyPath="yes" Name="SuiteCRMAddIn.vsto" Source="$(var.AddinFiles)"></File>
-			</Component>
 			<Component Id="SuiteCRMAddIn_dll_manifest_Component">
 				<File Id="SuiteCRMAddIn_dll_manifest" KeyPath="yes" Name="SuiteCRMAddIn.dll.manifest" Source="$(var.AddinFiles)"></File>
 			</Component>
@@ -132,7 +148,6 @@ https://www.microsoft.com/en-us/download/details.aspx?id=55170">
 			<Component Id="SuiteCRMAddIn_config_Component" >
 				<File Id="SuiteCRMAddIn_config" KeyPath="yes" Name="SuiteCRMAddIn.dll.config" Source="$(var.AddinFiles)" />
 			</Component>
-
 		</ComponentGroup>
 	</Fragment>
 </Wix>
