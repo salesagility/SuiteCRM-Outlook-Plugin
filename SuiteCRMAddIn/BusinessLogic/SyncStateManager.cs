@@ -32,6 +32,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Globalization;
     using System.Linq;
     using System.Runtime.InteropServices;
+    using System.Text;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -90,6 +91,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// A dictionary of all known sync states indexed by outlook id.
         /// </summary>
         private ConcurrentDictionary<string, SyncState> byOutlookId = new ConcurrentDictionary<string, SyncState>();
+
+        /// <summary>
+        /// A dictionary of all known sync states which have global ids, indexed by global id.
+        /// </summary>
+        private ConcurrentDictionary<string, SyncState> byGlobalId = new ConcurrentDictionary<string, SyncState>();
 
         /// <summary>
         /// A dictionary of sync states indexed by crm id, where known.
@@ -365,19 +371,29 @@ namespace SuiteCRMAddIn.BusinessLogic
         public SyncState GetExistingSyncState(EntryValue crmItem)
         {
             SyncState result;
-            try
+            string outlookId = crmItem.GetValueAsString("outlook_id");
+
+            if (this.byCrmId.ContainsKey(crmItem.id))
             {
                 result = this.byCrmId[crmItem.id];
             }
-            catch (KeyNotFoundException)
+            else if (this.byOutlookId.ContainsKey(outlookId))
             {
-                try
-                {
-                    var outlookId = crmItem.GetValueAsString("outlook_id");
+                result = this.byOutlookId[outlookId];
+            }
+            else if (this.byGlobalId.ContainsKey(outlookId))
+            {
+                result = this.byGlobalId[outlookId];
+            }
+            else
+            {
+                string simulatedGlobalId = SyncStateManager.SimulateGlobalId(crmItem.id);
 
-                    result = string.IsNullOrEmpty(outlookId) ? null : this.byOutlookId[outlookId];
+                if (this.byGlobalId.ContainsKey(simulatedGlobalId))
+                {
+                    result = this.byGlobalId[simulatedGlobalId];
                 }
-                catch (KeyNotFoundException)
+                else
                 {
                     string distinctFields = GetDistinctFields(crmItem);
 
@@ -524,6 +540,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     result = this.SetByOutlookId<AppointmentSyncState>(appointment.EntryID,
                         new MeetingSyncState(appointment, crmId, modifiedDate));
                 }
+                this.byGlobalId[appointment.GlobalAppointmentID] = result;
             }
 
             if (result != null && !string.IsNullOrEmpty(crmId))
@@ -531,6 +548,80 @@ namespace SuiteCRMAddIn.BusinessLogic
                 this.byCrmId[crmId] = result;
             }
             
+            return result;
+        }
+
+        /// <summary>
+        /// Return the global appointment id corresponding to this crm id.
+        /// </summary>
+        /// <remarks>
+        /// Outlook items arriving from CRM have a global appointment id based on their CRM id.
+        /// Arguably this should not go here.
+        /// </remarks>
+        /// <see cref="Outlook.AppointmentItem.GlobalAppointmentId"/> 
+        /// <see cref="AppointmentItemExtension.GetVCalId(Outlook.AppointmentItem)"/> 
+        /// <param name="crmId">The CRM id from which the global id should be reverse engineered.</param>
+        /// <returns>The reverse-engineered global id.</returns>
+        private static string SimulateGlobalId(string crmId)
+        {
+            byte[] globalId = new byte[89];
+            byte[] header = new byte[40]
+            {
+                0x04, // 1: EOT
+                0x00,
+                0x00,
+                0x00,
+                0x82, // 5: left parenthesis
+                0x00,
+                0xE0, // 7: shift out
+                0x00,
+                0x74, // 9: G
+                0xC5, // 10: right square bracket
+                0xB7, // 11: left brace
+                0x10, // 12: start of heading
+                0x1A, // 13: ?
+                0x82, // 14: left parenthesis
+                0xE0, // 15: shift out
+                0x08, // 16: ?
+                0x00,
+                0x00,
+                0x00,
+                0x00, // 20
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00, // 25
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00, // 30
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00, // 35
+                0x00,
+                0x31, // 37: s
+                0x00,
+                0x00,
+                0x00  // 40
+            };
+
+            byte[] signature = Encoding.UTF8.GetBytes("vCal-Uid");
+            byte[] crmIdBytes = Encoding.UTF8.GetBytes(crmId);
+
+            Buffer.BlockCopy(header, 0, globalId, 0, 40);
+            Buffer.BlockCopy(signature, 0, globalId, 40, signature.Length);
+            int cursor = 40 + signature.Length;
+            globalId[cursor++] = 0x01;
+            globalId[cursor++] = 0;
+            globalId[cursor++] = 0;
+            Buffer.BlockCopy(crmIdBytes, 0, globalId, cursor, crmIdBytes.Length);
+
+            string result = Encoding.UTF8.GetString(globalId, 0, globalId.Length);
+
             return result;
         }
 

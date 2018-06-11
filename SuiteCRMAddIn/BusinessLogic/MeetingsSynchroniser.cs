@@ -199,13 +199,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
+        /// <summary>
+        /// Override: we don't do this; meetings from CRM will be received by email and if we try to directly add them we'll get the global id wrong.
+        /// </summary>
+        /// <param name="appointmentsFolder">The Outlook folder in which the item should be stored.</param>
+        /// <param name="crmType">The CRM type of the item from which values are to be taken.</param>
+        /// <param name="crmItem">The CRM item from which values are to be taken.</param>
+        /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
+        /// <returns>Aways null.</returns>
         protected override MeetingSyncState AddNewItemFromCrmToOutlook(Outlook.MAPIFolder appointmentsFolder, string crmType, EntryValue crmItem, DateTime date_start)
         {
-            var result = base.AddNewItemFromCrmToOutlook(appointmentsFolder, crmType, crmItem, date_start);
-
-            SetOutlookRecipientsFromCRM(result.OutlookItem, crmItem, result.CrmEntryId, crmType);
-
-            return result;
+            return (MeetingSyncState)null;
         }
 
         /// <summary>
