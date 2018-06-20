@@ -27,7 +27,7 @@ namespace SuiteCRMClient.Email
 
     public class ArchiveResult
     {
-        public static ArchiveResult Success(string emailId, IEnumerable<System.Exception> warnings)
+        public static ArchiveResult Success(CrmId emailId, IEnumerable<System.Exception> warnings)
         {
             return new ArchiveResult
             {
@@ -44,11 +44,11 @@ namespace SuiteCRMClient.Email
             };
         }
 
-        public string EmailId { get; set; }
+        public CrmId EmailId { get; set; }
 
         public IEnumerable<System.Exception> Problems { get; set; }
 
-        public bool IsSuccess => !string.IsNullOrEmpty(EmailId) && (Problems == null || Problems.Count() == 0);
+        public bool IsSuccess => CrmId.IsValid(EmailId) && (Problems == null || Problems.Count() == 0);
 
         public bool IsFailure => !IsSuccess;
     }

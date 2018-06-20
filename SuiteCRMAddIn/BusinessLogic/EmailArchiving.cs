@@ -299,7 +299,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        public void CreateEmailRelationshipOrFail(string emailId, CrmEntity entity)
+        public void CreateEmailRelationshipOrFail(CrmId emailId, CrmEntity entity)
         {
             var success = RestAPIWrapper.TrySetRelationship(
                 new SetRelationshipParams

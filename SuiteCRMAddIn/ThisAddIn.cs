@@ -806,9 +806,9 @@ namespace SuiteCRMAddIn
         {
             string vCalId = meetingItem.GetVCalId();
 
-            if (!string.IsNullOrEmpty(vCalId) && RestAPIWrapper.GetEntry(MeetingsSynchroniser.DefaultCrmModule, vCalId, new string[] { "id" }) != null)
+            if (CrmId.IsValid(vCalId) && RestAPIWrapper.GetEntry(MeetingsSynchroniser.DefaultCrmModule, vCalId, new string[] { "id" }) != null)
             {
-                meetingItem.GetAssociatedAppointment(false).SetCrmId(vCalId);
+                meetingItem.GetAssociatedAppointment(false).SetCrmId(CrmId.Get(vCalId));
             }
         }
 

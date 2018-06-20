@@ -25,16 +25,16 @@ namespace SuiteCRMClient
     public class CrmEntity
     {
         private readonly string _moduleName;
-        private readonly string _entityId;
+        private readonly CrmId _entityId;
 
         public CrmEntity(string moduleName, string entityId)
         {
             _moduleName = moduleName;
-            _entityId = entityId;
+            _entityId = CrmId.Get(entityId);
         }
 
         public string ModuleName { get { return _moduleName; } }
 
-        public string EntityId { get { return _entityId; } }
+        public CrmId EntityId { get { return _entityId; } }
     }
 }

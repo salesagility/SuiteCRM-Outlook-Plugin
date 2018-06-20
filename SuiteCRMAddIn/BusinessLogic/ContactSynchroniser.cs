@@ -241,8 +241,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                string crmId = olItem.GetCrmId();
-                if (string.IsNullOrEmpty(crmId)) { crmId = "[not present]"; }
+                CrmId crmId = olItem.GetCrmId();
+                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
@@ -374,7 +374,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olItem,
                     crmItem.GetValueAsString("date_modified"),
                     crmItem.GetValueAsString("sync_contact"),
-                    crmItem.GetValueAsString("id"));
+                    crmItem.id);
             }
             finally
             {
@@ -463,12 +463,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Add the Outlook item referenced by this sync state, which may not exist in CRM, to CRM.
         /// </summary>
         /// <param name="syncState">The sync state referencing the outlook item to add.</param>
-        /// <param name="entryId">The id of this item in CRM, if known (in which case I should be doing
         /// an update, not an add).</param>
         /// <returns>The id of the entry added o</returns>
-        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.ContactItem> syncState)
+        internal override CrmId AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.ContactItem> syncState)
         {
-            string result = string.Empty;
+            CrmId result = CrmId.Empty;
             var olItem = syncState.OutlookItem;
 
             if (this.ShouldAddOrUpdateItemFromOutlookToCrm(olItem))
@@ -491,9 +490,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Construct a JSON packet representing this Outlook item, and despatch it to CRM.
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
-        /// <param name="entryId">The corresponding entry id in CRM, if known.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override string ConstructAndDespatchCrmItem(Outlook.ContactItem olItem)
+        protected override CrmId ConstructAndDespatchCrmItem(Outlook.ContactItem olItem)
         {
             return RestAPIWrapper.SetEntry(new ProtoContact(olItem).AsNameValues(), this.DefaultCrmModule);
         }
@@ -507,7 +505,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="contactIdInCRM">The identifier of the contact in the CRM system</param>
         /// <param name="syncProperty">If null, set the checkbox.</param>
         /// <param name="create">If provided and false, then remove rather than creating the relationship.</param>
-        private static void EnsureSyncWithOutlookSetInCRM(string contactIdInCRM, Outlook.UserProperty syncProperty, bool create = true)
+        private static void EnsureSyncWithOutlookSetInCRM(CrmId contactIdInCRM, Outlook.UserProperty syncProperty, bool create = true)
         {
             if (syncProperty == null)
             {
@@ -533,7 +531,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.EntryID;
         }
 
-        protected override string GetCrmEntryId(Outlook.ContactItem olItem)
+        protected override CrmId GetCrmEntryId(Outlook.ContactItem olItem)
         {
             return olItem.GetCrmId();
         }

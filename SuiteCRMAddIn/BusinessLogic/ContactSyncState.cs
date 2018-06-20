@@ -29,13 +29,14 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Runtime.InteropServices;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
+    using SuiteCRMClient;
 
     /// <summary>
     /// A SyncState for Contact items.
     /// </summary>
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
-        public ContactSyncState(Outlook.ContactItem oItem, string crmId, DateTime modified) : base(oItem, crmId, modified)
+        public ContactSyncState(Outlook.ContactItem oItem, CrmId crmId, DateTime modified) : base(oItem, crmId, modified)
         {
         }
 
@@ -62,8 +63,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                string crmId = OutlookItem.GetCrmId();
-                if (string.IsNullOrEmpty(crmId)) { crmId = "[not present]"; }
+                CrmId crmId = OutlookItem.GetCrmId();
+                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
                 return $"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tFull name   : '{OutlookItem.FullName}'\n\tSensitivity : {OutlookItem.Sensitivity}";
             }

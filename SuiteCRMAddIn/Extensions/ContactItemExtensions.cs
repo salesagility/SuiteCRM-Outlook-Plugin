@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
+    using SuiteCRMClient;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -69,18 +70,11 @@ namespace SuiteCRMAddIn.Extensions
         /// </summary>
         /// <param name="olItem">The Outlook item under consideration.</param>
         /// <returns>the CRM id for this item, if known, else the empty string.</returns>
-        public static string GetCrmId(this Outlook.ContactItem olItem)
+        public static CrmId GetCrmId(this Outlook.ContactItem olItem)
         {
-            string result;
+            CrmId result;
             Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-            if (property != null)
-            {
-                result = property.Value;
-            }
-            else
-            {
-                result = string.Empty;
-            }
+            result = property != null ? CrmId.Get(property.Value) : CrmId.Empty;
 
             return result;
         }

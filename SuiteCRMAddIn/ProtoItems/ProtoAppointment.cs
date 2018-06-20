@@ -23,14 +23,14 @@ namespace SuiteCRMAddIn.ProtoItems
         private readonly int duration;
         private readonly DateTime end;
         private readonly string location;
-        private readonly string organiser;
+        private readonly CrmId organiser;
         private readonly DateTime start;
         private readonly string subject;
         private readonly string globalId;
         private readonly Outlook.OlMeetingStatus status;
         private readonly string CancelledPrefix = "CANCELLED";
         private readonly ISet<string> recipientAddresses = new HashSet<string>();
-        private string CrmEntryId;
+        private CrmId CrmEntryId;
 
 
         /// <summary>
@@ -99,9 +99,9 @@ namespace SuiteCRMAddIn.ProtoItems
         /// </summary>
         /// <param name="olItem">The Outlook item representing a meeting.</param>
         /// <returns>The id of the related user if any, else the empty string.</returns>
-        public static string TryResolveOrganiser(Outlook.AppointmentItem olItem)
+        public static CrmId TryResolveOrganiser(Outlook.AppointmentItem olItem)
         {
-            string result = string.Empty;
+            CrmId result = CrmId.Empty;
             string organiser = olItem.Organizer;
 
             try
@@ -172,7 +172,7 @@ namespace SuiteCRMAddIn.ProtoItems
             data.Add(RestAPIWrapper.SetNameValuePair("duration_minutes", (this.duration % 60).ToString()));
             data.Add(RestAPIWrapper.SetNameValuePair("duration_hours", (this.duration / 60).ToString()));
 
-            if (!string.IsNullOrEmpty(this.organiser))
+            if (CrmId.IsValid(this.organiser))
             {
                 data.Add(RestAPIWrapper.SetNameValuePair("assigned_user_id", this.organiser));
             }
@@ -180,13 +180,13 @@ namespace SuiteCRMAddIn.ProtoItems
             data.Add(RestAPIWrapper.SetNameValuePair("outlook_id", this.globalId));
             data.Add(RestAPIWrapper.SetNameValuePair("status", statusString));
 
-            if (string.IsNullOrEmpty(CrmEntryId))
+            if (CrmId.IsInvalid(CrmEntryId))
             {
                 /* A Guid can be constructed from a 32 digit hex string. The globalId is a
                  * 112 digit hex string. It appears from inspection that the least significant
                  * bytes are those that vary between examples, with the most significant bytes 
                  * being invariant in the samples we have to hand. */
-                CrmEntryId = new Guid(this.globalId.Substring(this.globalId.Length - 32)).ToString();
+                CrmEntryId = CrmId.Get(new Guid(this.globalId.Substring(this.globalId.Length - 32)).ToString());
                 data.Add(RestAPIWrapper.SetNameValuePair("new_with_id", true));
             }
 

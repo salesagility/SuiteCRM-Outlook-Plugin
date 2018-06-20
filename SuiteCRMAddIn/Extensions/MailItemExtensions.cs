@@ -445,5 +445,16 @@ namespace SuiteCRMAddIn.Extensions
                 olItem.Save();
             }
         }
+
+        /// <summary>
+        /// Ensure that I have a user property with this name and this value.
+        /// </summary>
+        /// <param name="olItem">Me</param>
+        /// <param name="propertyName">The name of the property I should have.</param>
+        /// <param name="propertyValue">The value of the property I should have.</param>
+        private static void EnsureProperty(this Outlook.MailItem olItem, string propertyName, object propertyValue)
+        {
+            EnsureProperty(olItem, propertyName, propertyValue.ToString());
+        }
     }
 }

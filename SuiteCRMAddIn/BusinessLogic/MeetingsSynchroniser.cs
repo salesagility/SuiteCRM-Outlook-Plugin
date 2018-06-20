@@ -124,7 +124,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override void SetMeetingStatus(Outlook.AppointmentItem olItem, EntryValue crmItem)
         {
-            olItem.MeetingStatus = crmItem.GetValueAsString("assigned_user_id") == RestAPIWrapper.GetUserId() ?
+            olItem.MeetingStatus = CrmId.Get(crmItem.GetValueAsString("assigned_user_id")).Equals( RestAPIWrapper.GetUserId()) ?
                 Outlook.OlMeetingStatus.olMeeting :
                 Outlook.OlMeetingStatus.olMeetingReceived;
         }
@@ -177,14 +177,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        internal override string AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
+        internal override CrmId AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
         {
-            string previousCrmId = syncState.OutlookItem.GetCrmId();
-            string result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
+            CrmId previousCrmId = syncState.OutlookItem.GetCrmId();
+            CrmId result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
 
-            if (!string.IsNullOrEmpty(result))
+            if (CrmId.IsValid(result))
             {
-                if (string.IsNullOrEmpty(previousCrmId)) /* i.e., it's new */
+                if (CrmId.IsInvalid(previousCrmId)) /* i.e., it's new */
                 {
                     if (syncState.OutlookItem.Recipients != null)
                     {
@@ -267,7 +267,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return count;
         }
 
-        private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem olItem, string meetingId)
+        private void AddMeetingRecipientsFromOutlookToCrm(Outlook.AppointmentItem olItem, CrmId meetingId)
         {
             LogItemAction(olItem, "AppointmentSyncing.AddMeetingRecipientsFromOutlookToCrm");
             foreach (Outlook.Recipient recipient in olItem.Recipients)
@@ -356,15 +356,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             else
             {
-                string meetingId = olItem.GetCrmId();
-                Dictionary<string, string> moduleIds = new Dictionary<string, string>();
+                CrmId meetingId = olItem.GetCrmId();
+                Dictionary<string, CrmId> moduleIds = new Dictionary<string, CrmId>();
 
-                if (!string.IsNullOrEmpty(meetingId))
+                if (CrmId.IsValid(meetingId))
                 {
                     foreach (string moduleName in new string[] { "Leads", "Users", ContactSynchroniser.CrmModule })
                     {
-                        string moduleId = this.GetInviteeIdBySmtpAddress(smtpAddress, moduleName);
-                        if (!string.IsNullOrEmpty(moduleId))
+                        CrmId moduleId = this.GetInviteeIdBySmtpAddress(smtpAddress, moduleName);
+                        if (CrmId.IsValid(moduleId))
                         {
                             moduleIds[moduleName] = moduleId;
                             AddressResolutionData data = new AddressResolutionData(moduleName, moduleId, smtpAddress);
@@ -375,12 +375,12 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                     if (moduleIds.ContainsKey(ContactSynchroniser.CrmModule))
                     {
-                        string accountId = RestAPIWrapper.GetRelationship(
+                        CrmId accountId = RestAPIWrapper.GetRelationship(
                             ContactSynchroniser.CrmModule,
                             moduleIds[ContactSynchroniser.CrmModule],
                             "accounts");
 
-                        if (!string.IsNullOrWhiteSpace(accountId) &&
+                        if (CrmId.IsValid(accountId) &&
                             SetCrmRelationshipFromOutlook(this, meetingId, "Accounts", accountId))
                         {
                             var data = new AddressResolutionData("Accounts", accountId, smtpAddress);
@@ -394,21 +394,21 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        private bool TryAddRecipientInModule(string moduleName, string meetingId, Outlook.Recipient recipient)
+        private bool TryAddRecipientInModule(string moduleName, CrmId meetingId, Outlook.Recipient recipient)
         {
             bool result;
-            string id = SetCrmRelationshipFromOutlook(this, meetingId, recipient, moduleName);
+            CrmId id = SetCrmRelationshipFromOutlook(this, meetingId, recipient, moduleName);
 
-            if (!string.IsNullOrWhiteSpace(id))
+            if (CrmId.IsValid(id))
             {
                 string smtpAddress = recipient.GetSmtpAddress();
 
                 this.CacheAddressResolutionData(
                     new AddressResolutionData(moduleName, id, smtpAddress));
 
-                string accountId = RestAPIWrapper.GetRelationship(ContactSynchroniser.CrmModule, id, "accounts");
+                CrmId accountId = RestAPIWrapper.GetRelationship(ContactSynchroniser.CrmModule, id, "accounts");
 
-                if (!string.IsNullOrWhiteSpace(accountId) &&
+                if (CrmId.IsValid(accountId) &&
                     SetCrmRelationshipFromOutlook(this, meetingId, "Accounts", accountId))
                 {
                     this.CacheAddressResolutionData(

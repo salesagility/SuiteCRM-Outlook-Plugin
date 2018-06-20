@@ -146,8 +146,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                string crmId = olItem.GetCrmId();
-                if (string.IsNullOrEmpty(crmId)) { crmId = "[not present]"; }
+                CrmId crmId = olItem.GetCrmId();
+                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
@@ -167,7 +167,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
-            return RestAPIWrapper.GetUserId() == crmItem.GetValueAsString("assigned_user_id");
+            // TODO: should also add or update if current user is invited.
+            return RestAPIWrapper.GetUserId().Equals(CrmId.Get(crmItem.GetValueAsString("assigned_user_id")));
         }
 
         protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, string crmType, EntryValue crmItem)
@@ -342,7 +343,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem)
+        protected override CrmId ConstructAndDespatchCrmItem(Outlook.TaskItem olItem)
         {
             return RestAPIWrapper.SetEntry(new ProtoTask(olItem).AsNameValues(), this.DefaultCrmModule);
         }
@@ -407,7 +408,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.EntryID;
         }
 
-        protected override string GetCrmEntryId(Outlook.TaskItem olItem)
+        protected override CrmId GetCrmEntryId(Outlook.TaskItem olItem)
         {
             return olItem.GetCrmId();
         }

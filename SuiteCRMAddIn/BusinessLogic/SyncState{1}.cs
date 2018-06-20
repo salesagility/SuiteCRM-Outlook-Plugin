@@ -28,6 +28,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Collections.Generic;
+    using SuiteCRMClient;
 
     /// <summary>
     /// The sync state of an item of the specified type.
@@ -102,7 +103,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         protected string outlookItemId;
 
-        public SyncState(ItemType item, string crmId, DateTime modifiedDate)
+        public SyncState(ItemType item, CrmId crmId, DateTime modifiedDate)
         {
             this.OutlookItem = item;
             this.CrmEntryId = crmId;
@@ -396,7 +397,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// and its CRM entry ID to this crmEntryId, and recache its Outlook item.
         /// </summary>
         /// <param name="crmEntryId">The id of the object in CRM.</param>
-        internal void SetSynced(string crmEntryId)
+        internal void SetSynced(CrmId crmEntryId)
         {
             this.SetSynced();
             this.CrmEntryId = crmEntryId;

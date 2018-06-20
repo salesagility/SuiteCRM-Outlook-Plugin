@@ -37,7 +37,7 @@ namespace SuiteCRMClient.RESTObjects
         private Dictionary<string, object> map;
 
         [JsonProperty("id")]
-        public string id { get; set; }
+        public CrmId id { get; set; }
         [JsonProperty("module_name")]
         public string module_name { get; set; }
         private JObject name_value_objectField;

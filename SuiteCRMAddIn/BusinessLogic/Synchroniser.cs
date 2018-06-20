@@ -193,9 +193,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="syncState">The sync state.</param>
         /// <returns>The id of the entry added or updated.</returns>
-        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState)
+        internal virtual CrmId AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState)
         {
-            string result = string.Empty;
+            CrmId result = CrmId.Empty;
 
             if (this.ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem))
             {
@@ -212,7 +212,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             syncState.SetTransmitted();
 
                             result = ConstructAndDespatchCrmItem(olItem);
-                            if (!string.IsNullOrEmpty(result))
+                            if (CrmId.IsValid(result))
                             {
                                 var utcNow = DateTime.UtcNow;
                                 EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), this.DefaultCrmModule, result);
@@ -389,7 +389,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected abstract string ConstructAndDespatchCrmItem(OutlookItemType olItem);
+        protected abstract CrmId ConstructAndDespatchCrmItem(OutlookItemType olItem);
 
         /// <summary>
         /// Every Outlook item which is to be synchronised must have a property SOModifiedDate,
@@ -401,7 +401,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="modifiedDate">The value for the SOModifiedDate property.</param>
         /// <param name="type">The value for the SType property (CRM module name).</param>
         /// <param name="entryId">The value for the SEntryId property (CRM item id).</param>
-        protected void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, string modifiedDate, string type, string entryId)
+        protected void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, string modifiedDate, string type, CrmId entryId)
         {
             try
             {
@@ -409,7 +409,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
 
-                if (!string.IsNullOrEmpty(entryId))
+                if (CrmId.IsValid(entryId))
                 {
                     SyncStateManager.Instance.SetByCrmId(entryId, SyncStateManager.Instance.GetOrCreateSyncState(olItem));
                 }
@@ -449,7 +449,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olItem,
                 crmItem.GetValueAsString("date_modified"),
                 type,
-                crmItem.GetValueAsString("id"));
+                crmItem.id);
         }
 
         /// <summary>
@@ -462,7 +462,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="modifiedDate">The value for the SOModifiedDate property.</param>
         /// <param name="type">The value for the SType property.</param>
         /// <param name="entryId">The value for the SEntryId property.</param>
-        protected void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, DateTime modifiedDate, string type, string entryId)
+        protected void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, DateTime modifiedDate, string type, CrmId entryId)
         {
             this.EnsureSynchronisationPropertiesForOutlookItem(olItem, modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"), type, entryId);
         }
@@ -474,6 +474,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
         protected abstract void EnsureSynchronisationPropertyForOutlookItem(OutlookItemType olItem, string name, string value);
+
+        protected void EnsureSynchronisationPropertyForOutlookItem(OutlookItemType olItem, string name, CrmId value)
+        {
+            this.EnsureSynchronisationPropertyForOutlookItem(olItem, name, value.ToString());
+        }
 
         /// <summary>
         /// Find any existing Outlook items which appear to be identical to this CRM item.
@@ -503,7 +508,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The item whose id is saught.</param>
         /// <returns>The id, or null if it is not known.</returns>
-        protected abstract string GetCrmEntryId(OutlookItemType olItem);
+        protected abstract CrmId GetCrmEntryId(OutlookItemType olItem);
 
         /// <summary>
         /// Fetch the page of entries from this module starting at this offset.

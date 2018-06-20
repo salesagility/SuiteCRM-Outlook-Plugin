@@ -44,7 +44,7 @@ namespace SuiteCRMAddIn.ProtoItems
 
         private string status;
         private string subject;
-        private string crmEntryId;
+        private CrmId crmEntryId;
 
         public override string Description
         {
@@ -198,9 +198,10 @@ namespace SuiteCRMAddIn.ProtoItems
             data.Add(RestAPIWrapper.SetNameValuePair("date_start", this.dateStart));
             data.Add(RestAPIWrapper.SetNameValuePair("priority", this.priority));
 
-            data.Add(String.IsNullOrEmpty(crmEntryId) ?
-                RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()) :
-                RestAPIWrapper.SetNameValuePair("id", crmEntryId));
+            data.Add(CrmId.IsValid(crmEntryId) ?
+                RestAPIWrapper.SetNameValuePair("id", crmEntryId) :
+                RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()));
+
             return data;
         }
 

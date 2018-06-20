@@ -28,13 +28,14 @@ namespace SuiteCRMAddIn.BusinessLogic
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Runtime.InteropServices;
     using SuiteCRMClient.RESTObjects;
+    using SuiteCRMClient;
 
     /// <summary>
     /// A SyncState for Contact items.
     /// </summary>
     public class TaskSyncState: SyncState<Outlook.TaskItem>
     {
-        public TaskSyncState(Outlook.TaskItem item, string crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
+        public TaskSyncState(Outlook.TaskItem item, CrmId crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
         {
         }
 

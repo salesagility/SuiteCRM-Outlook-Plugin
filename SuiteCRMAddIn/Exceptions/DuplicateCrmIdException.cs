@@ -1,4 +1,5 @@
 ﻿using SuiteCRMAddIn.BusinessLogic;
+using SuiteCRMClient;
 using System;
 using System.Runtime.Serialization;
 
@@ -16,7 +17,7 @@ namespace SuiteCRMAddIn.Exceptions
         {
         }
 
-        public DuplicateCrmIdException(SyncState syncState, string id) : base($"Shouldn't happen: more than one Outlook object with CRM id '{id}' ({syncState.Description})")
+        public DuplicateCrmIdException(SyncState syncState, CrmId id) : base($"Shouldn't happen: more than one Outlook object with CRM id '{id}' ({syncState.Description})")
         {
         }
 
