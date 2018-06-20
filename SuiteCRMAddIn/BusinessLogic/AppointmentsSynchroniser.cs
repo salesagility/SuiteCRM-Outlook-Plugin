@@ -64,6 +64,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public AppointmentsSynchroniser(string name, SyncContext context)
             : base(name, context)
         {
+            // TODO: Also need to fetch appointments to which the current user is invited.
             this.fetchQueryPrefix = new StringBuilder("assigned_user_id = '{0}'")
                 .Append($" and date_start > '{string.Format("{0:yyyy-MM-dd HH:mm:ss}", GetStartDate())}' ") .ToString();
         }
@@ -157,7 +158,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     var crmId = olItem.GetCrmId();
                     Log.Debug($"OutlookItemChanged, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
 
-                    if (olItem != null && olItem.IsCall())
+                    if (olItem.IsCall())
                     {
                         base.OutlookItemChanged<CallSyncState>(olItem, Globals.ThisAddIn.CallsSynchroniser);
                     }
@@ -207,7 +208,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Prefix for meetings which have been canceled.
         /// </summary>
-        private static readonly string CanceledPrefix = "CANCELED";
+        private const string CanceledPrefix = "CANCELED";
 
 
         /// <summary>
@@ -220,11 +221,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                Outlook.UserProperty olProperty = olItem.UserProperties[name];
-                if (olProperty == null)
-                {
-                    olProperty = olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
-                }
+                Outlook.UserProperty olProperty = olItem.UserProperties[name] ?? olItem.UserProperties.Add(name, Outlook.OlUserPropertyType.olText);
+
                 if (!olProperty.Value.Equals(value))
                 {
                     try
@@ -294,13 +292,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="appointmentsFolder">The Outlook folder in which the item should be stored.</param>
         /// <param name="crmType">The CRM type of the item from which values are to be taken.</param>
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
-        /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
+        /// <param name="dateStart">The state date/time of the item, adjusted for timezone.</param>
         /// <returns>A sync state object for the new item.</returns>
         protected virtual SyncStateType AddNewItemFromCrmToOutlook(
             Outlook.MAPIFolder appointmentsFolder,
             string crmType,
             EntryValue crmItem,
-            DateTime date_start)
+            DateTime dateStart)
         {
             SyncStateType newState = null;
             Outlook.AppointmentItem olItem = null;
@@ -333,7 +331,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
                 if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
                 {
-                    olItem.Start = date_start;
+                    olItem.Start = dateStart;
                     SetOutlookItemDuration(crmType, crmItem, olItem);
                 }
             }
@@ -379,7 +377,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Set this outlook item's duration from this CRM item.
         /// </summary>
-        /// <param name="crmType">The type of the CRM item.</param>
         /// <param name="crmItem">The CRM item.</param>
         /// <param name="olItem">The Outlook item.</param>
         protected virtual void SetOutlookItemDuration(EntryValue crmItem, Outlook.AppointmentItem olItem)
@@ -636,9 +633,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                         if (withoutCrmId.Any())
                         {
                             result = withoutCrmId.ElementAt(0) as SyncStateType;
-                            result.CrmEntryId = crmId;
-                            result.OutlookItem.SetCrmId(crmId);
-                            this.UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, result);
+                            if (result != null)
+                            {
+                                result.CrmEntryId = crmId;
+                                result.OutlookItem.SetCrmId(crmId);
+                                this.UpdateExistingOutlookItemFromCrm(crmType, crmItem, dateStart, result);
+                            }
                         }
                         else
                         {
@@ -675,7 +675,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     Properties.Settings.Default.SyncMaxRecords,
                     "date_entered DESC", 0, false, null);
 
-                if (entries.entry_list.Count() > 0)
+                if (entries.entry_list.Any())
                 {
                     this.HandleItemMissingFromOutlook(entries.entry_list[0], syncState, syncState.CrmType);
                 }
@@ -716,7 +716,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             where T : class
             where S : SyncState<T>
         {
-            return this.SetCrmRelationshipFromOutlook<T, S>(sync, meetingId, resolution.moduleName, resolution.moduleId);
+            return this.SetCrmRelationshipFromOutlook<T, S>(sync, meetingId, resolution.ModuleName, resolution.ModuleId);
         }
 
 
@@ -732,21 +732,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             where T : class
             where S : SyncState<T>
         {
-            bool result = false;
-
-            if (CrmId.IsValid(foreignId))
-            {
-                SetRelationshipParams info = new SetRelationshipParams
+            return CrmId.IsValid(foreignId) &&
+                RestAPIWrapper.SetRelationshipUnsafe(new SetRelationshipParams
                 {
                     module2 = sync.DefaultCrmModule,
                     module2_id = meetingId,
                     module1 = foreignModule,
                     module1_id = foreignId
-                };
-                result = RestAPIWrapper.SetRelationshipUnsafe(info);
-            }
-
-            return result;
+                });
         }
 
 
@@ -807,14 +800,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override bool IsMatch(Outlook.AppointmentItem olItem, EntryValue crmItem)
         {
-            var crmItemStart = crmItem.GetValueAsDateTime("date_start");
-            var crmItemName = crmItem.GetValueAsString("name");
-
-            var olItemStart = olItem.Start;
-            var subject = olItem.Subject;
-
-            return subject == crmItemName &&
-                olItemStart == crmItemStart;
+            return olItem.Subject == crmItem.GetValueAsString("name") &&
+                   crmItem.GetValueAsDateTime("date_start") == olItem.Start;
         }
 
         /// <summary>
@@ -837,6 +824,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             int found = 0;
             /* typical Microsoft, you can only remove a user property by its 1-based number */
+
             for (int i = 1; i <= olItem.UserProperties.Count; i++)
             {
                 if (olItem.UserProperties[i].Name == name)
@@ -960,13 +948,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="crmType">The CRM type of the item from which values are to be taken.</param>
         /// <param name="crmItem">The CRM item from which values are to be taken.</param>
-        /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
+        /// <param name="dateStart">The state date/time of the item, adjusted for timezone.</param>
         /// <param name="syncState">The outlook item assumed to correspond with the CRM item.</param>
         /// <returns>An appropriate sync state.</returns>
         private SyncState<Outlook.AppointmentItem> UpdateExistingOutlookItemFromCrm(
             string crmType, 
             EntryValue crmItem, 
-            DateTime date_start, 
+            DateTime dateStart, 
             SyncState<Outlook.AppointmentItem> syncState)
         {
             LogItemAction(syncState.OutlookItem, "AppointmentSyncing.UpdateExistingOutlookItemFromCrm");
@@ -984,7 +972,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         olItem.Body = crmItem.GetValueAsString("description");
                         if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
                         {
-                            UpdateOutlookDetails(crmType, crmItem, date_start, olItem);
+                            UpdateOutlookDetails(crmType, crmItem, dateStart, olItem);
                         }
 
                         EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
@@ -1064,11 +1052,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="record">The record.</param>
         protected void CacheAddressResolutionData(string moduleName, LinkRecord record)
         {
-            Dictionary<string, object> data = record.data.AsDictionary();
-            string smtpAddress = data[AddressResolutionData.EmailAddressFieldName].ToString();
-            AddressResolutionData resolution = new AddressResolutionData(moduleName, data);
-
-            CacheAddressResolutionData(resolution);
+            CacheAddressResolutionData(
+                new AddressResolutionData(moduleName, 
+                    record.data.AsDictionary()));
         }
 
         /// <summary>
@@ -1079,22 +1065,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             List<AddressResolutionData> resolutions;
 
-            if (this.meetingRecipientsCache.ContainsKey(resolution.emailAddress))
+            if (this.meetingRecipientsCache.ContainsKey(resolution.EmailAddress))
             {
-                resolutions = this.meetingRecipientsCache[resolution.emailAddress];
+                resolutions = this.meetingRecipientsCache[resolution.EmailAddress];
             }
             else
             {
                 resolutions = new List<AddressResolutionData>();
-                this.meetingRecipientsCache[resolution.emailAddress] = resolutions;
+                this.meetingRecipientsCache[resolution.EmailAddress] = resolutions;
             }
 
-            if (!resolutions.Any(x => x.moduleId == resolution.moduleId && x.moduleName == resolution.moduleName))
+            if (!resolutions.Any(x => x.ModuleId == resolution.ModuleId && x.ModuleName == resolution.ModuleName))
             {
                 resolutions.Add(resolution);
             }
 
-            Log.Debug($"Successfully cached recipient {resolution.emailAddress} => {resolution.moduleName}, {resolution.moduleId}.");
+            Log.Debug($"Successfully cached recipient {resolution.EmailAddress} => {resolution.ModuleName}, {resolution.ModuleId}.");
         }
 
 
@@ -1143,15 +1129,15 @@ namespace SuiteCRMAddIn.BusinessLogic
             /// <summary>
             /// The email address resolved by this data.
             /// </summary>
-            public readonly string emailAddress;
+            public readonly string EmailAddress;
             /// <summary>
             /// The name of the CRM module to which it resolves.
             /// </summary>
-            public readonly string moduleName;
+            public readonly string ModuleName;
             /// <summary>
             /// The id within that module of the record to which it resolves.
             /// </summary>
-            public readonly CrmId moduleId;
+            public readonly CrmId ModuleId;
 
             /// <summary>
             /// The id within the `Accounts` module of a related record, if any.
@@ -1160,16 +1146,16 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             public AddressResolutionData(string moduleName, CrmId moduleId, string emailAddress)
             {
-                this.moduleName = moduleName;
-                this.moduleId = moduleId;
-                this.emailAddress = emailAddress;
+                this.ModuleName = moduleName;
+                this.ModuleId = moduleId;
+                this.EmailAddress = emailAddress;
             }
 
             public AddressResolutionData(string moduleName, Dictionary<string, object> data)
             {
-                this.moduleName = moduleName;
-                this.moduleId = CrmId.Get(data[ModuleIdFieldName]);
-                this.emailAddress = data[EmailAddressFieldName]?.ToString();
+                this.ModuleName = moduleName;
+                this.ModuleId = CrmId.Get(data[ModuleIdFieldName]);
+                this.EmailAddress = data[EmailAddressFieldName]?.ToString();
                 try
                 {
                     this.accountId = data[AccountIdFieldName]?.ToString();

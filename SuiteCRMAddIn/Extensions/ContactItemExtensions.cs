@@ -24,11 +24,6 @@ namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
     using SuiteCRMClient;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -57,11 +52,7 @@ namespace SuiteCRMAddIn.Extensions
         /// <param name="name">The name of the property to remove.</param>
         public static void ClearUserProperty(this Outlook.ContactItem olItem, string name)
         {
-            Outlook.UserProperty olProperty = olItem.UserProperties[name];
-            if (olProperty != null)
-            {
-                olProperty.Delete();
-            }
+            olItem.UserProperties[name]?.Delete();
         }
 
 
@@ -72,9 +63,8 @@ namespace SuiteCRMAddIn.Extensions
         /// <returns>the CRM id for this item, if known, else the empty string.</returns>
         public static CrmId GetCrmId(this Outlook.ContactItem olItem)
         {
-            CrmId result;
             Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-            result = property != null ? CrmId.Get(property.Value) : CrmId.Empty;
+            CrmId result = property != null ? CrmId.Get(property.Value) : CrmId.Empty;
 
             return result;
         }

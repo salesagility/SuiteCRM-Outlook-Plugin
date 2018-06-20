@@ -259,7 +259,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     try
                     {
-                        RestAPIWrapper.SetMeetingAcceptance(meetingId.ToString(), resolution.moduleName, resolution.moduleId, acceptance);
+                        RestAPIWrapper.SetMeetingAcceptance(meetingId.ToString(), resolution.ModuleName, resolution.ModuleId, acceptance);
                         count++;
                     }
                     catch (Exception any)
