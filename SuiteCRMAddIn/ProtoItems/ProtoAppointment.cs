@@ -85,7 +85,7 @@ namespace SuiteCRMAddIn.ProtoItems
             }
             else
             {
-                this.organiser = organiserProperty.Value.ToString();
+                this.organiser = CrmId.Get(organiserProperty.Value.ToString());
             }
 
             foreach (Outlook.Recipient recipient in olItem.Recipients)

@@ -89,6 +89,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// It's arguable that specialisations of this class ought to be singletons, but currently they are not.
     /// </remarks>
     /// <typeparam name="OutlookItemType">The class of item that I am responsible for synchronising.</typeparam>
+    /// <typeparam name="SyncStateType">An appropriate sync state type for my <see cref="OutlookItemType"/></typeparam>
     public abstract class Synchroniser<OutlookItemType, SyncStateType> : Synchroniser, IDisposable
         where OutlookItemType : class
         where SyncStateType : SyncState<OutlookItemType>
@@ -407,10 +408,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName, modifiedDate);
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
-                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
 
                 if (CrmId.IsValid(entryId))
                 {
+                    EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
                     SyncStateManager.Instance.SetByCrmId(entryId, SyncStateManager.Instance.GetOrCreateSyncState(olItem));
                 }
             }
@@ -449,7 +450,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olItem,
                 crmItem.GetValueAsString("date_modified"),
                 type,
-                crmItem.id);
+                crmItem.CrmId);
         }
 
         /// <summary>

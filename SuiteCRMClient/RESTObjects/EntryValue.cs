@@ -36,8 +36,13 @@ namespace SuiteCRMClient.RESTObjects
         /// </summary>
         private Dictionary<string, object> map;
 
+        /// <summary>
+        /// Convenience property to get my id as a CrmId object.
+        /// </summary>
+        public CrmId CrmId => CrmId.Get(id);
+
         [JsonProperty("id")]
-        public CrmId id { get; set; }
+        public string id { get; set; }
         [JsonProperty("module_name")]
         public string module_name { get; set; }
         private JObject name_value_objectField;

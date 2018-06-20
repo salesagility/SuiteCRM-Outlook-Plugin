@@ -87,10 +87,10 @@ namespace SuiteCRMAddIn.BusinessLogic
             Log.Debug($"AppointmentSyncing.GetID: query = `{query}`");
 
             string[] fields = { "id" };
-            EntryList _result = RestAPIWrapper.GetEntryList(moduleName, query, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
+            EntryList entries = RestAPIWrapper.GetEntryList(moduleName, query, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fields);
 
-            return _result.result_count > 0 ?
-                CrmId.Get(RestAPIWrapper.GetValueByKey(_result.entry_list[0], "id")) : 
+            return entries.result_count > 0 ?
+                CrmId.Get(RestAPIWrapper.GetValueByKey(entries.entry_list[0], "id")) : 
                 CrmId.Empty;
         }
 
@@ -112,7 +112,16 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                     if (CrmId.IsValid(crmId))
                     {
-                        // TODO!
+                        AppointmentSyncState existing =
+                            SyncStateManager.Instance.GetExistingSyncState(string.Empty, crmId) as AppointmentSyncState;
+
+                        /* we have an existing item with the same CRM id: suspicious */
+                        if (existing != null && existing.OutlookItem.GetVCalId() != crmId.ToString())
+                        {
+                            /* OK, its GlobalAppointmentId is wrong, it must have come via sync. Delete it. */
+                            Log.Debug($"Apparent case of item synced from CRM and then received via email/vCal. CRM id is {crmId}. Deleting bad copy.");
+                            this.RemoveItemAndSyncState(existing);
+                        }
                     }
 
                     Log.Debug($"OutlookItemAdded, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
@@ -623,7 +632,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     else
                     {
                         var withoutCrmId = matches.Where(x => CrmId.IsInvalid(x.CrmEntryId)).ToList();
-                        var crmId = crmItem.id;
+                        var crmId = crmItem.CrmId;
                         if (withoutCrmId.Any())
                         {
                             result = withoutCrmId.ElementAt(0) as SyncStateType;

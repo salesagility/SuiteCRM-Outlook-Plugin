@@ -374,7 +374,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olItem,
                     crmItem.GetValueAsString("date_modified"),
                     crmItem.GetValueAsString("sync_contact"),
-                    crmItem.id);
+                    crmItem.CrmId);
             }
             finally
             {

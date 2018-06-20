@@ -147,11 +147,16 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 try
                 {
-                    if (item.UserProperties[OrganiserPropertyName]?.Value == RestAPIWrapper.GetUserId() &&
+                    if (CrmId.Get(item.UserProperties[OrganiserPropertyName]?.Value)
+                            .Equals(RestAPIWrapper.GetUserId()) &&
                         item.Start > DateTime.Now)
                     {
                         result += AddOrUpdateMeetingAcceptanceFromOutlookToCRM(item);
                     }
+                }
+                catch (TypeInitializationException tix)
+                {
+                    Log.Warn("Failed to create CrmId with value '{item.UserProperties[OrganiserPropertyName]?.Value}'", tix);
                 }
                 catch (COMException comx)
                 {

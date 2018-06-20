@@ -196,7 +196,7 @@ namespace SuiteCRMClient
             
             if (list.entry_list != null && list.entry_list.Any())
             {
-                result = list.entry_list[0].id;
+                result = list.entry_list[0].CrmId;
             }
 
             return result;
@@ -216,7 +216,7 @@ namespace SuiteCRMClient
 
             if (list?.entry_list != null && list.entry_list.Count() > 0)
             {
-                result = list.entry_list[0].id;
+                result = list.entry_list[0].CrmId;
             }
 
             return result;
@@ -340,7 +340,7 @@ namespace SuiteCRMClient
             try
             {
                 EntryValue[] entries = RestAPIWrapper.GetRelationships(MainModule, ID, ModuleToFind, new string[] { "id" });
-                result = entries.Length > 0 ? entries[0].id : CrmId.Empty;
+                result = entries.Length > 0 ? entries[0].CrmId : CrmId.Empty;
             }
             catch (System.Exception)
             {

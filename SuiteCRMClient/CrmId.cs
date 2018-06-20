@@ -27,15 +27,27 @@ namespace SuiteCRMClient
         private CrmId()
         {
             crmId = string.Empty;
-            CrmId.Issued[string.Empty] = this;
         }
 
-        private CrmId(string id)
+        /// <summary>
+        /// Create a new instance of a CrmId with this id.
+        /// </summary>
+        /// <remarks>
+        /// This has to be public so that the JSON deserialiser can use it - but don't use it
+        /// otherwise
+        /// </remarks>
+        /// <param name="id"></param>
+        public CrmId(string id)
         {
             if (IsValid(id))
+            {
                 crmId = id;
+                Issued[id] = this;
+            }
             else
+            {
                 throw new TypeInitializationException($"'{id}' does not appear to be a valid CRM id.", null);
+            }
         }
 
         public int CompareTo(object obj)
@@ -114,9 +126,11 @@ namespace SuiteCRMClient
         /// <exception cref="TypeInitializationException"> if `value` does not appear to be a valid CRM id.</exception>
         public static CrmId Get(string value)
         {
-            return CrmId.Issued.ContainsKey(value) ?
-                CrmId.Issued[value]:
-                new CrmId(value);
+            return string.IsNullOrEmpty(value) ?
+                CrmId.Empty :
+                CrmId.Issued.ContainsKey(value) ?
+                    CrmId.Issued[value]:
+                    new CrmId(value);
         }
 
         /// <summary>

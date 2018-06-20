@@ -265,7 +265,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olItem.Body = string.Concat(body, "#<", timeStart, "#", timeDue);
                 olItem.Status = GetStatus(crmItem.GetValueAsString("status"));
                 olItem.Importance = GetImportance(crmItem.GetValueAsString("priority"));
-                EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.GetValueAsString("date_modified"), DefaultCrmModule, crmItem.id);
+                EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.GetValueAsString("date_modified"), DefaultCrmModule, crmItem.CrmId);
             }
             finally
             {
