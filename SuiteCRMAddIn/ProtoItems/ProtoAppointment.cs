@@ -32,6 +32,7 @@ namespace SuiteCRMAddIn.ProtoItems
         private readonly ISet<string> recipientAddresses = new HashSet<string>();
         private CrmId CrmEntryId;
 
+        private readonly Outlook.AppointmentItem olItem;
 
         /// <summary>
         /// Readonly access to an ordered list of my recipient addresses.
@@ -59,6 +60,7 @@ namespace SuiteCRMAddIn.ProtoItems
         /// <param name="olItem">The Outlook item to take values from.</param>
         public ProtoAppointment(Outlook.AppointmentItem olItem)
         {
+            this.olItem = olItem;
             this.body = olItem.Body;
             this.CrmEntryId = olItem.GetCrmId();
             this.duration = olItem.Duration;
@@ -76,7 +78,7 @@ namespace SuiteCRMAddIn.ProtoItems
             {
                 if (olItem.Organizer == clsGlobals.GetCurrentUsername())
                 {
-                    this.organiser = RestAPIWrapper.GetUserId();
+                    this.organiser = CrmId.Get(RestAPIWrapper.GetUserId());
                 }
                 else
                 {
@@ -117,7 +119,7 @@ namespace SuiteCRMAddIn.ProtoItems
 
                             try
                             {
-                                result = RestAPIWrapper.GetUserId(new MailAddress(address));
+                                result = CrmId.Get(RestAPIWrapper.GetUserId(new MailAddress(address)));
                             }
                             catch (FormatException)
                             {
@@ -128,7 +130,7 @@ namespace SuiteCRMAddIn.ProtoItems
                 }
                 else
                 {
-                    result = RestAPIWrapper.GetUserId(organiser);
+                    result = CrmId.Get(RestAPIWrapper.GetUserId(organiser));
                 }
             }
             catch (Exception any)
@@ -144,11 +146,9 @@ namespace SuiteCRMAddIn.ProtoItems
         /// AsNameValues is used in transmission to CRM as well as for comparison, so it should NOT
         /// access our cache of recipient addresses.
         /// </summary>
-        /// <param name="entryId">The CRM entry Id of the object represented.</param>
         /// <returns>A set of name/value pairs suitable for transmitting to CRM.</returns>
         public override NameValueCollection AsNameValues()
         {
-            NameValueCollection data = new NameValueCollection();
             string statusString;
             string name;
 
@@ -164,21 +164,25 @@ namespace SuiteCRMAddIn.ProtoItems
                     break;
             }
 
-            data.Add(RestAPIWrapper.SetNameValuePair("name", name));
-            data.Add(RestAPIWrapper.SetNameValuePair("description", this.body));
-            data.Add(RestAPIWrapper.SetNameValuePair("location", this.location));
-            data.Add(RestAPIWrapper.SetNameValuePair("date_start", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.start.ToUniversalTime())));
-            data.Add(RestAPIWrapper.SetNameValuePair("date_end", string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.end.ToUniversalTime())));
-            data.Add(RestAPIWrapper.SetNameValuePair("duration_minutes", (this.duration % 60).ToString()));
-            data.Add(RestAPIWrapper.SetNameValuePair("duration_hours", (this.duration / 60).ToString()));
+            NameValueCollection data = new NameValueCollection
+            {
+                RestAPIWrapper.SetNameValuePair("name", name),
+                RestAPIWrapper.SetNameValuePair("description", this.body),
+                RestAPIWrapper.SetNameValuePair("location", this.location),
+                RestAPIWrapper.SetNameValuePair("date_start",
+                    string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.start.ToUniversalTime())),
+                RestAPIWrapper.SetNameValuePair("date_end",
+                    string.Format("{0:yyyy-MM-dd HH:mm:ss}", this.end.ToUniversalTime())),
+                RestAPIWrapper.SetNameValuePair("duration_minutes", (this.duration % 60).ToString()),
+                RestAPIWrapper.SetNameValuePair("duration_hours", (this.duration / 60).ToString()),
+                RestAPIWrapper.SetNameValuePair("outlook_id", this.globalId),
+                RestAPIWrapper.SetNameValuePair("status", statusString)
+            };
 
             if (CrmId.IsValid(this.organiser))
             {
-                data.Add(RestAPIWrapper.SetNameValuePair("assigned_user_id", this.organiser));
+                data.Add(RestAPIWrapper.SetNameValuePair("assigned_user_id", this.organiser.ToString()));
             }
-
-            data.Add(RestAPIWrapper.SetNameValuePair("outlook_id", this.globalId));
-            data.Add(RestAPIWrapper.SetNameValuePair("status", statusString));
 
             if (CrmId.IsInvalid(CrmEntryId))
             {
@@ -186,11 +190,11 @@ namespace SuiteCRMAddIn.ProtoItems
                  * 112 digit hex string. It appears from inspection that the least significant
                  * bytes are those that vary between examples, with the most significant bytes 
                  * being invariant in the samples we have to hand. */
-                CrmEntryId = CrmId.Get(new Guid(this.globalId.Substring(this.globalId.Length - 32)).ToString());
+                CrmEntryId = CrmId.Get(new Guid(this.globalId.Substring(this.globalId.Length - 32)));
                 data.Add(RestAPIWrapper.SetNameValuePair("new_with_id", true));
             }
 
-            data.Add(RestAPIWrapper.SetNameValuePair("id", CrmEntryId));
+            data.Add(RestAPIWrapper.SetNameValuePair("id", CrmEntryId.ToString()));
 
             return data;
         }

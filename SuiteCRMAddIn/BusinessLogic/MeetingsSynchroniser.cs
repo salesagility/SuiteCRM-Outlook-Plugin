@@ -204,18 +204,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        /// <summary>
-        /// Override: we don't do this; meetings from CRM will be received by email and if we try to directly add them we'll get the global id wrong.
-        /// </summary>
-        /// <param name="appointmentsFolder">The Outlook folder in which the item should be stored.</param>
-        /// <param name="crmType">The CRM type of the item from which values are to be taken.</param>
-        /// <param name="crmItem">The CRM item from which values are to be taken.</param>
-        /// <param name="date_start">The state date/time of the item, adjusted for timezone.</param>
-        /// <returns>Aways null.</returns>
-        protected override MeetingSyncState AddNewItemFromCrmToOutlook(Outlook.MAPIFolder appointmentsFolder, string crmType, EntryValue crmItem, DateTime date_start)
-        {
-            return (MeetingSyncState)null;
-        }
 
         /// <summary>
         /// Set the meeting acceptance status, in CRM, of all invitees to this meeting from
@@ -259,7 +247,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     try
                     {
-                        RestAPIWrapper.SetMeetingAcceptance(meetingId.ToString(), resolution.ModuleName, resolution.ModuleId, acceptance);
+                        RestAPIWrapper.SetMeetingAcceptance(meetingId.ToString(), resolution.ModuleName, resolution.ModuleId.ToString(), acceptance);
                         count++;
                     }
                     catch (Exception any)
@@ -380,10 +368,10 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                     if (moduleIds.ContainsKey(ContactSynchroniser.CrmModule))
                     {
-                        CrmId accountId = RestAPIWrapper.GetRelationship(
+                        CrmId accountId = CrmId.Get(RestAPIWrapper.GetRelationship(
                             ContactSynchroniser.CrmModule,
-                            moduleIds[ContactSynchroniser.CrmModule],
-                            "accounts");
+                            moduleIds[ContactSynchroniser.CrmModule].ToString(),
+                            "accounts"));
 
                         if (CrmId.IsValid(accountId) &&
                             SetCrmRelationshipFromOutlook(this, meetingId, "Accounts", accountId))
@@ -411,7 +399,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                 this.CacheAddressResolutionData(
                     new AddressResolutionData(moduleName, id, smtpAddress));
 
-                CrmId accountId = RestAPIWrapper.GetRelationship(ContactSynchroniser.CrmModule, id, "accounts");
+                CrmId accountId = CrmId.Get(RestAPIWrapper.GetRelationship(
+                    ContactSynchroniser.CrmModule, id.ToString(), "accounts"));
 
                 if (CrmId.IsValid(accountId) &&
                     SetCrmRelationshipFromOutlook(this, meetingId, "Accounts", accountId))

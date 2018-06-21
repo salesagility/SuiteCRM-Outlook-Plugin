@@ -181,8 +181,8 @@ namespace SuiteCRMClient.Email
         /// <param name="moduleKeys">Keys (standardised names) of modules to search.</param>
         public ArchiveResult Save(IEnumerable<CrmEntity> relatedRecords, string excludedEmails = "")
         {
-            IEnumerable<CrmEntity> withIds = relatedRecords.Where(x => CrmId.IsValid(x.EntityId));
-            IEnumerable<CrmEntity> foundIds = GetRelatedIds(relatedRecords.Where(x => CrmId.IsInvalid(x.EntityId)).Select(x => x.ModuleName), excludedEmails);
+            IEnumerable<CrmEntity> withIds = relatedRecords.Where(x => !string.IsNullOrEmpty(x.EntityId));
+            IEnumerable<CrmEntity> foundIds = GetRelatedIds(relatedRecords.Where(x => string.IsNullOrEmpty(x.EntityId)).Select(x => x.ModuleName), excludedEmails);
             return Save(withIds.Union(foundIds));
         }
 
@@ -347,7 +347,7 @@ namespace SuiteCRMClient.Email
         /// <param name="emailId"></param>
         /// <param name="attachmentId"></param>
         /// <returns></returns>
-        private bool BindAttachmentInCrm(CrmId emailId, CrmId attachmentId)
+        private bool BindAttachmentInCrm(string emailId, string attachmentId)
         {
             return RestAPIWrapper.TrySetRelationship(
                         new SetRelationshipParams
@@ -420,7 +420,7 @@ namespace SuiteCRMClient.Email
                 }
             }
 
-            public void MaybeAddField(string fieldName, CrmId fieldValue)
+            public void MaybeAddField(string fieldName, string fieldValue)
             {
                 this.MaybeAddField(fieldName, fieldValue.ToString(), false);
             }

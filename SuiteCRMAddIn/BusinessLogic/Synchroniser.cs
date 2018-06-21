@@ -450,7 +450,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olItem,
                 crmItem.GetValueAsString("date_modified"),
                 type,
-                crmItem.CrmId);
+                CrmId.Get(crmItem.id));
         }
 
         /// <summary>

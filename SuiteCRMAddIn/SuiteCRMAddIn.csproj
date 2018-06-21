@@ -211,6 +211,8 @@
   <ItemGroup>
     <Compile Include="BusinessLogic\CallsSynchroniser.cs" />
     <Compile Include="BusinessLogic\CallSyncState.cs" />
+    <Compile Include="BusinessLogic\CrmId.cs" />
+    <Compile Include="BusinessLogic\CrmIdValidationPolicy.cs" />
     <Compile Include="Exceptions\DuplicateCrmIdException.cs" />
     <Compile Include="BusinessLogic\ErrorHandler.cs" />
     <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
@@ -390,6 +392,7 @@
     </None>
     <None Include="Locale\fr_FR\LC_MESSAGES\SuiteCRMAddIn.po" />
     <None Include="packages.config" />
+    <None Include="Properties\DataSources\SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy+Policy.datasource" />
     <None Include="Properties\DataSources\SuiteCRMAddIn.BusinessLogic.ErrorHandler+PopupWhen.datasource" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

@@ -29,6 +29,6 @@ namespace SuiteCRMClient.RESTObjects
        [JsonProperty("error")]
        public ErrorValue error { get; set; }
        [JsonProperty("id")]
-       public CrmId id { get; set; }
+       public string id { get; set; }
     }
 }

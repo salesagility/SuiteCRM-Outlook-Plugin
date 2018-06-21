@@ -374,7 +374,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     olItem,
                     crmItem.GetValueAsString("date_modified"),
                     crmItem.GetValueAsString("sync_contact"),
-                    crmItem.CrmId);
+                    CrmId.Get(crmItem.id));
             }
             finally
             {
@@ -493,7 +493,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override CrmId ConstructAndDespatchCrmItem(Outlook.ContactItem olItem)
         {
-            return RestAPIWrapper.SetEntry(new ProtoContact(olItem).AsNameValues(), this.DefaultCrmModule);
+            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoContact(olItem).AsNameValues(), this.DefaultCrmModule));
         }
 
 
@@ -512,7 +512,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 SetRelationshipParams info = new SetRelationshipParams
                 {
                     module1 = CrmModule,
-                    module1_id = contactIdInCRM,
+                    module1_id = contactIdInCRM.ToString(),
                     module2 = "user_sync",
                     module2_id = RestAPIWrapper.GetUserId(),
                     delete = create ? 0 : 1

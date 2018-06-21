@@ -446,11 +446,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                             /* i.e. this was a new item saved to CRM for the first time */
                             if (syncState.OutlookItem.IsCall())
                             {
-                                SetCrmRelationshipFromOutlook(Globals.ThisAddIn.CallsSynchroniser, result, "Users", RestAPIWrapper.GetUserId());
+                                SetCrmRelationshipFromOutlook(Globals.ThisAddIn.CallsSynchroniser, result, "Users", CrmId.Get(RestAPIWrapper.GetUserId()));
                             }
                             else
                             {
-                                SetCrmRelationshipFromOutlook(Globals.ThisAddIn.MeetingsSynchroniser, result, "Users", RestAPIWrapper.GetUserId());
+                                SetCrmRelationshipFromOutlook(Globals.ThisAddIn.MeetingsSynchroniser, result, "Users", CrmId.Get(RestAPIWrapper.GetUserId()));
                             }
                         }
                     }
@@ -481,7 +481,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override CrmId ConstructAndDespatchCrmItem(Outlook.AppointmentItem olItem)
         {
-            return RestAPIWrapper.SetEntry(new ProtoAppointment<SyncStateType>(olItem).AsNameValues(), this.DefaultCrmModule);
+            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoAppointment<SyncStateType>(olItem).AsNameValues(), this.DefaultCrmModule));
         }
 
 
@@ -567,7 +567,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 CrmId crmId = olItem.GetCrmId(); 
-                if (CrmId.IsValid(crmId)) { crmId = CrmId.Empty; }
+                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
@@ -629,7 +629,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     else
                     {
                         var withoutCrmId = matches.Where(x => CrmId.IsInvalid(x.CrmEntryId)).ToList();
-                        var crmId = crmItem.CrmId;
+                        var crmId = CrmId.Get(crmItem.id);
                         if (withoutCrmId.Any())
                         {
                             result = withoutCrmId.ElementAt(0) as SyncStateType;
@@ -736,9 +736,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 RestAPIWrapper.SetRelationshipUnsafe(new SetRelationshipParams
                 {
                     module2 = sync.DefaultCrmModule,
-                    module2_id = meetingId,
+                    module2_id = meetingId.ToString(),
                     module1 = foreignModule,
-                    module1_id = foreignId
+                    module1_id = foreignId.ToString()
                 });
         }
 

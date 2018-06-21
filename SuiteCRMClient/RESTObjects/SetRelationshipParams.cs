@@ -30,7 +30,7 @@ namespace SuiteCRMClient.RESTObjects
         private string m2;
 
         [JsonProperty("module1_id")]
-        public CrmId module1_id { get; set; }
+        public string module1_id { get; set; }
         [JsonProperty("module1")]
         public string module1
         {
@@ -44,7 +44,7 @@ namespace SuiteCRMClient.RESTObjects
             }
         }
         [JsonProperty("module2_id")]
-        public CrmId module2_id { get; set; }
+        public string module2_id { get; set; }
         [JsonProperty("module2")]
         public string module2
         {

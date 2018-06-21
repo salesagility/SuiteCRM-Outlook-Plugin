@@ -167,30 +167,32 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
-            // TODO: should also add or update if current user is invited.
-            return RestAPIWrapper.GetUserId().Equals(CrmId.Get(crmItem.GetValueAsString("assigned_user_id")));
+            try
+            {
+                return RestAPIWrapper.GetUserId().Equals(CrmId.Get(crmItem.GetValueAsString("assigned_user_id")));
+            }
+            catch (TypeInitializationException tix)
+            {
+                Log.Warn("Bad CRM id?", tix);
+                return false;
+            }
         }
 
-        protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, string crmType, EntryValue crmItem)
+
+        protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder,
+            string crmType, EntryValue crmItem)
         {
             SyncState<Outlook.TaskItem> result = null;
 
-            Log.Debug($"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {RestAPIWrapper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
+            Log.Debug(
+                $"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {RestAPIWrapper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
 
             var syncState = SyncStateManager.Instance.GetExistingSyncState(crmItem) as SyncState<Outlook.TaskItem>;
 
-            if (syncState == null)
-            {
-                result = MaybeAddNewItemFromCrmToOutlook(tasksFolder, crmItem);
-            }
-            else
-            {
-                result = UpdateExistingOutlookItemFromCrm(crmItem, syncState);
-            }
+            result = syncState == null ? MaybeAddNewItemFromCrmToOutlook(tasksFolder, crmItem) : UpdateExistingOutlookItemFromCrm(crmItem, syncState);
 
             return result;
         }
-
 
         /// <summary>
         /// Item creation really ought to happen within the context of a lock, in order to prevent duplicate creation.
@@ -265,7 +267,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olItem.Body = string.Concat(body, "#<", timeStart, "#", timeDue);
                 olItem.Status = GetStatus(crmItem.GetValueAsString("status"));
                 olItem.Importance = GetImportance(crmItem.GetValueAsString("priority"));
-                EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.GetValueAsString("date_modified"), DefaultCrmModule, crmItem.CrmId);
+                EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.GetValueAsString("date_modified"), DefaultCrmModule, CrmId.Get(crmItem.id));
             }
             finally
             {
@@ -345,7 +347,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The CRM id of the object created or modified.</returns>
         protected override CrmId ConstructAndDespatchCrmItem(Outlook.TaskItem olItem)
         {
-            return RestAPIWrapper.SetEntry(new ProtoTask(olItem).AsNameValues(), this.DefaultCrmModule);
+            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoTask(olItem).AsNameValues(), this.DefaultCrmModule));
         }
 
 

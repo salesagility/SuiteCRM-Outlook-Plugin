@@ -305,7 +305,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 new SetRelationshipParams
                 {
                     module2 = "emails",
-                    module2_id = emailId,
+                    module2_id = emailId.ToString(),
                     module1 = entity.ModuleName,
                     module1_id = entity.EntityId,
                 }, Objective.Email);

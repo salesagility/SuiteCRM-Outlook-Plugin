@@ -23,6 +23,7 @@
 
 namespace SuiteCRMAddIn.ProtoItems
 {
+    using BusinessLogic;
     using Extensions;
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
@@ -35,24 +36,18 @@ namespace SuiteCRMAddIn.ProtoItems
     /// </summary>
     public class ProtoTask : ProtoItem<Outlook.TaskItem>
     {
-        private Outlook.TaskItem oItem;
-        private string body = String.Empty;
+        private readonly Outlook.TaskItem oItem;
+        private readonly string body = String.Empty;
         private string dateStart = string.Empty, dateDue = string.Empty;
-        private string description = String.Empty;
+        private readonly string description = String.Empty;
 
-        private string priority;
+        private readonly string priority;
 
-        private string status;
-        private string subject;
-        private CrmId crmEntryId;
+        private readonly string status;
+        private readonly string subject;
+        private readonly CrmId crmEntryId;
 
-        public override string Description
-        {
-            get
-            {
-                return $"{this.subject} ({this.status})";
-            }
-        }
+        public override string Description => $"{this.subject} ({this.status})";
 
         public ProtoTask(Outlook.TaskItem oItem)
         {
@@ -63,12 +58,12 @@ namespace SuiteCRMAddIn.ProtoItems
             if (oItem.Body != null)
             {
                 body = oItem.Body;
-                var times = this.ParseTimesFromTaskBody(body);
+                var times = ParseTimesFromTaskBody(body);
                 if (times != null)
                 {
-                    DateTime utcStart = new DateTime();
+                    DateTime utcStart = oItem.StartDate.ToUniversalTime();
                     DateTime utcDue = new DateTime();
-                    utcStart = oItem.StartDate.ToUniversalTime();
+
                     if (oItem.DueDate.ToUniversalTime() > DateTime.MinValue && 
                         oItem.DueDate.ToUniversalTime() < DateTime.MaxValue)
                     {
@@ -190,22 +185,21 @@ namespace SuiteCRMAddIn.ProtoItems
         /// <returns>a name value list representing this task</returns>
         public override NameValueCollection AsNameValues()
         {
-            var data = new NameValueCollection();
-            data.Add(RestAPIWrapper.SetNameValuePair("name", this.subject));
-            data.Add(RestAPIWrapper.SetNameValuePair("description", this.description));
-            data.Add(RestAPIWrapper.SetNameValuePair("status", this.status));
-            data.Add(RestAPIWrapper.SetNameValuePair("date_due", this.dateDue));
-            data.Add(RestAPIWrapper.SetNameValuePair("date_start", this.dateStart));
-            data.Add(RestAPIWrapper.SetNameValuePair("priority", this.priority));
-
-            data.Add(CrmId.IsValid(crmEntryId) ?
-                RestAPIWrapper.SetNameValuePair("id", crmEntryId) :
-                RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()));
-
-            return data;
+            return new NameValueCollection
+            {
+                RestAPIWrapper.SetNameValuePair("name", this.subject),
+                RestAPIWrapper.SetNameValuePair("description", this.description),
+                RestAPIWrapper.SetNameValuePair("status", this.status),
+                RestAPIWrapper.SetNameValuePair("date_due", this.dateDue),
+                RestAPIWrapper.SetNameValuePair("date_start", this.dateStart),
+                RestAPIWrapper.SetNameValuePair("priority", this.priority),
+                CrmId.IsValid(crmEntryId)
+                    ? RestAPIWrapper.SetNameValuePair("id", crmEntryId.ToString())
+                    : RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId())
+            };
         }
 
-        private TimeSpan[] ParseTimesFromTaskBody(string taskBody)
+        private static TimeSpan[] ParseTimesFromTaskBody(string taskBody)
         {
             TimeSpan[] result;
 
@@ -221,11 +215,11 @@ namespace SuiteCRMAddIn.ProtoItems
                     result = new TimeSpan[2];
                     List<int> hhmm = new List<int>(4);
 
-                    string times = taskBody.Substring(taskBody.LastIndexOf("#<")).Substring(2);
+                    string times = taskBody.Substring(taskBody.LastIndexOf("#<", StringComparison.Ordinal)).Substring(2);
                     char[] sep = {'<', '#', ':'};
-                    int parsed = 0;
                     foreach (var fragment in times.Split(sep))
                     {
+                        var parsed = 0;
                         int.TryParse(fragment, out parsed);
                         hhmm.Add(parsed);
                         parsed = 0;

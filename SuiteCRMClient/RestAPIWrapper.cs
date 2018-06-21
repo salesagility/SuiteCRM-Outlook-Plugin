@@ -61,7 +61,7 @@ namespace SuiteCRMClient
         /// we really really don't. It's unlikely to change often in a session - in fact it 
         /// can currently change only when the user changes settings.
         /// </summary>
-        public static CrmId CachedUserId { get; private set; } = CrmId.Empty;
+        public static string CachedUserId { get; private set; } = string.Empty;
 
         public static void SetLog(ILogger log)
         {
@@ -138,8 +138,8 @@ namespace SuiteCRMClient
             bool result = false; 
             if (userSession != null)
             {
-                CrmId userId = RestAPIWrapper.GetRealUserId();
-                if (CrmId.IsInvalid(userId))
+                string userId = RestAPIWrapper.GetRealUserId();
+                if (string.IsNullOrEmpty(userId))
                 {
                     userSession.Login();
                     result = RestAPIWrapper.GetRealUserId() != null;
@@ -159,7 +159,7 @@ namespace SuiteCRMClient
         /// </summary>
         public static void FlushUserIdCache()
         {
-            CachedUserId = CrmId.Empty;
+            CachedUserId = string.Empty;
         }
 
 
@@ -167,9 +167,9 @@ namespace SuiteCRMClient
         /// Return the CRM id of the current user.
         /// </summary>
         /// <returns>the CRM id of the current user.</returns>
-        public static CrmId GetUserId()
+        public static string GetUserId()
         {
-            if (CrmId.IsInvalid(CachedUserId))
+            if (string.IsNullOrEmpty(CachedUserId))
             {
                 CachedUserId = GetRealUserId();
             }
@@ -182,9 +182,9 @@ namespace SuiteCRMClient
         /// </summary>
         /// <param name="mailAddress">the email address to seek.</param>
         /// <returns>An id if available, else the empty string.</returns>
-        public static CrmId GetUserId(MailAddress mailAddress)
+        public static string GetUserId(MailAddress mailAddress)
         {
-            CrmId result = CrmId.Empty;
+            string result = string.Empty;
             EntryList list = GetEntryList(
                 "Users", 
                 $"(users.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Users' and ea.email_address LIKE '%{MySqlEscape(mailAddress.ToString())}%'))", 
@@ -196,7 +196,7 @@ namespace SuiteCRMClient
             
             if (list.entry_list != null && list.entry_list.Any())
             {
-                result = list.entry_list[0].CrmId;
+                result = list.entry_list[0].id;
             }
 
             return result;
@@ -208,15 +208,15 @@ namespace SuiteCRMClient
         /// </summary>
         /// <param name="username">the username to seek.</param>
         /// <returns>An id if available, else the empty string.</returns>
-        public static CrmId GetUserId(string username)
+        public static string GetUserId(string username)
         {
-            CrmId result = CrmId.Empty;
+            string result = string.Empty;
            
             EntryList list = GetEntryList("Users", $"users.user_name LIKE '%{MySqlEscape(username)}%'", 0, "id DESC", 0, false, new string[] { "id" });
 
             if (list?.entry_list != null && list.entry_list.Count() > 0)
             {
-                result = list.entry_list[0].CrmId;
+                result = list.entry_list[0].id;
             }
 
             return result;
@@ -240,9 +240,9 @@ namespace SuiteCRMClient
         /// Get the CRM id of the current user, ignoring the cache.
         /// </summary>
         /// <returns>the CRM id of the current user.</returns>
-        private static CrmId GetRealUserId()
+        private static string GetRealUserId()
         {
-            CrmId userId = CrmId.Empty;
+            string userId = string.Empty;
 
             if (SuiteCRMUserSession != null)
             {
@@ -252,7 +252,7 @@ namespace SuiteCRMClient
                     {
                         @session = SuiteCRMUserSession.id
                     };
-                    userId = CrmId.Get(SuiteCRMUserSession.RestServer.GetCrmStringResponse("get_user_id", data));
+                    userId = SuiteCRMUserSession.RestServer.GetCrmStringResponse("get_user_id", data);
                 }
                 catch (Exception)
                 {
@@ -269,7 +269,7 @@ namespace SuiteCRMClient
         /// <param name="data">The data to set.</param>
         /// <param name="moduleName">The name of the CRM module into which to insert it.</param>
         /// <returns>the CRM id of the object created or modified.</returns>
-        public static CrmId SetEntry(NameValueCollection data, string moduleName)
+        public static string SetEntry(NameValueCollection data, string moduleName)
         {
             return SetEntry(data.ToArray(), moduleName);
         }
@@ -280,7 +280,7 @@ namespace SuiteCRMClient
         /// <param name="data">The data to set.</param>
         /// <param name="moduleName">The name of the CRM module into which to insert it.</param>
         /// <returns>the CRM id of the object created or modified.</returns>
-        public static CrmId SetEntry(NameValue[] values, string moduleName)
+        public static string SetEntry(NameValue[] values, string moduleName)
         {
             if (values == null || values.Count() == 0)
             {
@@ -294,8 +294,8 @@ namespace SuiteCRMClient
                 @name_value_list = values
             };
             SetEntryResult result = SuiteCRMUserSession.RestServer.GetCrmResponse<SetEntryResult>("set_entry", data);
-            return CrmId.IsInvalid(result.id) ?
-                CrmId.Empty :
+            return string.IsNullOrEmpty(result.id) ?
+                string.Empty :
                 result.id;
         }
 
@@ -307,7 +307,7 @@ namespace SuiteCRMClient
         /// <param name="moduleId">The id of the invitee within that module.</param>
         /// <param name="status">The acceptance status to set.</param>
         /// <returns>true if nothing dreadful happens - not necessarily proof that the call succeeded.</returns>
-        public static bool SetMeetingAcceptance(string meetingId, string moduleName, CrmId moduleId, string status)
+        public static bool SetMeetingAcceptance(string meetingId, string moduleName, string moduleId, string status)
         {
             Log.Debug($"RestApiWrapper.SetMeetingAcceptance: meetingId=`{meetingId}`; moduleName=`{moduleName}`; moduleId=`{moduleId}`; status=`{status}`");
             bool result = false;
@@ -320,7 +320,7 @@ namespace SuiteCRMClient
                     @module_name = "Meetings",
                     @module_id = meetingId,
                     @link_field_name = moduleName.ToLower(),
-                    @related_ids = new CrmId[] { moduleId },
+                    @related_ids = new string[] { moduleId },
                     @name_value_list = new NameValue[] { new NameValue() { name = "accept_status", value = status } },
                 };
                 var value = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.eNewSetRelationshipListResult>("set_relationship", data);
@@ -333,25 +333,25 @@ namespace SuiteCRMClient
             return result;
         }
 
-        public static CrmId GetRelationship(string MainModule, CrmId ID, string ModuleToFind)
+        public static string GetRelationship(string MainModule, string ID, string ModuleToFind)
         {
-            CrmId result;
+            string result;
 
             try
             {
                 EntryValue[] entries = RestAPIWrapper.GetRelationships(MainModule, ID, ModuleToFind, new string[] { "id" });
-                result = entries.Length > 0 ? entries[0].CrmId : CrmId.Empty;
+                result = entries.Length > 0 ? entries[0].id : string.Empty;
             }
             catch (System.Exception)
             {
                 // Swallow exception(!)
-                result = CrmId.Empty;
+                result = string.Empty;
             }
 
             return result;
         }
 
-        public static EntryValue[] GetRelationships(string MainModule, CrmId ID, string ModuleToFind, string[] fields)
+        public static EntryValue[] GetRelationships(string MainModule, string ID, string ModuleToFind, string[] fields)
         {
             try
             {
@@ -469,7 +469,7 @@ namespace SuiteCRMClient
                     @module_name = relationship.module1,
                     @module_id = relationship.module1_id,
                     @link_field_name = linkFieldName,
-                    @related_ids = new CrmId[] { relationship.module2_id },
+                    @related_ids = new string[] { relationship.module2_id },
                     @name_value_list = new NameValue[] { },
                     @delete = relationship.delete
                 };

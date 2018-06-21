@@ -1,10 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
-
-namespace SuiteCRMClient
+﻿/**
+ * Outlook integration for SuiteCRM.
+ * @package Outlook integration for SuiteCRM
+ * @copyright SalesAgility Ltd http://www.salesagility.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU LESSER GENERAL PUBLIC LICENCE as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENCE
+ * along with this program; if not, see http://www.gnu.org/licenses
+ * or write to the Free Software Foundation,Inc., 51 Franklin Street,
+ * Fifth Floor, Boston, MA 02110-1301  USA
+ *
+ * @author SalesAgility <info@salesagility.com>
+ */
+namespace SuiteCRMAddIn.BusinessLogic
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Runtime.CompilerServices;
+    using System.Text.RegularExpressions;
+
     /// <summary>
     ///     A validated CRM id.
     /// </summary>
@@ -12,9 +34,10 @@ namespace SuiteCRMClient
     {
         public static readonly CrmId Empty = new CrmId();
 
-        private static readonly Regex Validator = new Regex("[a-f0-9-]+");
+        private static readonly Regex Validator =
+            CrmIdValidationPolicy.GetValidationPattern(Properties.Settings.Default.CrmIdValidationPolicy);
 
-        private static readonly Dictionary<string,CrmId> Issued = new Dictionary<string, CrmId>();
+        private static readonly Dictionary<string, CrmId> Issued = new Dictionary<string, CrmId>();
 
         /// <summary>
         ///     The actual id string.
@@ -46,7 +69,8 @@ namespace SuiteCRMClient
             }
             else
             {
-                throw new TypeInitializationException($"'{id}' does not appear to be a valid CRM id.", null);
+                throw new TypeInitializationException(this.GetType().FullName,
+                    new Exception($"'{id}' does not appear to be a valid CRM id."));
             }
         }
 
@@ -70,7 +94,7 @@ namespace SuiteCRMClient
         /// </returns>
         public static bool IsValid(string id)
         {
-            return !string.IsNullOrEmpty(id) && Validator.IsMatch(id) && id.Length == 36;
+            return !string.IsNullOrEmpty(id) && Validator.IsMatch(id);
         }
 
         /// <summary>
@@ -99,10 +123,10 @@ namespace SuiteCRMClient
         }
 
         /// <summary>
-        /// True if <see cref="CrmId.IsValid"/> is false of this id.
+        /// True if <see cref="CrmId.IsValid(CrmId)"/> is false of this id.
         /// </summary>
         /// <param name="id">The object which may or may not be a valid CRM id.</param>
-        /// <returns>True if <see cref="CrmId.IsValid"/> is false of this id.</returns>
+        /// <returns>True if <see cref="CrmId.IsValid(CrmId)"/> is false of this id.</returns>
         public static bool IsInvalid(CrmId id)
         {
             return !CrmId.IsValid(id);
@@ -129,7 +153,7 @@ namespace SuiteCRMClient
             return string.IsNullOrEmpty(value) ?
                 CrmId.Empty :
                 CrmId.Issued.ContainsKey(value) ?
-                    CrmId.Issued[value]:
+                    CrmId.Issued[value] :
                     new CrmId(value);
         }
 

@@ -217,6 +217,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                         break;
                 }
             }
+            catch (TypeInitializationException tix)
+            {
+                log.Warn("Bad CRM id?", tix);
+                result = null;
+            }
             catch (KeyNotFoundException kex)
             {
                 log.Warn("KeyNotFoundException in GetExistingSyncState", kex);
@@ -370,7 +375,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             SyncState result;
             string outlookId = crmItem.GetValueAsString("outlook_id");
-            CrmId crmId = crmItem.CrmId;
+            CrmId crmId = CrmId.Get(crmItem.id);
 
             if (this.byCrmId.ContainsKey(crmId))
             {
@@ -870,10 +875,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="syncState">the sync state to index.</param>
         internal void SetByCrmId<SyncStateType>(CrmId crmId, SyncStateType syncState) where SyncStateType : SyncState
         {
-            if (this.byCrmId[crmId] != null && this.byCrmId[crmId] != syncState)
+            if (this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null && this.byCrmId[crmId] != syncState)
             {
                 throw new DuplicateCrmIdException(syncState, crmId);
             }
+
             this.byCrmId[crmId] = syncState;
             string outlookId = syncState?.OutlookItemEntryId;
 

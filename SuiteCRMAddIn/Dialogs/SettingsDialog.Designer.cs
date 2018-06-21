@@ -103,6 +103,9 @@ namespace SuiteCRMAddIn.Dialogs
             this.InformationTabPage = new System.Windows.Forms.TabPage();
             this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.showErrorsSelector = new System.Windows.Forms.ComboBox();
+            this.popupWhenBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.showErrorsLabel = new System.Windows.Forms.Label();
             this.logLevelHelp = new System.Windows.Forms.Label();
             this.logLevelLabel = new System.Windows.Forms.Label();
             this.logLevelSelector = new System.Windows.Forms.ComboBox();
@@ -111,9 +114,9 @@ namespace SuiteCRMAddIn.Dialogs
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.showErrorsLabel = new System.Windows.Forms.Label();
-            this.showErrorsSelector = new System.Windows.Forms.ComboBox();
-            this.popupWhenBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.crmIdValidationLabel = new System.Windows.Forms.Label();
+            this.crmIdValidationSelector = new System.Windows.Forms.ComboBox();
+            this.policyBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -128,6 +131,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.InformationTabPage.SuspendLayout();
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.policyBindingSource)).BeginInit();
             this.SuspendLayout();
             // 
             // tabPage3
@@ -632,6 +636,8 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.crmIdValidationSelector);
+            this.groupBox4.Controls.Add(this.crmIdValidationLabel);
             this.groupBox4.Controls.Add(this.showErrorsSelector);
             this.groupBox4.Controls.Add(this.showErrorsLabel);
             this.groupBox4.Controls.Add(this.logLevelHelp);
@@ -645,6 +651,28 @@ namespace SuiteCRMAddIn.Dialogs
             this.groupBox4.TabIndex = 5;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Logging";
+            // 
+            // showErrorsSelector
+            // 
+            this.showErrorsSelector.DataSource = this.popupWhenBindingSource;
+            this.showErrorsSelector.FormattingEnabled = true;
+            this.showErrorsSelector.Location = new System.Drawing.Point(186, 136);
+            this.showErrorsSelector.Name = "showErrorsSelector";
+            this.showErrorsSelector.Size = new System.Drawing.Size(140, 21);
+            this.showErrorsSelector.TabIndex = 36;
+            // 
+            // popupWhenBindingSource
+            // 
+            this.popupWhenBindingSource.DataSource = typeof(SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen);
+            // 
+            // showErrorsLabel
+            // 
+            this.showErrorsLabel.AutoSize = true;
+            this.showErrorsLabel.Location = new System.Drawing.Point(6, 139);
+            this.showErrorsLabel.Name = "showErrorsLabel";
+            this.showErrorsLabel.Size = new System.Drawing.Size(67, 13);
+            this.showErrorsLabel.TabIndex = 35;
+            this.showErrorsLabel.Text = "Show Errors:";
             // 
             // logLevelHelp
             // 
@@ -726,27 +754,28 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // showErrorsLabel
+            // crmIdValidationLabel
             // 
-            this.showErrorsLabel.AutoSize = true;
-            this.showErrorsLabel.Location = new System.Drawing.Point(6, 139);
-            this.showErrorsLabel.Name = "showErrorsLabel";
-            this.showErrorsLabel.Size = new System.Drawing.Size(67, 13);
-            this.showErrorsLabel.TabIndex = 35;
-            this.showErrorsLabel.Text = "Show Errors:";
+            this.crmIdValidationLabel.AutoSize = true;
+            this.crmIdValidationLabel.Location = new System.Drawing.Point(6, 163);
+            this.crmIdValidationLabel.Name = "crmIdValidationLabel";
+            this.crmIdValidationLabel.Size = new System.Drawing.Size(92, 13);
+            this.crmIdValidationLabel.TabIndex = 37;
+            this.crmIdValidationLabel.Text = "CRM Id Validation";
             // 
-            // showErrorsSelector
+            // crmIdValidationSelector
             // 
-            this.showErrorsSelector.DataSource = this.popupWhenBindingSource;
-            this.showErrorsSelector.FormattingEnabled = true;
-            this.showErrorsSelector.Location = new System.Drawing.Point(186, 136);
-            this.showErrorsSelector.Name = "showErrorsSelector";
-            this.showErrorsSelector.Size = new System.Drawing.Size(140, 21);
-            this.showErrorsSelector.TabIndex = 36;
+            this.crmIdValidationSelector.DataSource = this.policyBindingSource;
+            this.crmIdValidationSelector.DisplayMember = "Value";
+            this.crmIdValidationSelector.FormattingEnabled = true;
+            this.crmIdValidationSelector.Location = new System.Drawing.Point(186, 160);
+            this.crmIdValidationSelector.Name = "crmIdValidationSelector";
+            this.crmIdValidationSelector.Size = new System.Drawing.Size(140, 21);
+            this.crmIdValidationSelector.TabIndex = 38;
             // 
-            // popupWhenBindingSource
+            // policyBindingSource
             // 
-            this.popupWhenBindingSource.DataSource = typeof(SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen);
+            this.policyBindingSource.DataSource = typeof(SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy);
             // 
             // SettingsDialog
             // 
@@ -793,6 +822,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.policyBindingSource)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -861,5 +891,8 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.ComboBox showErrorsSelector;
         private System.Windows.Forms.Label showErrorsLabel;
         private System.Windows.Forms.BindingSource popupWhenBindingSource;
+        private System.Windows.Forms.ComboBox crmIdValidationSelector;
+        private System.Windows.Forms.Label crmIdValidationLabel;
+        private System.Windows.Forms.BindingSource policyBindingSource;
     }
 }
