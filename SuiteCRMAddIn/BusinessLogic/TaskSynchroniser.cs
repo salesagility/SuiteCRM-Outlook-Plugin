@@ -169,7 +169,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                return RestAPIWrapper.GetUserId().Equals(CrmId.Get(crmItem.GetValueAsString("assigned_user_id")));
+                return RestAPIWrapper.GetUserId().Equals(crmItem.GetValueAsString("assigned_user_id"));
             }
             catch (TypeInitializationException tix)
             {
