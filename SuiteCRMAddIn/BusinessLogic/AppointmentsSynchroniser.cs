@@ -1095,6 +1095,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                     {
                         this.CacheAddressResolutionData(list.name, record);
                     }
+                    catch (TypeInitializationException tix)
+                    {
+                        ErrorHandler.Handle("Probable invalid CRM ID", tix);
+                    }
                     catch (KeyNotFoundException kex)
                     {
                         ErrorHandler.Handle($"Email address '{record.data.GetValueAsString(AddressResolutionData.EmailAddressFieldName)}' not recognised while caching meeting recipients.", kex);
