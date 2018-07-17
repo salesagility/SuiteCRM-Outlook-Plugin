@@ -56,7 +56,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.dtpAutoArchiveFrom = new System.Windows.Forms.DateTimePicker();
             this.label8 = new System.Windows.Forms.Label();
             this.EmailArchiveAccountTabs = new System.Windows.Forms.TabControl();
-            this.tabPage4 = new System.Windows.Forms.TabPage();
+            this.autoArchiveAccountsPage = new System.Windows.Forms.TabPage();
             this.label7 = new System.Windows.Forms.Label();
             this.txtAutoSync = new System.Windows.Forms.TextBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
@@ -103,6 +103,9 @@ namespace SuiteCRMAddIn.Dialogs
             this.InformationTabPage = new System.Windows.Forms.TabPage();
             this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.crmIdValidationSelector = new System.Windows.Forms.ComboBox();
+            this.policyBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.crmIdValidationLabel = new System.Windows.Forms.Label();
             this.showErrorsSelector = new System.Windows.Forms.ComboBox();
             this.popupWhenBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.showErrorsLabel = new System.Windows.Forms.Label();
@@ -114,9 +117,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.crmIdValidationLabel = new System.Windows.Forms.Label();
-            this.crmIdValidationSelector = new System.Windows.Forms.ComboBox();
-            this.policyBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -130,8 +130,8 @@ namespace SuiteCRMAddIn.Dialogs
             this.synchronisationTab.SuspendLayout();
             this.InformationTabPage.SuspendLayout();
             this.groupBox4.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.policyBindingSource)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).BeginInit();
             this.SuspendLayout();
             // 
             // tabPage3
@@ -167,22 +167,22 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // EmailArchiveAccountTabs
             // 
-            this.EmailArchiveAccountTabs.Controls.Add(this.tabPage4);
+            this.EmailArchiveAccountTabs.Controls.Add(this.autoArchiveAccountsPage);
             this.EmailArchiveAccountTabs.Location = new System.Drawing.Point(11, 3);
             this.EmailArchiveAccountTabs.Name = "EmailArchiveAccountTabs";
             this.EmailArchiveAccountTabs.SelectedIndex = 0;
             this.EmailArchiveAccountTabs.Size = new System.Drawing.Size(340, 246);
             this.EmailArchiveAccountTabs.TabIndex = 17;
             // 
-            // tabPage4
+            // autoArchiveAccountsPage
             // 
-            this.tabPage4.Location = new System.Drawing.Point(4, 22);
-            this.tabPage4.Name = "tabPage4";
-            this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage4.Size = new System.Drawing.Size(332, 220);
-            this.tabPage4.TabIndex = 0;
-            this.tabPage4.Text = "Account#1";
-            this.tabPage4.UseVisualStyleBackColor = true;
+            this.autoArchiveAccountsPage.Location = new System.Drawing.Point(4, 22);
+            this.autoArchiveAccountsPage.Name = "autoArchiveAccountsPage";
+            this.autoArchiveAccountsPage.Padding = new System.Windows.Forms.Padding(3);
+            this.autoArchiveAccountsPage.Size = new System.Drawing.Size(332, 220);
+            this.autoArchiveAccountsPage.TabIndex = 0;
+            this.autoArchiveAccountsPage.Text = "Account#1";
+            this.autoArchiveAccountsPage.UseVisualStyleBackColor = true;
             // 
             // label7
             // 
@@ -652,6 +652,29 @@ namespace SuiteCRMAddIn.Dialogs
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Logging";
             // 
+            // crmIdValidationSelector
+            // 
+            this.crmIdValidationSelector.DataSource = this.policyBindingSource;
+            this.crmIdValidationSelector.DisplayMember = "Value";
+            this.crmIdValidationSelector.FormattingEnabled = true;
+            this.crmIdValidationSelector.Location = new System.Drawing.Point(186, 160);
+            this.crmIdValidationSelector.Name = "crmIdValidationSelector";
+            this.crmIdValidationSelector.Size = new System.Drawing.Size(140, 21);
+            this.crmIdValidationSelector.TabIndex = 38;
+            // 
+            // policyBindingSource
+            // 
+            this.policyBindingSource.DataSource = typeof(SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy);
+            // 
+            // crmIdValidationLabel
+            // 
+            this.crmIdValidationLabel.AutoSize = true;
+            this.crmIdValidationLabel.Location = new System.Drawing.Point(6, 163);
+            this.crmIdValidationLabel.Name = "crmIdValidationLabel";
+            this.crmIdValidationLabel.Size = new System.Drawing.Size(92, 13);
+            this.crmIdValidationLabel.TabIndex = 37;
+            this.crmIdValidationLabel.Text = "CRM Id Validation";
+            // 
             // showErrorsSelector
             // 
             this.showErrorsSelector.DataSource = this.popupWhenBindingSource;
@@ -754,29 +777,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // crmIdValidationLabel
-            // 
-            this.crmIdValidationLabel.AutoSize = true;
-            this.crmIdValidationLabel.Location = new System.Drawing.Point(6, 163);
-            this.crmIdValidationLabel.Name = "crmIdValidationLabel";
-            this.crmIdValidationLabel.Size = new System.Drawing.Size(92, 13);
-            this.crmIdValidationLabel.TabIndex = 37;
-            this.crmIdValidationLabel.Text = "CRM Id Validation";
-            // 
-            // crmIdValidationSelector
-            // 
-            this.crmIdValidationSelector.DataSource = this.policyBindingSource;
-            this.crmIdValidationSelector.DisplayMember = "Value";
-            this.crmIdValidationSelector.FormattingEnabled = true;
-            this.crmIdValidationSelector.Location = new System.Drawing.Point(186, 160);
-            this.crmIdValidationSelector.Name = "crmIdValidationSelector";
-            this.crmIdValidationSelector.Size = new System.Drawing.Size(140, 21);
-            this.crmIdValidationSelector.TabIndex = 38;
-            // 
-            // policyBindingSource
-            // 
-            this.policyBindingSource.DataSource = typeof(SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy);
-            // 
             // SettingsDialog
             // 
             this.AcceptButton = this.btnSave;
@@ -821,8 +821,8 @@ namespace SuiteCRMAddIn.Dialogs
             this.InformationTabPage.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.policyBindingSource)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -869,7 +869,7 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.Label AddInVersionLabel;
         private System.Windows.Forms.TabControl EmailArchiveAccountTabs;
-        private System.Windows.Forms.TabPage tabPage4;
+        private System.Windows.Forms.TabPage autoArchiveAccountsPage;
         private System.Windows.Forms.GroupBox licenceGroup;
         private System.Windows.Forms.Label licenceLabel;
         private System.Windows.Forms.TextBox licenceText;
