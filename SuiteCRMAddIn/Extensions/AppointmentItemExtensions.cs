@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
     using Extensions;
+    using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Generic;
@@ -69,7 +70,7 @@ namespace SuiteCRMAddIn.Extensions
         /// </summary>
         /// <param name="olItem">The Outlook item under consideration.</param>
         /// <returns>the CRM id for this item, if known, else the empty string.</returns>
-        public static string GetCrmId(this Outlook.AppointmentItem olItem)
+        public static CrmId GetCrmId(this Outlook.AppointmentItem olItem)
         {
             string result;
             Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
@@ -82,7 +83,7 @@ namespace SuiteCRMAddIn.Extensions
                 result = olItem.GetVCalId();
             }
 
-            return result;
+            return CrmId.Get(result);
         }
 
         /// <summary>
@@ -90,7 +91,7 @@ namespace SuiteCRMAddIn.Extensions
         /// </summary>
         /// <param name="olItem">The Outlook item under consideration.</param>
         /// <param name="crmId">The value to set.</param>
-        public static void SetCrmId(this Outlook.AppointmentItem olItem, string crmId)
+        public static void SetCrmId(this Outlook.AppointmentItem olItem, CrmId crmId)
         {
             Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
 
@@ -99,13 +100,13 @@ namespace SuiteCRMAddIn.Extensions
                 property = olItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, Outlook.OlUserPropertyType.olText);
                 SyncStateManager.Instance.SetByCrmId(crmId, SyncStateManager.Instance.GetOrCreateSyncState(olItem));
             }
-            if (string.IsNullOrEmpty(crmId))
+            if (CrmId.IsInvalid(crmId))
             {
                 property.Delete();
             }
             else
             {
-                property.Value = crmId;
+                property.Value = crmId.ToString();
             }
         }
 

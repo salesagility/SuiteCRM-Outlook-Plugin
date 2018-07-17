@@ -392,7 +392,7 @@ namespace SuiteCRMClient.Email
             var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry", initNoteDataWebFormat);
 
             RESTObjects.NoteAttachment note = new RESTObjects.NoteAttachment();
-            note.ID = res.id;
+            note.ID = res.id.ToString();
             note.FileName = attachment.DisplayName;
             note.FileContent = attachment.FileContentInBase64String;
             note.ParentType = "Emails";
@@ -418,6 +418,11 @@ namespace SuiteCRMClient.Email
                         value = replaceCRs ? fieldValue.Replace("\n", "") : fieldValue
                     });
                 }
+            }
+
+            public void MaybeAddField(string fieldName, string fieldValue)
+            {
+                this.MaybeAddField(fieldName, fieldValue.ToString(), false);
             }
         }
     }

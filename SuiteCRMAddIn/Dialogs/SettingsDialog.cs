@@ -168,6 +168,15 @@ namespace SuiteCRMAddIn.Dialogs
             showErrorsSelector.ValueMember = "Key";
             showErrorsSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.ShowExceptions);
 
+            crmIdValidationSelector.DataSource = Enum.GetValues(typeof(CrmIdValidationPolicy.Policy))
+                .Cast<CrmIdValidationPolicy.Policy>()
+                .Select(p => new { Key = (int)p, Value = p.ToString() })
+                .OrderBy(o => o.Key)
+                .ToList();
+            crmIdValidationSelector.DisplayMember = "Value";
+            crmIdValidationSelector.ValueMember = "Key";
+            crmIdValidationSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.CrmIdValidationPolicy);
+
             this.PopulateDirectionsMenu(syncCallsMenu, Properties.Settings.Default.SyncCalls);
             this.PopulateDirectionsMenu(syncContactsMenu, Properties.Settings.Default.SyncContacts);
             this.PopulateDirectionsMenu(syncMeetingsMenu, Properties.Settings.Default.SyncMeetings);
@@ -475,6 +484,9 @@ namespace SuiteCRMAddIn.Dialogs
             Globals.ThisAddIn.Log.Level = Properties.Settings.Default.LogLevel;
 
             Properties.Settings.Default.ShowExceptions = (ErrorHandler.PopupWhen)showErrorsSelector.SelectedValue;
+
+            Properties.Settings.Default.CrmIdValidationPolicy =
+                (CrmIdValidationPolicy.Policy) crmIdValidationSelector.SelectedValue;
 
             Properties.Settings.Default.DaysOldEmailToAutoArchive =
                 (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));

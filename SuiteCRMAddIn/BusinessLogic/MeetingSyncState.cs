@@ -27,13 +27,14 @@ namespace SuiteCRMAddIn.BusinessLogic
     using Microsoft.Office.Interop.Outlook;
     using SuiteCRMAddIn.ProtoItems;
     using SuiteCRMClient.RESTObjects;
+    using SuiteCRMClient;
 
     /// <summary>
     /// A sync state which syncs an appointment which is a meeting.
     /// </summary>
     public class MeetingSyncState : AppointmentSyncState
     {
-        public MeetingSyncState(AppointmentItem item, string crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
+        public MeetingSyncState(AppointmentItem item, CrmId crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
         {
         }
 

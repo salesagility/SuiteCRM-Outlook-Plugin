@@ -150,7 +150,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 if (fred.Name == null)
                 {
-                    Log.Warn($"Anonymous thread {fred.ManagedThreadId} running as '{this.Name}'.");
+                    Log.Debug($"Anonymous thread {fred.ManagedThreadId} running as '{this.Name}'.");
                 }
 
                 lock (processLock)

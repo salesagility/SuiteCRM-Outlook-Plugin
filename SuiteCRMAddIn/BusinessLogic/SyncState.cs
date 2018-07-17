@@ -23,13 +23,14 @@
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using System;
     using System.Runtime.InteropServices;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
-    /// Superclass for SyncState<T>, q.v..
+    /// Superclass for <see cref="SyncState{ItemType}"/>, q.v..
     /// </summary>
     public abstract class SyncState : WithRemovableSynchronisationProperties
     {
@@ -37,7 +38,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private bool _wasDeleted = false;
 
-        public string CrmEntryId { get; set; }
+        public CrmId CrmEntryId { get; set; }
 
         public abstract string CrmType { get; }
 
@@ -46,7 +47,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public abstract string Description { get; }
 
-        public bool ExistedInCrm => !string.IsNullOrEmpty(CrmEntryId);
+        public bool ExistedInCrm => CrmId.IsValid(CrmEntryId);
 
         public bool IsDeletedInOutlook
         {

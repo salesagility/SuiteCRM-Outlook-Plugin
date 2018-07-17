@@ -392,5 +392,16 @@ namespace SuiteCRMAddIn.Properties {
                 this["ShowExceptions"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Strict")]
+        public CrmIdValidationPolicy.Policy CrmIdValidationPolicy {
+            get
+            {
+                return ((CrmIdValidationPolicy.Policy) (this["CrmIdValidationPolicy"]));
+            }
+            set { this["CrmIdValidationPolicy"] = value; }
+        }
     }
 }

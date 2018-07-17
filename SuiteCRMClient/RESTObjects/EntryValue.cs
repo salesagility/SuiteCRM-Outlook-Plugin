@@ -40,6 +40,7 @@ namespace SuiteCRMClient.RESTObjects
         public string id { get; set; }
         [JsonProperty("module_name")]
         public string module_name { get; set; }
+
         private JObject name_value_objectField;
         [JsonProperty("name_value_list")]
         public JObject name_value_object

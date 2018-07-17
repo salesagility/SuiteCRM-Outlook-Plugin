@@ -46,10 +46,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         public static void Handle(string contextMessage, Exception error)
         {
             Globals.ThisAddIn.Log.Error(contextMessage, error);
-            var errorClassName = error == null ? string.Empty : error.GetType().Name;
-            string text = error == null ?
-                contextMessage :
-                $"{contextMessage}; {errorClassName}: {error.Message}";
+            var errorClassName = error?.GetType().Name ?? string.Empty;
+            StringBuilder bob = new StringBuilder(contextMessage);
+
+            for (Exception e = error; e != null; e = e.GetBaseException())
+            {
+                if (e != error)
+                {
+                    bob.Append("Caused by: ");
+                }
+                bob.Append(e.GetType().Name).Append(e.Message);
+            }
+            string text = bob.ToString();
 
             switch (Properties.Settings.Default.ShowExceptions)
             {

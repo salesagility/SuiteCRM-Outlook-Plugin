@@ -31,10 +31,11 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using SuiteCRMClient.Logging;
+    using SuiteCRMClient;
 
     public abstract class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
-        public AppointmentSyncState(Outlook.AppointmentItem item, string crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
+        public AppointmentSyncState(Outlook.AppointmentItem item, CrmId crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
         {
             this.outlookItemId = item.EntryID;
         }
@@ -90,8 +91,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                string crmId = OutlookItem.GetCrmId();
-                if (string.IsNullOrEmpty(crmId)) { crmId = "[not present]"; }
+                CrmId crmId = OutlookItem.GetCrmId();
+                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{OutlookItem.Subject}'\n\tSensitivity : {OutlookItem.Sensitivity}\n\tStatus     : {OutlookItem.MeetingStatus}\n\tReminder set {OutlookItem.ReminderSet}\n\tState      : {this.TxState}\n\tRecipients:\n");
