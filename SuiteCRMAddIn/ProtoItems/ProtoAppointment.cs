@@ -76,7 +76,7 @@ namespace SuiteCRMAddIn.ProtoItems
 
             if (organiserProperty == null || string.IsNullOrWhiteSpace(organiserProperty.Value))
             {
-                if (olItem.Organizer == clsGlobals.GetCurrentUsername())
+                if (olItem.Organizer == Globals.ThisAddIn.Application.GetCurrentUsername())
                 {
                     this.organiser = CrmId.Get(RestAPIWrapper.GetUserId());
                 }

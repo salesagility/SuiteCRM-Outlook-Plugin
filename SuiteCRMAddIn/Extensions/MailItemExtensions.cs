@@ -183,6 +183,7 @@ namespace SuiteCRMAddIn.Extensions
             ArchiveableEmail mailArchive = new ArchiveableEmail(MailItemExtensions.SuiteCRMUserSession, MailItemExtensions.Log);
             mailArchive.From = olItem.GetSenderSMTPAddress();
             mailArchive.To = string.Empty;
+            mailArchive.CrmEntryId = olItem.GetCRMEntryId();
 
             Log.Info($"MailItemExtension.AsArchiveable: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
 
@@ -373,6 +374,25 @@ namespace SuiteCRMAddIn.Extensions
             return Archive(olItem, reason, EmailArchiving.defaultModuleKeys.Select(x => new CrmEntity(x, null)));
         }
 
+        public static string GetCRMEntryId(this Outlook.MailItem olItem)
+        {
+            string result;
+            Outlook.UserProperty olProperty = null;
+            
+            try
+            {
+                olProperty = olItem.UserProperties[CrmIdPropertyName];
+                result = olProperty != null ? olProperty.Value.ToString() : string.Empty;
+            }
+            catch (COMException cex)
+            {
+                ErrorHandler.Handle("Could not get property while archiving email", cex);
+                result = string.Empty;
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// Archive this email item to CRM.
         /// </summary>
@@ -383,40 +403,21 @@ namespace SuiteCRMAddIn.Extensions
         /// <returns>A result object indicating success or failure.</returns>
         public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, IEnumerable<CrmEntity> moduleKeys, string excludedEmails = "")
         {
-            ArchiveResult result;
-            Outlook.UserProperty olProperty = null;
+            ArchiveResult result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
 
-            try
+            if (result.IsSuccess)
             {
-                olProperty = olItem.UserProperties[CrmIdPropertyName];
-            }
-            catch (COMException cex)
-            {
-                ErrorHandler.Handle("Could not get property while archiving email", cex);
-            }
-
-            if (olProperty == null || string.IsNullOrEmpty(olProperty.Value))
-            {
-                result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
-                
-                if (result.IsSuccess)
+                try
                 {
-                    try
-                    {
-                        olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
-                            SuiteCRMCategoryName :
-                            $"{olItem.Categories},{SuiteCRMCategoryName}";
-                        olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
-                    }
-                    catch (COMException cex)
-                    {
-                        ErrorHandler.Handle("Could not set property while archiving email", cex);
-                    }
+                    olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
+                        SuiteCRMCategoryName :
+                        $"{olItem.Categories},{SuiteCRMCategoryName}";
+                    olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
                 }
-            }
-            else
-            {
-                result = ArchiveResult.Success(olProperty.Value, new[] { new AlreadyArchivedException(olItem) });
+                catch (COMException cex)
+                {
+                    ErrorHandler.Handle("Could not set property while archiving email", cex);
+                }
             }
 
             return result;

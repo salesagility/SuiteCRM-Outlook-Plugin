@@ -578,7 +578,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     .Append($"\n\tStatus      : {olItem.MeetingStatus}")
                     .Append($"\n\tReminder set: {olItem.ReminderSet}")
                     .Append($"\n\tOrganiser   : {olItem.Organizer}")
-                    .Append($"\n\tOutlook User: {clsGlobals.GetCurrentUsername()}")
+                    .Append($"\n\tOutlook User: {Globals.ThisAddIn.Application.GetCurrentUsername()}")
                     .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}")
                     .Append($"\n\tRecipients  :\n");
 

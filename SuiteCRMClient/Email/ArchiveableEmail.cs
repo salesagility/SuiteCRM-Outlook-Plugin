@@ -61,6 +61,7 @@ namespace SuiteCRMClient.Email
         /// The outlook item id of the item.
         /// </summary>
         public string OutlookId { get; set; }
+        public string CrmEntryId { get; set; }
 
         public object contactData;
 
@@ -209,7 +210,14 @@ namespace SuiteCRMClient.Email
             {
                 try
                 {
-                    result = TrySave(relatedRecords, this.HTMLBody, null);
+                    if (string.IsNullOrEmpty(this.CrmEntryId))
+                    {
+                        result = TrySave(relatedRecords, this.HTMLBody, null);
+                    }
+                    else
+                    {
+                        result = TryUpdate(relatedRecords, null);
+                    }
                 }
                 catch (Exception firstFail)
                 {
@@ -232,7 +240,33 @@ namespace SuiteCRMClient.Email
 
 
         /// <summary>
-        /// Attempt to save me given these contact Ids and this HTML body, taking note of these previous failures.
+        /// Attempt link these related records to my existing record, taking note of these previous failures.
+        /// </summary>
+        /// <param name="relatedRecords">CRM module names/ids of records to which I should be related.</param>
+        /// <param name="fails">Any previous failures in attempting to save me.</param>
+        /// <returns>An archive result object describing the outcome of this attempt.</returns>
+        private ArchiveResult TryUpdate(IEnumerable<CrmEntity> relatedRecords, Exception[] fails)
+        {
+            ArchiveResult result;
+
+            try
+            {
+                LinkRelatedRecords(relatedRecords, new SetEntryResult { id = this.CrmEntryId });
+                result = ArchiveResult.Success(this.CrmEntryId, fails);
+            }
+            catch (Exception any)
+            {
+                List<Exception> newFails = new List<Exception>();
+                newFails.Add(any);
+                newFails.AddRange(fails);
+                result = ArchiveResult.Failure(newFails.ToArray());
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Attempt to save me given these related records and this HTML body, taking note of these previous failures.
         /// </summary>
         /// <param name="relatedRecords">CRM module names/ids of records to which I should be related.</param>
         /// <param name="htmlBody">The HTML body with which I should be saved.</param>
@@ -240,14 +274,14 @@ namespace SuiteCRMClient.Email
         /// <returns>An archive result object describing the outcome of this attempt.</returns>
         private ArchiveResult TrySave(IEnumerable<CrmEntity> relatedRecords, string htmlBody, Exception[] fails)
         {
-            var restServer = SuiteCRMUserSession.RestServer;
-            var emailResult = restServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry",
+            CrmRestServer restServer = SuiteCRMUserSession.RestServer;
+            SetEntryResult emailResult = restServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry",
                ConstructPacket(htmlBody));
             ArchiveResult result = ArchiveResult.Success(emailResult.id, fails);
 
             if (result.IsSuccess)
             {
-                LinkRelatedRecords(relatedRecords, emailResult);
+                LinkRelatedRecords(relatedRecords, new SetEntryResult { id = this.CrmEntryId });
                 SaveAttachments(emailResult);
             }
 
