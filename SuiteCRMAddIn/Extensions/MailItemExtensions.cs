@@ -409,10 +409,17 @@ namespace SuiteCRMAddIn.Extensions
             {
                 try
                 {
-                    olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
-                        SuiteCRMCategoryName :
-                        $"{olItem.Categories},{SuiteCRMCategoryName}";
-                    olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
+                    if (string.IsNullOrEmpty(olItem.Categories))
+                    {
+                        olItem.Categories = SuiteCRMCategoryName;
+                    }
+                    else if (olItem.Categories.IndexOf(SuiteCRMCategoryName) == -1)
+                    {
+                        olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
+                            SuiteCRMCategoryName :
+                            $"{olItem.Categories},{SuiteCRMCategoryName}";
+                        olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
+                    }
                 }
                 catch (COMException cex)
                 {

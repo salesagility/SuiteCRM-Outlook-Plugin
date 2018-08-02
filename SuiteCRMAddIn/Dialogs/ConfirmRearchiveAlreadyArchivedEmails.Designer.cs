@@ -53,6 +53,7 @@
             this.To,
             this.Date,
             this.Subject});
+            this.alreadyArchivedEmailsGrid.Cursor = System.Windows.Forms.Cursors.Default;
             this.alreadyArchivedEmailsGrid.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
             this.alreadyArchivedEmailsGrid.Location = new System.Drawing.Point(13, 25);
             this.alreadyArchivedEmailsGrid.Name = "alreadyArchivedEmailsGrid";
@@ -60,7 +61,6 @@
             this.alreadyArchivedEmailsGrid.ShowEditingIcon = false;
             this.alreadyArchivedEmailsGrid.Size = new System.Drawing.Size(579, 138);
             this.alreadyArchivedEmailsGrid.TabIndex = 0;
-            this.alreadyArchivedEmailsGrid.UseWaitCursor = true;
             // 
             // question
             // 
@@ -71,11 +71,11 @@
             this.question.TabIndex = 1;
             this.question.Text = "The following emails have already been archived. Are you sure you want to re-arch" +
     "ive them?";
-            this.question.UseWaitCursor = true;
             // 
             // yesButton
             // 
             this.yesButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.yesButton.Cursor = System.Windows.Forms.Cursors.Default;
             this.yesButton.DialogResult = System.Windows.Forms.DialogResult.Yes;
             this.yesButton.Location = new System.Drawing.Point(517, 169);
             this.yesButton.Name = "yesButton";
@@ -83,7 +83,6 @@
             this.yesButton.TabIndex = 2;
             this.yesButton.Text = "Yes";
             this.yesButton.UseVisualStyleBackColor = true;
-            this.yesButton.UseWaitCursor = true;
             // 
             // noButton
             // 
@@ -95,10 +94,10 @@
             this.noButton.TabIndex = 3;
             this.noButton.Text = "No";
             this.noButton.UseVisualStyleBackColor = true;
-            this.noButton.UseWaitCursor = true;
             // 
             // From
             // 
+            this.From.DataPropertyName = "From";
             this.From.HeaderText = "From";
             this.From.Name = "From";
             this.From.ReadOnly = true;
@@ -123,6 +122,7 @@
             this.Subject.HeaderText = "Subject";
             this.Subject.Name = "Subject";
             this.Subject.ReadOnly = true;
+            this.Subject.Width = 235;
             // 
             // ConfirmRearchiveAlreadyArchivedEmails
             // 
@@ -142,7 +142,6 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Confirm Rearchive Already Archived Emails";
-            this.UseWaitCursor = true;
             ((System.ComponentModel.ISupportInitialize)(this.alreadyArchivedEmailsGrid)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

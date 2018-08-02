@@ -971,7 +971,7 @@ namespace SuiteCRMAddIn.Dialogs
 
             if (archived.Count() > 0)
             {
-                if ( new ConfirmRearchiveAlreadyArchivedEmails(archived).ShowDialog() == DialogResult.OK)
+                if (new ConfirmRearchiveAlreadyArchivedEmails(archived).ShowDialog() == DialogResult.Yes)
                 {
                     result = selectedEmails;
                 }
