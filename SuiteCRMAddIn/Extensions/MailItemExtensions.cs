@@ -415,9 +415,7 @@ namespace SuiteCRMAddIn.Extensions
                     }
                     else if (olItem.Categories.IndexOf(SuiteCRMCategoryName) == -1)
                     {
-                        olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
-                            SuiteCRMCategoryName :
-                            $"{olItem.Categories},{SuiteCRMCategoryName}";
+                        olItem.Categories = $"{olItem.Categories},{SuiteCRMCategoryName}";
                     }
 
                     olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
