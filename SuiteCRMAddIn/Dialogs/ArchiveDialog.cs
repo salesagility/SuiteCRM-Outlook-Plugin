@@ -955,6 +955,13 @@ namespace SuiteCRMAddIn.Dialogs
                     Log.Error("btnArchive_Click", exception);
                     MessageBox.Show("There was an error while archiving", "Error");
                 }
+                finally
+                {
+                    foreach (MailItem i in this.archivableEmails)
+                    {
+                        i.Save();
+                    }
+                }
             }
         }
 

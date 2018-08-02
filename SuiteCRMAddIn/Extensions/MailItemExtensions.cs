@@ -207,7 +207,7 @@ namespace SuiteCRMAddIn.Extensions
 
             mailArchive.CC = olItem.CC;
 
-            mailArchive.OutlookId = olItem.EnsureEntryID();
+            mailArchive.ClientId = olItem.EnsureEntryID();
             mailArchive.Subject = olItem.Subject;
             mailArchive.Sent = olItem.ArchiveTime(reason);
             mailArchive.Body = olItem.Body;
@@ -418,8 +418,9 @@ namespace SuiteCRMAddIn.Extensions
                         olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
                             SuiteCRMCategoryName :
                             $"{olItem.Categories},{SuiteCRMCategoryName}";
-                        olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
                     }
+
+                    olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
                 }
                 catch (COMException cex)
                 {
