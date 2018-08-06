@@ -41,6 +41,14 @@ namespace SuiteCRMAddIn.Dialogs
                 new BindingList<TableItem>(
                 mails.Select(x => new TableItem(x)).ToList()),
                 null);
+
+            this.alreadyArchivedEmailsGrid.ClearSelection();
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            this.alreadyArchivedEmailsGrid.ClearSelection();
         }
 
         public class TableItem
@@ -65,5 +73,36 @@ namespace SuiteCRMAddIn.Dialogs
                 this.Subject = email.Subject;
             }
         }
+
+
+        /// <summary>
+        /// If any of these `selectedEmails` has already been archived, pop up a dialof asking whether they should be rearchived
+        /// </summary>
+        /// <param name="selectedEmails"></param>
+        /// <returns></returns>
+        public static IEnumerable<MailItem> ConfirmAlreadyArchivedEmails(IEnumerable<MailItem> selectedEmails)
+        {
+            IEnumerable<MailItem> archived = selectedEmails.Where(x => !string.IsNullOrEmpty(x.GetCRMEntryId()));
+            IEnumerable<MailItem> result;
+
+            if (archived.Count() > 0)
+            {
+                if (new ConfirmRearchiveAlreadyArchivedEmails(archived).ShowDialog() == DialogResult.Yes)
+                {
+                    result = selectedEmails;
+                }
+                else
+                {
+                    result = selectedEmails.Where(x => string.IsNullOrEmpty(x.GetCRMEntryId()));
+                }
+            }
+            else
+            {
+                result = selectedEmails;
+            }
+
+            return result;
+        }
+
     }
 }

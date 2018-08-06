@@ -254,9 +254,9 @@ namespace SuiteCRMClient
                     };
                     userId = SuiteCRMUserSession.RestServer.GetCrmStringResponse("get_user_id", data);
                 }
-                catch (Exception)
+                catch (Exception fail)
                 {
-                    // Swallow exception(!)
+                    Log.Error("", fail);
                 }
             }
 

@@ -37,6 +37,7 @@
             this.To = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Date = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Subject = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.warningLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.alreadyArchivedEmailsGrid)).BeginInit();
             this.SuspendLayout();
             // 
@@ -55,11 +56,13 @@
             this.Subject});
             this.alreadyArchivedEmailsGrid.Cursor = System.Windows.Forms.Cursors.Default;
             this.alreadyArchivedEmailsGrid.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
+            this.alreadyArchivedEmailsGrid.Enabled = false;
             this.alreadyArchivedEmailsGrid.Location = new System.Drawing.Point(13, 25);
             this.alreadyArchivedEmailsGrid.Name = "alreadyArchivedEmailsGrid";
             this.alreadyArchivedEmailsGrid.ReadOnly = true;
+            this.alreadyArchivedEmailsGrid.RowHeadersVisible = false;
             this.alreadyArchivedEmailsGrid.ShowEditingIcon = false;
-            this.alreadyArchivedEmailsGrid.Size = new System.Drawing.Size(579, 138);
+            this.alreadyArchivedEmailsGrid.Size = new System.Drawing.Size(579, 146);
             this.alreadyArchivedEmailsGrid.TabIndex = 0;
             // 
             // question
@@ -77,9 +80,9 @@
             this.yesButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.yesButton.Cursor = System.Windows.Forms.Cursors.Default;
             this.yesButton.DialogResult = System.Windows.Forms.DialogResult.Yes;
-            this.yesButton.Location = new System.Drawing.Point(517, 169);
+            this.yesButton.Location = new System.Drawing.Point(528, 177);
             this.yesButton.Name = "yesButton";
-            this.yesButton.Size = new System.Drawing.Size(75, 23);
+            this.yesButton.Size = new System.Drawing.Size(64, 23);
             this.yesButton.TabIndex = 2;
             this.yesButton.Text = "Yes";
             this.yesButton.UseVisualStyleBackColor = true;
@@ -88,9 +91,9 @@
             // 
             this.noButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.noButton.DialogResult = System.Windows.Forms.DialogResult.No;
-            this.noButton.Location = new System.Drawing.Point(436, 169);
+            this.noButton.Location = new System.Drawing.Point(456, 177);
             this.noButton.Name = "noButton";
-            this.noButton.Size = new System.Drawing.Size(75, 23);
+            this.noButton.Size = new System.Drawing.Size(63, 23);
             this.noButton.TabIndex = 3;
             this.noButton.Text = "No";
             this.noButton.UseVisualStyleBackColor = true;
@@ -122,7 +125,18 @@
             this.Subject.HeaderText = "Subject";
             this.Subject.Name = "Subject";
             this.Subject.ReadOnly = true;
-            this.Subject.Width = 235;
+            this.Subject.Width = 275;
+            // 
+            // warningLabel
+            // 
+            this.warningLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.warningLabel.AutoSize = true;
+            this.warningLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.warningLabel.Location = new System.Drawing.Point(10, 182);
+            this.warningLabel.Name = "warningLabel";
+            this.warningLabel.Size = new System.Drawing.Size(428, 13);
+            this.warningLabel.TabIndex = 4;
+            this.warningLabel.Text = "WARNING: this will unlink any related records that have already been set.";
             // 
             // ConfirmRearchiveAlreadyArchivedEmails
             // 
@@ -130,6 +144,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.noButton;
             this.ClientSize = new System.Drawing.Size(604, 212);
+            this.Controls.Add(this.warningLabel);
             this.Controls.Add(this.noButton);
             this.Controls.Add(this.yesButton);
             this.Controls.Add(this.question);
@@ -158,5 +173,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn To;
         private System.Windows.Forms.DataGridViewTextBoxColumn Date;
         private System.Windows.Forms.DataGridViewTextBoxColumn Subject;
+        private System.Windows.Forms.Label warningLabel;
     }
 }

@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using SuiteCRMClient.Logging;
+    using SuiteCRMClient.Exceptions;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -36,6 +37,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         public static void Handle(Exception error)
         {
             ErrorHandler.Handle("SuiteCRM Addin has encountered a problem", error);
+        }
+
+        /// <summary>
+        /// Handle bad credentials specially.
+        /// </summary>
+        /// <param name="badCredentials"></param>
+        public static void Handle(BadCredentialsException badCredentials)
+        {
+            if (Globals.ThisAddIn.ShowReconfigureOrDisable("Login failed; have your credentials changed?"))
+            {
+                Globals.ThisAddIn.Disable();
+            }
         }
 
         public static void Handle(string message)

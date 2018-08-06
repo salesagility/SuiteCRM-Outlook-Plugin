@@ -312,7 +312,7 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void Disable()
+        internal void Disable()
         {
             const string methodName = "ThisAddIn.Disable";
             Log.Warn(catalogue.GetString("Disabling add-in"));
@@ -339,7 +339,7 @@ namespace SuiteCRMAddIn
         /// </summary>
         /// <param name="summary">A summary of the problem that caused the dialogue to be shown.</param>
         /// <returns>true if the user chose to disable the add-in.</returns>
-        private bool ShowReconfigureOrDisable(string summary)
+        internal bool ShowReconfigureOrDisable(string summary)
         {
             bool result;
 
@@ -508,8 +508,12 @@ namespace SuiteCRMAddIn
 
         public void ShowArchiveForm()
         {
-            ArchiveDialog objForm = new ArchiveDialog();
-            objForm.ShowDialog();
+            IEnumerable<Outlook.MailItem> itemsToArchive = ConfirmRearchiveAlreadyArchivedEmails.ConfirmAlreadyArchivedEmails(this.SelectedEmails);
+
+            if (itemsToArchive.Any())
+            {
+                new ArchiveDialog(itemsToArchive, EmailArchiveReason.Manual).ShowDialog();
+            }
         }
 
         internal void ManualArchive()

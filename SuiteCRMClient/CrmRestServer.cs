@@ -156,7 +156,15 @@ namespace SuiteCRMClient
 
             if (error != null && error.IsPopulated())
             {
-                throw new CrmServerErrorException(error, HttpUtility.UrlDecode(payload));
+                switch (Int32.Parse(error.number))
+                {
+                    case 10:
+                    case 1008:
+                    case 1009:
+                        throw new BadCredentialsException(error);
+                    default:
+                        throw new CrmServerErrorException(error, HttpUtility.UrlDecode(payload));
+                }
             }
         }
 

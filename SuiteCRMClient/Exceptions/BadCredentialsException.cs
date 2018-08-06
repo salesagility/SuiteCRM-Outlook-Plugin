@@ -20,31 +20,16 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMClient
+namespace SuiteCRMClient.Exceptions
 {
     using System;
     using System.Runtime.Serialization;
+    using SuiteCRMClient.RESTObjects;
 
-    /// <summary>
-    /// An exception thrown by the CrmRestServer, when a REST call fails.
-    /// </summary>
-    /// <see cref="CrmRestServer"/> 
     [Serializable]
-    public class CrmRestException : Exception
+    public class BadCredentialsException : CrmServerErrorException
     {
-        public CrmRestException()
-        {
-        }
-
-        public CrmRestException(string message) : base(message)
-        {
-        }
-
-        public CrmRestException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected CrmRestException(SerializationInfo info, StreamingContext context) : base(info, context)
+        public BadCredentialsException(ErrorValue error) : base(error)
         {
         }
     }
