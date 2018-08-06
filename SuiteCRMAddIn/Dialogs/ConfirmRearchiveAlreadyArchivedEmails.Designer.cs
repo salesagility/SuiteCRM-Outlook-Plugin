@@ -37,7 +37,6 @@
             this.To = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Date = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Subject = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.warningLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.alreadyArchivedEmailsGrid)).BeginInit();
             this.SuspendLayout();
             // 
@@ -127,24 +126,12 @@
             this.Subject.ReadOnly = true;
             this.Subject.Width = 275;
             // 
-            // warningLabel
-            // 
-            this.warningLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.warningLabel.AutoSize = true;
-            this.warningLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.warningLabel.Location = new System.Drawing.Point(10, 182);
-            this.warningLabel.Name = "warningLabel";
-            this.warningLabel.Size = new System.Drawing.Size(428, 13);
-            this.warningLabel.TabIndex = 4;
-            this.warningLabel.Text = "WARNING: this will unlink any related records that have already been set.";
-            // 
             // ConfirmRearchiveAlreadyArchivedEmails
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.noButton;
             this.ClientSize = new System.Drawing.Size(604, 212);
-            this.Controls.Add(this.warningLabel);
             this.Controls.Add(this.noButton);
             this.Controls.Add(this.yesButton);
             this.Controls.Add(this.question);
@@ -173,6 +160,5 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn To;
         private System.Windows.Forms.DataGridViewTextBoxColumn Date;
         private System.Windows.Forms.DataGridViewTextBoxColumn Subject;
-        private System.Windows.Forms.Label warningLabel;
     }
 }

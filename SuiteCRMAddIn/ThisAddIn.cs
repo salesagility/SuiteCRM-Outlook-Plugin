@@ -508,11 +508,9 @@ namespace SuiteCRMAddIn
 
         public void ShowArchiveForm()
         {
-            IEnumerable<Outlook.MailItem> itemsToArchive = ConfirmRearchiveAlreadyArchivedEmails.ConfirmAlreadyArchivedEmails(this.SelectedEmails);
-
-            if (itemsToArchive.Any())
+            if (this.SelectedEmails.Any())
             {
-                new ArchiveDialog(itemsToArchive, EmailArchiveReason.Manual).ShowDialog();
+                new ArchiveDialog(this.SelectedEmails, EmailArchiveReason.Manual).ShowDialog();
             }
         }
 

@@ -82,6 +82,12 @@ namespace SuiteCRMAddIn.Dialogs
                 this.archivableEmails = selectedEmails;
                 this.reason = reason;
                 InitializeComponent();
+
+                var alreadyArchived = selectedEmails.Where(x => !string.IsNullOrEmpty(x.GetCRMEntryId()));
+
+                this.legend.Text = alreadyArchived.Any() ?
+                    $"{alreadyArchived.Count()} message(s) have already been archived; rearchiving will remove any existing relationships. You must select all contacts, accounts, leads, etc that you wish to archive the message(s) to." :
+                    "Use the form to find record in CRM";
             }
         }
 
@@ -908,6 +914,8 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void btnArchive_Click(object sender, EventArgs e)
         {
+            IEnumerable<MailItem> itemsToArchive = ConfirmRearchiveAlreadyArchivedEmails.ConfirmAlreadyArchivedEmails(archivableEmails);
+
             using (WaitCursor.For(this))
             {
                 try
@@ -925,21 +933,21 @@ namespace SuiteCRMAddIn.Dialogs
                         return;
                     }
 
-                    var selectedEmailsCount = archivableEmails.Count();
+                    var selectedEmailsCount = itemsToArchive.Count();
                     if (selectedEmailsCount == 0)
                     {
                         MessageBox.Show("No emails selected", "Error");
                         return;
                     }
 
-                    Log.Debug($"ArchiveDialog: About to manually archive {archivableEmails.Count()} emails");
+                    Log.Debug($"ArchiveDialog: About to manually archive {selectedEmailsCount} emails");
                     var archiver = Globals.ThisAddIn.EmailArchiver;
                     bool success = this.ReportOnEmailArchiveSuccess(
-                        archivableEmails.Select(mailItem =>
+                        itemsToArchive.Select(mailItem =>
                                 archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.reason))
                             .ToList());
                     string prefix = success ? "S" : "Uns";
-                    Log.Debug($"ArchiveDialog: {prefix}uccessfully archived { this.archivableEmails.Count()} emails");
+                    Log.Debug($"ArchiveDialog: {prefix}uccessfully archived {selectedEmailsCount} emails");
 
                     this.DialogResult = DialogResult.OK;
                     Close();
