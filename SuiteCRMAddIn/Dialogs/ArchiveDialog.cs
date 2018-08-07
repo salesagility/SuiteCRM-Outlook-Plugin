@@ -81,11 +81,17 @@ namespace SuiteCRMAddIn.Dialogs
             InitializeComponent();
 
             var alreadyArchived = selectedEmails.Where(x => !string.IsNullOrEmpty(x.GetCRMEntryId()));
-
-            this.legend.Text = alreadyArchived.Any() ?
+            var anyArchived = alreadyArchived.Any();
+            this.legend.Text = anyArchived ?
                 $"{alreadyArchived.Count()} message(s) have already been archived; rearchiving will remove any existing relationships. You must select all contacts, accounts, leads, etc that you wish to archive the message(s) to." :
                 "";
-            this.legend.Visible = alreadyArchived.Any();
+            this.legend.Visible = anyArchived;
+
+            if (!anyArchived)
+            {
+                this.tsResults.Height += this.legend.Height;
+                this.lstViewSearchModules.Height += this.legend.Height;
+            }
         }
 
 
@@ -1043,6 +1049,24 @@ namespace SuiteCRMAddIn.Dialogs
                      * UserProperties nor add to them */
                 }
             }
+        }
+        private void RemoveSelection(Object obj)
+        {
+            TextBox textbox = obj as TextBox;
+            if (textbox != null)
+            {
+                textbox.SelectionLength = 0;
+            }
+        }
+
+        private void legend_MouseUp(object sender, MouseEventArgs e)
+        {
+            RemoveSelection(sender);
+        }
+
+        private void legend_KeyUp(object sender, KeyEventArgs e)
+        {
+            RemoveSelection(sender);
         }
 
         internal class LinkSpec

@@ -172,21 +172,25 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             this.legend.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.legend.BackColor = System.Drawing.SystemColors.Window;
+            this.legend.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.legend.ForeColor = System.Drawing.Color.DarkRed;
             this.legend.Location = new System.Drawing.Point(9, 316);
             this.legend.Multiline = true;
             this.legend.Name = "legend";
             this.legend.ReadOnly = true;
             this.legend.Size = new System.Drawing.Size(451, 47);
             this.legend.TabIndex = 9;
+            this.legend.KeyUp += new System.Windows.Forms.KeyEventHandler(this.legend_KeyUp);
+            this.legend.MouseUp += new System.Windows.Forms.MouseEventHandler(this.legend_MouseUp);
             // 
             // instructionLabel
             // 
             this.instructionLabel.AutoSize = true;
             this.instructionLabel.Location = new System.Drawing.Point(6, 9);
             this.instructionLabel.Name = "instructionLabel";
-            this.instructionLabel.Size = new System.Drawing.Size(176, 13);
+            this.instructionLabel.Size = new System.Drawing.Size(194, 13);
             this.instructionLabel.TabIndex = 10;
-            this.instructionLabel.Text = "Use this form to find records in CRM";
+            this.instructionLabel.Text = "Use the form below find records in CRM";
             // 
             // ArchiveDialog
             // 
