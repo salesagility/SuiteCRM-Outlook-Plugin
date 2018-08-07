@@ -68,7 +68,7 @@ namespace SuiteCRMAddIn.Dialogs
                     recipientAddresses.Add(recipient.GetSmtpAddress());
                 }
 
-                this.From = email.SenderEmailAddress;
+                this.From = email.GetSenderSMTPAddress();
                 this.To = string.Join(";", recipientAddresses);
                 this.Date = email.SentOn;
                 this.Subject = email.Subject;
