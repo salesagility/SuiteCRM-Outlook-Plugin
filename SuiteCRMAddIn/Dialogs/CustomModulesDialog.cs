@@ -175,7 +175,7 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void frmCustomModules_Load(object sender, EventArgs e)
         {
-            using (new WaitCursor(this))
+            using (WaitCursor.For(this))
             {
                 try
                 {

@@ -62,33 +62,30 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private readonly EmailArchiveReason reason;
 
-        public ArchiveDialog() : this(Globals.ThisAddIn.SelectedEmails, EmailArchiveReason.Manual)
-        {
-        }
-
         public ArchiveDialog(IEnumerable<MailItem> selectedEmails, EmailArchiveReason reason)
         {
-            using (new WaitCursor(this))
+            try
             {
-                try
+                using (WaitCursor.For(this))
                 {
                     this.moduleChains = AdvancedArchiveSettingsDialog.SetupSearchChains();
                 }
-                catch (Exception any)
-                {
-                    ErrorHandler.Handle($"Failed to parse Archiving Search Chains value '{Properties.Settings.Default.ArchivingSearchChains}':", any);
-                }
-
-                this.archivableEmails = selectedEmails;
-                this.reason = reason;
-                InitializeComponent();
-
-                var alreadyArchived = selectedEmails.Where(x => !string.IsNullOrEmpty(x.GetCRMEntryId()));
-
-                this.legend.Text = alreadyArchived.Any() ?
-                    $"{alreadyArchived.Count()} message(s) have already been archived; rearchiving will remove any existing relationships. You must select all contacts, accounts, leads, etc that you wish to archive the message(s) to." :
-                    "Use the form to find record in CRM";
             }
+            catch (Exception any)
+            {
+                ErrorHandler.Handle($"Failed to parse Archiving Search Chains value '{Properties.Settings.Default.ArchivingSearchChains}':", any);
+            }
+
+            this.archivableEmails = selectedEmails;
+            this.reason = reason;
+            InitializeComponent();
+
+            var alreadyArchived = selectedEmails.Where(x => !string.IsNullOrEmpty(x.GetCRMEntryId()));
+
+            this.legend.Text = alreadyArchived.Any() ?
+                $"{alreadyArchived.Count()} message(s) have already been archived; rearchiving will remove any existing relationships. You must select all contacts, accounts, leads, etc that you wish to archive the message(s) to." :
+                "";
+            this.legend.Visible = alreadyArchived.Any();
         }
 
 
@@ -140,18 +137,15 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void frmArchive_Load(object sender, EventArgs e)
         {
-            using (new WaitCursor(this))
-            {
-                this.AddActionHandlers();
-                this.PopulateUIComponents();
+            this.AddActionHandlers();
+            this.PopulateUIComponents();
 
-                if (Properties.Settings.Default.AutomaticSearch)
-                {
-                    this.BeginInvoke((MethodInvoker)delegate
-                   {
-                       this.Search(this.txtSearch.Text);
-                   });
-                }
+            if (Properties.Settings.Default.AutomaticSearch)
+            {
+               this.BeginInvoke((MethodInvoker)delegate
+               {
+                   this.Search(this.txtSearch.Text);
+               });
             }
         }
 
@@ -301,17 +295,8 @@ namespace SuiteCRMAddIn.Dialogs
         {
             this.tsResults.Nodes.Clear();
 
-            if (this.txtSearch.Text.Replace(';', ',').Contains<char>(','))
-            {
-                foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }).OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
-                {
-                    this.Search(str);
-                }
-            }
-            else
-            {
-                this.Search(this.txtSearch.Text);
-            }
+            this.Search(this.txtSearch.Text);
+
             this.AcceptButton = btnArchive;
         }
 
@@ -333,12 +318,16 @@ namespace SuiteCRMAddIn.Dialogs
         /// <remarks>
         /// TODO: Candidate for refactoring.
         /// </remarks>
-        /// <param name="searchText">The text to search for.</param>
-        public void Search(string searchText)
+        /// <param name="allSearchText">The text to search for.</param>
+        public void Search(string allSearchText)
         {
-            using (WaitCursor.For(this))
+            this.txtSearch.Enabled = false;
+
+            foreach (string searchText in
+                allSearchText.Split(new char[] { ',', ';', ' ' })
+                .OrderBy(x => x)
+                .GroupBy(x => x).Select(g => g.First().Trim()))
             {
-                this.txtSearch.Enabled = false;
 
                 try
                 {
@@ -349,60 +338,58 @@ namespace SuiteCRMAddIn.Dialogs
                     }
                     else
                     {
-                        searchText = searchText.TrimStart(new char[0]);
-
-                        using (new WaitCursor(this))
+                        foreach (ListViewItem item in this.lstViewSearchModules.Items)
                         {
-                            foreach (ListViewItem item in this.lstViewSearchModules.Items)
+                            TreeNode node = null;
+                            try
                             {
-                                TreeNode node = null;
-                                try
+                                if (item.Checked)
                                 {
-                                    if (item.Checked)
+                                    string moduleName = item.Tag.ToString();
+
+                                    if (moduleName != "All")
                                     {
-                                        string moduleName = item.Tag.ToString();
+                                        node = FindOrCreateNodeForModule(moduleName);
 
-                                        if (moduleName != "All")
+                                        List<string> fieldsToSeek = new List<string>();
+                                        fieldsToSeek.Add("id");
+                                        EntryList queryResult;
+                                        using (WaitCursor.For(this))
                                         {
-                                            node = FindOrCreateNodeForModule(moduleName);
-
-                                            List<string> fieldsToSeek = new List<string>();
-                                            fieldsToSeek.Add("id");
-
-                                            var queryResult = TryQuery(searchText, moduleName, fieldsToSeek);
-                                            if (queryResult != null)
+                                            queryResult = TryQuery(searchText, moduleName, fieldsToSeek);
+                                        }
+                                        if (queryResult != null)
+                                        {
+                                            if (queryResult.result_count > 0)
                                             {
-                                                if (queryResult.result_count > 0)
-                                                {
-                                                    this.PopulateTree(queryResult, moduleName, node);
-                                                }
-                                            }
-                                            else
-                                            {
-                                                MessageBox.Show(
-                                                    $"An error was encountered while querying module '{moduleName}'. The error has been logged",
-                                                    $"Query error in module {moduleName}",
-                                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                this.PopulateTree(queryResult, moduleName, node);
                                             }
                                         }
-
+                                        else
+                                        {
+                                            MessageBox.Show(
+                                                $"An error was encountered while querying module '{moduleName}'. The error has been logged",
+                                                $"Query error in module {moduleName}",
+                                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
                                     }
-                                }
-                                catch (System.Exception any)
-                                {
-                                    ErrorHandler.Handle("Failure when custom module included (3)", any);
 
-                                    MessageBox.Show(
-                                        $"An error was encountered while querying module '{item.Tag.ToString()}'. The error ('{any.Message}') has been logged",
-                                        $"Query error in module {item.Tag.ToString()}",
-                                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 }
-                                finally
+                            }
+                            catch (System.Exception any)
+                            {
+                                ErrorHandler.Handle("Failure when custom module included (3)", any);
+
+                                MessageBox.Show(
+                                    $"An error was encountered while querying module '{item.Tag.ToString()}'. The error ('{any.Message}') has been logged",
+                                    $"Query error in module {item.Tag.ToString()}",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            finally
+                            {
+                                if (node != null && node.GetNodeCount(true) <= 0)
                                 {
-                                    if (node != null && node.GetNodeCount(true) <= 0)
-                                    {
-                                        node.Remove();
-                                    }
+                                    node.Remove();
                                 }
                             }
                         }
@@ -934,23 +921,24 @@ namespace SuiteCRMAddIn.Dialogs
                     }
 
                     var selectedEmailsCount = itemsToArchive.Count();
-                    if (selectedEmailsCount == 0)
+                    if (selectedEmailsCount > 0)
                     {
-                        MessageBox.Show("No emails selected", "Error");
-                        return;
+                        Log.Debug($"ArchiveDialog: About to manually archive {selectedEmailsCount} emails");
+                        var archiver = Globals.ThisAddIn.EmailArchiver;
+                        bool success = this.ReportOnEmailArchiveSuccess(
+                            itemsToArchive.Select(mailItem =>
+                                    archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.reason))
+                                .ToList());
+                        string prefix = success ? "S" : "Uns";
+                        Log.Debug($"ArchiveDialog: {prefix}uccessfully archived {selectedEmailsCount} emails");
+
+                        this.DialogResult = DialogResult.OK;
+                        Close();
                     }
-
-                    Log.Debug($"ArchiveDialog: About to manually archive {selectedEmailsCount} emails");
-                    var archiver = Globals.ThisAddIn.EmailArchiver;
-                    bool success = this.ReportOnEmailArchiveSuccess(
-                        itemsToArchive.Select(mailItem =>
-                                archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.reason))
-                            .ToList());
-                    string prefix = success ? "S" : "Uns";
-                    Log.Debug($"ArchiveDialog: {prefix}uccessfully archived {selectedEmailsCount} emails");
-
-                    this.DialogResult = DialogResult.OK;
-                    Close();
+                    else
+                    {
+                        this.DialogResult = DialogResult.Cancel;
+                    }
                 }
                 catch (System.Exception exception)
                 {
