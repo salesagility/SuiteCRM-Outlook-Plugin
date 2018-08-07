@@ -171,7 +171,7 @@ namespace SuiteCRMAddIn.Dialogs
             // legend
             // 
             this.legend.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.legend.BackColor = System.Drawing.SystemColors.Window;
+            this.legend.BackColor = System.Drawing.SystemColors.Control;
             this.legend.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.legend.ForeColor = System.Drawing.Color.DarkRed;
             this.legend.Location = new System.Drawing.Point(9, 316);
