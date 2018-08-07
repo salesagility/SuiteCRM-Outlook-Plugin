@@ -907,58 +907,65 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void btnArchive_Click(object sender, EventArgs e)
         {
-            IEnumerable<MailItem> itemsToArchive = ConfirmRearchiveAlreadyArchivedEmails.ConfirmAlreadyArchivedEmails(archivableEmails);
-
-            using (WaitCursor.For(this))
+            try
             {
-                try
+                IEnumerable<MailItem> itemsToArchive = ConfirmRearchiveAlreadyArchivedEmails.ConfirmAlreadyArchivedEmails(archivableEmails);
+
+                using (WaitCursor.For(this))
                 {
-                    if (this.tsResults.Nodes.Count == 0)
+                    try
                     {
-                        MessageBox.Show("There are no search results.", "Error");
-                        return;
-                    }
+                        if (this.tsResults.Nodes.Count == 0)
+                        {
+                            MessageBox.Show("There are no search results.", "Error");
+                            return;
+                        }
 
-                    var selectedCrmEntities = GetSelectedCrmEntities(this.tsResults);
-                    if (!selectedCrmEntities.Any())
-                    {
-                        MessageBox.Show("No selected CRM entities", "Error");
-                        return;
-                    }
+                        var selectedCrmEntities = GetSelectedCrmEntities(this.tsResults);
+                        if (!selectedCrmEntities.Any())
+                        {
+                            MessageBox.Show("No selected CRM entities", "Error");
+                            return;
+                        }
 
-                    var selectedEmailsCount = itemsToArchive.Count();
-                    if (selectedEmailsCount > 0)
-                    {
-                        Log.Debug($"ArchiveDialog: About to manually archive {selectedEmailsCount} emails");
-                        var archiver = Globals.ThisAddIn.EmailArchiver;
-                        bool success = this.ReportOnEmailArchiveSuccess(
-                            itemsToArchive.Select(mailItem =>
-                                    archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.reason))
-                                .ToList());
-                        string prefix = success ? "S" : "Uns";
-                        Log.Debug($"ArchiveDialog: {prefix}uccessfully archived {selectedEmailsCount} emails");
+                        var selectedEmailsCount = itemsToArchive.Count();
+                        if (selectedEmailsCount > 0)
+                        {
+                            Log.Debug($"ArchiveDialog: About to manually archive {selectedEmailsCount} emails");
+                            var archiver = Globals.ThisAddIn.EmailArchiver;
+                            bool success = this.ReportOnEmailArchiveSuccess(
+                                itemsToArchive.Select(mailItem =>
+                                        archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.reason))
+                                    .ToList());
+                            string prefix = success ? "S" : "Uns";
+                            Log.Debug($"ArchiveDialog: {prefix}uccessfully archived {selectedEmailsCount} emails");
 
-                        this.DialogResult = DialogResult.OK;
-                        Close();
+                            this.DialogResult = DialogResult.OK;
+                            Close();
+                        }
+                        else
+                        {
+                            this.DialogResult = DialogResult.Cancel;
+                        }
                     }
-                    else
+                    catch (System.Exception exception)
                     {
-                        this.DialogResult = DialogResult.Cancel;
+                        this.DialogResult = DialogResult.Abort;
+                        Log.Error("btnArchive_Click", exception);
+                        MessageBox.Show("There was an error while archiving", "Error");
+                    }
+                    finally
+                    {
+                        foreach (MailItem i in this.archivableEmails)
+                        {
+                            i.Save();
+                        }
                     }
                 }
-                catch (System.Exception exception)
-                {
-                    this.DialogResult = DialogResult.Abort;
-                    Log.Error("btnArchive_Click", exception);
-                    MessageBox.Show("There was an error while archiving", "Error");
-                }
-                finally
-                {
-                    foreach (MailItem i in this.archivableEmails)
-                    {
-                        i.Save();
-                    }
-                }
+            }
+            catch (DialogCancelledException)
+            {
+
             }
         }
 

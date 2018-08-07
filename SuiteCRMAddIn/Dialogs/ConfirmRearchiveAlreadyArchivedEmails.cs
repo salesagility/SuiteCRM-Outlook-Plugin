@@ -30,6 +30,7 @@ namespace SuiteCRMAddIn.Dialogs
     using System.Data;
     using System.Linq;
     using System.Windows.Forms;
+    using System.Runtime.Serialization;
 
     public partial class ConfirmRearchiveAlreadyArchivedEmails : Form
     {
@@ -87,13 +88,16 @@ namespace SuiteCRMAddIn.Dialogs
 
             if (archived.Count() > 0)
             {
-                if (new ConfirmRearchiveAlreadyArchivedEmails(archived).ShowDialog() == DialogResult.Yes)
+                switch (new ConfirmRearchiveAlreadyArchivedEmails(archived).ShowDialog())
                 {
-                    result = selectedEmails;
-                }
-                else
-                {
-                    result = selectedEmails.Where(x => string.IsNullOrEmpty(x.GetCRMEntryId()));
+                    case DialogResult.Yes:
+                        result = selectedEmails;
+                        break;
+                    case DialogResult.No:
+                        result = selectedEmails.Where(x => string.IsNullOrEmpty(x.GetCRMEntryId()));
+                        break;
+                    default:
+                        throw new DialogCancelledException();
                 }
             }
             else
@@ -104,5 +108,25 @@ namespace SuiteCRMAddIn.Dialogs
             return result;
         }
 
+    }
+
+    [Serializable]
+    internal class DialogCancelledException : System.Exception
+    {
+        public DialogCancelledException()
+        {
+        }
+
+        public DialogCancelledException(string message) : base(message)
+        {
+        }
+
+        public DialogCancelledException(string message, System.Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected DialogCancelledException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
     }
 }

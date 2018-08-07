@@ -30,13 +30,14 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ConfirmRearchiveAlreadyArchivedEmails));
             this.alreadyArchivedEmailsGrid = new System.Windows.Forms.DataGridView();
-            this.question = new System.Windows.Forms.Label();
-            this.yesButton = new System.Windows.Forms.Button();
-            this.noButton = new System.Windows.Forms.Button();
             this.From = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.To = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Date = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Subject = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.question = new System.Windows.Forms.Label();
+            this.yesButton = new System.Windows.Forms.Button();
+            this.noButton = new System.Windows.Forms.Button();
+            this.cancelButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.alreadyArchivedEmailsGrid)).BeginInit();
             this.SuspendLayout();
             // 
@@ -63,39 +64,6 @@
             this.alreadyArchivedEmailsGrid.ShowEditingIcon = false;
             this.alreadyArchivedEmailsGrid.Size = new System.Drawing.Size(579, 146);
             this.alreadyArchivedEmailsGrid.TabIndex = 0;
-            // 
-            // question
-            // 
-            this.question.AutoSize = true;
-            this.question.Location = new System.Drawing.Point(12, 9);
-            this.question.Name = "question";
-            this.question.Size = new System.Drawing.Size(442, 13);
-            this.question.TabIndex = 1;
-            this.question.Text = "The following emails have already been archived. Are you sure you want to re-arch" +
-    "ive them?";
-            // 
-            // yesButton
-            // 
-            this.yesButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.yesButton.Cursor = System.Windows.Forms.Cursors.Default;
-            this.yesButton.DialogResult = System.Windows.Forms.DialogResult.Yes;
-            this.yesButton.Location = new System.Drawing.Point(528, 177);
-            this.yesButton.Name = "yesButton";
-            this.yesButton.Size = new System.Drawing.Size(64, 23);
-            this.yesButton.TabIndex = 2;
-            this.yesButton.Text = "Yes";
-            this.yesButton.UseVisualStyleBackColor = true;
-            // 
-            // noButton
-            // 
-            this.noButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.noButton.DialogResult = System.Windows.Forms.DialogResult.No;
-            this.noButton.Location = new System.Drawing.Point(456, 177);
-            this.noButton.Name = "noButton";
-            this.noButton.Size = new System.Drawing.Size(63, 23);
-            this.noButton.TabIndex = 3;
-            this.noButton.Text = "No";
-            this.noButton.UseVisualStyleBackColor = true;
             // 
             // From
             // 
@@ -126,12 +94,56 @@
             this.Subject.ReadOnly = true;
             this.Subject.Width = 275;
             // 
+            // question
+            // 
+            this.question.AutoSize = true;
+            this.question.Location = new System.Drawing.Point(12, 9);
+            this.question.Name = "question";
+            this.question.Size = new System.Drawing.Size(442, 13);
+            this.question.TabIndex = 1;
+            this.question.Text = "The following emails have already been archived. Are you sure you want to re-arch" +
+    "ive them?";
+            // 
+            // yesButton
+            // 
+            this.yesButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.yesButton.Cursor = System.Windows.Forms.Cursors.Default;
+            this.yesButton.DialogResult = System.Windows.Forms.DialogResult.Yes;
+            this.yesButton.Location = new System.Drawing.Point(377, 176);
+            this.yesButton.Name = "yesButton";
+            this.yesButton.Size = new System.Drawing.Size(64, 23);
+            this.yesButton.TabIndex = 2;
+            this.yesButton.Text = "Yes";
+            this.yesButton.UseVisualStyleBackColor = true;
+            // 
+            // noButton
+            // 
+            this.noButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.noButton.DialogResult = System.Windows.Forms.DialogResult.No;
+            this.noButton.Location = new System.Drawing.Point(447, 176);
+            this.noButton.Name = "noButton";
+            this.noButton.Size = new System.Drawing.Size(63, 23);
+            this.noButton.TabIndex = 3;
+            this.noButton.Text = "No";
+            this.noButton.UseVisualStyleBackColor = true;
+            // 
+            // cancelButton
+            // 
+            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.cancelButton.Location = new System.Drawing.Point(517, 176);
+            this.cancelButton.Name = "cancelButton";
+            this.cancelButton.Size = new System.Drawing.Size(75, 23);
+            this.cancelButton.TabIndex = 4;
+            this.cancelButton.Text = "Cancel";
+            this.cancelButton.UseVisualStyleBackColor = true;
+            // 
             // ConfirmRearchiveAlreadyArchivedEmails
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.noButton;
             this.ClientSize = new System.Drawing.Size(604, 212);
+            this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.noButton);
             this.Controls.Add(this.yesButton);
             this.Controls.Add(this.question);
@@ -160,5 +172,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn To;
         private System.Windows.Forms.DataGridViewTextBoxColumn Date;
         private System.Windows.Forms.DataGridViewTextBoxColumn Subject;
+        private System.Windows.Forms.Button cancelButton;
     }
 }
