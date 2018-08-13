@@ -267,7 +267,10 @@ namespace SuiteCRMClient.Email
             {
                 List<Exception> newFails = new List<Exception>();
                 newFails.Add(any);
-                newFails.AddRange(fails);
+                if (fails != null && fails.Any())
+                {
+                    newFails.AddRange(fails);
+                }
                 result = ArchiveResult.Failure(newFails.ToArray());
             }
 
