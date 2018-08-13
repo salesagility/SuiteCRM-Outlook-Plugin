@@ -174,7 +174,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             catch (KeyNotFoundException knf)
             {
                 // OK, this is impossible. But it IS happening... why?
-                Log.Error($"Key not found exception while seeking '{moduleKey}'", knf);
+                ErrorHandler.Handle($"Failed while checking permission {permission} for module '{moduleKey}'", knf);
                 return result;
             }
         }
@@ -220,7 +220,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception fetchFailed)
             {
-                Log.Error($"Cannot detect access {moduleKey}/{permission} because {fetchFailed.GetType().Name}: {fetchFailed.Message}", fetchFailed);
+                ErrorHandler.Handle($"Failed to detect access {moduleKey}/{permission}", fetchFailed);
                 throw;
             }
 
@@ -349,7 +349,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error("Failed in HasCahedAccess", any);
+                ErrorHandler.Handle($"Failed while checking the permissions cache for access to {moduleKey}/{direction}", any);
             }
 
             return result;
@@ -383,20 +383,21 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of outlook item for which I manage 
     /// permissions (may be stored in more than one module).</typeparam>
-    public class CRMPermissionsCache<OutlookItemType> : CRMPermissionsCache
+    public class CRMPermissionsCache<OutlookItemType, SyncStateType> : CRMPermissionsCache
         where OutlookItemType : class
+        where SyncStateType : SyncState<OutlookItemType>
     {
         /// <summary>
         /// The synchroniser on whose behalf I work.
         /// </summary>
-        private Synchroniser<OutlookItemType> synchroniser;
+        private Synchroniser<OutlookItemType, SyncStateType> synchroniser;
 
         /// <summary>
         /// Construct a new instance of a permissions cache for this syncrhoniser using this log.
         /// </summary>
         /// <param name="synchroniser">The synchroniser on whose behalf I shall work.</param>
         /// <param name="log">The logger I shall log to.</param>
-        public CRMPermissionsCache(Synchroniser<OutlookItemType> synchroniser, ILogger log) : 
+        public CRMPermissionsCache(Synchroniser<OutlookItemType,SyncStateType> synchroniser, ILogger log) : 
             base($"PC Permissions cache ${synchroniser.GetType().Name}", log)
         {
             this.synchroniser = synchroniser;

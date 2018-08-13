@@ -26,6 +26,7 @@ namespace SuiteCRMAddIn.Dialogs
     using Exceptions;
     using Extensions;
     using Microsoft.Office.Interop.Outlook;
+    using Newtonsoft.Json.Linq;
     using SuiteCRMClient;
     using SuiteCRMClient.Email;
     using SuiteCRMClient.Logging;
@@ -34,22 +35,65 @@ namespace SuiteCRMAddIn.Dialogs
     using System.Collections.Generic;
     using System.Data;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Text;
+    using System.Threading;
     using System.Windows.Forms;
     using Exception = System.Exception;
 
     public partial class ArchiveDialog : Form
     {
-        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSyncing.CrmModule, "Leads", "Opportunities", "Project", "Users" };
+        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSynchroniser.CrmModule, "Leads", "Opportunities", "Project", "Users" };
 
-        public ArchiveDialog()
-        {
-            InitializeComponent();
-        }
-
-        public string type;
+        /// <summary>
+        /// The emails to be archived.
+        /// </summary>
+        private readonly IEnumerable<MailItem> archivableEmails;
 
         private ILogger Log => Globals.ThisAddIn.Log;
+
+        /// <summary>
+        /// Chains of modules to expand in the search tree.
+        /// </summary>
+        private IDictionary<string, ICollection<LinkSpec>> moduleChains = new Dictionary<string, ICollection<LinkSpec>>();
+
+        /// <summary>
+        /// The reason for archiving.
+        /// </summary>
+        private readonly EmailArchiveReason reason;
+
+        public ArchiveDialog(IEnumerable<MailItem> selectedEmails, EmailArchiveReason reason)
+        {
+            try
+            {
+                using (WaitCursor.For(this))
+                {
+                    this.moduleChains = AdvancedArchiveSettingsDialog.SetupSearchChains();
+                }
+            }
+            catch (Exception any)
+            {
+                ErrorHandler.Handle($"Failed to parse Archiving Search Chains value '{Properties.Settings.Default.ArchivingSearchChains}':", any);
+            }
+
+            this.archivableEmails = selectedEmails;
+            this.reason = reason;
+            InitializeComponent();
+
+            var alreadyArchived = selectedEmails.Where(x => !string.IsNullOrEmpty(x.GetCRMEntryId()));
+            var anyArchived = alreadyArchived.Any();
+            this.legend.Text = anyArchived ?
+                $"{alreadyArchived.Count()} message(s) have already been archived; rearchiving will remove any existing relationships. You must select all contacts, accounts, leads, etc that you wish to archive the message(s) to." :
+                "";
+            this.legend.Visible = anyArchived;
+
+            if (!anyArchived)
+            {
+                this.tsResults.Height += this.legend.Height;
+                this.lstViewSearchModules.Height += this.legend.Height;
+            }
+        }
+
 
         /// <summary>
         /// Add any selected custom modules to the list view
@@ -99,15 +143,15 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void frmArchive_Load(object sender, EventArgs e)
         {
-            using (new WaitCursor(this))
-            {
-                this.AddActionHandlers();
-                this.PopulateUIComponents();
+            this.AddActionHandlers();
+            this.PopulateUIComponents();
 
-                if (Properties.Settings.Default.AutomaticSearch)
-                {
-                    this.btnSearch_Click(null, null);
-                }
+            if (Properties.Settings.Default.AutomaticSearch)
+            {
+               this.BeginInvoke((MethodInvoker)delegate
+               {
+                   this.Search(this.txtSearch.Text);
+               });
             }
         }
 
@@ -116,7 +160,7 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void PopulateUIComponents()
         {
-            this.txtSearch.Text = ConstructSearchText(Globals.ThisAddIn.SelectedEmails);
+            this.txtSearch.Text = ConstructSearchText();
             if (Properties.Settings.Default.EmailCategories != null && Properties.Settings.Default.EmailCategories.IsImplemented)
             {
                 this.categoryInput.DataSource = Properties.Settings.Default.EmailCategories;
@@ -166,12 +210,76 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         /// <param name="emails">A list of emails, presumably those selected by the user</param>
         /// <returns>A string comprising the sender addresses from the emails, comma separated.</returns>
-        private static string ConstructSearchText(IEnumerable<MailItem> emails)
+        private string ConstructSearchText()
         {
-            return string.Join(",", emails.Select(email => clsGlobals.GetSMTPEmailAddress(email))
-                .OrderBy(address => address)
-                .GroupBy(address => address)
-                .Select(g => g.First()));
+            string result;
+            var currentUserSMTPAddress = Globals.ThisAddIn.Application.GetCurrentUserSMTPAddress();
+            switch (this.reason)
+            {
+                case EmailArchiveReason.Inbound:
+                    result = ConstructInboundSearchTest();
+                    break;
+                case EmailArchiveReason.Manual:
+                    // is the sender the current user?
+                    if (this.archivableEmails
+                        .Select(email => email.GetSenderSMTPAddress())
+                        .Any(x => x.Equals(currentUserSMTPAddress)))
+                    {
+                        if (this.archivableEmails
+                            .Select(email => email.GetSenderSMTPAddress())
+                            .All(x => x.Equals(currentUserSMTPAddress)))
+                        {
+                            result = ConstructOutboundSearchText();
+                        }
+                        else
+                        {
+                            ICollection<string> addresses = 
+                                new HashSet<string>($"{ConstructInboundSearchTest()},{ConstructOutboundSearchText()}"
+                                .Split(','));
+                            addresses.Remove(currentUserSMTPAddress);
+                            result = string.Join(",", addresses.OrderBy(address => address)
+                                        .GroupBy(address => address)
+                                        .Select(g => g.First()));
+                        }
+                        }
+                    else
+                    {
+                        result = ConstructInboundSearchTest();
+                    }
+                    break;
+                case EmailArchiveReason.Outbound:
+                case EmailArchiveReason.SendAndArchive:
+                    result = ConstructOutboundSearchText();
+                    break;
+                default:
+                    result = string.Empty;
+                    break;
+            }
+
+            return result;
+        }
+
+        private string ConstructOutboundSearchText()
+        {
+            string result;
+            ICollection<string> addresses = new HashSet<string>();
+            foreach (var email in this.archivableEmails)
+            {
+                foreach (Recipient recipient in email.Recipients)
+                    addresses.Add(recipient.GetSmtpAddress());
+            }
+            result = string.Join(",", addresses.OrderBy(address => address)
+                        .GroupBy(address => address)
+                        .Select(g => g.First()));
+            return result;
+        }
+
+        private string ConstructInboundSearchTest()
+        {
+            return string.Join(",", this.archivableEmails.Select(email => email.GetSenderSMTPAddress())
+                        .OrderBy(address => address)
+                        .GroupBy(address => address)
+                        .Select(g => g.First()));
         }
 
 
@@ -193,17 +301,9 @@ namespace SuiteCRMAddIn.Dialogs
         {
             this.tsResults.Nodes.Clear();
 
-            if (this.txtSearch.Text.Replace(';', ',').Contains<char>(','))
-            {
-                foreach (string str in this.txtSearch.Text.Split(new char[] { ',' }).OrderBy(x => x).GroupBy(x => x).Select(g => g.First()))
-                {
-                    this.Search(str);
-                }
-            }
-            else
-            {
-                this.Search(this.txtSearch.Text);
-            }
+            this.Search(this.txtSearch.Text);
+
+            this.AcceptButton = btnArchive;
         }
 
         private bool UnallowedNumber(string strText)
@@ -224,12 +324,16 @@ namespace SuiteCRMAddIn.Dialogs
         /// <remarks>
         /// TODO: Candidate for refactoring.
         /// </remarks>
-        /// <param name="searchText">The text to search for.</param>
-        public void Search(string searchText)
+        /// <param name="allSearchText">The text to search for.</param>
+        public void Search(string allSearchText)
         {
-            using (WaitCursor.For(this))
+            this.txtSearch.Enabled = false;
+
+            foreach (string searchText in
+                allSearchText.Split(new char[] { ',', ';', ' ' })
+                .OrderBy(x => x)
+                .GroupBy(x => x).Select(g => g.First().Trim()))
             {
-                this.txtSearch.Enabled = false;
 
                 try
                 {
@@ -240,8 +344,6 @@ namespace SuiteCRMAddIn.Dialogs
                     }
                     else
                     {
-                        searchText = searchText.TrimStart(new char[0]);
-
                         foreach (ListViewItem item in this.lstViewSearchModules.Items)
                         {
                             TreeNode node = null;
@@ -257,8 +359,11 @@ namespace SuiteCRMAddIn.Dialogs
 
                                         List<string> fieldsToSeek = new List<string>();
                                         fieldsToSeek.Add("id");
-
-                                        var queryResult = TryQuery(searchText, moduleName, fieldsToSeek);
+                                        EntryList queryResult;
+                                        using (WaitCursor.For(this))
+                                        {
+                                            queryResult = TryQuery(searchText, moduleName, fieldsToSeek);
+                                        }
                                         if (queryResult != null)
                                         {
                                             if (queryResult.result_count > 0)
@@ -274,11 +379,12 @@ namespace SuiteCRMAddIn.Dialogs
                                                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                         }
                                     }
+
                                 }
                             }
                             catch (System.Exception any)
                             {
-                                Globals.ThisAddIn.Log.Error("Failure when custom module included (3)", any);
+                                ErrorHandler.Handle("Failure when custom module included (3)", any);
 
                                 MessageBox.Show(
                                     $"An error was encountered while querying module '{item.Tag.ToString()}'. The error ('{any.Message}') has been logged",
@@ -295,10 +401,10 @@ namespace SuiteCRMAddIn.Dialogs
                         }
                     }
                 }
-                catch (System.Exception any)
+                catch (Exception any)
                 {
 #if DEBUG
-                    Log.Error("frmArchive.Search: Unexpected error while populating archive tree", any);
+                    ErrorHandler.Handle("Unexpected error while populating archive tree", any);
 #endif
                     this.tsResults.Nodes.Clear();
                 }
@@ -339,20 +445,34 @@ namespace SuiteCRMAddIn.Dialogs
             string queryText = ConstructQueryTextForModuleName(searchText, moduleName, fieldsToSeek);
             try
             {
-                queryResult = RestAPIWrapper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+                queryResult = RestAPIWrapper.GetEntryList(moduleName, 
+                    queryText, 
+                    Properties.Settings.Default.SyncMaxRecords, 
+                    "date_entered DESC", 
+                    0, 
+                    false, 
+                    fieldsToSeek.ToArray(), 
+                    ConstructLinkNamesToFieldsArray(moduleName));
             }
             catch (System.Exception any)
             {
-                Globals.ThisAddIn.Log.Error($"Failure when custom module included (1)\n\tQuery was '{queryText}'", any);
+                ErrorHandler.Handle($"Failure when custom module included (1); Query was '{queryText}'", any);
 
                 queryText = queryText.Replace("%", string.Empty);
                 try
                 {
-                    queryResult = RestAPIWrapper.GetEntryList(moduleName, queryText, Properties.Settings.Default.SyncMaxRecords, "date_entered DESC", 0, false, fieldsToSeek.ToArray());
+                    queryResult = RestAPIWrapper.GetEntryList(moduleName, 
+                        queryText, 
+                        Properties.Settings.Default.SyncMaxRecords, 
+                        "date_entered DESC", 
+                        0, 
+                        false, 
+                        fieldsToSeek.ToArray(), 
+                        ConstructLinkNamesToFieldsArray(moduleName));
                 }
                 catch (Exception secondFail)
                 {
-                    Globals.ThisAddIn.Log.Error($"Failure when custom module included (2)\n\tQuery was '{queryText}'", secondFail);
+                    ErrorHandler.Handle($"Failure when custom module included (2); Query was '{queryText}'", secondFail);
                     queryResult = null;
                     throw;
                 }
@@ -363,6 +483,29 @@ namespace SuiteCRMAddIn.Dialogs
             }
 
             return queryResult;
+        }
+
+        private object ConstructLinkNamesToFieldsArray(string moduleName)
+        {
+            object result;
+            try
+            {
+                ICollection<LinkSpec> chain = this.moduleChains[moduleName];
+                ICollection<object> links = new List<object>();
+
+                foreach (var link in chain)
+                {
+                    links.Add(new { @name = link.LinkName, @value = link.FieldNames });
+                }
+
+                result = links.ToArray();
+            }
+            catch (KeyNotFoundException)
+            {
+                result = null;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -414,7 +557,7 @@ namespace SuiteCRMAddIn.Dialogs
 
             switch (moduleName)
             {
-                case ContactSyncing.CrmModule:
+                case ContactSynchroniser.CrmModule:
                     queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
                     AddFirstLastAndAccountNames(fields);
                     break;
@@ -550,8 +693,8 @@ namespace SuiteCRMAddIn.Dialogs
 
             if (fieldNames.Contains("first_name") && fieldNames.Contains("last_name"))
             {
-                string lowerName = moduleName.ToLower();
-                result = $"({lowerName}.first_name LIKE '%{firstName}%' {logicalOperator} {lowerName}.last_name LIKE '%{lastName}%') OR ({lowerName}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{emailAddress}%'))"; ;
+                string moduleLower = moduleName.ToLower();
+                result = $"({moduleLower}.first_name LIKE '%{firstName}%' {logicalOperator} {moduleLower}.last_name LIKE '%{lastName}%') OR ({moduleLower}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{emailAddress}%'))"; ;
             }
 
             return result;
@@ -565,9 +708,13 @@ namespace SuiteCRMAddIn.Dialogs
         /// <param name="parent">The parent node beneath which the new node should be added.</param>
         private void PopulateTree(EntryList searchResult, string module, TreeNode parent)
         {
-            foreach (EntryValue entry in searchResult.entry_list)
+            for (int i = 0; i < searchResult.entry_list.Count(); i++)
             {
+                EntryValue entry = searchResult.entry_list[i];
                 string key = RestAPIWrapper.GetValueByKey(entry, "id");
+
+                ICollection<LinkSpec> links = moduleChains.ContainsKey(module) ? moduleChains[module] : new List<LinkSpec>();
+
                 if (!parent.Nodes.ContainsKey(key))
                 {
                     TreeNode node = new TreeNode(ConstructNodeName(module, entry))
@@ -576,6 +723,26 @@ namespace SuiteCRMAddIn.Dialogs
                         Tag = key
                     };
                     parent.Nodes.Add(node);
+
+                    foreach (var relationship in entry.relationships.link_list)
+                    {
+                        LinkSpec link = links.Where(x => x.LinkName == relationship.name).FirstOrDefault();
+
+                        TreeNode chainNode = new TreeNode(link != null ? link.TargetName : relationship.name);
+                        node.Nodes.Add(chainNode);
+
+                        foreach (LinkRecord member in relationship.records)
+                        {
+                            var targetId = link != null ? link.TargetId : "id";
+
+                            TreeNode memberNode = new TreeNode(member.data.GetValueAsString(link != null ? link.Label : "name"))
+                            {
+                                Name = member.data.GetValueAsString(targetId),
+                                Tag = member.data.GetValueAsString(targetId)
+                            };
+                            chainNode.Nodes.Add(memberNode);
+                        }
+                    }
                 }
             }
             if (searchResult.result_count <= 3)
@@ -610,6 +777,9 @@ namespace SuiteCRMAddIn.Dialogs
                     break;
                 case "Cases":
                     keyValue = RestAPIWrapper.GetValueByKey(entry, "case_number");
+                    break;
+                case "Contacts":
+                    keyValue = string.Empty;
                     break;
                 default:
                     keyValue = RestAPIWrapper.GetValueByKey(entry, "account_name");
@@ -713,6 +883,8 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void txtSearch_KeyDown(object sender, KeyEventArgs e)
         {
+            this.AcceptButton = btnSearch;
+
             if (e.KeyCode == Keys.Enter)
             {
                 e.Handled = true;
@@ -737,38 +909,63 @@ namespace SuiteCRMAddIn.Dialogs
         {
             try
             {
-                if (this.tsResults.Nodes.Count == 0)
+                IEnumerable<MailItem> itemsToArchive = ConfirmRearchiveAlreadyArchivedEmails.ConfirmAlreadyArchivedEmails(archivableEmails);
+
+                using (WaitCursor.For(this))
                 {
-                    MessageBox.Show("There are no search results.", "Error");
-                    return;
+                    try
+                    {
+                        if (this.tsResults.Nodes.Count == 0)
+                        {
+                            MessageBox.Show("There are no search results.", "Error");
+                            return;
+                        }
+
+                        var selectedCrmEntities = GetSelectedCrmEntities(this.tsResults);
+                        if (!selectedCrmEntities.Any())
+                        {
+                            MessageBox.Show("No selected CRM entities", "Error");
+                            return;
+                        }
+
+                        var selectedEmailsCount = itemsToArchive.Count();
+                        if (selectedEmailsCount > 0)
+                        {
+                            Log.Debug($"ArchiveDialog: About to manually archive {selectedEmailsCount} emails");
+                            var archiver = Globals.ThisAddIn.EmailArchiver;
+                            bool success = this.ReportOnEmailArchiveSuccess(
+                                itemsToArchive.Select(mailItem =>
+                                        archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.reason))
+                                    .ToList());
+                            string prefix = success ? "S" : "Uns";
+                            Log.Debug($"ArchiveDialog: {prefix}uccessfully archived {selectedEmailsCount} emails");
+
+                            this.DialogResult = DialogResult.OK;
+                            Close();
+                        }
+                        else
+                        {
+                            this.DialogResult = DialogResult.Cancel;
+                        }
+                    }
+                    catch (System.Exception exception)
+                    {
+                        this.DialogResult = DialogResult.Abort;
+                        Log.Error("btnArchive_Click", exception);
+                        MessageBox.Show("There was an error while archiving", "Error");
+                    }
+                    finally
+                    {
+                        foreach (MailItem i in this.archivableEmails)
+                        {
+                            i.Save();
+                        }
+                    }
                 }
-
-                var selectedCrmEntities = GetSelectedCrmEntities(this.tsResults);
-                if (!selectedCrmEntities.Any())
-                {
-                    MessageBox.Show("No selected CRM entities", "Error");
-                    return;
-                }
-
-                var selectedEmailsCount = Globals.ThisAddIn.SelectedEmailCount;
-                if (selectedEmailsCount == 0)
-                {
-                    MessageBox.Show("No emails selected", "Error");
-                    return;
-                }
-
-                var archiver = Globals.ThisAddIn.EmailArchiver;
-                this.ReportOnEmailArchiveSuccess(
-                    Globals.ThisAddIn.SelectedEmails.Select(mailItem =>
-                            archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, EmailArchiveReason.Manual))
-                        .ToList());
-
-                Close();
             }
-            catch (System.Exception exception)
+            catch (DialogCancelledException)
             {
-                Log.Error("btnArchive_Click", exception);
-                MessageBox.Show("There was an error while archiving", "Error");
+
             }
         }
 
@@ -823,6 +1020,7 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            this.DialogResult = DialogResult.Cancel;
             base.Close();
         }
 
@@ -834,12 +1032,6 @@ namespace SuiteCRMAddIn.Dialogs
             }
         }
 
-        private void txtSearch_Leave(object sender, EventArgs e)
-        {
-            btnSearch_Click(sender, e);
-            this.AcceptButton = btnArchive;
-        }
-
         /// <summary>
         /// If the Category input changes, set its current value as the Category property on 
         /// each of the currently selected emails.
@@ -848,14 +1040,78 @@ namespace SuiteCRMAddIn.Dialogs
         /// <param name="e"></param>
         private void categoryInput_SelectedIndexChanged(object sender, EventArgs e)
         {
-            foreach (MailItem mail in Globals.ThisAddIn.SelectedEmails)
+            foreach (MailItem mail in this.archivableEmails)
             {
-                if (mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName] == null)
+                try
                 {
-                    mail.UserProperties.Add(MailItemExtensions.CRMCategoryPropertyName, OlUserPropertyType.olText);
+                    if (mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName] == null)
+                    {
+                        mail.UserProperties.Add(MailItemExtensions.CRMCategoryPropertyName, OlUserPropertyType.olText);
+                    }
+                    mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName].Value = categoryInput.SelectedItem.ToString();
                 }
-                mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName].Value = categoryInput.SelectedItem.ToString();
+                catch (COMException)
+                {
+                    /* this happens with SendAndArchive. Don't know why, but you can neither access the 
+                     * UserProperties nor add to them */
+                }
             }
+        }
+        private void RemoveSelection(Object obj)
+        {
+            TextBox textbox = obj as TextBox;
+            if (textbox != null)
+            {
+                textbox.SelectionLength = 0;
+            }
+        }
+
+        private void legend_MouseUp(object sender, MouseEventArgs e)
+        {
+            RemoveSelection(sender);
+        }
+
+        private void legend_KeyUp(object sender, KeyEventArgs e)
+        {
+            RemoveSelection(sender);
+        }
+
+        internal class LinkSpec
+        {
+            /// <summary>
+            /// The name of the linking module
+            /// </summary>
+            public string LinkName { get; set; }
+
+            /// <summary>
+            /// The names of the fields to request
+            /// </summary>
+            public ICollection<string> FieldNames { get; set; }
+
+            /// <summary>
+            /// The name of the target module
+            /// </summary>
+            public string TargetName { get; set; }
+
+            /// <summary>
+            /// The name of the id field in the target module (expected to be one of the fields in `FieldNames`).
+            /// </summary>
+            public string TargetId { get; set; }
+
+            /// <summary>
+            /// The label to put on the node.
+            /// </summary>
+            public string Label { get; set; }
+
+            public LinkSpec(string linkName, string targetName, ICollection<string> fieldNames)
+            {
+                this.LinkName = linkName;
+                this.TargetName = targetName;
+                this.FieldNames = fieldNames;
+                this.TargetId = fieldNames.ElementAt(0);
+                this.Label = fieldNames.ElementAtOrDefault(1);
+            }
+
         }
     }
 }

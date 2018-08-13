@@ -22,6 +22,7 @@
  */
 namespace SuiteCRMAddIn.Extensions
 {
+    using System.Collections.Generic;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -29,6 +30,12 @@ namespace SuiteCRMAddIn.Extensions
     /// </summary>
     public static class RecipientExtensions
     {
+        /// <summary>
+        /// A cache of SMTP addresses, so we're not continually fetching them from a remote 
+        /// Exchange server.
+        /// </summary>
+        private static Dictionary<Outlook.Recipient, string> smtpAddressCache = new Dictionary<Outlook.Recipient, string>();
+
         /// <summary>
         /// From this email recipient, extract the SMTP address (if that's possible).
         /// </summary>
@@ -38,23 +45,33 @@ namespace SuiteCRMAddIn.Extensions
         {
             string result = string.Empty;
 
-            switch (recipient.AddressEntry.Type)
+            if (smtpAddressCache.ContainsKey(recipient))
             {
-                case "SMTP":
-                    result = recipient.Address;
-                    break;
-                case "EX": /* an Exchange address */
-                    var exchangeUser = recipient.AddressEntry.GetExchangeUser();
-                    if (exchangeUser != null)
-                    {
-                        result = exchangeUser.PrimarySmtpAddress;
-                    }
-                    break;
-                default:
-                    Globals.ThisAddIn.Log.AddEntry(
-                        $"RecipientExtensions.GetSmtpAddres: unknown email type {recipient.AddressEntry.Type}", 
-                        SuiteCRMClient.Logging.LogEntryType.Warning);
-                    break;
+                result = smtpAddressCache[recipient];
+            }
+
+            if (string.IsNullOrEmpty(result))
+            {
+                switch (recipient.AddressEntry.Type)
+                {
+                    case "SMTP":
+                        result = recipient.Address;
+                        break;
+                    case "EX": /* an Exchange address */
+                        var exchangeUser = recipient.AddressEntry.GetExchangeUser();
+                        if (exchangeUser != null)
+                        {
+                            result = exchangeUser.PrimarySmtpAddress;
+                        }
+                        break;
+                    default:
+                        Globals.ThisAddIn.Log.AddEntry(
+                            $"RecipientExtensions.GetSmtpAddres: unknown email type {recipient.AddressEntry.Type}",
+                            SuiteCRMClient.Logging.LogEntryType.Warning);
+                        break;
+                }
+
+                smtpAddressCache[recipient] = result;
             }
 
             return result;

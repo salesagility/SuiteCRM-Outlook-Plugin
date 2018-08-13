@@ -27,6 +27,7 @@ namespace SuiteCRMAddIn
     using BusinessLogic;
     using Daemon;
     using Dialogs;
+    using Extensions;
     using Microsoft.Office.Core;
     using NGettext;
     using Properties;
@@ -39,6 +40,7 @@ namespace SuiteCRMAddIn
     using System.Linq;
     using System.Reflection;
     using System.Runtime.InteropServices;
+    using System.Text;
     using System.Threading;
     using System.Windows.Forms;
     using Office = Microsoft.Office.Core;
@@ -57,9 +59,19 @@ namespace SuiteCRMAddIn
         public OutlookMajorVersion OutlookVersion;
 
         private SyncContext synchronisationContext;
-        private ContactSyncing contactSynchroniser;
-        private TaskSyncing taskSynchroniser;
-        private AppointmentSyncing appointmentSynchroniser;
+        private ContactSynchroniser contactSynchroniser;
+        private TaskSynchroniser taskSynchroniser;
+        private MeetingsSynchroniser meetingSynchroniser;
+        private CallsSynchroniser callSynchroniser;
+
+        /// <summary>
+        /// #2246: Discriminate between calls and meetings when adding and updating.
+        /// </summary>
+        internal CallsSynchroniser CallsSynchroniser { get { return callSynchroniser; } }
+        /// <summary>
+        /// #2246: Discriminate between calls and meetings when adding and updating.
+        /// </summary>
+        internal MeetingsSynchroniser MeetingsSynchroniser { get { return meetingSynchroniser; } }
 
         /// <summary>
         /// Internationalisation (118n) strings dictionary
@@ -146,9 +158,10 @@ namespace SuiteCRMAddIn
             StartLogging();
 
             synchronisationContext = new SyncContext(outlookApp);
-            contactSynchroniser = new ContactSyncing("CS", synchronisationContext);
-            taskSynchroniser = new TaskSyncing("TS", synchronisationContext);
-            appointmentSynchroniser = new AppointmentSyncing("AS", synchronisationContext);
+            callSynchroniser = new CallsSynchroniser("AS", synchronisationContext);
+            contactSynchroniser = new ContactSynchroniser("CS", synchronisationContext);
+            meetingSynchroniser = new MeetingsSynchroniser("MS", synchronisationContext);
+            taskSynchroniser = new TaskSynchroniser("TS", synchronisationContext);
             EmailArchiver = new EmailArchiving("EM", synchronisationContext.Log);
 
             var outlookExplorer = outlookApp.ActiveExplorer();
@@ -171,12 +184,6 @@ namespace SuiteCRMAddIn
                 {
                     ConstructOutlook2007MenuBar();
                 }
-            }
-            else
-            {
-                //For Outlook version 2010 and greater
-                //var app = this.Application;
-                //app.FolderContextMenuDisplay += new Outlook.ApplicationEvents_11_FolderContextMenuDisplayEventHander(this.app_FolderContextMenuDisplay);
             }
         }
 
@@ -213,7 +220,7 @@ namespace SuiteCRMAddIn
                 {
                     /* This will fail in the case of a new installation, but that's OK. 
                      * However, log it, in case it also fails at other times. */
-                    Log.Error($"Caught {any.GetType().Name} '{any.Message}' while attempting to upgrade settings.");
+                    ErrorHandler.Handle("Failure while attempting to upgrade settings.", any);
                 }
             }
         }
@@ -282,7 +289,7 @@ namespace SuiteCRMAddIn
                 log.Info(catalogue.GetString("Starting normal operations."));
 
                 DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction());
-                StartSynchronisationProcesses();
+                StartConfiguredSynchronisationProcesses();
                 this.IsLicensed = true;
             }
             else if (disable)
@@ -295,7 +302,7 @@ namespace SuiteCRMAddIn
                 /* it's possible for both success AND disable to be true (if login to CRM fails); 
                  * but logically if success is false disable must be true, so this branch should
                  * never be reached. */
-                log.Error(
+                Log.Error(
                     catalogue.GetString(
                         "In {0}: success is {1}; disable is {2}; impossible state, disabling.",
                         "ThisAddIn.Run",
@@ -305,7 +312,7 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void Disable()
+        internal void Disable()
         {
             const string methodName = "ThisAddIn.Disable";
             Log.Warn(catalogue.GetString("Disabling add-in"));
@@ -332,7 +339,7 @@ namespace SuiteCRMAddIn
         /// </summary>
         /// <param name="summary">A summary of the problem that caused the dialogue to be shown.</param>
         /// <returns>true if the user chose to disable the add-in.</returns>
-        private bool ShowReconfigureOrDisable(string summary)
+        internal bool ShowReconfigureOrDisable(string summary)
         {
             bool result;
 
@@ -372,7 +379,7 @@ namespace SuiteCRMAddIn
         {
             foreach (var s in GetKeySettings())
             {
-                log.Error(s);
+                log.Debug(s);
             }
         }
 
@@ -408,17 +415,66 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.objExplorer_FolderSwitch", ex);
+                ErrorHandler.Handle($"Failure while attempting to change folder to {this.objExplorer.CurrentFolder.FolderPath}", ex);
             }
         }
 
-        public void StartSynchronisationProcesses()
+        /// <summary>
+        /// Start all synchronisation processes that are configured, if they 
+        /// are not already running.
+        /// </summary>
+        public void StartConfiguredSynchronisationProcesses()
         {
-            DoOrLogError(() => this.appointmentSynchroniser.Start(), catalogue.GetString("Starting appointments synchroniser"));
-            DoOrLogError(() => this.contactSynchroniser.Start(), catalogue.GetString("Starting contacts synchroniser"));
-            DoOrLogError(() => this.taskSynchroniser.Start(), catalogue.GetString("Starting tasks synchroniser"));
-            DoOrLogError(() => this.EmailArchiver.Start(), catalogue.GetString("Starting email archiver"));
+            StartSynchroniserIfConfigured(this.callSynchroniser);
+            StartSynchroniserIfConfigured(this.contactSynchroniser);
+            StartSynchroniserIfConfigured(this.meetingSynchroniser);
+            StartSynchroniserIfConfigured(this.taskSynchroniser);
         }
+
+        /// <summary>
+        /// Start all synchronisation processes that are not configured to run,
+        /// if they are already running.
+        /// </summary>
+        public void StopUnconfiguredSynchronisationProcesses()
+        {
+            StopSynchroniserIfUnconfigured(this.callSynchroniser);
+            StopSynchroniserIfUnconfigured(this.contactSynchroniser);
+            StopSynchroniserIfUnconfigured(this.meetingSynchroniser);
+            StopSynchroniserIfUnconfigured(this.taskSynchroniser);
+        }
+
+        /// <summary>
+        /// Start this synchronisation process, if it is configured to run, 
+        /// provided it is not already running.
+        /// </summary>
+        /// <param name="synchroniser">The synchroniser to start.</param>
+        private void StartSynchroniserIfConfigured(Synchroniser synchroniser)
+        {
+            if (synchroniser != null && 
+                synchroniser.Direction != SyncDirection.Direction.Neither &&
+                !synchroniser.IsActive)
+            {
+                DoOrLogError(() => 
+                    synchroniser.Start(), 
+                    catalogue.GetString("Starting {0}", new object[] { synchroniser.GetType().Name }));
+            }
+        }
+
+        /// <summary>
+        /// Stop this synchroniser if it is active and is configured to be inactive.
+        /// </summary>
+        /// <param name="synchroniser">The synchroniser to stop.</param>
+        private void StopSynchroniserIfUnconfigured(Synchroniser synchroniser)
+        {
+            if (synchroniser != null &&
+                synchroniser.Direction == SyncDirection.Direction.Neither &&
+                synchroniser.IsActive)
+            {
+                synchroniser.Stop();
+            }
+
+        }
+
 
         private void cbtnArchive_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
@@ -452,8 +508,10 @@ namespace SuiteCRMAddIn
 
         public void ShowArchiveForm()
         {
-            ArchiveDialog objForm = new ArchiveDialog();
-            objForm.ShowDialog();
+            if (this.SelectedEmails.Any())
+            {
+                new ArchiveDialog(this.SelectedEmails, EmailArchiveReason.Manual).ShowDialog();
+            }
         }
 
         internal void ManualArchive()
@@ -530,6 +588,7 @@ namespace SuiteCRMAddIn
                 }
 
                 this.UnregisterEvents();
+                SyncStateManager.Instance.BruteForceSaveAll();
                 this.ShutdownProcesses();
 
                 if (SuiteCRMUserSession != null)
@@ -537,8 +596,9 @@ namespace SuiteCRMAddIn
                     SuiteCRMUserSession.LogOut();
                 }
 
-                DisposeOf(appointmentSynchroniser);
+                DisposeOf(callSynchroniser);
                 DisposeOf(contactSynchroniser);
+                DisposeOf(meetingSynchroniser);
                 DisposeOf(taskSynchroniser);
             }
             catch (Exception ex)
@@ -712,7 +772,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error(catalogue.GetString("ThisAddIn.Application_ItemSend"), ex);
+                ErrorHandler.Handle(catalogue.GetString("Failed while trying to handle a sent email"), ex);
             }
         }
 
@@ -732,18 +792,25 @@ namespace SuiteCRMAddIn
                                             item as Outlook.MailItem,
                                             Settings.Default.ExcludedEmails);
                     }
-                    else if (item is Outlook.MeetingItem)
+                    else if (item is Outlook.MeetingItem && SyncDirection.AllowOutbound(Properties.Settings.Default.SyncMeetings))
                     {
-                        DaemonWorker.Instance.AddTask(
-                            new UpdateMeetingAcceptancesAction(
-                                appointmentSynchroniser, 
-                                item as Outlook.MeetingItem));
+                        ProcessNewMeetingItem(item as Outlook.MeetingItem);
                     }
                 }
             }
             catch (Exception ex)
             {
-                log.Error(catalogue.GetString("ThisAddIn.Application_NewMail"), ex);
+                ErrorHandler.Handle(catalogue.GetString("Failed while trying to handle a received email"), ex);
+            }
+        }
+
+        private void ProcessNewMeetingItem(Outlook.MeetingItem meetingItem)
+        {
+            string vCalId = meetingItem.GetVCalId();
+
+            if (CrmId.IsValid(vCalId) && RestAPIWrapper.GetEntry(MeetingsSynchroniser.DefaultCrmModule, vCalId, new string[] { "id" }) != null)
+            {
+                meetingItem.GetAssociatedAppointment(false).SetCrmId(CrmId.Get(vCalId));
             }
         }
 
@@ -848,7 +915,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.Authenticate", ex);
+                Log.Error("ThisAddIn.Authenticate", ex);
             }
 
             return result;
@@ -930,11 +997,7 @@ namespace SuiteCRMAddIn
         /// <returns>The number of items I am monitoring.</returns>
         internal int CountItems()
         {
-            int result = this.appointmentSynchroniser != null ? this.appointmentSynchroniser.ItemsCount : 0;
-            result += this.contactSynchroniser != null ? this.contactSynchroniser.ItemsCount : 0;
-            result += this.taskSynchroniser != null ? this.taskSynchroniser.ItemsCount : 0;
-
-            return result;
+            return SyncStateManager.Instance.CountItems();
         }
 
 
@@ -946,13 +1009,17 @@ namespace SuiteCRMAddIn
         {
             List<WithRemovableSynchronisationProperties> result = new List<WithRemovableSynchronisationProperties>();
 
-            if (this.appointmentSynchroniser != null)
+            if (this.callSynchroniser != null)
             {
-                result.AddRange(this.appointmentSynchroniser.GetSynchronisedItems());
+                result.AddRange(this.callSynchroniser.GetSynchronisedItems());
             }
             if (this.contactSynchroniser != null)
             {
                 result.AddRange(this.contactSynchroniser.GetSynchronisedItems());
+            }
+            if (this.meetingSynchroniser != null)
+            {
+                result.AddRange(this.meetingSynchroniser.GetSynchronisedItems());
             }
             if (this.taskSynchroniser != null)
             {

@@ -57,7 +57,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The modules to which we'll try to save if no more specific list of modules is specified.
         /// </summary>
-        public static readonly List<string> defaultModuleKeys = new List<string>() { ContactSyncing.CrmModule, "Leads" };
+        public static readonly List<string> defaultModuleKeys = new List<string>() { ContactSynchroniser.CrmModule, "Leads", "Accounts" };
 
         public EmailArchiving(string name, ILogger log) : base(name, log)
         {
@@ -67,17 +67,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (Globals.ThisAddIn.HasCrmUserSession)
             {
-                Log.Debug("Auto-Archive iteration started");
-
                 var minReceivedDateTime = DateTime.UtcNow.AddDays(0 - Properties.Settings.Default.DaysOldEmailToAutoArchive);
                 var foldersToBeArchived = GetMailFolders(Globals.ThisAddIn.Application.Session.Folders)
                     .Where(FolderShouldBeAutoArchived);
 
-                foreach (var folder in foldersToBeArchived)
+                if (foldersToBeArchived.Count() > 0)
                 {
-                    ArchiveFolderItems(folder, minReceivedDateTime);
+                    Log.Debug("Auto-Archive iteration started");
+
+                    foreach (var folder in foldersToBeArchived)
+                    {
+                        ArchiveFolderItems(folder, minReceivedDateTime);
+                    }
+                    Log.Debug("Auto-Archive iteration completed");
                 }
-                Log.Debug("Auto-Archive iteration completed");
+                else
+                {
+                    Log.Debug("No folders to auto-archive.");
+                }
             }
             else
             {
@@ -131,11 +138,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                     }
 
-
                     foreach (var candidate in candidateItems)
                     {
                         var comType = Microsoft.VisualBasic.Information.TypeName(candidate);
-                        
                         
                         switch (comType)
                         {
@@ -159,7 +164,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error($"EmailArchiving.ArchiveFolderItems; folder {folder.Name}:", ex);
+                ErrorHandler.Handle($"Failed while archiving and email item in folder {folder.Name}:", ex);
             }
         }
 
@@ -180,7 +185,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception any)
                 {
-                    Log.Error($"EmailArchiving.ArchiveFolderItems; Failed to archive MailItem '{olItem.Subject}' from '{olItem.GetSenderSMTPAddress()}", any);
+                    ErrorHandler.Handle($"Failed to archive MailItem '{olItem.Subject}' from '{olItem.GetSenderSMTPAddress()}", any);
                 }
             }
         }
@@ -273,8 +278,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.GetMailFolders", ex);
-                ;
+                ErrorHandler.Handle("Failed while trying to get mail folders", ex);
             }
         }
 
@@ -293,13 +297,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        public void CreateEmailRelationshipOrFail(string emailId, CrmEntity entity)
+        public void CreateEmailRelationshipOrFail(CrmId emailId, CrmEntity entity)
         {
             var success = RestAPIWrapper.TrySetRelationship(
                 new SetRelationshipParams
                 {
                     module2 = "emails",
-                    module2_id = emailId,
+                    module2_id = emailId.ToString(),
                     module1 = entity.ModuleName,
                     module1_id = entity.EntityId,
                 }, Objective.Email);

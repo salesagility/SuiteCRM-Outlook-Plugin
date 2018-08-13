@@ -34,13 +34,14 @@ namespace SuiteCRMAddIn.Daemon
     /// already has a SyncState.
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of item I transmit.</typeparam>
-    public class TransmitUpdateAction<OutlookItemType> : AbstractDaemonAction
+    public class TransmitUpdateAction<OutlookItemType, SyncStateType> : AbstractDaemonAction
         where OutlookItemType : class
+        where SyncStateType : SyncState<OutlookItemType>
     {
         /// <summary>
         /// The synchroniser I need to call to perform this action.
         /// </summary>
-        private Synchroniser<OutlookItemType> synchroniser;
+        private Synchroniser<OutlookItemType, SyncStateType> synchroniser;
         /// <summary>
         /// The sync state on which this action should be performed.
         /// </summary>
@@ -52,13 +53,13 @@ namespace SuiteCRMAddIn.Daemon
         /// </summary>
         /// <param name="synchroniser">The synchroniser I will call to perform this action.</param>
         /// <param name="state">The sync state on which this action should be performed.</param>
-        public TransmitUpdateAction(Synchroniser<OutlookItemType> synchroniser, SyncState<OutlookItemType> state) : base(1)
+        public TransmitUpdateAction(Synchroniser<OutlookItemType, SyncStateType> synchroniser, SyncStateType state) : base(1)
         {
             state.SetQueued();
             this.synchroniser = synchroniser;
             this.state = state;
 
-            SyncState<Outlook.AppointmentItem> meeting = state as SyncState<Outlook.AppointmentItem>;
+            MeetingSyncState meeting = state as MeetingSyncState;
 
             if (meeting != null)
             {
@@ -76,7 +77,7 @@ namespace SuiteCRMAddIn.Daemon
                 }
                 catch (COMException comx)
                 {
-                    log.Error($"Item missing? HResult = {comx.HResult}", comx);
+                    ErrorHandler.Handle($"Possibly-deleted item while trying to transmit update? HResult = {comx.HResult}", comx);
                 }
             }
         }
@@ -92,7 +93,7 @@ namespace SuiteCRMAddIn.Daemon
                 }
                 catch (COMException comx)
                 {
-                    Globals.ThisAddIn.Log.Error($"Item missing? HResult = {comx.HResult}", comx);
+                    ErrorHandler.Handle($"Possibly-deleted item while trying to transmit update? HResult = {comx.HResult}", comx);
                     return $"{this.GetType().Name} ({state.CrmType} - possibly cancelled meeting?";
                 }
             }
@@ -110,7 +111,7 @@ namespace SuiteCRMAddIn.Daemon
                 }
                 catch (COMException comx)
                 {
-                    Globals.ThisAddIn.Log.Error($"Item missing? HResult = {comx.HResult}", comx);
+                    ErrorHandler.Handle($"Possibly-deleted item while trying to transmit update? HResult = {comx.HResult}", comx);
                     synchroniser.HandleItemMissingFromOutlook(state);
                 }
 

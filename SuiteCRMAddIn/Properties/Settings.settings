@@ -53,9 +53,6 @@
     <Setting Name="AutoArchive" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="SyncCalendar" Type="SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
     <Setting Name="SyncContacts" Type="SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
@@ -82,6 +79,18 @@
     </Setting>
     <Setting Name="NeedsUpgrade" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="SyncCalls" Type="SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="SyncMeetings" Type="SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="SyncTasks" Type="SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="ArchivingSearchChains" Type="System.String" Scope="User">
+      <Value Profile="(Default)">{ "Contacts": [ { "linkName": "accounts_contacts_1", "targetName": "accounts", "fields": ["id", "name" ]}]}</Value>
     </Setting>
   </Settings>
 </SettingsFile>

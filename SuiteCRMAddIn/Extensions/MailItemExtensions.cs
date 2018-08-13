@@ -40,6 +40,12 @@ namespace SuiteCRMAddIn.Extensions
     public static class MailItemExtensions
     {
         /// <summary>
+        /// A cache of SMTP addresses, so we're not continually fetching them from a remote 
+        /// Exchange server.
+        /// </summary>
+        private static Dictionary<Outlook.MailItem, string> senderAddressCache = new Dictionary<Outlook.MailItem, string>();
+
+        /// <summary>
         /// Magic property tag to get the email address from an Outlook Recipient object.
         /// </summary>
         const string PR_SMTP_ADDRESS = "http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
@@ -106,52 +112,60 @@ namespace SuiteCRMAddIn.Extensions
         {
             string result = string.Empty;
 
-            try
+            if (senderAddressCache.ContainsKey(olItem))
             {
-                switch (olItem.SenderEmailType)
-                {
-                    case "SMTP": /* an SMTP address; easy */
-                        result = olItem.SenderEmailAddress;
-                        break;
-                    case "EX": /* an Exchange address */
-                        var sender = olItem.Sender;
-                        if (sender != null)
-                        {
-                            var exchangeUser = sender.GetExchangeUser();
-                            if (exchangeUser != null)
-                            {
-                                result = exchangeUser.PrimarySmtpAddress;
-                            }
-                        }
-                        break;
-                    case "":
-                    case null:
-                        /* happens, is coped with in the final clause, don't worry about it */
-                        break;
-                    default:
-                        Log.Warn($"Unknown email type {olItem.SenderEmailType}");
-                        break;
-                }
-            }
-            catch (Exception any)
-            {
-                Log.Error(
-                    $"MailItemExtensions.GetSenderSMTPAddress: unexpected error {any.GetType().Name} '{any.Message}'", any);
+                result = senderAddressCache[olItem];
             }
 
-            try
+            if (string.IsNullOrEmpty(result))
             {
-                if (string.IsNullOrEmpty(result))
+                try
                 {
-                    var currentUser = Globals.ThisAddIn.Application.ActiveExplorer().Session.CurrentUser.PropertyAccessor;
-                    result = currentUser.GetProperty(PR_SMTP_ADDRESS).ToString();
+                    switch (olItem.SenderEmailType)
+                    {
+                        case "SMTP": /* an SMTP address; easy */
+                            result = olItem.SenderEmailAddress;
+                            break;
+                        case "EX": /* an Exchange address */
+                            var sender = olItem.Sender;
+                            if (sender != null)
+                            {
+                                var exchangeUser = sender.GetExchangeUser();
+                                if (exchangeUser != null)
+                                {
+                                    result = exchangeUser.PrimarySmtpAddress;
+                                }
+                            }
+                            break;
+                        case "":
+                        case null:
+                            /* happens, is coped with in the final clause, don't worry about it */
+                            break;
+                        default:
+                            Log.Warn($"Unknown email type {olItem.SenderEmailType}");
+                            break;
+                    }
                 }
-            }
-            catch (Exception any)
-            {
-                Log.Error(
-                    $"MailItemExtensions.GetSenderSMTPAddress: failed to get email address of current user: {any.GetType().Name} '{any.Message}'",
-                    any);
+                catch (Exception any)
+                {
+                    ErrorHandler.Handle("Failed while trying to get the sender's SMTP address", any);
+                }
+
+                try
+                {
+                    if (string.IsNullOrEmpty(result))
+                    {
+                        var currentUser = Globals.ThisAddIn.Application.ActiveExplorer().Session.CurrentUser.PropertyAccessor;
+                        result = currentUser.GetProperty(PR_SMTP_ADDRESS).ToString();
+                    }
+                }
+                catch (Exception any)
+                {
+                    ErrorHandler.Handle("Failed to get email address of current user",
+                        any);
+                }
+
+                senderAddressCache[olItem] = result;
             }
 
             return result;
@@ -169,6 +183,7 @@ namespace SuiteCRMAddIn.Extensions
             ArchiveableEmail mailArchive = new ArchiveableEmail(MailItemExtensions.SuiteCRMUserSession, MailItemExtensions.Log);
             mailArchive.From = olItem.GetSenderSMTPAddress();
             mailArchive.To = string.Empty;
+            mailArchive.CrmEntryId = olItem.GetCRMEntryId();
 
             Log.Info($"MailItemExtension.AsArchiveable: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
 
@@ -192,7 +207,7 @@ namespace SuiteCRMAddIn.Extensions
 
             mailArchive.CC = olItem.CC;
 
-            mailArchive.OutlookId = olItem.EnsureEntryID();
+            mailArchive.ClientId = olItem.EnsureEntryID();
             mailArchive.Subject = olItem.Subject;
             mailArchive.Sent = olItem.ArchiveTime(reason);
             mailArchive.Body = olItem.Body;
@@ -306,7 +321,7 @@ namespace SuiteCRMAddIn.Extensions
                     }
                     catch (Exception ex1)
                     {
-                        Log.Error("EmailArchiving.GetAttachmentBytes", ex1);
+                        ErrorHandler.Handle("Failed to get data of an email attachment", ex1);
                     }
                 }
                 finally
@@ -359,6 +374,25 @@ namespace SuiteCRMAddIn.Extensions
             return Archive(olItem, reason, EmailArchiving.defaultModuleKeys.Select(x => new CrmEntity(x, null)));
         }
 
+        public static string GetCRMEntryId(this Outlook.MailItem olItem)
+        {
+            string result;
+            Outlook.UserProperty olProperty = null;
+            
+            try
+            {
+                olProperty = olItem.UserProperties[CrmIdPropertyName];
+                result = olProperty != null ? olProperty.Value.ToString() : string.Empty;
+            }
+            catch (COMException cex)
+            {
+                ErrorHandler.Handle("Could not get property while archiving email", cex);
+                result = string.Empty;
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// Archive this email item to CRM.
         /// </summary>
@@ -369,24 +403,27 @@ namespace SuiteCRMAddIn.Extensions
         /// <returns>A result object indicating success or failure.</returns>
         public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, IEnumerable<CrmEntity> moduleKeys, string excludedEmails = "")
         {
-            ArchiveResult result;
-            Outlook.UserProperty olProperty = olItem.UserProperties[CrmIdPropertyName];
+            ArchiveResult result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
 
-            if (olProperty == null)
+            if (result.IsSuccess)
             {
-                result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
-                
-                if (result.IsSuccess)
+                try
                 {
-                    olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
-                        SuiteCRMCategoryName :
-                        $"{olItem.Categories},{SuiteCRMCategoryName}";
+                    if (string.IsNullOrEmpty(olItem.Categories))
+                    {
+                        olItem.Categories = SuiteCRMCategoryName;
+                    }
+                    else if (olItem.Categories.IndexOf(SuiteCRMCategoryName) == -1)
+                    {
+                        olItem.Categories = $"{olItem.Categories},{SuiteCRMCategoryName}";
+                    }
+
                     olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
                 }
-            }
-            else
-            {
-                result = ArchiveResult.Success(olProperty.Value, new[] { new AlreadyArchivedException(olItem) });
+                catch (COMException cex)
+                {
+                    ErrorHandler.Handle("Could not set property while archiving email", cex);
+                }
             }
 
             return result;
@@ -414,6 +451,17 @@ namespace SuiteCRMAddIn.Extensions
             {
                 olItem.Save();
             }
+        }
+
+        /// <summary>
+        /// Ensure that I have a user property with this name and this value.
+        /// </summary>
+        /// <param name="olItem">Me</param>
+        /// <param name="propertyName">The name of the property I should have.</param>
+        /// <param name="propertyValue">The value of the property I should have.</param>
+        private static void EnsureProperty(this Outlook.MailItem olItem, string propertyName, object propertyValue)
+        {
+            EnsureProperty(olItem, propertyName, propertyValue.ToString());
         }
     }
 }

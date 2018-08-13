@@ -28,13 +28,28 @@ namespace SuiteCRMAddIn.BusinessLogic
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Runtime.InteropServices;
     using SuiteCRMClient.Logging;
+    using SuiteCRMClient.RESTObjects;
+    using SuiteCRMClient;
 
     /// <summary>
     /// A SyncState for Contact items.
     /// </summary>
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
-        public override string CrmType => ContactSyncing.CrmModule;
+        public ContactSyncState(Outlook.ContactItem oItem, CrmId crmId, DateTime modified) : base(oItem, crmId, modified)
+        {
+        }
+
+        public override Outlook.OlDefaultFolders DefaultFolder
+        {
+            get
+            {
+                return Outlook.OlDefaultFolders.olFolderContacts;
+            }
+        }
+
+
+        public override string CrmType => ContactSynchroniser.CrmModule;
 
         public override bool ShouldSyncWithCrm => IsPublic;
 
@@ -48,11 +63,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                Outlook.UserProperty olPropertyEntryId = olItem.UserProperties[Synchroniser<Outlook.ContactItem>.CrmIdPropertyName];
-                string crmId = olPropertyEntryId == null ?
-                    "[not present]" :
-                    olPropertyEntryId.Value;
-                return $"\tOutlook Id  : {olItem.EntryID}\n\tCRM Id      : {crmId}\n\tFull name   : '{olItem.FullName}'\n\tSensitivity : {olItem.Sensitivity}";
+                CrmId crmId = OutlookItem.GetCrmId();
+                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
+
+                return $"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tFull name   : '{OutlookItem.FullName}'\n\tSensitivity : {OutlookItem.Sensitivity}";
+            }
+        }
+
+        public override string IdentifyingFields
+        {
+            get
+            {
+                return $"name: '{OutlookItem.FullName}'; email: '{OutlookItem.Email1Address}'";
             }
         }
 
@@ -76,8 +98,26 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override void RemoveSynchronisationProperties()
         {
-            olItem.ClearSynchronisationProperties();
+            OutlookItem.ClearSynchronisationProperties();
         }
 
+
+        /// <summary>
+        /// Get a string representing the values of the distinct fields of this crmItem, 
+        /// as a final fallback for identifying an otherwise unidentifiable object.
+        /// </summary>
+        /// <param name="crmItem">An item received from CRM.</param>
+        /// <returns>An identifying string.</returns>
+        /// <see cref="SyncState{ItemType}.IdentifyingFields"/> 
+        internal static string GetDistinctFields(EntryValue crmItem)
+        {
+            // TODO: fix
+            return $"subject: '{crmItem.GetValueAsString("name")}'; start: '{crmItem.GetValueAsDateTime("date_start")}'";
+        }
+
+        internal override void SaveItem()
+        {
+            this.OutlookItem?.Save();
+        }
     }
 }

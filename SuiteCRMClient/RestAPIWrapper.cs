@@ -194,7 +194,7 @@ namespace SuiteCRMClient
                 false, 
                 new string[] { "id" });
             
-            if (list.entry_list.Count<EntryValue>() > 0)
+            if (list.entry_list != null && list.entry_list.Any())
             {
                 result = list.entry_list[0].id;
             }
@@ -214,9 +214,7 @@ namespace SuiteCRMClient
            
             EntryList list = GetEntryList("Users", $"users.user_name LIKE '%{MySqlEscape(username)}%'", 0, "id DESC", 0, false, new string[] { "id" });
 
-            if (list != null && 
-                list.entry_list != null && 
-                list.entry_list.Count<EntryValue>() > 0)
+            if (list?.entry_list != null && list.entry_list.Count() > 0)
             {
                 result = list.entry_list[0].id;
             }
@@ -254,51 +252,15 @@ namespace SuiteCRMClient
                     {
                         @session = SuiteCRMUserSession.id
                     };
-                    userId = SuiteCRMUserSession.RestServer.GetCrmResponse<string>("get_user_id", data);
+                    userId = SuiteCRMUserSession.RestServer.GetCrmStringResponse("get_user_id", data);
                 }
-                catch (Exception)
+                catch (Exception fail)
                 {
-                    // Swallow exception(!)
+                    Log.Error("", fail);
                 }
             }
 
             return userId;
-        }
-
-        /// <summary>
-        /// Sets an entry in CRM and returns the id. 'Unsafe' because if it fails (for 
-        /// whatever reason), it returns the empty string. Most code which uses it fails
-        /// to check for the 'empty string' return result. Use 'SetEntry' instead (which
-        /// throws an exception on failure).
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="moduleName"></param>
-        /// <returns>the CRM id of the object created or modified.</returns>
-        public static string SetEntryUnsafe(NameValue[] data, string moduleName = "Emails")
-        {
-            try
-            {
-                return SetEntry(data, moduleName);
-            }
-            catch (System.Exception)
-            {
-                // Swallow exception(!)
-                return string.Empty;
-            }
-        }
-
-        /// <summary>
-        /// Sets an entry in CRM and returns the id. 'Unsafe' because if it fails (for 
-        /// whatever reason), it returns the empty string. Most code which uses it fails
-        /// to check for the 'empty string' return result. Use 'SetEntry' instead (which
-        /// throws an exception on failure).
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="moduleName"></param>
-        /// <returns>the CRM id of the object created or modified.</returns>
-        public static string SetEntryUnsafe(NameValueCollection data, string moduleName = "Emails")
-        {
-            return SetEntryUnsafe(data.ToArray(), moduleName);
         }
 
         /// <summary>
@@ -320,6 +282,10 @@ namespace SuiteCRMClient
         /// <returns>the CRM id of the object created or modified.</returns>
         public static string SetEntry(NameValue[] values, string moduleName)
         {
+            if (values == null || values.Count() == 0)
+            {
+                throw new MissingValuesException($"Missing values when storing an instance of '{moduleName}'");
+            }
             EnsureLoggedIn();
             object data = new
             {
@@ -327,10 +293,10 @@ namespace SuiteCRMClient
                 @module_name = moduleName,
                 @name_value_list = values
             };
-            SetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<SetEntryResult>("set_entry", data);
-            return _result.id == null ?
+            SetEntryResult result = SuiteCRMUserSession.RestServer.GetCrmResponse<SetEntryResult>("set_entry", data);
+            return string.IsNullOrEmpty(result.id) ?
                 string.Empty :
-                _result.id.ToString();
+                result.id;
         }
 
         /// <summary>
@@ -547,8 +513,50 @@ namespace SuiteCRMClient
 
             return SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.ServerInfo>("get_server_info", data);
         }
-        
-        public static EntryList GetEntryList(string module, string query, int limit, string order_by, int offset, bool GetDeleted, string[] fields)
+
+
+        /// <summary>
+        /// Get the specified entry from the specified module.
+        /// </summary>
+        /// <param name="module">The module to be queried.</param>
+        /// <param name="id">The id of the entry to return.</param>
+        /// <param name="fields">The fields to return.</param>
+        /// <param name="linkNamesToFieldsArray">A link object to return associated records in other modules.</param>
+        /// <returns>A list of entries in the module matching the query.</returns>
+        public static Entry GetEntry(string module, string id, string[] fields, object linkNamesToFieldsArray = null)
+        {
+            Entry result = new Entry();
+
+            if (EnsureLoggedIn())
+            {
+                object data = new
+                {
+                    @session = SuiteCRMUserSession.id,
+                    @module_name = module,
+                    @id = id,
+                    @select_fields = fields,
+                    @link_names_to_fields_array = linkNamesToFieldsArray,
+                    @track_view = false
+                };
+                result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.Entry>("get_entry", data);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get the specified entries from the specified module.
+        /// </summary>
+        /// <param name="module">The module to be queried.</param>
+        /// <param name="query">The query to filter by.</param>
+        /// <param name="limit">The limit to the number of fields to return in a page.</param>
+        /// <param name="order_by">The field(s) to order by.</param>
+        /// <param name="offset">The offset of the start of the page to return in the result set.</param>
+        /// <param name="getDeleted">If true, include deleted records in the result.</param>
+        /// <param name="fields">The fields to return.</param>
+        /// <param name="linkNamesToFieldsArray">A link object to return associated records in other modules.</param>
+        /// <returns>A list of entries in the module matching the query.</returns>
+        public static EntryList GetEntryList(string module, string query, int limit, string order_by, int offset, bool getDeleted, string[] fields, object linkNamesToFieldsArray = null)
         {
             EntryList result = new EntryList();
 
@@ -562,15 +570,9 @@ namespace SuiteCRMClient
                     @order_by = order_by,
                     @offset = offset,
                     @select_fields = fields,
-                    @link_names_to_fields_array = module == "Meetings" ?
-                    new[] {
-                    new { @name = "users", @value = new[] {"id", "email1" } },
-                    new { @name = "contacts", @value = new[] {"id", "account_id", "email1" } },
-                    new { @name = "leads", @value = new[] {"id", "email1" } }
-                    } :
-                    null,
+                    @link_names_to_fields_array = linkNamesToFieldsArray,
                     @max_results = $"{limit}",
-                    @deleted = GetDeleted,
+                    @deleted = getDeleted,
                     @favorites = false
                 };
                 result = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.EntryList>("get_entry_list", data);
@@ -583,27 +585,10 @@ namespace SuiteCRMClient
                 {
                     try
                     {
-                        result.resolveLinks();
-                        Hashtable hashtable = new Hashtable();
-                        int index = 0;
-                        foreach (EntryValue _value in result.entry_list)
-                        {
-                            if (!hashtable.Contains(_value.id))
-                            {
-                                hashtable.Add(_value.id, _value);
-                            }
-                            result.entry_list[index] = null;
-                            index++;
-                        }
-                        int num2 = 0;
-                        result.entry_list = null;
-                        result.entry_list = new EntryValue[hashtable.Count];
-                        result.result_count = hashtable.Count;
-                        foreach (DictionaryEntry entry in hashtable)
-                        {
-                            result.entry_list[num2] = (EntryValue)entry.Value;
-                            num2++;
-                        }
+                        result.ResolveLinks();
+
+                        result.entry_list = result.entry_list.OrderBy(x => x.id).GroupBy(x => x.id).Select(g=> g.First()).ToArray();
+                        result.result_count = result.entry_list.Count();
                     }
                     catch (System.Exception)
                     {

@@ -57,7 +57,7 @@ namespace SuiteCRMClient.RESTObjects
         [JsonProperty("result_count")]
         public int result_count { get; set; }
 
-        public void resolveLinks()
+        public void ResolveLinks()
         {
             if (this.entry_list.Length == this.relationshipList.Length)
             {
