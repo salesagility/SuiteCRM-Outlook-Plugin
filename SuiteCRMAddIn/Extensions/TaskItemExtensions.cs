@@ -23,7 +23,7 @@
 namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
-    using Extensions;
+    using SuiteCRMClient;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -32,22 +32,22 @@ namespace SuiteCRMAddIn.Extensions
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
-    /// Extension methods for Outlook AppointmentItems.
+    /// Extension methods for Outlook TaskItems.
     /// </summary>
     /// <remarks>
-    /// TODO: There are many methods in AppointmentSyncing which should be refactored into here.
+    /// TODO: There are many methods in TaskSyncing which should be refactored into here.
     /// </remarks>
-    public static class AppointmentItemExtension
+    public static class TaskItemExtensions
     {
         /// <summary>
         /// Remove all the synchronisation properties from this item.
         /// </summary>
         /// <param name="olItem">The item from which the property should be removed.</param>
-        public static void ClearSynchronisationProperties(this Outlook.AppointmentItem olItem)
+        public static void ClearSynchronisationProperties(this Outlook.TaskItem olItem)
         {
-            olItem.ClearUserProperty(Synchroniser<Outlook.AppointmentItem>.CrmIdPropertyName);
-            olItem.ClearUserProperty(Synchroniser<Outlook.AppointmentItem>.ModifiedDatePropertyName);
-            olItem.ClearUserProperty(Synchroniser<Outlook.AppointmentItem>.TypePropertyName);
+            olItem.ClearUserProperty(SyncStateManager.CrmIdPropertyName);
+            olItem.ClearUserProperty(SyncStateManager.ModifiedDatePropertyName);
+            olItem.ClearUserProperty(SyncStateManager.TypePropertyName);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace SuiteCRMAddIn.Extensions
         /// </summary>
         /// <param name="olItem">The item from which the property should be removed.</param>
         /// <param name="name">The name of the property to remove.</param>
-        public static void ClearUserProperty(this Outlook.AppointmentItem olItem, string name)
+        public static void ClearUserProperty(this Outlook.TaskItem olItem, string name)
         {
             Outlook.UserProperty olProperty = olItem.UserProperties[name];
             if (olProperty != null)
@@ -64,21 +64,26 @@ namespace SuiteCRMAddIn.Extensions
             }
         }
 
-        public static void EnsureRecipient(this Outlook.AppointmentItem olItem, string smtpAddress)
+
+        /// <summary>
+        /// Get the CRM id for this item, if known, else the empty string.
+        /// </summary>
+        /// <param name="olItem">The Outlook item under consideration.</param>
+        /// <returns>the CRM id for this item, if known, else the empty string.</returns>
+        public static CrmId GetCrmId(this Outlook.TaskItem olItem)
         {
-            bool found = false;
-
-            foreach (Outlook.Recipient recipient in olItem.Recipients)
+            string result;
+            Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+            if (property != null)
             {
-                found |= recipient.GetSmtpAddress().Equals(smtpAddress);
-
-                if (found) break;
+                result = property.Value;
+            }
+            else
+            {
+                result = string.Empty;
             }
 
-            if (!found)
-            {
-                olItem.Recipients.Add(smtpAddress);
-            }
+            return CrmId.Get(result);
         }
     }
 }

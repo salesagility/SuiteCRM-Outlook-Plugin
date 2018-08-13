@@ -50,15 +50,17 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SettingsDialog));
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.dtpAutoArchiveFrom = new System.Windows.Forms.DateTimePicker();
             this.label8 = new System.Windows.Forms.Label();
             this.EmailArchiveAccountTabs = new System.Windows.Forms.TabControl();
-            this.tabPage4 = new System.Windows.Forms.TabPage();
+            this.autoArchiveAccountsPage = new System.Windows.Forms.TabPage();
             this.label7 = new System.Windows.Forms.Label();
             this.txtAutoSync = new System.Windows.Forms.TextBox();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.advancedArchiveSettingsButton = new System.Windows.Forms.Button();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.chkShowConfirmationMessageArchive = new System.Windows.Forms.CheckBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
@@ -89,14 +91,24 @@ namespace SuiteCRMAddIn.Dialogs
             this.label1 = new System.Windows.Forms.Label();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.synchronisationTab = new System.Windows.Forms.TabPage();
-            this.syncCalendarMenu = new System.Windows.Forms.ComboBox();
-            this.syncCalendarLabel = new System.Windows.Forms.Label();
+            this.syncTasksMenu = new System.Windows.Forms.ComboBox();
+            this.syncTasksLabel = new System.Windows.Forms.Label();
+            this.syncMeetingsMenu = new System.Windows.Forms.ComboBox();
+            this.syncMeetingsLabel = new System.Windows.Forms.Label();
+            this.syncCallsMenu = new System.Windows.Forms.ComboBox();
+            this.syncCallsLabel = new System.Windows.Forms.Label();
             this.syncContactsMenu = new System.Windows.Forms.ComboBox();
             this.syncContactsLabel = new System.Windows.Forms.Label();
             this.syncLabel = new System.Windows.Forms.Label();
             this.InformationTabPage = new System.Windows.Forms.TabPage();
             this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.crmIdValidationSelector = new System.Windows.Forms.ComboBox();
+            this.policyBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.crmIdValidationLabel = new System.Windows.Forms.Label();
+            this.showErrorsSelector = new System.Windows.Forms.ComboBox();
+            this.popupWhenBindingSource = new System.Windows.Forms.BindingSource(this.components);
+            this.showErrorsLabel = new System.Windows.Forms.Label();
             this.logLevelHelp = new System.Windows.Forms.Label();
             this.logLevelLabel = new System.Windows.Forms.Label();
             this.logLevelSelector = new System.Windows.Forms.ComboBox();
@@ -118,6 +130,8 @@ namespace SuiteCRMAddIn.Dialogs
             this.synchronisationTab.SuspendLayout();
             this.InformationTabPage.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.policyBindingSource)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).BeginInit();
             this.SuspendLayout();
             // 
             // tabPage3
@@ -153,22 +167,22 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // EmailArchiveAccountTabs
             // 
-            this.EmailArchiveAccountTabs.Controls.Add(this.tabPage4);
+            this.EmailArchiveAccountTabs.Controls.Add(this.autoArchiveAccountsPage);
             this.EmailArchiveAccountTabs.Location = new System.Drawing.Point(11, 3);
             this.EmailArchiveAccountTabs.Name = "EmailArchiveAccountTabs";
             this.EmailArchiveAccountTabs.SelectedIndex = 0;
             this.EmailArchiveAccountTabs.Size = new System.Drawing.Size(340, 246);
             this.EmailArchiveAccountTabs.TabIndex = 17;
             // 
-            // tabPage4
+            // autoArchiveAccountsPage
             // 
-            this.tabPage4.Location = new System.Drawing.Point(4, 22);
-            this.tabPage4.Name = "tabPage4";
-            this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage4.Size = new System.Drawing.Size(332, 220);
-            this.tabPage4.TabIndex = 0;
-            this.tabPage4.Text = "Account#1";
-            this.tabPage4.UseVisualStyleBackColor = true;
+            this.autoArchiveAccountsPage.Location = new System.Drawing.Point(4, 22);
+            this.autoArchiveAccountsPage.Name = "autoArchiveAccountsPage";
+            this.autoArchiveAccountsPage.Padding = new System.Windows.Forms.Padding(3);
+            this.autoArchiveAccountsPage.Size = new System.Drawing.Size(332, 220);
+            this.autoArchiveAccountsPage.TabIndex = 0;
+            this.autoArchiveAccountsPage.Text = "Account#1";
+            this.autoArchiveAccountsPage.UseVisualStyleBackColor = true;
             // 
             // label7
             // 
@@ -191,6 +205,7 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // tabPage2
             // 
+            this.tabPage2.Controls.Add(this.advancedArchiveSettingsButton);
             this.tabPage2.Controls.Add(this.groupBox2);
             this.tabPage2.Location = new System.Drawing.Point(23, 4);
             this.tabPage2.Name = "tabPage2";
@@ -199,6 +214,16 @@ namespace SuiteCRMAddIn.Dialogs
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Archive";
             this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // advancedArchiveSettingsButton
+            // 
+            this.advancedArchiveSettingsButton.Location = new System.Drawing.Point(265, 306);
+            this.advancedArchiveSettingsButton.Name = "advancedArchiveSettingsButton";
+            this.advancedArchiveSettingsButton.Size = new System.Drawing.Size(75, 23);
+            this.advancedArchiveSettingsButton.TabIndex = 1;
+            this.advancedArchiveSettingsButton.Text = "Advanced";
+            this.advancedArchiveSettingsButton.UseVisualStyleBackColor = true;
+            this.advancedArchiveSettingsButton.Click += new System.EventHandler(this.advancedButton_Click);
             // 
             // groupBox2
             // 
@@ -493,8 +518,12 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // synchronisationTab
             // 
-            this.synchronisationTab.Controls.Add(this.syncCalendarMenu);
-            this.synchronisationTab.Controls.Add(this.syncCalendarLabel);
+            this.synchronisationTab.Controls.Add(this.syncTasksMenu);
+            this.synchronisationTab.Controls.Add(this.syncTasksLabel);
+            this.synchronisationTab.Controls.Add(this.syncMeetingsMenu);
+            this.synchronisationTab.Controls.Add(this.syncMeetingsLabel);
+            this.synchronisationTab.Controls.Add(this.syncCallsMenu);
+            this.synchronisationTab.Controls.Add(this.syncCallsLabel);
             this.synchronisationTab.Controls.Add(this.syncContactsMenu);
             this.synchronisationTab.Controls.Add(this.syncContactsLabel);
             this.synchronisationTab.Controls.Add(this.syncLabel);
@@ -506,22 +535,56 @@ namespace SuiteCRMAddIn.Dialogs
             this.synchronisationTab.Text = "Synchronisation";
             this.synchronisationTab.UseVisualStyleBackColor = true;
             // 
-            // syncCalendarMenu
+            // syncTasksMenu
             // 
-            this.syncCalendarMenu.FormattingEnabled = true;
-            this.syncCalendarMenu.Location = new System.Drawing.Point(126, 76);
-            this.syncCalendarMenu.Name = "syncCalendarMenu";
-            this.syncCalendarMenu.Size = new System.Drawing.Size(228, 21);
-            this.syncCalendarMenu.TabIndex = 4;
+            this.syncTasksMenu.FormattingEnabled = true;
+            this.syncTasksMenu.Location = new System.Drawing.Point(126, 130);
+            this.syncTasksMenu.Name = "syncTasksMenu";
+            this.syncTasksMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncTasksMenu.TabIndex = 8;
             // 
-            // syncCalendarLabel
+            // syncTasksLabel
             // 
-            this.syncCalendarLabel.AutoSize = true;
-            this.syncCalendarLabel.Location = new System.Drawing.Point(38, 79);
-            this.syncCalendarLabel.Name = "syncCalendarLabel";
-            this.syncCalendarLabel.Size = new System.Drawing.Size(52, 13);
-            this.syncCalendarLabel.TabIndex = 3;
-            this.syncCalendarLabel.Text = "Calendar:";
+            this.syncTasksLabel.AutoSize = true;
+            this.syncTasksLabel.Location = new System.Drawing.Point(38, 133);
+            this.syncTasksLabel.Name = "syncTasksLabel";
+            this.syncTasksLabel.Size = new System.Drawing.Size(39, 13);
+            this.syncTasksLabel.TabIndex = 7;
+            this.syncTasksLabel.Text = "Tasks:";
+            // 
+            // syncMeetingsMenu
+            // 
+            this.syncMeetingsMenu.FormattingEnabled = true;
+            this.syncMeetingsMenu.Location = new System.Drawing.Point(126, 103);
+            this.syncMeetingsMenu.Name = "syncMeetingsMenu";
+            this.syncMeetingsMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncMeetingsMenu.TabIndex = 6;
+            // 
+            // syncMeetingsLabel
+            // 
+            this.syncMeetingsLabel.AutoSize = true;
+            this.syncMeetingsLabel.Location = new System.Drawing.Point(38, 106);
+            this.syncMeetingsLabel.Name = "syncMeetingsLabel";
+            this.syncMeetingsLabel.Size = new System.Drawing.Size(53, 13);
+            this.syncMeetingsLabel.TabIndex = 5;
+            this.syncMeetingsLabel.Text = "Meetings:";
+            // 
+            // syncCallsMenu
+            // 
+            this.syncCallsMenu.FormattingEnabled = true;
+            this.syncCallsMenu.Location = new System.Drawing.Point(126, 76);
+            this.syncCallsMenu.Name = "syncCallsMenu";
+            this.syncCallsMenu.Size = new System.Drawing.Size(228, 21);
+            this.syncCallsMenu.TabIndex = 4;
+            // 
+            // syncCallsLabel
+            // 
+            this.syncCallsLabel.AutoSize = true;
+            this.syncCallsLabel.Location = new System.Drawing.Point(38, 79);
+            this.syncCallsLabel.Name = "syncCallsLabel";
+            this.syncCallsLabel.Size = new System.Drawing.Size(32, 13);
+            this.syncCallsLabel.TabIndex = 3;
+            this.syncCallsLabel.Text = "Calls:";
             // 
             // syncContactsMenu
             // 
@@ -573,6 +636,10 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.crmIdValidationSelector);
+            this.groupBox4.Controls.Add(this.crmIdValidationLabel);
+            this.groupBox4.Controls.Add(this.showErrorsSelector);
+            this.groupBox4.Controls.Add(this.showErrorsLabel);
             this.groupBox4.Controls.Add(this.logLevelHelp);
             this.groupBox4.Controls.Add(this.logLevelLabel);
             this.groupBox4.Controls.Add(this.logLevelSelector);
@@ -580,10 +647,55 @@ namespace SuiteCRMAddIn.Dialogs
             this.groupBox4.Controls.Add(this.label11);
             this.groupBox4.Location = new System.Drawing.Point(13, 144);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(332, 138);
+            this.groupBox4.Size = new System.Drawing.Size(332, 199);
             this.groupBox4.TabIndex = 5;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Logging";
+            // 
+            // crmIdValidationSelector
+            // 
+            this.crmIdValidationSelector.DataSource = this.policyBindingSource;
+            this.crmIdValidationSelector.DisplayMember = "Value";
+            this.crmIdValidationSelector.FormattingEnabled = true;
+            this.crmIdValidationSelector.Location = new System.Drawing.Point(186, 160);
+            this.crmIdValidationSelector.Name = "crmIdValidationSelector";
+            this.crmIdValidationSelector.Size = new System.Drawing.Size(140, 21);
+            this.crmIdValidationSelector.TabIndex = 38;
+            // 
+            // policyBindingSource
+            // 
+            this.policyBindingSource.DataSource = typeof(SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy);
+            // 
+            // crmIdValidationLabel
+            // 
+            this.crmIdValidationLabel.AutoSize = true;
+            this.crmIdValidationLabel.Location = new System.Drawing.Point(6, 163);
+            this.crmIdValidationLabel.Name = "crmIdValidationLabel";
+            this.crmIdValidationLabel.Size = new System.Drawing.Size(92, 13);
+            this.crmIdValidationLabel.TabIndex = 37;
+            this.crmIdValidationLabel.Text = "CRM Id Validation";
+            // 
+            // showErrorsSelector
+            // 
+            this.showErrorsSelector.DataSource = this.popupWhenBindingSource;
+            this.showErrorsSelector.FormattingEnabled = true;
+            this.showErrorsSelector.Location = new System.Drawing.Point(186, 136);
+            this.showErrorsSelector.Name = "showErrorsSelector";
+            this.showErrorsSelector.Size = new System.Drawing.Size(140, 21);
+            this.showErrorsSelector.TabIndex = 36;
+            // 
+            // popupWhenBindingSource
+            // 
+            this.popupWhenBindingSource.DataSource = typeof(SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen);
+            // 
+            // showErrorsLabel
+            // 
+            this.showErrorsLabel.AutoSize = true;
+            this.showErrorsLabel.Location = new System.Drawing.Point(6, 139);
+            this.showErrorsLabel.Name = "showErrorsLabel";
+            this.showErrorsLabel.Size = new System.Drawing.Size(67, 13);
+            this.showErrorsLabel.TabIndex = 35;
+            this.showErrorsLabel.Text = "Show Errors:";
             // 
             // logLevelHelp
             // 
@@ -709,6 +821,8 @@ namespace SuiteCRMAddIn.Dialogs
             this.InformationTabPage.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.policyBindingSource)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -755,7 +869,7 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.Label AddInVersionLabel;
         private System.Windows.Forms.TabControl EmailArchiveAccountTabs;
-        private System.Windows.Forms.TabPage tabPage4;
+        private System.Windows.Forms.TabPage autoArchiveAccountsPage;
         private System.Windows.Forms.GroupBox licenceGroup;
         private System.Windows.Forms.Label licenceLabel;
         private System.Windows.Forms.TextBox licenceText;
@@ -764,10 +878,21 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.ComboBox logLevelSelector;
         private System.Windows.Forms.Label logLevelHelp;
         private System.Windows.Forms.TabPage synchronisationTab;
-        private System.Windows.Forms.ComboBox syncCalendarMenu;
-        private System.Windows.Forms.Label syncCalendarLabel;
+        private System.Windows.Forms.ComboBox syncCallsMenu;
+        private System.Windows.Forms.Label syncCallsLabel;
         private System.Windows.Forms.ComboBox syncContactsMenu;
         private System.Windows.Forms.Label syncContactsLabel;
         private System.Windows.Forms.Label syncLabel;
+        private System.Windows.Forms.ComboBox syncMeetingsMenu;
+        private System.Windows.Forms.Label syncMeetingsLabel;
+        private System.Windows.Forms.ComboBox syncTasksMenu;
+        private System.Windows.Forms.Label syncTasksLabel;
+        private System.Windows.Forms.Button advancedArchiveSettingsButton;
+        private System.Windows.Forms.ComboBox showErrorsSelector;
+        private System.Windows.Forms.Label showErrorsLabel;
+        private System.Windows.Forms.BindingSource popupWhenBindingSource;
+        private System.Windows.Forms.ComboBox crmIdValidationSelector;
+        private System.Windows.Forms.Label crmIdValidationLabel;
+        private System.Windows.Forms.BindingSource policyBindingSource;
     }
 }

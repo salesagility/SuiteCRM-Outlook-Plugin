@@ -48,7 +48,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.txtDisplay.Visible = false;
             base.Controls.Add(this.txtDisplay);
             this.IgnoreModules.Add("iFrames");
-            this.IgnoreModules.Add(ContactSyncing.CrmModule);
+            this.IgnoreModules.Add(ContactSynchroniser.CrmModule);
             this.IgnoreModules.Add("Accounts");
             this.IgnoreModules.Add("Projects");
             this.IgnoreModules.Add("Bugs");
@@ -60,8 +60,8 @@ namespace SuiteCRMAddIn.Dialogs
             this.IgnoreModules.Add("KBDocuments");
             this.IgnoreModules.Add("Trackers");
             this.IgnoreModules.Add("Emails");
-            this.IgnoreModules.Add(AppointmentSyncing.AltCrmModule);
-            this.IgnoreModules.Add(TaskSyncing.CrmModule);
+            this.IgnoreModules.Add(CallsSynchroniser.CrmModule);
+            this.IgnoreModules.Add(TaskSynchroniser.CrmModule);
             this.IgnoreModules.Add("UserPrefs");
             this.IgnoreModules.Add("Contracts");
             this.IgnoreModules.Add("Campaigns");
@@ -129,7 +129,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.IgnoreModules.Add("SavedSearch");
             this.IgnoreModules.Add("SugarFeed");
             this.IgnoreModules.Add("SugarFavorites");
-            this.IgnoreModules.Add(AppointmentSyncing.CrmModule);
+            this.IgnoreModules.Add(MeetingsSynchroniser.CrmModule);
             this.IgnoreModules.Add("Notes");
             this.IgnoreModules.Add("TrackerPerfs");
             this.IgnoreModules.Add("TrackerQueries");
@@ -175,7 +175,7 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void frmCustomModules_Load(object sender, EventArgs e)
         {
-            using (new WaitCursor(this))
+            using (WaitCursor.For(this))
             {
                 try
                 {
@@ -266,8 +266,7 @@ namespace SuiteCRMAddIn.Dialogs
             }
             catch (Exception ex)
             {
-                Log.Error("btnSave_Click error", ex);
-                // Swallow exception(!)
+                ErrorHandler.Handle("Failure while trying to save selected custom modules", ex);
             }
         }
 

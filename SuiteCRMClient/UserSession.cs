@@ -103,6 +103,10 @@ namespace SuiteCRMClient
                     result = AuthenticateCRM();
                 }
             }
+            catch (BadCredentialsException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _log.Error("Login error", ex);
@@ -117,7 +121,7 @@ namespace SuiteCRMClient
         /// <summary>
         /// Authenticate against CRM.
         /// </summary>
-        /// <returns>A polling interval value, it returned by the host (currently it isn't)</returns>
+        /// <returns>A polling interval value, if returned by the host (currently it isn't)</returns>
         private int? AuthenticateCRM()
         {
             int? result;
@@ -136,8 +140,13 @@ namespace SuiteCRMClient
                 SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = this;
                 result = loginReturn.PollingInterval;
             }
-            catch (CrmServerErrorException)
+            catch (BadCredentialsException)
             {
+                throw;
+            }
+            catch (CrmServerErrorException e1)
+            {
+                _log.Error("Failed first login attempt", e1);
                 try
                 {
                     loginReturn = AuthenticateCRM(username, password);
@@ -147,8 +156,13 @@ namespace SuiteCRMClient
                     result = loginReturn.PollingInterval;
 
                 }
-                catch (CrmServerErrorException)
+                catch (BadCredentialsException)
                 {
+                    throw;
+                }
+                catch (CrmServerErrorException e2)
+                {
+                    _log.Error("Failed second login attempt", e2);
                     id = String.Empty;
                     SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = null;
                     throw;

@@ -20,50 +20,34 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using SuiteCRMClient;
+    using SuiteCRMClient.Logging;
     using System;
     using System.Runtime.InteropServices;
-    using SuiteCRMClient.Logging;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
-    /// Superclass for SyncState<T>, q.v..
+    /// Superclass for <see cref="SyncState{ItemType}"/>, q.v..
     /// </summary>
     public abstract class SyncState : WithRemovableSynchronisationProperties
     {
+        protected static Outlook.NameSpace MapiNS => Globals.ThisAddIn.Application.GetNamespace("MAPI");
+
         private bool _wasDeleted = false;
 
+        public CrmId CrmEntryId { get; set; }
+
         public abstract string CrmType { get; }
-
-        public string CrmEntryId { get; set; }
-
-        public DateTime OModifiedDate { get; set; }
-
-        public bool ExistedInCrm => !string.IsNullOrEmpty(CrmEntryId);
-
-        public bool IsPublic => OutlookItemSensitivity == Outlook.OlSensitivity.olNormal;
-
-        public virtual bool ShouldSyncWithCrm => IsPublic;
-
-        /// <summary>
-        /// Precisely 'this.OutlookItem.EntryId'.
-        /// </summary>
-        /// <remarks>Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.EntryId'.</remarks>
-        public abstract string OutlookItemEntryId { get; }
-
-        /// <summary>
-        /// Precisely 'this.OutlookItem.Sensitivity'.
-        /// </summary>
-        /// <remarks>Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.</remarks>
-        public abstract Outlook.OlSensitivity OutlookItemSensitivity { get; }
-
-        public abstract Outlook.UserProperties OutlookUserProperties { get; }
 
         /// <summary>
         /// A description of the item, suitable for use in debugging logs.
         /// </summary>
         public abstract string Description { get; }
+
+        public bool ExistedInCrm => CrmId.IsValid(CrmEntryId);
 
         public bool IsDeletedInOutlook
         {
@@ -89,6 +73,26 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        public bool IsPublic => OutlookItemSensitivity == Outlook.OlSensitivity.olNormal;
+
+        public DateTime OModifiedDate { get; set; }
+
+        /// <summary>
+        /// Precisely 'this.OutlookItem.EntryId'.
+        /// </summary>
+        /// <remarks>Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.EntryId'.</remarks>
+        public abstract string OutlookItemEntryId { get; }
+
+        /// <summary>
+        /// Precisely 'this.OutlookItem.Sensitivity'.
+        /// </summary>
+        /// <remarks>Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.Sensitivity'.</remarks>
+        public abstract Outlook.OlSensitivity OutlookItemSensitivity { get; }
+
+        public abstract Outlook.UserProperties OutlookUserProperties { get; }
+
+        public virtual bool ShouldSyncWithCrm => IsPublic;
+
         public void RemoveCrmLink()
         {
             CrmEntryId = null;
@@ -102,5 +106,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Remove all synchronisation properties from this object.
         /// </summary>
         public abstract void RemoveSynchronisationProperties();
+
+        /// <summary>
+        /// Save my Outlook item.
+        /// </summary>
+        internal abstract void SaveItem();
     }
 }

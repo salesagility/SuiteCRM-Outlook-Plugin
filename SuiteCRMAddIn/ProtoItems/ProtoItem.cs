@@ -16,8 +16,12 @@
         /// Construct a name-value collection from my fields, suitable to be despatched to CRM
         /// to create or update the representation in CRM of the item I represent.
         /// </summary>
-        /// <param name="entryId">The entry id of the object I represent in CRM, if known</param>
         /// <returns>The name-value collection constructed.</returns>
-        public abstract NameValueCollection AsNameValues(string entryId);
+        public abstract NameValueCollection AsNameValues();
+
+        /// <summary>
+        /// Get a description of the item.
+        /// </summary>
+        public abstract string Description { get; }
     }
 }

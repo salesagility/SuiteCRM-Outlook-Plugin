@@ -75,7 +75,7 @@ namespace SuiteCRMAddIn.Dialogs
             catch (Exception ex)
             {
                 // Suppress exception.
-                Log.Error("GetCheckedFolders error", ex);
+                ErrorHandler.Handle("Failed while fetching checked folders", ex);
             }
         }
 
@@ -107,7 +107,7 @@ namespace SuiteCRMAddIn.Dialogs
             catch (Exception ex)
             {
                 // Swallow exception(!)
-                Log.Error("GetMailFolders error", ex);
+                ErrorHandler.Handle("Failed while getting email folders", ex);
             }
         }
 

@@ -8,6 +8,8 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using SuiteCRMAddIn.BusinessLogic;
+
 namespace SuiteCRMAddIn.Properties {
     
     
@@ -225,18 +227,6 @@ namespace SuiteCRMAddIn.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncCalendar {
-            get {
-                return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncCalendar"]));
-            }
-            set {
-                this["SyncCalendar"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
         public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncContacts {
             get {
                 return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncContacts"]));
@@ -340,6 +330,78 @@ namespace SuiteCRMAddIn.Properties {
             set {
                 this["NeedsUpgrade"] = value;
             }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncCalls {
+            get {
+                return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncCalls"]));
+            }
+            set {
+                this["SyncCalls"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncMeetings {
+            get {
+                return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncMeetings"]));
+            }
+            set {
+                this["SyncMeetings"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction SyncTasks {
+            get {
+                return ((global::SuiteCRMAddIn.BusinessLogic.SyncDirection.Direction)(this["SyncTasks"]));
+            }
+            set {
+                this["SyncTasks"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("{ \"Contacts\": [ { \"linkName\": \"accounts_contacts_1\", \"targetName\": \"accounts\", \"f" +
+            "ields\": [\"id\", \"name\" ]}]}")]
+        public string ArchivingSearchChains {
+            get {
+                return ((string)(this["ArchivingSearchChains"]));
+            }
+            set {
+                this["ArchivingSearchChains"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("FirstTime")]
+        public ErrorHandler.PopupWhen ShowExceptions {
+            get {
+                return ((ErrorHandler.PopupWhen)(this["ShowExceptions"]));
+            }
+            set {
+                this["ShowExceptions"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Strict")]
+        public CrmIdValidationPolicy.Policy CrmIdValidationPolicy {
+            get
+            {
+                return ((CrmIdValidationPolicy.Policy) (this["CrmIdValidationPolicy"]));
+            }
+            set { this["CrmIdValidationPolicy"] = value; }
         }
     }
 }

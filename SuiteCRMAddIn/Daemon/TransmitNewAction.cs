@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.Daemon
 {
     using Exceptions;
     using SuiteCRMAddIn.BusinessLogic;
+    using SuiteCRMClient;
     using System.Net;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -32,17 +33,22 @@ namespace SuiteCRMAddIn.Daemon
     /// does not already have a valid CRM id.
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of item I transmit.</typeparam>
-    public class TransmitNewAction<OutlookItemType> : AbstractDaemonAction
+    public class TransmitNewAction<OutlookItemType, SyncStateType> : AbstractDaemonAction
         where OutlookItemType : class
+        where SyncStateType : SyncState<OutlookItemType>
     {
-        private string crmType;
         private SyncState<OutlookItemType> syncState;
-        private Synchroniser<OutlookItemType> synchroniser;
+        private Synchroniser<OutlookItemType, SyncStateType> synchroniser;
 
-        public TransmitNewAction(Synchroniser<OutlookItemType> synchroniser, SyncState<OutlookItemType> state, string crmType) : base(1)
+        public TransmitNewAction(Synchroniser<OutlookItemType, SyncStateType> synchroniser, SyncStateType state) : base(1)
         {
+            /* step the state transition engine forward to queued */
+            if (state.TxState == TransmissionState.NewFromOutlook)
+            {
+                state.SetPending();
+                state.SetQueued();
+            }
             this.syncState = state;
-            this.crmType = crmType;
             this.synchroniser = synchroniser;
         }
 
@@ -50,46 +56,58 @@ namespace SuiteCRMAddIn.Daemon
         {
             get
             {
-                return $"{this.GetType().Name} ({this.crmType})";
+                return $"{this.GetType().Name} ({this.synchroniser.DefaultCrmModule})";
             }
         }
 
         public override string Perform()
         {
-            /* #223: ensure that the state has a crmId is null or empty.
+            string result;
+
+            /* #223: ensure that the state has a crmId that is null or empty.
              * If not null or empty then this is not a new item: do nothing and exit. */
-            if (string.IsNullOrEmpty(syncState.CrmEntryId))
+            if (CrmId.IsInvalid(syncState.CrmEntryId))
             {
-                try {
-                    string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState, this.crmType);
-                    return $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
-                }
-                catch (WebException wex)
+                if (syncState.TxState == TransmissionState.Queued)
                 {
-                    if (wex.Status == WebExceptionStatus.ProtocolError)
+                    try
                     {
-                        using (HttpWebResponse response = wex.Response as HttpWebResponse)
+                        CrmId returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState);
+                        result = $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
+                    }
+                    catch (WebException wex)
+                    {
+                        if (wex.Status == WebExceptionStatus.ProtocolError)
                         {
-                            switch (response.StatusCode)
+                            using (HttpWebResponse response = wex.Response as HttpWebResponse)
                             {
-                                case HttpStatusCode.RequestTimeout:
-                                case HttpStatusCode.ServiceUnavailable:
-                                    throw new ActionRetryableException($"Temporary error ({response.StatusCode})", wex);
-                                default:
-                                    throw new ActionFailedException($"Permanent error ({response.StatusCode})", wex);
+                                switch (response.StatusCode)
+                                {
+                                    case HttpStatusCode.RequestTimeout:
+                                    case HttpStatusCode.ServiceUnavailable:
+                                        throw new ActionRetryableException($"Temporary error ({response.StatusCode})", wex);
+                                    default:
+                                        throw new ActionFailedException($"Permanent error ({response.StatusCode})", wex);
+                                }
                             }
                         }
+                        else
+                        {
+                            throw new ActionRetryableException("Temporary network error", wex);
+                        }
                     }
-                    else
-                    {
-                        throw new ActionRetryableException("Temporary network error", wex);
-                    }
+                }
+                else
+                {
+                    result = $"State is {syncState.TxState}; not retransmitting";
                 }
             }
             else
             {
-                return $"item was already synced as {syncState.CrmEntryId}; aborted.\n{this.syncState.Description}";
+                result = $"item was already synced as {syncState.CrmEntryId}; aborted.\n{this.syncState.Description}";
             }
+
+            return result;
         }
     }
 }

@@ -75,6 +75,19 @@ namespace SuiteCRMClient.RESTObjects
         }
 
         /// <summary>
+        /// Get the value for this name within this name-value collection, as a string.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The value as a string (or the empty string if unbound).</returns>
+        public string GetValueAsString(string name)
+        {
+            var binding = this.GetBinding(name);
+            return binding == null ?
+                string.Empty :
+                binding.value.ToString();
+        }
+
+        /// <summary>
         /// Return my names/values as a dictionary.
         /// </summary>
         /// <returns>my names/values as a dictionary</returns>

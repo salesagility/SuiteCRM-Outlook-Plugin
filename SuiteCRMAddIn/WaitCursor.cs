@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SuiteCRMClient.Logging;
+using System;
 using System.Windows.Forms;
 
 namespace SuiteCRMAddIn
@@ -15,8 +16,16 @@ namespace SuiteCRMAddIn
             _originalCursor = form.Cursor;
             _shouldReenable = shouldDisable && form.Enabled;
 
-            form.Cursor = Cursors.WaitCursor;
-            if (_shouldReenable) form.Enabled = false;
+            try
+            {
+                form.Cursor = Cursors.WaitCursor;
+                if (_shouldReenable) form.Enabled = false;
+            }
+            catch (Exception any)
+            {
+                // doesn't, cosmically speaking, matter.
+                Globals.ThisAddIn.Log.Warn($"Exception while trying to set wait cursor on form {_form.Name}", any);
+            }
         }
 
         public void Dispose()

@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
- namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.BusinessLogic
 {
     /// <summary>
     /// A state which a process (such as a synchronisation process) may be in.

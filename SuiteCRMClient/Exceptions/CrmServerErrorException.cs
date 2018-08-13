@@ -29,12 +29,17 @@ namespace SuiteCRMClient.Exceptions
     /// An exception which wraps an ErrorValue object.
     /// </summary>
     [Serializable]
-    internal class CrmServerErrorException : Exception
+    public class CrmServerErrorException : Exception
     {
         /// <summary>
         /// The error as returned by CRM over the JSON link.
         /// </summary>
         public readonly ErrorValue Error;
+
+        /// <summary>
+        /// The error number
+        /// </summary>
+        public int ErrorNumber => Int32.Parse(Error.number);
 
         /// <summary>
         /// The payload of the request which resulted in the error.
