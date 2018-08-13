@@ -220,7 +220,7 @@ namespace SuiteCRMAddIn
                 {
                     /* This will fail in the case of a new installation, but that's OK. 
                      * However, log it, in case it also fails at other times. */
-                    Log.Error($"Caught {any.GetType().Name} '{any.Message}' while attempting to upgrade settings.");
+                    ErrorHandler.Handle("Failure while attempting to upgrade settings.", any);
                 }
             }
         }
@@ -302,7 +302,7 @@ namespace SuiteCRMAddIn
                 /* it's possible for both success AND disable to be true (if login to CRM fails); 
                  * but logically if success is false disable must be true, so this branch should
                  * never be reached. */
-                log.Error(
+                Log.Error(
                     catalogue.GetString(
                         "In {0}: success is {1}; disable is {2}; impossible state, disabling.",
                         "ThisAddIn.Run",
@@ -312,7 +312,7 @@ namespace SuiteCRMAddIn
             }
         }
 
-        private void Disable()
+        internal void Disable()
         {
             const string methodName = "ThisAddIn.Disable";
             Log.Warn(catalogue.GetString("Disabling add-in"));
@@ -339,7 +339,7 @@ namespace SuiteCRMAddIn
         /// </summary>
         /// <param name="summary">A summary of the problem that caused the dialogue to be shown.</param>
         /// <returns>true if the user chose to disable the add-in.</returns>
-        private bool ShowReconfigureOrDisable(string summary)
+        internal bool ShowReconfigureOrDisable(string summary)
         {
             bool result;
 
@@ -379,7 +379,7 @@ namespace SuiteCRMAddIn
         {
             foreach (var s in GetKeySettings())
             {
-                log.Error(s);
+                log.Debug(s);
             }
         }
 
@@ -415,7 +415,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.objExplorer_FolderSwitch", ex);
+                ErrorHandler.Handle($"Failure while attempting to change folder to {this.objExplorer.CurrentFolder.FolderPath}", ex);
             }
         }
 
@@ -508,8 +508,10 @@ namespace SuiteCRMAddIn
 
         public void ShowArchiveForm()
         {
-            ArchiveDialog objForm = new ArchiveDialog();
-            objForm.ShowDialog();
+            if (this.SelectedEmails.Any())
+            {
+                new ArchiveDialog(this.SelectedEmails, EmailArchiveReason.Manual).ShowDialog();
+            }
         }
 
         internal void ManualArchive()
@@ -770,7 +772,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error(catalogue.GetString("ThisAddIn.Application_ItemSend"), ex);
+                ErrorHandler.Handle(catalogue.GetString("Failed while trying to handle a sent email"), ex);
             }
         }
 
@@ -798,7 +800,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error(catalogue.GetString("ThisAddIn.Application_NewMail"), ex);
+                ErrorHandler.Handle(catalogue.GetString("Failed while trying to handle a received email"), ex);
             }
         }
 
@@ -806,9 +808,9 @@ namespace SuiteCRMAddIn
         {
             string vCalId = meetingItem.GetVCalId();
 
-            if (!string.IsNullOrEmpty(vCalId) && RestAPIWrapper.GetEntry(MeetingsSynchroniser.DefaultCrmModule, vCalId, new string[] { "id" }) != null)
+            if (CrmId.IsValid(vCalId) && RestAPIWrapper.GetEntry(MeetingsSynchroniser.DefaultCrmModule, vCalId, new string[] { "id" }) != null)
             {
-                meetingItem.GetAssociatedAppointment(false).SetCrmId(vCalId);
+                meetingItem.GetAssociatedAppointment(false).SetCrmId(CrmId.Get(vCalId));
             }
         }
 
@@ -913,7 +915,7 @@ namespace SuiteCRMAddIn
             }
             catch (Exception ex)
             {
-                log.Error("ThisAddIn.Authenticate", ex);
+                Log.Error("ThisAddIn.Authenticate", ex);
             }
 
             return result;

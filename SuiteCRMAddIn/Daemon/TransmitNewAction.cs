@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.Daemon
 {
     using Exceptions;
     using SuiteCRMAddIn.BusinessLogic;
+    using SuiteCRMClient;
     using System.Net;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -65,13 +66,13 @@ namespace SuiteCRMAddIn.Daemon
 
             /* #223: ensure that the state has a crmId that is null or empty.
              * If not null or empty then this is not a new item: do nothing and exit. */
-            if (string.IsNullOrEmpty(syncState.CrmEntryId))
+            if (CrmId.IsInvalid(syncState.CrmEntryId))
             {
                 if (syncState.TxState == TransmissionState.Queued)
                 {
                     try
                     {
-                        string returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState);
+                        CrmId returnedCrmId = this.synchroniser.AddOrUpdateItemFromOutlookToCrm(syncState);
                         result = $"synced new item as {returnedCrmId}.\n\t{syncState.Description}";
                     }
                     catch (WebException wex)

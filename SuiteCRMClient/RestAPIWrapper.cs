@@ -194,7 +194,7 @@ namespace SuiteCRMClient
                 false, 
                 new string[] { "id" });
             
-            if (list.entry_list != null && list.entry_list.Count<EntryValue>() > 0)
+            if (list.entry_list != null && list.entry_list.Any())
             {
                 result = list.entry_list[0].id;
             }
@@ -214,9 +214,7 @@ namespace SuiteCRMClient
            
             EntryList list = GetEntryList("Users", $"users.user_name LIKE '%{MySqlEscape(username)}%'", 0, "id DESC", 0, false, new string[] { "id" });
 
-            if (list != null && 
-                list.entry_list != null && 
-                list.entry_list.Count<EntryValue>() > 0)
+            if (list?.entry_list != null && list.entry_list.Count() > 0)
             {
                 result = list.entry_list[0].id;
             }
@@ -256,9 +254,9 @@ namespace SuiteCRMClient
                     };
                     userId = SuiteCRMUserSession.RestServer.GetCrmStringResponse("get_user_id", data);
                 }
-                catch (Exception)
+                catch (Exception fail)
                 {
-                    // Swallow exception(!)
+                    Log.Error("", fail);
                 }
             }
 
@@ -295,10 +293,10 @@ namespace SuiteCRMClient
                 @module_name = moduleName,
                 @name_value_list = values
             };
-            SetEntryResult _result = SuiteCRMUserSession.RestServer.GetCrmResponse<SetEntryResult>("set_entry", data);
-            return _result.id == null ?
+            SetEntryResult result = SuiteCRMUserSession.RestServer.GetCrmResponse<SetEntryResult>("set_entry", data);
+            return string.IsNullOrEmpty(result.id) ?
                 string.Empty :
-                _result.id.ToString();
+                result.id;
         }
 
         /// <summary>

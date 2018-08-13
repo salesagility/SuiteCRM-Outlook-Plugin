@@ -6,31 +6,32 @@ namespace SuiteCRMAddIn.ProtoItems
     using SuiteCRMClient;
     using SuiteCRMClient.RESTObjects;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using BusinessLogic;
 
     /// <summary>
     /// Broadly, a C# representation of a CRM contact.
     /// </summary>
     public class ProtoContact : ProtoItem<Outlook.ContactItem>
     {
-        private string Body;
-        private string BusinessAddressCity;
-        private string BusinessAddressCountry;
-        private string BusinessAddressPostalCode;
-        private string BusinessAddressState;
-        private string BusinessAddressStreet;
-        private string BusinessFaxNumber;
-        private string BusinessTelephoneNumber;
-        private string CompanyName;
-        private string Department;
-        private string Email1Address;
-        private string FirstName;
-        private string HomeTelephoneNumber;
-        private string JobTitle;
-        private string LastName;
-        private string MobileTelephoneNumber;
-        private string Title;
-        private bool isPublic;
-        private string CrmEntryId;
+        private readonly string Body;
+        private readonly string BusinessAddressCity;
+        private readonly string BusinessAddressCountry;
+        private readonly string BusinessAddressPostalCode;
+        private readonly string BusinessAddressState;
+        private readonly string BusinessAddressStreet;
+        private readonly string BusinessFaxNumber;
+        private readonly string BusinessTelephoneNumber;
+        private readonly string CompanyName;
+        private readonly string Department;
+        private readonly string Email1Address;
+        private readonly string FirstName;
+        private readonly string HomeTelephoneNumber;
+        private readonly string JobTitle;
+        private readonly string LastName;
+        private readonly string MobileTelephoneNumber;
+        private readonly string Title;
+        private readonly bool isPublic;
+        private readonly CrmId CrmEntryId;
 
         public override string Description
         {
@@ -65,31 +66,30 @@ namespace SuiteCRMAddIn.ProtoItems
 
         public override NameValueCollection AsNameValues()
         {
-            var data = new NameValueCollection();
-
-            data.Add(RestAPIWrapper.SetNameValuePair("email1", Email1Address));
-            data.Add(RestAPIWrapper.SetNameValuePair("title", JobTitle));
-            data.Add(RestAPIWrapper.SetNameValuePair("phone_work", BusinessTelephoneNumber));
-            data.Add(RestAPIWrapper.SetNameValuePair("phone_home", HomeTelephoneNumber));
-            data.Add(RestAPIWrapper.SetNameValuePair("phone_mobile", MobileTelephoneNumber));
-            data.Add(RestAPIWrapper.SetNameValuePair("phone_fax", BusinessFaxNumber));
-            data.Add(RestAPIWrapper.SetNameValuePair("department", Department));
-            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_city", BusinessAddressCity));
-            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_state", BusinessAddressState));
-            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_postalcode", BusinessAddressPostalCode));
-            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_country", BusinessAddressCountry));
-            data.Add(RestAPIWrapper.SetNameValuePair("primary_address_street", BusinessAddressStreet));
-            data.Add(RestAPIWrapper.SetNameValuePair("description", Body));
-            data.Add(RestAPIWrapper.SetNameValuePair("last_name", LastName));
-            data.Add(RestAPIWrapper.SetNameValuePair("first_name", FirstName));
-            data.Add(RestAPIWrapper.SetNameValuePair("account_name", CompanyName));
-            data.Add(RestAPIWrapper.SetNameValuePair("salutation", Title));
-            data.Add(string.IsNullOrEmpty(CrmEntryId) ?
-                RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()) :
-                RestAPIWrapper.SetNameValuePair("id", CrmEntryId));
-            data.Add(RestAPIWrapper.SetNameValuePair("sync_contact", this.isPublic));
-
-            return data;
+            return new NameValueCollection
+            {
+                RestAPIWrapper.SetNameValuePair("email1", Email1Address),
+                RestAPIWrapper.SetNameValuePair("title", JobTitle),
+                RestAPIWrapper.SetNameValuePair("phone_work", BusinessTelephoneNumber),
+                RestAPIWrapper.SetNameValuePair("phone_home", HomeTelephoneNumber),
+                RestAPIWrapper.SetNameValuePair("phone_mobile", MobileTelephoneNumber),
+                RestAPIWrapper.SetNameValuePair("phone_fax", BusinessFaxNumber),
+                RestAPIWrapper.SetNameValuePair("department", Department),
+                RestAPIWrapper.SetNameValuePair("primary_address_city", BusinessAddressCity),
+                RestAPIWrapper.SetNameValuePair("primary_address_state", BusinessAddressState),
+                RestAPIWrapper.SetNameValuePair("primary_address_postalcode", BusinessAddressPostalCode),
+                RestAPIWrapper.SetNameValuePair("primary_address_country", BusinessAddressCountry),
+                RestAPIWrapper.SetNameValuePair("primary_address_street", BusinessAddressStreet),
+                RestAPIWrapper.SetNameValuePair("description", Body),
+                RestAPIWrapper.SetNameValuePair("last_name", LastName),
+                RestAPIWrapper.SetNameValuePair("first_name", FirstName),
+                RestAPIWrapper.SetNameValuePair("account_name", CompanyName),
+                RestAPIWrapper.SetNameValuePair("salutation", Title),
+                CrmId.IsValid(CrmEntryId)
+                    ? RestAPIWrapper.SetNameValuePair("id", CrmEntryId.ToString())
+                    : RestAPIWrapper.SetNameValuePair("assigned_user_id", RestAPIWrapper.GetUserId()),
+                RestAPIWrapper.SetNameValuePair("sync_contact", this.isPublic)
+            };
         }
     }
 }

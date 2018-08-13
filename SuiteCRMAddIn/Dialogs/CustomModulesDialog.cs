@@ -175,7 +175,7 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void frmCustomModules_Load(object sender, EventArgs e)
         {
-            using (new WaitCursor(this))
+            using (WaitCursor.For(this))
             {
                 try
                 {
@@ -266,8 +266,7 @@ namespace SuiteCRMAddIn.Dialogs
             }
             catch (Exception ex)
             {
-                Log.Error("btnSave_Click error", ex);
-                // Swallow exception(!)
+                ErrorHandler.Handle("Failure while trying to save selected custom modules", ex);
             }
         }
 

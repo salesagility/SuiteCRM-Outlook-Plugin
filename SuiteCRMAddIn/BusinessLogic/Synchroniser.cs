@@ -89,6 +89,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// It's arguable that specialisations of this class ought to be singletons, but currently they are not.
     /// </remarks>
     /// <typeparam name="OutlookItemType">The class of item that I am responsible for synchronising.</typeparam>
+    /// <typeparam name="SyncStateType">An appropriate sync state type for my <see cref="OutlookItemType"/></typeparam>
     public abstract class Synchroniser<OutlookItemType, SyncStateType> : Synchroniser, IDisposable
         where OutlookItemType : class
         where SyncStateType : SyncState<OutlookItemType>
@@ -123,7 +124,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         protected string fetchQueryPrefix;
 
-        private string _folderName;
+        private string folderName;
 
         // Keep a reference to the COM object on which we have event handlers, otherwise
         // when the reference is garbage-collected, the event-handlers are removed!
@@ -193,9 +194,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="syncState">The sync state.</param>
         /// <returns>The id of the entry added or updated.</returns>
-        internal virtual string AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState)
+        internal virtual CrmId AddOrUpdateItemFromOutlookToCrm(SyncState<OutlookItemType> syncState)
         {
-            string result = string.Empty;
+            CrmId result = CrmId.Empty;
 
             if (this.ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem))
             {
@@ -212,7 +213,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             syncState.SetTransmitted();
 
                             result = ConstructAndDespatchCrmItem(olItem);
-                            if (!string.IsNullOrEmpty(result))
+                            if (CrmId.IsValid(result))
                             {
                                 var utcNow = DateTime.UtcNow;
                                 EnsureSynchronisationPropertiesForOutlookItem(olItem, utcNow.ToString(), this.DefaultCrmModule, result);
@@ -242,7 +243,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Synchroniser.AddOrUpdateItemFromOutlookToCrm", ex);
+                    ErrorHandler.Handle("Failed while trying to add or update an item from Outlook to CRM", ex);
                     syncState.SetPending(true);
                 }
                 finally
@@ -374,7 +375,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Synchroniser.AddOrUpdateItemsFromCrmToOutlook", ex);
+                    ErrorHandler.Handle($"Failed while trying to add or update {this.DefaultCrmModule} from Outlook to CRM", ex);
                 }
             }
         }
@@ -389,7 +390,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </remarks>
         /// <param name="olItem">The Outlook item.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected abstract string ConstructAndDespatchCrmItem(OutlookItemType olItem);
+        protected abstract CrmId ConstructAndDespatchCrmItem(OutlookItemType olItem);
 
         /// <summary>
         /// Every Outlook item which is to be synchronised must have a property SOModifiedDate,
@@ -401,16 +402,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="modifiedDate">The value for the SOModifiedDate property.</param>
         /// <param name="type">The value for the SType property (CRM module name).</param>
         /// <param name="entryId">The value for the SEntryId property (CRM item id).</param>
-        protected void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, string modifiedDate, string type, string entryId)
+        protected void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, string modifiedDate, string type, CrmId entryId)
         {
             try
             {
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName, modifiedDate);
                 EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
-                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
 
-                if (!string.IsNullOrEmpty(entryId))
+                if (CrmId.IsValid(entryId))
                 {
+                    EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
                     SyncStateManager.Instance.SetByCrmId(entryId, SyncStateManager.Instance.GetOrCreateSyncState(olItem));
                 }
             }
@@ -449,7 +450,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olItem,
                 crmItem.GetValueAsString("date_modified"),
                 type,
-                crmItem.GetValueAsString("id"));
+                CrmId.Get(crmItem.id));
         }
 
         /// <summary>
@@ -462,7 +463,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="modifiedDate">The value for the SOModifiedDate property.</param>
         /// <param name="type">The value for the SType property.</param>
         /// <param name="entryId">The value for the SEntryId property.</param>
-        protected void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, DateTime modifiedDate, string type, string entryId)
+        protected void EnsureSynchronisationPropertiesForOutlookItem(OutlookItemType olItem, DateTime modifiedDate, string type, CrmId entryId)
         {
             this.EnsureSynchronisationPropertiesForOutlookItem(olItem, modifiedDate.ToString("yyyy-MM-dd HH:mm:ss"), type, entryId);
         }
@@ -474,6 +475,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
         protected abstract void EnsureSynchronisationPropertyForOutlookItem(OutlookItemType olItem, string name, string value);
+
+        protected void EnsureSynchronisationPropertyForOutlookItem(OutlookItemType olItem, string name, CrmId value)
+        {
+            this.EnsureSynchronisationPropertyForOutlookItem(olItem, name, value.ToString());
+        }
 
         /// <summary>
         /// Find any existing Outlook items which appear to be identical to this CRM item.
@@ -491,7 +497,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                this.Log.Error("Exception while checking for matches", any);
+                ErrorHandler.Handle($"Failure while checking for items matching id '{crmItem.id}'", any);
                 result = new List<SyncState<OutlookItemType>>();
             }
 
@@ -503,7 +509,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The item whose id is saught.</param>
         /// <returns>The id, or null if it is not known.</returns>
-        protected abstract string GetCrmEntryId(OutlookItemType olItem);
+        protected abstract CrmId GetCrmEntryId(OutlookItemType olItem);
 
         /// <summary>
         /// Fetch the page of entries from this module starting at this offset.
@@ -533,8 +539,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 var folder = GetDefaultFolder();
                 _itemsCollection = folder.Items;
-                _folderName = folder.Name;
-                Log.Debug("Adding event handlers for folder " + _folderName);
+                folderName = folder.Name;
+                Log.Debug("Adding event handlers for folder " + folderName);
                 _itemsCollection.ItemAdd += Items_ItemAdd;
                 _itemsCollection.ItemChange += Items_ItemChange;
                 _itemsCollection.ItemRemove += Items_ItemRemove;
@@ -554,40 +560,40 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected void Items_ItemAdd(object olItem)
         {
-            Log.Warn($"Outlook {_folderName} ItemAdd");
+            Log.Warn($"Outlook {folderName} ItemAdd");
             try
             {
                 OutlookItemAdded(olItem as OutlookItemType);
             }
             catch (Exception problem)
             {
-                Log.Error($"{_folderName} ItemAdd failed", problem);
+                ErrorHandler.Handle($"Failed to handle an item added to {folderName}", problem);
             }
         }
 
         protected void Items_ItemChange(object olItem)
         {
-            Log.Debug($"Outlook {_folderName} ItemChange");
+            Log.Debug($"Outlook {folderName} ItemChange");
             try
             {
                 OutlookItemChanged(olItem as OutlookItemType);
             }
             catch (Exception problem)
             {
-                Log.Error($"{_folderName} ItemChange failed", problem);
+                ErrorHandler.Handle($"Failed to handle an item modified in {folderName}", problem);
             }
         }
 
         protected void Items_ItemRemove()
         {
-            Log.Debug($"Outlook {_folderName} ItemRemove");
+            Log.Debug($"Outlook {folderName} ItemRemove");
             try
             {
                 RemoveDeletedItems();
             }
             catch (Exception problem)
             {
-                Log.Error($"{_folderName} ItemRemove failed", problem);
+                ErrorHandler.Handle($"Failed to handle item(s) removed from {folderName}", problem);
             }
         }
 
@@ -817,7 +823,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             if (_itemsCollection != null)
             {
-                Log.Debug("Removing event handlers for folder " + _folderName);
+                Log.Debug("Removing event handlers for folder " + folderName);
                 _itemsCollection.ItemAdd -= Items_ItemAdd;
                 _itemsCollection.ItemChange -= Items_ItemChange;
                 _itemsCollection.ItemRemove -= Items_ItemRemove;
@@ -859,7 +865,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("Synchroniser.RemoveItemAndSyncState: Exception  oItem.oItem.Delete", ex);
+                ErrorHandler.Handle($"Failed while trying to delete a {this.DefaultCrmModule} item", ex);
             }
             this.RemoveItemSyncState(syncState);
         }
@@ -927,7 +933,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             }
                             catch (BadStateTransition bst)
                             {
-                                Log.Error($"Transition exception in ResolveUnmatchedItems", bst);
+                                ErrorHandler.Handle($"Failure while seeking to resolve unmatched items", bst);
                             }
                         }
                         break;
@@ -1025,7 +1031,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error($"{prefix}: unexpected failure while checking {this.DefaultCrmModule}.", any);
+                ErrorHandler.Handle($"Unexpected failure while checking {this.DefaultCrmModule}.", any);
                 result = false;
             }
 

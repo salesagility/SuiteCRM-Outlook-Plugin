@@ -58,9 +58,14 @@ namespace SuiteCRMClient.Email
         public EmailArchiveReason Reason { get; set; }
 
         /// <summary>
-        /// The outlook item id of the item.
+        /// The client-side item id of the item.
         /// </summary>
-        public string OutlookId { get; set; }
+        public string ClientId { get; set; }
+
+        /// <summary>
+        /// The server-side item id.
+        /// </summary>
+        public string CrmEntryId { get; set; }
 
         public object contactData;
 
@@ -209,7 +214,14 @@ namespace SuiteCRMClient.Email
             {
                 try
                 {
-                    result = TrySave(relatedRecords, this.HTMLBody, null);
+                    if (string.IsNullOrEmpty(this.CrmEntryId))
+                    {
+                        result = TrySave(relatedRecords, null);
+                    }
+                    else
+                    {
+                        result = TryUpdate(relatedRecords, null);
+                    }
                 }
                 catch (Exception firstFail)
                 {
@@ -217,7 +229,7 @@ namespace SuiteCRMClient.Email
 
                     try
                     {
-                        result = TrySave(relatedRecords, string.Empty, new[] { firstFail });
+                        result = TrySave(relatedRecords, new[] { firstFail });
                     }
                     catch (Exception secondFail)
                     {
@@ -232,17 +244,50 @@ namespace SuiteCRMClient.Email
 
 
         /// <summary>
-        /// Attempt to save me given these contact Ids and this HTML body, taking note of these previous failures.
+        /// Delete my existing record and create a new one.
         /// </summary>
         /// <param name="relatedRecords">CRM module names/ids of records to which I should be related.</param>
-        /// <param name="htmlBody">The HTML body with which I should be saved.</param>
         /// <param name="fails">Any previous failures in attempting to save me.</param>
         /// <returns>An archive result object describing the outcome of this attempt.</returns>
-        private ArchiveResult TrySave(IEnumerable<CrmEntity> relatedRecords, string htmlBody, Exception[] fails)
+        private ArchiveResult TryUpdate(IEnumerable<CrmEntity> relatedRecords, Exception[] fails)
         {
-            var restServer = SuiteCRMUserSession.RestServer;
-            var emailResult = restServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry",
-               ConstructPacket(htmlBody));
+            ArchiveResult result;
+
+            try
+            {
+                // delete
+                NameValue[] deletePacket = new NameValue[2];
+                deletePacket[0] = RestAPIWrapper.SetNameValuePair("id", this.CrmEntryId);
+                deletePacket[1] = RestAPIWrapper.SetNameValuePair("deleted", "1");
+                RestAPIWrapper.SetEntry(deletePacket, "Emails");
+                // recreate
+                result = this.TrySave(relatedRecords, fails);
+            }
+            catch (Exception any)
+            {
+                List<Exception> newFails = new List<Exception>();
+                newFails.Add(any);
+                if (fails != null && fails.Any())
+                {
+                    newFails.AddRange(fails);
+                }
+                result = ArchiveResult.Failure(newFails.ToArray());
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Attempt to save me given these related records and this HTML body, taking note of these previous failures.
+        /// </summary>
+        /// <param name="relatedRecords">CRM module names/ids of records to which I should be related.</param>
+        /// <param name="fails">Any previous failures in attempting to save me.</param>
+        /// <returns>An archive result object describing the outcome of this attempt.</returns>
+        private ArchiveResult TrySave(IEnumerable<CrmEntity> relatedRecords, Exception[] fails)
+        {
+            CrmRestServer restServer = SuiteCRMUserSession.RestServer;
+            SetEntryResult emailResult = restServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry",
+               ConstructPacket(this.HTMLBody));
             ArchiveResult result = ArchiveResult.Success(emailResult.id, fails);
 
             if (result.IsSuccess)
@@ -309,7 +354,7 @@ namespace SuiteCRMClient.Email
             emailData.MaybeAddField("description_html", htmlBody);
             emailData.MaybeAddField("assigned_user_id", RestAPIWrapper.GetUserId());
             emailData.MaybeAddField("category_id", this.Category);
-            emailData.MaybeAddField("message_id", this.OutlookId);
+            emailData.MaybeAddField("message_id", this.ClientId);
 
             return new
             {
@@ -392,7 +437,7 @@ namespace SuiteCRMClient.Email
             var res = SuiteCRMUserSession.RestServer.GetCrmResponse<RESTObjects.SetEntryResult>("set_entry", initNoteDataWebFormat);
 
             RESTObjects.NoteAttachment note = new RESTObjects.NoteAttachment();
-            note.ID = res.id;
+            note.ID = res.id.ToString();
             note.FileName = attachment.DisplayName;
             note.FileContent = attachment.FileContentInBase64String;
             note.ParentType = "Emails";
@@ -418,6 +463,11 @@ namespace SuiteCRMClient.Email
                         value = replaceCRs ? fieldValue.Replace("\n", "") : fieldValue
                     });
                 }
+            }
+
+            public void MaybeAddField(string fieldName, string fieldValue)
+            {
+                this.MaybeAddField(fieldName, fieldValue.ToString(), false);
             }
         }
     }

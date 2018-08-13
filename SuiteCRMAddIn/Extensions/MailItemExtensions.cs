@@ -148,8 +148,7 @@ namespace SuiteCRMAddIn.Extensions
                 }
                 catch (Exception any)
                 {
-                    Log.Error(
-                        $"MailItemExtensions.GetSenderSMTPAddress: unexpected error {any.GetType().Name} '{any.Message}'", any);
+                    ErrorHandler.Handle("Failed while trying to get the sender's SMTP address", any);
                 }
 
                 try
@@ -162,8 +161,7 @@ namespace SuiteCRMAddIn.Extensions
                 }
                 catch (Exception any)
                 {
-                    Log.Error(
-                        $"MailItemExtensions.GetSenderSMTPAddress: failed to get email address of current user: {any.GetType().Name} '{any.Message}'",
+                    ErrorHandler.Handle("Failed to get email address of current user",
                         any);
                 }
 
@@ -185,6 +183,7 @@ namespace SuiteCRMAddIn.Extensions
             ArchiveableEmail mailArchive = new ArchiveableEmail(MailItemExtensions.SuiteCRMUserSession, MailItemExtensions.Log);
             mailArchive.From = olItem.GetSenderSMTPAddress();
             mailArchive.To = string.Empty;
+            mailArchive.CrmEntryId = olItem.GetCRMEntryId();
 
             Log.Info($"MailItemExtension.AsArchiveable: serialising mail {olItem.Subject} dated {olItem.SentOn}.");
 
@@ -208,7 +207,7 @@ namespace SuiteCRMAddIn.Extensions
 
             mailArchive.CC = olItem.CC;
 
-            mailArchive.OutlookId = olItem.EnsureEntryID();
+            mailArchive.ClientId = olItem.EnsureEntryID();
             mailArchive.Subject = olItem.Subject;
             mailArchive.Sent = olItem.ArchiveTime(reason);
             mailArchive.Body = olItem.Body;
@@ -322,7 +321,7 @@ namespace SuiteCRMAddIn.Extensions
                     }
                     catch (Exception ex1)
                     {
-                        Log.Error("EmailArchiving.GetAttachmentBytes", ex1);
+                        ErrorHandler.Handle("Failed to get data of an email attachment", ex1);
                     }
                 }
                 finally
@@ -375,6 +374,25 @@ namespace SuiteCRMAddIn.Extensions
             return Archive(olItem, reason, EmailArchiving.defaultModuleKeys.Select(x => new CrmEntity(x, null)));
         }
 
+        public static string GetCRMEntryId(this Outlook.MailItem olItem)
+        {
+            string result;
+            Outlook.UserProperty olProperty = null;
+            
+            try
+            {
+                olProperty = olItem.UserProperties[CrmIdPropertyName];
+                result = olProperty != null ? olProperty.Value.ToString() : string.Empty;
+            }
+            catch (COMException cex)
+            {
+                ErrorHandler.Handle("Could not get property while archiving email", cex);
+                result = string.Empty;
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// Archive this email item to CRM.
         /// </summary>
@@ -385,40 +403,27 @@ namespace SuiteCRMAddIn.Extensions
         /// <returns>A result object indicating success or failure.</returns>
         public static ArchiveResult Archive(this Outlook.MailItem olItem, EmailArchiveReason reason, IEnumerable<CrmEntity> moduleKeys, string excludedEmails = "")
         {
-            ArchiveResult result;
-            Outlook.UserProperty olProperty = null;
+            ArchiveResult result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
 
-            try
+            if (result.IsSuccess)
             {
-                olProperty = olItem.UserProperties[CrmIdPropertyName];
-            }
-            catch (COMException cex)
-            {
-                Log.Error("Could not get property while archiving email", cex);
-            }
-
-            if (olProperty == null || string.IsNullOrEmpty(olProperty.Value))
-            {
-                result = olItem.AsArchiveable(reason).Save(moduleKeys, excludedEmails);
-                
-                if (result.IsSuccess)
+                try
                 {
-                    try
+                    if (string.IsNullOrEmpty(olItem.Categories))
                     {
-                        olItem.Categories = string.IsNullOrEmpty(olItem.Categories) ?
-                            SuiteCRMCategoryName :
-                            $"{olItem.Categories},{SuiteCRMCategoryName}";
-                        olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
+                        olItem.Categories = SuiteCRMCategoryName;
                     }
-                    catch (COMException cex)
+                    else if (olItem.Categories.IndexOf(SuiteCRMCategoryName) == -1)
                     {
-                        Log.Error("Could not set property while archiving email", cex);
+                        olItem.Categories = $"{olItem.Categories},{SuiteCRMCategoryName}";
                     }
+
+                    olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
                 }
-            }
-            else
-            {
-                result = ArchiveResult.Success(olProperty.Value, new[] { new AlreadyArchivedException(olItem) });
+                catch (COMException cex)
+                {
+                    ErrorHandler.Handle("Could not set property while archiving email", cex);
+                }
             }
 
             return result;
@@ -446,6 +451,17 @@ namespace SuiteCRMAddIn.Extensions
             {
                 olItem.Save();
             }
+        }
+
+        /// <summary>
+        /// Ensure that I have a user property with this name and this value.
+        /// </summary>
+        /// <param name="olItem">Me</param>
+        /// <param name="propertyName">The name of the property I should have.</param>
+        /// <param name="propertyValue">The value of the property I should have.</param>
+        private static void EnsureProperty(this Outlook.MailItem olItem, string propertyName, object propertyValue)
+        {
+            EnsureProperty(olItem, propertyName, propertyValue.ToString());
         }
     }
 }

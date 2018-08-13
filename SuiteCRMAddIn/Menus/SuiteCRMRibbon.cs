@@ -183,7 +183,10 @@ namespace SuiteCRMAddIn
                             List<Outlook.MailItem> items = new List<Outlook.MailItem>();
                             items.Add(olItem);
 
-                            new ArchiveDialog(items, EmailArchiveReason.SendAndArchive).ShowDialog();
+                            if ( new ArchiveDialog(items, EmailArchiveReason.SendAndArchive).ShowDialog() == DialogResult.OK)
+                            {
+                                olItem.Send();
+                            }
                         }
                         catch (Exception failedToArchve)
                         {
@@ -192,8 +195,6 @@ namespace SuiteCRMAddIn
                                 $"Failed to archive message because {failedToArchve.Message}",
                                 "Failed to archive");
                         }
-
-                        olItem.Send();
                     }
                     catch (Exception failedToSend)
                     {

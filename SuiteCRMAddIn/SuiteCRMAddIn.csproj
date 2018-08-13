@@ -211,6 +211,16 @@
   <ItemGroup>
     <Compile Include="BusinessLogic\CallsSynchroniser.cs" />
     <Compile Include="BusinessLogic\CallSyncState.cs" />
+    <Compile Include="BusinessLogic\CrmId.cs" />
+    <Compile Include="BusinessLogic\CrmIdValidationPolicy.cs" />
+    <Compile Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.Designer.cs">
+      <DependentUpon>ConfirmRearchiveAlreadyArchivedEmails.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Exceptions\DuplicateCrmIdException.cs" />
+    <Compile Include="BusinessLogic\ErrorHandler.cs" />
     <Compile Include="BusinessLogic\MeetingsSynchroniser.cs" />
     <Compile Include="BusinessLogic\MeetingSyncState.cs" />
     <Compile Include="BusinessLogic\TransmissionState.cs" />
@@ -261,6 +271,7 @@
     <Compile Include="Exceptions\DuplicateSyncStateException.cs" />
     <Compile Include="Exceptions\UnexpectedSyncStateClassException.cs" />
     <Compile Include="Extensions\AddressEntryExtensions.cs" />
+    <Compile Include="Extensions\ApplicationExtension.cs" />
     <Compile Include="Extensions\MeetingItemExtensions.cs" />
     <Compile Include="Extensions\TaskItemExtensions.cs" />
     <Compile Include="Extensions\ContactItemExtensions.cs" />
@@ -353,6 +364,9 @@
     <EmbeddedResource Include="Dialogs\ClearCrmIdsDialog.resx">
       <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.resx">
+      <DependentUpon>ConfirmRearchiveAlreadyArchivedEmails.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ShuttingDownDialog.resx">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -388,6 +402,8 @@
     </None>
     <None Include="Locale\fr_FR\LC_MESSAGES\SuiteCRMAddIn.po" />
     <None Include="packages.config" />
+    <None Include="Properties\DataSources\SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy+Policy.datasource" />
+    <None Include="Properties\DataSources\SuiteCRMAddIn.BusinessLogic.ErrorHandler+PopupWhen.datasource" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

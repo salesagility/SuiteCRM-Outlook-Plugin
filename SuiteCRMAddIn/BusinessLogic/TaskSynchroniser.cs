@@ -102,7 +102,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (System.Exception any)
             {
-                Log.Error($"Error while saving task {olItem?.Subject}", any);
+                ErrorHandler.Handle($"Failure while saving task {olItem?.Subject}", any);
             }
         }
 
@@ -127,12 +127,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("TaskSyncing.SyncFolder", ex);
+                    ErrorHandler.Handle("Failure while synchronising Tasks", ex);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error("TaskSyncing.SyncFolder", ex);
+                ErrorHandler.Handle("Failure while synchronising Tasks", ex);
             }
         }
 
@@ -146,8 +146,8 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                string crmId = olItem.GetCrmId();
-                if (string.IsNullOrEmpty(crmId)) { crmId = "[not present]"; }
+                CrmId crmId = olItem.GetCrmId();
+                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
@@ -167,29 +167,32 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override bool ShouldAddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder folder, string crmType, EntryValue crmItem)
         {
-            return RestAPIWrapper.GetUserId() == crmItem.GetValueAsString("assigned_user_id");
+            try
+            {
+                return RestAPIWrapper.GetUserId().Equals(crmItem.GetValueAsString("assigned_user_id"));
+            }
+            catch (TypeInitializationException tix)
+            {
+                Log.Warn("Bad CRM id?", tix);
+                return false;
+            }
         }
 
-        protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder, string crmType, EntryValue crmItem)
+
+        protected override SyncState<Outlook.TaskItem> AddOrUpdateItemFromCrmToOutlook(Outlook.MAPIFolder tasksFolder,
+            string crmType, EntryValue crmItem)
         {
             SyncState<Outlook.TaskItem> result = null;
 
-            Log.Debug($"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {RestAPIWrapper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
+            Log.Debug(
+                $"TaskSyncing.AddOrUpdateItemFromCrmToOutlook\n\tSubject: {crmItem.GetValueAsString("name")}\n\tCurrent user id {RestAPIWrapper.GetUserId()}\n\tAssigned user id: {crmItem.GetValueAsString("assigned_user_id")}");
 
             var syncState = SyncStateManager.Instance.GetExistingSyncState(crmItem) as SyncState<Outlook.TaskItem>;
 
-            if (syncState == null)
-            {
-                result = MaybeAddNewItemFromCrmToOutlook(tasksFolder, crmItem);
-            }
-            else
-            {
-                result = UpdateExistingOutlookItemFromCrm(crmItem, syncState);
-            }
+            result = syncState == null ? MaybeAddNewItemFromCrmToOutlook(tasksFolder, crmItem) : UpdateExistingOutlookItemFromCrm(crmItem, syncState);
 
             return result;
         }
-
 
         /// <summary>
         /// Item creation really ought to happen within the context of a lock, in order to prevent duplicate creation.
@@ -264,7 +267,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olItem.Body = string.Concat(body, "#<", timeStart, "#", timeDue);
                 olItem.Status = GetStatus(crmItem.GetValueAsString("status"));
                 olItem.Importance = GetImportance(crmItem.GetValueAsString("priority"));
-                EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.GetValueAsString("date_modified"), DefaultCrmModule, crmItem.id);
+                EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem.GetValueAsString("date_modified"), DefaultCrmModule, CrmId.Get(crmItem.id));
             }
             finally
             {
@@ -293,8 +296,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             catch (Exception fail)
             {
                 /* you (sometimes? always?) can't set the start or due dates of tasks. Investigate. */
-                Log.Error(
-                    $"TaskSyncing.SetOutlookItemPropertiesFromCrmItem: Failed to set {nameOfValue} on task because {fail.Message}",
+                ErrorHandler.Handle(
+                    $"Failed to set {nameOfValue} on task",
                     fail);
             }
 
@@ -342,9 +345,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         /// <param name="olItem">The Outlook item.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override string ConstructAndDespatchCrmItem(Outlook.TaskItem olItem)
+        protected override CrmId ConstructAndDespatchCrmItem(Outlook.TaskItem olItem)
         {
-            return RestAPIWrapper.SetEntry(new ProtoTask(olItem).AsNameValues(), this.DefaultCrmModule);
+            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoTask(olItem).AsNameValues(), this.DefaultCrmModule));
         }
 
 
@@ -363,7 +366,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.GetOutlookTItems", ex);
+                ErrorHandler.Handle("Failed while trying to index Tasks", ex);
             }
         }
 
@@ -392,7 +395,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error($"TaskSyncing.EnsureSynchronisationPropertyForOutlookItem: Failed to set property {name} to value {value} on item {olItem.Subject}", any);
+                ErrorHandler.Handle($"Failed to set property {name} to value {value} on task {olItem.Subject}", any);
             }
         }
 
@@ -407,7 +410,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             return olItem.EntryID;
         }
 
-        protected override string GetCrmEntryId(Outlook.TaskItem olItem)
+        protected override CrmId GetCrmEntryId(Outlook.TaskItem olItem)
         {
             return olItem.GetCrmId();
         }

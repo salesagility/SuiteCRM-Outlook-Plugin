@@ -20,10 +20,13 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using Exceptions;
     using Extensions;
+    using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using System;
@@ -32,6 +35,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Globalization;
     using System.Linq;
     using System.Runtime.InteropServices;
+    using System.Text;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -92,9 +96,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         private ConcurrentDictionary<string, SyncState> byOutlookId = new ConcurrentDictionary<string, SyncState>();
 
         /// <summary>
+        /// A dictionary of all known sync states which have global ids, indexed by global id.
+        /// </summary>
+        private ConcurrentDictionary<string, SyncState> byGlobalId = new ConcurrentDictionary<string, SyncState>();
+
+        /// <summary>
         /// A dictionary of sync states indexed by crm id, where known.
         /// </summary>
-        private ConcurrentDictionary<string, SyncState> byCrmId = new ConcurrentDictionary<string, SyncState>();
+        private ConcurrentDictionary<CrmId, SyncState> byCrmId = new ConcurrentDictionary<CrmId, SyncState>();
 
         /// <summary>
         /// A dictionary of sync states indexed by the values of distinct fields.
@@ -208,6 +217,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                         break;
                 }
             }
+            catch (TypeInitializationException tix)
+            {
+                log.Warn("Bad CRM id?", tix);
+                result = null;
+            }
             catch (KeyNotFoundException kex)
             {
                 log.Warn("KeyNotFoundException in GetExistingSyncState", kex);
@@ -230,23 +244,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         public AppointmentSyncState GetSyncState(Outlook.AppointmentItem appointment)
         {
             SyncState result = this.byOutlookId.ContainsKey(appointment.EntryID) ? this.byOutlookId[appointment.EntryID] : null;
-            string crmId = result == null ? appointment.GetCrmId() : CheckForDuplicateSyncState(result, appointment.GetCrmId());
+            CrmId crmId = result == null ? appointment.GetCrmId() : CheckForDuplicateSyncState(result, appointment.GetCrmId());
 
-            if (result == null && string.IsNullOrEmpty(crmId))
+            if (CrmId.IsValid(crmId))
             {
-                result = null;
-            }
-            else if (result == null && this.byCrmId.ContainsKey(crmId))
-            {
-                result = this.byCrmId[crmId];
-            }
-            else if (result != null && crmId != null && this.byCrmId.ContainsKey(crmId) == false)
-            {
-                this.byCrmId[crmId] = result;
-                result.CrmEntryId = crmId;
+                if (result == null && this.byCrmId.ContainsKey(crmId))
+                {
+                    result = this.byCrmId[crmId];
+                }
+                else if (result != null && this.byCrmId.ContainsKey(crmId) == false)
+                {
+                    this.byCrmId[crmId] = result;
+                    result.CrmEntryId = crmId;
+                }
             }
 
-            if (result != null && result as AppointmentSyncState == null)
+            if (result != null && !(result is AppointmentSyncState))
             {
                 throw new UnexpectedSyncStateClassException("AppointmentSyncState", result);
             }
@@ -267,20 +280,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         public ContactSyncState GetSyncState(Outlook.ContactItem contact)
         {
             SyncState result = this.byOutlookId.ContainsKey(contact.EntryID) ? this.byOutlookId[contact.EntryID] : null;
-            string crmId = CheckForDuplicateSyncState(result, contact.GetCrmId());
+            CrmId crmId = CheckForDuplicateSyncState(result, contact.GetCrmId());
 
-            if (result == null && string.IsNullOrEmpty(crmId))
+            if (CrmId.IsValid(crmId))
             {
-                result = null;
-            }
-            else if (result == null && this.byCrmId.ContainsKey(crmId))
-            {
-                result = this.byCrmId[crmId];
-            }
-            else if (result != null && crmId != null && this.byCrmId.ContainsKey(crmId) == false)
-            {
-                this.byCrmId[crmId] = result;
-                result.CrmEntryId = crmId;
+                if (result == null && this.byCrmId.ContainsKey(crmId))
+                {
+                    result = this.byCrmId[crmId];
+                }
+                else if (result != null && this.byCrmId.ContainsKey(crmId) == false)
+                {
+                    this.byCrmId[crmId] = result;
+                    result.CrmEntryId = crmId;
+                }
             }
 
             if (result != null && result as ContactSyncState == null)
@@ -304,23 +316,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         public TaskSyncState GetSyncState(Outlook.TaskItem task)
         {
             SyncState result = this.byOutlookId.ContainsKey(task.EntryID) ? this.byOutlookId[task.EntryID] : null;
-            string crmId = result == null ? task.GetCrmId() : CheckForDuplicateSyncState(result, task.GetCrmId());
+            CrmId crmId = result == null ? task.GetCrmId() : CheckForDuplicateSyncState(result, task.GetCrmId());
 
-            if (result == null && string.IsNullOrEmpty(crmId))
+            if (CrmId.IsValid(crmId))
             {
-                result = null;  
-            }
-            else if (result == null && this.byCrmId.ContainsKey(crmId))
-            {
-                result = this.byCrmId[crmId];
-            }
-            else if (result != null && crmId != null && this.byCrmId.ContainsKey(crmId) == false)
-            {
-                this.byCrmId[crmId] = result;
-                result.CrmEntryId = crmId;
+                if (result == null && this.byCrmId.ContainsKey(crmId))
+                {
+                    result = this.byCrmId[crmId];
+                }
+                else if (result != null && crmId != null && this.byCrmId.ContainsKey(crmId) == false)
+                {
+                    this.byCrmId[crmId] = result;
+                    result.CrmEntryId = crmId;
+                }
             }
 
-            if (result != null && result as TaskSyncState == null)
+            if (result != null && !(result is TaskSyncState))
             {
                 throw new UnexpectedSyncStateClassException("TaskSyncState", result);
             }
@@ -337,15 +348,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmId">A candidate CRM id.</param>
         /// <returns>A better guess at the CRM id.</returns>
         /// <exception cref="DuplicateSyncStateException">If a duplicate is detected.</exception>
-        private string CheckForDuplicateSyncState(SyncState state, string crmId)
+        private CrmId CheckForDuplicateSyncState(SyncState state, CrmId crmId)
         {
-            string result = string.IsNullOrEmpty(crmId) && state != null ? state.CrmEntryId : crmId;
+            CrmId result = CrmId.IsInvalid(crmId) && state != null ? state.CrmEntryId : crmId;
 
             if (result != null)
             {
-                SyncState byCrmState = string.IsNullOrEmpty(crmId) ?
-                    null :
-                    this.byCrmId.ContainsKey(crmId) ? this.byCrmId[crmId] : null;
+                SyncState byCrmState = this.byCrmId.ContainsKey(crmId) ? this.byCrmId[crmId] : null;
 
                 if (state != null && byCrmState != null && state != byCrmState)
                 {
@@ -365,19 +374,30 @@ namespace SuiteCRMAddIn.BusinessLogic
         public SyncState GetExistingSyncState(EntryValue crmItem)
         {
             SyncState result;
-            try
-            {
-                result = this.byCrmId[crmItem.id];
-            }
-            catch (KeyNotFoundException)
-            {
-                try
-                {
-                    var outlookId = crmItem.GetValueAsString("outlook_id");
+            string outlookId = crmItem.GetValueAsString("outlook_id");
+            CrmId crmId = CrmId.Get(crmItem.id);
 
-                    result = string.IsNullOrEmpty(outlookId) ? null : this.byOutlookId[outlookId];
+            if (this.byCrmId.ContainsKey(crmId))
+            {
+                result = this.byCrmId[crmId];
+            }
+            else if (this.byOutlookId.ContainsKey(outlookId))
+            {
+                result = this.byOutlookId[outlookId];
+            }
+            else if (this.byGlobalId.ContainsKey(outlookId))
+            {
+                result = this.byGlobalId[outlookId];
+            }
+            else
+            {
+                string simulatedGlobalId = SyncStateManager.SimulateGlobalId(crmId);
+
+                if (this.byGlobalId.ContainsKey(simulatedGlobalId))
+                {
+                    result = this.byGlobalId[simulatedGlobalId];
                 }
-                catch (KeyNotFoundException)
+                else
                 {
                     string distinctFields = GetDistinctFields(crmItem);
 
@@ -398,6 +418,44 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             return result;
         }
+
+        /// <summary>
+        /// Get the existing sync state for this CRM item, if it exists, else null.
+        /// </summary>
+        /// <param name="outlookId">The Outlook id of the syncstate to seek.</param>
+        /// <param name="crmId">The CRM id of the syncstate to seek.</param>
+         /// <returns>The appropriate sync state, or null if none.</returns>
+        public SyncState GetExistingSyncState(string outlookId, CrmId crmId)
+        {
+            SyncState result;
+
+            if (this.byCrmId.ContainsKey(crmId))
+            {
+                result = this.byCrmId[crmId];
+            }
+            else if (!string.IsNullOrEmpty(outlookId))
+            {
+                if (this.byOutlookId.ContainsKey(outlookId))
+                {
+                    result = this.byOutlookId[outlookId];
+                }
+                else
+                {
+                    result = this.byGlobalId.ContainsKey(outlookId) ?
+                        this.byGlobalId[outlookId] :
+                        null;
+                }
+            }
+            else
+            {
+                string simulatedGlobalId = SyncStateManager.SimulateGlobalId(crmId);
+
+                result = this.byGlobalId.ContainsKey(simulatedGlobalId) ? this.byGlobalId[simulatedGlobalId] : null;
+            }
+
+            return result;
+        }
+
 
         /// <summary>
         /// Get a string representing the values of the distinct fields of this crmItem, 
@@ -503,11 +561,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state.</returns>
         private AppointmentSyncState CreateSyncState(Outlook.AppointmentItem appointment)
         {
-            string crmId = appointment.GetCrmId();
+            CrmId crmId = appointment.GetCrmId();
 
             AppointmentSyncState result;
 
-            if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
+            if (CrmId.IsValid(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
             {
                 result = CheckUnexpectedFoundState<Outlook.AppointmentItem, AppointmentSyncState>(appointment, crmId);
             }
@@ -524,13 +582,88 @@ namespace SuiteCRMAddIn.BusinessLogic
                     result = this.SetByOutlookId<AppointmentSyncState>(appointment.EntryID,
                         new MeetingSyncState(appointment, crmId, modifiedDate));
                 }
+                this.byGlobalId[appointment.GlobalAppointmentID] = result;
             }
 
-            if (result != null && !string.IsNullOrEmpty(crmId))
+            if (result != null && CrmId.IsValid(crmId))
             {
                 this.byCrmId[crmId] = result;
             }
             
+            return result;
+        }
+
+        /// <summary>
+        /// Return the global appointment id corresponding to this crm id.
+        /// </summary>
+        /// <remarks>
+        /// Outlook items arriving from CRM have a global appointment id based on their CRM id.
+        /// Arguably this should not go here.
+        /// </remarks>
+        /// <see cref="Outlook.AppointmentItem.GlobalAppointmentId"/> 
+        /// <see cref="AppointmentItemExtension.GetVCalId(Outlook.AppointmentItem)"/> 
+        /// <param name="crmId">The CRM id from which the global id should be reverse engineered.</param>
+        /// <returns>The reverse-engineered global id.</returns>
+        private static string SimulateGlobalId(CrmId crmId)
+        {
+            byte[] globalId = new byte[89];
+            byte[] header = new byte[40]
+            {
+                0x04, // 1: EOT
+                0x00,
+                0x00,
+                0x00,
+                0x82, // 5: left parenthesis
+                0x00,
+                0xE0, // 7: shift out
+                0x00,
+                0x74, // 9: G
+                0xC5, // 10: right square bracket
+                0xB7, // 11: left brace
+                0x10, // 12: start of heading
+                0x1A, // 13: ?
+                0x82, // 14: left parenthesis
+                0xE0, // 15: shift out
+                0x08, // 16: ?
+                0x00,
+                0x00,
+                0x00,
+                0x00, // 20
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00, // 25
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00, // 30
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00, // 35
+                0x00,
+                0x31, // 37: s
+                0x00,
+                0x00,
+                0x00  // 40
+            };
+
+            byte[] signature = Encoding.UTF8.GetBytes("vCal-Uid");
+            byte[] crmIdBytes = Encoding.UTF8.GetBytes(crmId.ToString());
+
+            Buffer.BlockCopy(header, 0, globalId, 0, 40);
+            Buffer.BlockCopy(signature, 0, globalId, 40, signature.Length);
+            int cursor = 40 + signature.Length;
+            globalId[cursor++] = 0x01;
+            globalId[cursor++] = 0;
+            globalId[cursor++] = 0;
+            Buffer.BlockCopy(crmIdBytes, 0, globalId, cursor, crmIdBytes.Length);
+
+            string result = Encoding.UTF8.GetString(globalId, 0, globalId.Length);
+
             return result;
         }
 
@@ -544,10 +677,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state.</returns>
         private ContactSyncState CreateSyncState(Outlook.ContactItem contact)
         {
-            string crmId = contact.GetCrmId();
+            CrmId crmId = contact.GetCrmId();
             ContactSyncState result;
 
-            if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
+            if (CrmId.IsValid(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
             {
                 result = CheckUnexpectedFoundState<Outlook.ContactItem, ContactSyncState>(contact, crmId);
             }
@@ -558,7 +691,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         ParseDateTimeFromUserProperty(contact.UserProperties[ModifiedDatePropertyName])));
             }
 
-            if (result != null && !string.IsNullOrEmpty(crmId))
+            if (result != null && CrmId.IsValid(crmId))
             {
                 this.byCrmId[crmId] = result;
             }
@@ -576,11 +709,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>An appropriate sync state.</returns>
         private TaskSyncState CreateSyncState(Outlook.TaskItem task)
         {
-            string crmId = task.GetCrmId();
+            CrmId crmId = task.GetCrmId();
 
             TaskSyncState result;
 
-            if (!string.IsNullOrEmpty(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
+            if (CrmId.IsValid(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
             {
                 result = CheckUnexpectedFoundState<Outlook.TaskItem, TaskSyncState>(task, crmId);
             }
@@ -591,7 +724,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         ParseDateTimeFromUserProperty(task.UserProperties[ModifiedDatePropertyName])));
             }
 
-            if (result != null && !string.IsNullOrEmpty(crmId))
+            if (result != null && CrmId.IsValid(crmId))
             {
                 this.byCrmId[crmId] = result;
             }
@@ -612,7 +745,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="crmId">The CRM id associated with that item.</param>
         /// <returns>An appropriate sync state</returns>
         /// <exception cref="Exception">If the sync state doesn't exactly match what we would expect.</exception>
-        private StateType CheckUnexpectedFoundState<ItemType, StateType>(ItemType olItem, string crmId)
+        private StateType CheckUnexpectedFoundState<ItemType, StateType>(ItemType olItem, CrmId crmId)
             where ItemType : class
             where StateType : SyncState<ItemType>
         {
@@ -724,7 +857,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 catch (COMException) { }
                 try
                 {
-                    if (!string.IsNullOrEmpty(state.CrmEntryId) && this.byCrmId[state.CrmEntryId] == state)
+                    if (CrmId.IsValid(state.CrmEntryId) && this.byCrmId[state.CrmEntryId] == state)
                     {
                         this.byCrmId.TryRemove(state.CrmEntryId, out ignore);
                     }
@@ -740,8 +873,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <typeparam name="SyncStateType">The type of <see cref="SyncState"/> passed</typeparam>
         /// <param name="crmId">The crmId to index this sync state to.</param>
         /// <param name="syncState">the sync state to index.</param>
-        internal void SetByCrmId<SyncStateType>(string crmId, SyncStateType syncState) where SyncStateType : SyncState
+        internal void SetByCrmId<SyncStateType>(CrmId crmId, SyncStateType syncState) where SyncStateType : SyncState
         {
+            if (this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null && this.byCrmId[crmId] != syncState)
+            {
+                throw new DuplicateCrmIdException(syncState, crmId);
+            }
+
             this.byCrmId[crmId] = syncState;
             string outlookId = syncState?.OutlookItemEntryId;
 

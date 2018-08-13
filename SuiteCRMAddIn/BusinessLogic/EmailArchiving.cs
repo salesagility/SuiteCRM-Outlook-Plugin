@@ -57,7 +57,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// The modules to which we'll try to save if no more specific list of modules is specified.
         /// </summary>
-        public static readonly List<string> defaultModuleKeys = new List<string>() { ContactSynchroniser.CrmModule, "Leads" };
+        public static readonly List<string> defaultModuleKeys = new List<string>() { ContactSynchroniser.CrmModule, "Leads", "Accounts" };
 
         public EmailArchiving(string name, ILogger log) : base(name, log)
         {
@@ -138,11 +138,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                     }
 
-
                     foreach (var candidate in candidateItems)
                     {
                         var comType = Microsoft.VisualBasic.Information.TypeName(candidate);
-                        
                         
                         switch (comType)
                         {
@@ -166,7 +164,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error($"EmailArchiving.ArchiveFolderItems; folder {folder.Name}:", ex);
+                ErrorHandler.Handle($"Failed while archiving and email item in folder {folder.Name}:", ex);
             }
         }
 
@@ -187,7 +185,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 catch (Exception any)
                 {
-                    Log.Error($"EmailArchiving.ArchiveFolderItems; Failed to archive MailItem '{olItem.Subject}' from '{olItem.GetSenderSMTPAddress()}", any);
+                    ErrorHandler.Handle($"Failed to archive MailItem '{olItem.Subject}' from '{olItem.GetSenderSMTPAddress()}", any);
                 }
             }
         }
@@ -280,8 +278,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception ex)
             {
-                Log.Error("ThisAddIn.GetMailFolders", ex);
-                ;
+                ErrorHandler.Handle("Failed while trying to get mail folders", ex);
             }
         }
 
@@ -300,13 +297,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        public void CreateEmailRelationshipOrFail(string emailId, CrmEntity entity)
+        public void CreateEmailRelationshipOrFail(CrmId emailId, CrmEntity entity)
         {
             var success = RestAPIWrapper.TrySetRelationship(
                 new SetRelationshipParams
                 {
                     module2 = "emails",
-                    module2_id = emailId,
+                    module2_id = emailId.ToString(),
                     module1 = entity.ModuleName,
                     module1_id = entity.EntityId,
                 }, Objective.Email);

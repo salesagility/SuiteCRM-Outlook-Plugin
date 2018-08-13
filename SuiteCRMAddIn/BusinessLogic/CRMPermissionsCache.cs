@@ -174,7 +174,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             catch (KeyNotFoundException knf)
             {
                 // OK, this is impossible. But it IS happening... why?
-                Log.Error($"Key not found exception while seeking '{moduleKey}'", knf);
+                ErrorHandler.Handle($"Failed while checking permission {permission} for module '{moduleKey}'", knf);
                 return result;
             }
         }
@@ -220,7 +220,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception fetchFailed)
             {
-                Log.Error($"Cannot detect access {moduleKey}/{permission} because {fetchFailed.GetType().Name}: {fetchFailed.Message}", fetchFailed);
+                ErrorHandler.Handle($"Failed to detect access {moduleKey}/{permission}", fetchFailed);
                 throw;
             }
 
@@ -349,7 +349,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                Log.Error("Failed in HasCahedAccess", any);
+                ErrorHandler.Handle($"Failed while checking the permissions cache for access to {moduleKey}/{direction}", any);
             }
 
             return result;
