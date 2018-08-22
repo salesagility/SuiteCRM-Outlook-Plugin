@@ -179,7 +179,7 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 try
                 {
-                    RestAPIWrapper.EnsureLoggedIn(Globals.ThisAddIn.SuiteCRMUserSession);
+                    RestAPIWrapper.EnsureLoggedIn();
 
                     if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                     {

@@ -36,7 +36,7 @@ namespace SuiteCRMClient
         public string SuiteCRMPassword { get; set; }
         public string LDAPKey { get; set; }
         public string LDAPIV = "password";
-        public bool AwaitingAuthentication { get; set; }
+        public bool AwaitingAuthentication { get; set; } = true;
 
         private CrmRestServer restServer;
 
