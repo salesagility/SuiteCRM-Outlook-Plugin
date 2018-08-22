@@ -136,7 +136,7 @@ namespace SuiteCRMClient
         public static bool EnsureLoggedIn(UserSession userSession)
         {
             bool result = false; 
-            if (userSession != null)
+            if (userSession != null && userSession.AwaitingAuthentication == false)
             {
                 string userId = RestAPIWrapper.GetRealUserId();
                 if (string.IsNullOrEmpty(userId))

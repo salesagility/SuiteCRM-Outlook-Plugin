@@ -101,7 +101,7 @@ namespace SuiteCRMClient.Email
         /// <returns>A list of strings representing CRM ids.</returns>
         private IEnumerable<CrmEntity> GetRelatedIds(IEnumerable<string> moduleKeys, IEnumerable<string> excludedAddresses)
         {
-            RestAPIWrapper.EnsureLoggedIn(SuiteCRMUserSession);
+            RestAPIWrapper.EnsureLoggedIn();
 
             List<CrmEntity> result = new List<CrmEntity>();
             List<string> checkedAddresses = new List<string>();

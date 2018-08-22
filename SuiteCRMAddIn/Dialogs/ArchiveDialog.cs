@@ -330,7 +330,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.txtSearch.Enabled = false;
 
             foreach (string searchText in
-                allSearchText.Split(new char[] { ',', ';', ' ' })
+                allSearchText.Split(new char[] { ',', ';' })
                 .OrderBy(x => x)
                 .GroupBy(x => x).Select(g => g.First().Trim()))
             {
