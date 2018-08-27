@@ -417,6 +417,7 @@ namespace SuiteCRMAddIn.Dialogs
                     }
                     else
                     {
+                        this.tsResults.Sort();
                         this.btnArchive.Enabled = true;
                     }
                     this.txtSearch.Enabled = true;
