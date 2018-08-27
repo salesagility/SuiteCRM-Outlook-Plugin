@@ -37,6 +37,7 @@ namespace SuiteCRMAddIn.Dialogs
     using System.Linq;
     using System.Runtime.InteropServices;
     using System.Text;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Windows.Forms;
     using Exception = System.Exception;
@@ -416,6 +417,7 @@ namespace SuiteCRMAddIn.Dialogs
                     }
                     else
                     {
+                        this.tsResults.Sort();
                         this.btnArchive.Enabled = true;
                     }
                     this.txtSearch.Enabled = true;
@@ -442,37 +444,23 @@ namespace SuiteCRMAddIn.Dialogs
         {
             EntryList queryResult = null;
 
-            string queryText = ConstructQueryTextForModuleName(searchText, moduleName, fieldsToSeek);
+            var searchQuery = new SearchQuery(searchText, moduleName, fieldsToSeek, moduleChains);
             try
             {
-                queryResult = RestAPIWrapper.GetEntryList(moduleName, 
-                    queryText, 
-                    Properties.Settings.Default.SyncMaxRecords, 
-                    "date_entered DESC", 
-                    0, 
-                    false, 
-                    fieldsToSeek.ToArray(), 
-                    ConstructLinkNamesToFieldsArray(moduleName));
+                queryResult = searchQuery.Execute();
             }
             catch (System.Exception any)
             {
-                ErrorHandler.Handle($"Failure when custom module included (1); Query was '{queryText}'", any);
+                ErrorHandler.Handle($"Failure when custom module included (1); Query was '{searchQuery}'", any);
 
-                queryText = queryText.Replace("%", string.Empty);
+                searchQuery = searchQuery.Replace("%", string.Empty);
                 try
                 {
-                    queryResult = RestAPIWrapper.GetEntryList(moduleName, 
-                        queryText, 
-                        Properties.Settings.Default.SyncMaxRecords, 
-                        "date_entered DESC", 
-                        0, 
-                        false, 
-                        fieldsToSeek.ToArray(), 
-                        ConstructLinkNamesToFieldsArray(moduleName));
+                    queryResult = searchQuery.Execute();
                 }
                 catch (Exception secondFail)
                 {
-                    ErrorHandler.Handle($"Failure when custom module included (2); Query was '{queryText}'", secondFail);
+                    ErrorHandler.Handle($"Failure when custom module included (2); Query was '{searchQuery}'", secondFail);
                     queryResult = null;
                     throw;
                 }
@@ -483,29 +471,6 @@ namespace SuiteCRMAddIn.Dialogs
             }
 
             return queryResult;
-        }
-
-        private object ConstructLinkNamesToFieldsArray(string moduleName)
-        {
-            object result;
-            try
-            {
-                ICollection<LinkSpec> chain = this.moduleChains[moduleName];
-                ICollection<object> links = new List<object>();
-
-                foreach (var link in chain)
-                {
-                    links.Add(new { @name = link.LinkName, @value = link.FieldNames });
-                }
-
-                result = links.ToArray();
-            }
-            catch (KeyNotFoundException)
-            {
-                result = null;
-            }
-
-            return result;
         }
 
         /// <summary>
@@ -532,106 +497,6 @@ namespace SuiteCRMAddIn.Dialogs
             }
 
             return node;
-        }
-
-        /// <summary>
-        /// Construct suitable query text to query the module with this name for potential connection with this search text.
-        /// </summary>
-        /// <remarks>
-        /// Refactored from a horrible nest of spaghetti code. I don't yet fully understand this.
-        /// TODO: Candidate for further refactoring to reduce complexity.
-        /// </remarks>
-        /// <param name="searchText">The text entered to search for.</param>
-        /// <param name="moduleName">The name of the module to search.</param>
-        /// <param name="fields">The list of fields to pull back, which may be modified by this method.</param>
-        /// <returns>A suitable search query</returns>
-        /// <exception cref="CouldNotConstructQueryException">if no search string could be constructed.</exception>
-        private static string ConstructQueryTextForModuleName(string searchText, string moduleName, List<string> fields)
-        {
-            string queryText = string.Empty;
-            List<string> searchTokens = searchText.Split(new char[] { ' ' }).ToList();
-            var escapedSearchText = RestAPIWrapper.MySqlEscape(searchText);
-            var firstTerm = RestAPIWrapper.MySqlEscape(searchTokens.First());
-            var lastTerm = RestAPIWrapper.MySqlEscape(searchTokens.Last());
-            string logicalOperator = firstTerm == lastTerm ? "OR" : "AND";
-
-            switch (moduleName)
-            {
-                case ContactSynchroniser.CrmModule:
-                    queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
-                    AddFirstLastAndAccountNames(fields);
-                    break;
-                case "Leads":
-                    queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
-                    AddFirstLastAndAccountNames(fields);
-                    break;
-                case "Cases":
-                    queryText = $"(cases.name LIKE '%{escapedSearchText}%' OR cases.case_number LIKE '{escapedSearchText}')";
-                    foreach (string fieldName in new string[] { "name", "case_number" })
-                    {
-                        fields.Add(fieldName);
-                    }
-                    break;
-                case "Bugs":
-                    queryText = $"(bugs.name LIKE '%{escapedSearchText}%' {logicalOperator} bugs.bug_number LIKE '{escapedSearchText}')";
-                    foreach (string fieldName in new string[] { "name", "bug_number" })
-                    {
-                        fields.Add(fieldName);
-                    }
-                    break;
-                case "Accounts":
-                    queryText = "(accounts.name LIKE '%" + firstTerm + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + escapedSearchText + "%'))";
-                    AddFirstLastAndAccountNames(fields);
-                    break;
-                default:
-                    List<string> fieldNames = RestAPIWrapper.GetCharacterFields(moduleName);
-
-                    if (fieldNames.Contains("first_name") && fieldNames.Contains("last_name"))
-                    {
-                        /* This is Ian's suggestion */
-                        queryText = ConstructQueryTextWithFirstAndLastNames(moduleName, escapedSearchText, firstTerm, lastTerm);
-                        foreach (string fieldName in new string[] { "first_name", "last_name" })
-                        {
-                            fields.Add(fieldName);
-                        }
-                    }
-                    else
-                    {
-                        queryText = ConstructQueryTextForUnknownModule(moduleName, escapedSearchText);
-
-                        foreach (string candidate in new string[] {"name", "description"})
-                        {
-                            if (fieldNames.Contains(candidate))
-                            {
-                                fields.Add(candidate);
-                            }
-                        }
-                    }
-                    break;
-            }
-
-            if (string.IsNullOrEmpty(queryText))
-            {
-                throw new CouldNotConstructQueryException(moduleName, searchText);
-            }
-
-            return queryText;
-        }
-
-        /// <summary>
-        /// Add 'first_name', 'last_name', 'name' and 'account_name' to this list of field names.
-        /// </summary>
-        /// <remarks>
-        /// It feels completely wrong to do this in code. There should be a configuration file of
-        /// appropriate fieldnames for module names somewhere, but there isn't. TODO: probably fix.
-        /// </remarks>
-        /// <param name="fields">The list of field names.</param>
-        private static void AddFirstLastAndAccountNames(List<string> fields)
-        {
-            foreach (string fieldName in new string[] { "first_name", "last_name", "name", "account_name" })
-            {
-                fields.Add(fieldName);
-            }
         }
 
         /// <summary>
@@ -670,35 +535,6 @@ namespace SuiteCRMAddIn.Dialogs
             return queryBuilder.ToString();
         }
 
-        /// <summary>
-        /// If the search text supplied comprises two space-separated tokens, these are possibly a first and last name;
-        /// if only one token, it's likely an email address, but might be a first or last name. 
-        /// This query explores those possibilities.
-        /// </summary>
-        /// <param name="moduleName">The name of the module to search.</param>
-        /// <param name="emailAddress">The portion of the search text which may be an email address.</param>
-        /// <param name="firstName">The portion of the search text which may be a first name</param>
-        /// <param name="lastName">The portion of the search text which may be a last name</param>
-        /// <returns>If the module has fields 'first_name' and 'last_name', then a potential query string;
-        /// else an empty string.</returns>
-        private static string ConstructQueryTextWithFirstAndLastNames(
-            string moduleName, 
-            string emailAddress, 
-            string firstName, 
-            string lastName)
-        {
-            List<string> fieldNames = RestAPIWrapper.GetCharacterFields(moduleName);
-            string result = string.Empty;
-            string logicalOperator = firstName == lastName ? "OR" : "AND";
-
-            if (fieldNames.Contains("first_name") && fieldNames.Contains("last_name"))
-            {
-                string moduleLower = moduleName.ToLower();
-                result = $"({moduleLower}.first_name LIKE '%{firstName}%' {logicalOperator} {moduleLower}.last_name LIKE '%{lastName}%') OR ({moduleLower}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{emailAddress}%'))"; ;
-            }
-
-            return result;
-        }
 
         /// <summary>
         /// Add a node beneath this parent representing this search result in this module.
@@ -1112,6 +948,294 @@ namespace SuiteCRMAddIn.Dialogs
                 this.Label = fieldNames.ElementAtOrDefault(1);
             }
 
+        }
+
+        /// <summary>
+        /// A query to search the server side database in response to a client 
+        /// side (at this state, ArchiveDialog) query; a testable bean.
+        /// </summary>
+        internal class SearchQuery
+        {
+            /// <summary>
+            /// The text we're seeking.
+            /// </summary>
+            private string searchText;
+            /// <summary>
+            /// The name of the module within which we're seeking it.
+            /// </summary>
+            private string moduleName;
+            /// <summary>
+            /// The fields within which we're seeking.
+            /// </summary>
+            private List<string> fieldsToSeek;
+            /// <summary>
+            /// The chains of modules we should traverse.
+            /// </summary>
+            private IDictionary<string, ICollection<LinkSpec>> moduleChains;
+            /// <summary>
+            /// A collection of substitutions to make in the constructed search text.
+            /// </summary>
+            private IList<Tuple<Regex, string>> replacements = new List<Tuple<Regex, string>>();
+
+            /// <summary>
+            /// A collection of modulename, fieldname pairs to order by.
+            /// </summary>
+            private ISet<Tuple<string,string>> fieldsToOrderBy = new HashSet<Tuple<string,string>>();
+
+ 
+            /// <summary>
+            /// An arguably redundant property wrapped around 
+            /// ConstructSearchText, mainly for tesstability.
+            /// </summary>
+            public string QueryText { get
+                {
+                    return this.ConstructQueryText();
+                }
+            }
+
+            /// <summary>
+            /// Get the text of a clause to order the quwery results by.
+            /// </summary>
+            /// <remarks>Note that the `order_by` clause of `get_entry_list` 
+            /// doesn't work reliably, because of deduping.</remarks>
+            public string OrderClause { get
+                {
+                    return this.fieldsToOrderBy.Any() ? 
+                        String.Join(",", this.fieldsToOrderBy.Select(x=> x.Item2)) : 
+                        "date_entered DESC";
+                }
+            }
+
+            /// <summary>
+            /// Construct a new instance of a search query.
+            /// </summary>
+            /// <param name="searchText">The text entered to search for.</param>
+            /// <param name="moduleName">The name of the module to search.</param>
+            /// <param name="fieldsToSeek">The list of fields to pull back, which may be modified by this method.</param>
+            public SearchQuery(string searchText, string moduleName, List<string> fieldsToSeek, IDictionary<string, ICollection<LinkSpec>> moduleChains)
+            {
+                this.searchText = searchText;
+                this.moduleName = moduleName;
+                this.fieldsToSeek = fieldsToSeek;
+                this.moduleChains = moduleChains;
+            }
+
+            /// <summary>
+            /// If the search text supplied comprises two space-separated tokens, these are possibly a first and last name;
+            /// if only one token, it's likely an email address, but might be a first or last name. 
+            /// This query explores those possibilities.
+            /// </summary>
+            /// <param name="emailAddress">The portion of the search text which may be an email address.</param>
+            /// <param name="firstName">The portion of the search text which may be a first name</param>
+            /// <param name="lastName">The portion of the search text which may be a last name</param>
+            /// <returns>If the module has fields 'first_name' and 'last_name', then a potential query string;
+            /// else an empty string.</returns>
+            private string ConstructQueryTextWithFirstAndLastNames(
+                string emailAddress,
+                string firstName,
+                string lastName)
+            {
+                List<string> fieldNames = RestAPIWrapper.GetCharacterFields(this.moduleName);
+                string result = string.Empty;
+                string logicalOperator = firstName == lastName ? "OR" : "AND";
+
+                if (fieldNames.Contains("first_name") && fieldNames.Contains("last_name"))
+                {
+                    string moduleLower = this.moduleName.ToLower();
+                    fieldsToOrderBy.Add(new Tuple<string, string>(moduleLower, "last_name"));
+                    fieldsToOrderBy.Add(new Tuple<string, string>(moduleLower, "first_name"));
+                    fieldsToOrderBy.Add(new Tuple<string, string>("ea", "email_address"));
+
+                    result = $"({moduleLower}.first_name LIKE '%{firstName}%' {logicalOperator} {moduleLower}.last_name LIKE '%{lastName}%') OR ({moduleLower}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{emailAddress}%'))"; ;
+                }
+
+                return result;
+            }
+
+
+            /// <summary>
+            /// Add 'first_name', 'last_name', 'name' and 'account_name' to this list of field names.
+            /// </summary>
+            /// <remarks>
+            /// It feels completely wrong to do this in code. There should be a configuration file of
+            /// appropriate fieldnames for module names somewhere, but there isn't. TODO: probably fix.
+            /// </remarks>
+            /// <param name="fields">The list of field names.</param>
+            private void AddFirstLastAndAccountNames(List<string> fields)
+            {
+                foreach (string fieldName in new string[] { "first_name", "last_name", "name", "account_name" })
+                {
+                    fields.Add(fieldName);
+                    this.fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
+                }
+            }
+
+
+            /// <summary>
+            /// Construct suitable query text to query the module with this name for potential connection with this search text.
+            /// </summary>
+            /// <remarks>
+            /// Refactored from a horrible nest of spaghetti code. I don't yet fully understand this.
+            /// TODO: Candidate for further refactoring to reduce complexity.
+            /// </remarks>
+            /// <returns>A suitable search query</returns>
+            /// <exception cref="CouldNotConstructQueryException">if no search string could be constructed.</exception>
+            private string ConstructQueryText()
+            {
+                string queryText = string.Empty;
+                List<string> searchTokens = searchText.Split(new char[] { ',', ';' }).ToList();
+                var escapedSearchText = RestAPIWrapper.MySqlEscape(searchText);
+                var firstTerm = RestAPIWrapper.MySqlEscape(searchTokens.First());
+                var lastTerm = RestAPIWrapper.MySqlEscape(searchTokens.Last());
+                string logicalOperator = firstTerm == lastTerm ? "OR" : "AND";
+
+                switch (moduleName)
+                {
+                    case ContactSynchroniser.CrmModule:
+                        queryText = ConstructQueryTextWithFirstAndLastNames(escapedSearchText, firstTerm, lastTerm);
+                        AddFirstLastAndAccountNames(fieldsToSeek);
+                        break;
+                    case "Leads":
+                        queryText = ConstructQueryTextWithFirstAndLastNames(escapedSearchText, firstTerm, lastTerm);
+                        AddFirstLastAndAccountNames(fieldsToSeek);
+                        break;
+                    case "Cases":
+                        queryText = $"(cases.name LIKE '%{escapedSearchText}%' OR cases.case_number LIKE '{escapedSearchText}')";
+                        foreach (string fieldName in new string[] { "name", "case_number" })
+                        {
+                            fieldsToSeek.Add(fieldName);
+                            fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
+                        }
+                        break;
+                    case "Bugs":
+                        queryText = $"(bugs.name LIKE '%{escapedSearchText}%' {logicalOperator} bugs.bug_number LIKE '{escapedSearchText}')";
+                        foreach (string fieldName in new string[] { "name", "bug_number" })
+                        {
+                            fieldsToSeek.Add(fieldName);
+                            fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
+                        }
+                        break;
+                    case "Accounts":
+                        queryText = "(accounts.name LIKE '%" + firstTerm + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + escapedSearchText + "%'))";
+                        foreach (string fieldName in new string[] { "name", "account_name" })
+                        {
+                            this.fieldsToSeek.Add(fieldName);
+                            this.fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
+                        }
+                        break;
+                    default:
+                        List<string> fieldNames = RestAPIWrapper.GetCharacterFields(moduleName);
+
+                        if (fieldNames.Contains("first_name") && fieldNames.Contains("last_name"))
+                        {
+                            /* This is Ian's suggestion */
+                            queryText = ConstructQueryTextWithFirstAndLastNames(escapedSearchText, firstTerm, lastTerm);
+                            foreach (string fieldName in new string[] { "first_name", "last_name" })
+                            {
+                                fieldsToSeek.Add(fieldName);
+                                fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
+                            }
+                        }
+                        else
+                        {
+                            queryText = ConstructQueryTextForUnknownModule(moduleName, escapedSearchText);
+
+                            foreach (string fieldName in new string[] { "name", "description" })
+                            {
+                                if (fieldNames.Contains(fieldName))
+                                {
+                                    fieldsToSeek.Add(fieldName);
+                                    fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
+                                }
+                            }
+                        }
+                        break;
+                }
+
+                if (string.IsNullOrEmpty(queryText))
+                {
+                    throw new CouldNotConstructQueryException(moduleName, searchText);
+                }
+
+                foreach (var replacement in this.replacements)
+                {
+                    queryText = replacement.Item1.Replace(queryText, replacement.Item2);
+                }
+
+                return queryText;
+            }
+
+            /// <summary>
+            /// Construct an array of links to traverse to the target module.
+            /// </summary>
+            /// <returns>The constructed array.</returns>
+            private object ConstructLinkNamesToFieldsArray()
+            {
+                object result;
+                try
+                {
+                    ICollection<LinkSpec> chain = this.moduleChains[moduleName];
+                    ICollection<object> links = new List<object>();
+
+                    foreach (var link in chain)
+                    {
+                        links.Add(new { @name = link.LinkName, @value = link.FieldNames });
+                    }
+
+                    result = links.ToArray();
+                }
+                catch (KeyNotFoundException)
+                {
+                    result = null;
+                }
+
+                return result;
+            }
+
+            /// <summary>
+            /// Execute me on the server.
+            /// </summary>
+            /// <returns>The results of executing me.</returns>
+            internal EntryList Execute()
+            {
+                string queryText = this.QueryText;
+
+                return RestAPIWrapper.GetEntryList(moduleName,
+                    queryText,
+                    Properties.Settings.Default.SyncMaxRecords,
+                    this.OrderClause,
+                    0,
+                    false,
+                    fieldsToSeek.ToArray(),
+                    ConstructLinkNamesToFieldsArray());
+            }
+
+            /// <summary>
+            /// Replace this pattern with this substitution in my query text.
+            /// </summary>
+            /// <remarks>Note that while you can add replacements, you cannot 
+            /// remove them.</remarks>
+            /// <param name="pattern">The pattern to replace.</param>
+            /// <param name="substitution">The substitution to replace it with.</param>
+            /// <returns>Myself, to allow chaining.</returns>
+            public SearchQuery Replace(string pattern, string substitution)
+            {
+                return this.Replace(new Regex(pattern), substitution);
+            }
+
+            /// <summary>
+            /// Replace this pattern with this substitution in my query text.
+            /// </summary>
+            /// <remarks>Note that while you can add replacements, you cannot 
+            /// remove them.</remarks>
+            /// <param name="pattern">The pattern to replace.</param>
+            /// <param name="substitution">The substitution to replace it with.</param>
+            /// <returns>Myself, to allow chaining.</returns>
+            public SearchQuery Replace(Regex attern, string substitution)
+            {
+                this.replacements.Add(new Tuple<Regex, string>(attern, substitution));
+                return this;
+            }
         }
     }
 }
