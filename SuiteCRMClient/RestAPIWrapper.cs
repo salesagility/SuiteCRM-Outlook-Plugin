@@ -586,9 +586,14 @@ namespace SuiteCRMClient
                     try
                     {
                         result.ResolveLinks();
+                        List<EntryValue> deduped = new List<EntryValue>(result.entry_list);
+                        deduped = deduped.OrderBy(x => x.id).GroupBy(x => x.id).Select(g => g.First()).ToList();
 
-                        result.entry_list = result.entry_list.OrderBy(x => x.id).GroupBy(x => x.id).Select(g=> g.First()).ToArray();
-                        result.result_count = result.entry_list.Count();
+                        if (deduped.Count() < result.entry_list.Count())
+                        {
+                            result.entry_list = deduped.ToArray();
+                            result.result_count = result.entry_list.Count();
+                        }
                     }
                     catch (System.Exception)
                     {
