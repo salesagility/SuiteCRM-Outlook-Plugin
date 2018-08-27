@@ -30,6 +30,8 @@ namespace SuiteCRMAddIn.Extensions
     using BusinessLogic;
     using SuiteCRMClient;
     using Outlook = Microsoft.Office.Interop.Outlook;
+    using System.Runtime.InteropServices;
+    using SuiteCRMClient.Logging;
 
     public static class ApplicationExtension
     {
@@ -63,7 +65,20 @@ namespace SuiteCRMAddIn.Extensions
         /// <returns>The SMTP address for the current user, if it can be recovered, else an empty string.</returns>
         public static string GetCurrentUserSMTPAddress(this Outlook.Application app)
         {
-            return app.Session.CurrentUser.GetSmtpAddress();
+            string result;
+
+            try
+            {
+                result = app.Session.CurrentUser.GetSmtpAddress();
+            }
+            catch (COMException any)
+            {
+                // this happens, I think when there's been a failure to connect to Exchange server.
+                Globals.ThisAddIn.Log.Error("Failure when trying to access user SMTP address", any);
+                result = string.Empty;
+            }
+
+            return result;
         }
     }
 }
