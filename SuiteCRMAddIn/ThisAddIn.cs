@@ -429,6 +429,7 @@ namespace SuiteCRMAddIn
             StartSynchroniserIfConfigured(this.contactSynchroniser);
             StartSynchroniserIfConfigured(this.meetingSynchroniser);
             StartSynchroniserIfConfigured(this.taskSynchroniser);
+            StartSynchroniserIfConfigured(this.EmailArchiver);
         }
 
         /// <summary>
@@ -441,6 +442,7 @@ namespace SuiteCRMAddIn
             StopSynchroniserIfUnconfigured(this.contactSynchroniser);
             StopSynchroniserIfUnconfigured(this.meetingSynchroniser);
             StopSynchroniserIfUnconfigured(this.taskSynchroniser);
+            StopSynchroniserIfUnconfigured(this.EmailArchiver);
         }
 
         /// <summary>
@@ -460,6 +462,23 @@ namespace SuiteCRMAddIn
             }
         }
 
+
+        /// <summary>
+        /// Start this archiver process, if it is configured to run, 
+        /// provided it is not already running.
+        /// </summary>
+        /// <param name="archiver">The archiver to start.</param>
+        private void StartSynchroniserIfConfigured(EmailArchiving archiver)
+        {
+            if (archiver != null && Settings.Default.AutoArchive == true && !archiver.IsActive)
+            {
+                DoOrLogError(() =>
+                    archiver.Start(),
+                    catalogue.GetString("Starting {0}", new object[] { archiver.GetType().Name }));
+            }
+        }
+
+
         /// <summary>
         /// Stop this synchroniser if it is active and is configured to be inactive.
         /// </summary>
@@ -472,7 +491,19 @@ namespace SuiteCRMAddIn
             {
                 synchroniser.Stop();
             }
+        }
 
+
+        /// <summary>
+        /// Stop this archiver if it is active and is configured to be inactive.
+        /// </summary>
+        /// <param name="archiver">The archiver to stop.</param>
+        private void StopSynchroniserIfUnconfigured(EmailArchiving archiver)
+        {
+            if (archiver != null && Settings.Default.AutoArchive == false && archiver.IsActive)
+            {
+                archiver.Stop();
+            }
         }
 
 
