@@ -190,7 +190,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 olItem.Save();
-                LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
+                try
+                {
+                    LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
+                }
+                catch (InvalidCrmIdException)
+                {
+                    Log.Debug($"AppointmentSyncing.SaveItem, saved item '{olItem.Subject}' {olItem.EntryID} (no valid CRM id)");
+                }
             }
             catch (System.Exception any)
             {
