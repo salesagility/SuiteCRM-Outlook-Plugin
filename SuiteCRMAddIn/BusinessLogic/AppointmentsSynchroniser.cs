@@ -516,7 +516,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// when the add-in starts up; initialises the SyncState list.  
         /// </summary>
         /// <param name="appointmentsFolder">The folder to scan.</param>
-        protected override void GetOutlookItems(Outlook.MAPIFolder appointmentsFolder)
+        protected override void LinkOutlookItems(Outlook.MAPIFolder appointmentsFolder)
         {
             try
             {
@@ -537,11 +537,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                                 /* The appointment probably already has the three magic properties 
                                  * required for synchronisation; is that a proxy for believing that it
                                  * already exists in CRM? If so, is it reliable? */
-                                LogItemAction(olItem, "AppointmentSyncing.GetOutlookItems: Adding known item to queue");
+                                LogItemAction(olItem, "AppointmentSyncing.LinkOutlookItems: Adding known item to queue");
                             }
                             else
                             {
-                                LogItemAction(olItem, "AppointmentSyncing.GetOutlookItems: Adding unknown item to queue");
+                                LogItemAction(olItem, "AppointmentSyncing.LinkOutlookItems: Adding unknown item to queue");
                             }
 
                             SyncStateManager.Instance.GetOrCreateSyncState(olItem).SetPresentAtStartup();

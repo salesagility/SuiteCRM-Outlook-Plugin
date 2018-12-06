@@ -351,7 +351,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        protected override void GetOutlookItems(Outlook.MAPIFolder taskFolder)
+        protected override void LinkOutlookItems(Outlook.MAPIFolder taskFolder)
         {
             try
             {
