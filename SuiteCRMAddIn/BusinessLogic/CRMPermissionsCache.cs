@@ -383,6 +383,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of outlook item for which I manage 
     /// permissions (may be stored in more than one module).</typeparam>
+    /// <typeparam name="SyncStateType">The appropriate SyncState type for that Outlook item type.</typeparam>
     public class CRMPermissionsCache<OutlookItemType, SyncStateType> : CRMPermissionsCache
         where OutlookItemType : class
         where SyncStateType : SyncState<OutlookItemType>
