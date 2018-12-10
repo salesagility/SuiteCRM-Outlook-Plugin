@@ -117,6 +117,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
+            this.dotNetVersionLabel = new System.Windows.Forms.Label();
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -614,6 +615,7 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // InformationTabPage
             // 
+            this.InformationTabPage.Controls.Add(this.dotNetVersionLabel);
             this.InformationTabPage.Controls.Add(this.AddInVersionLabel);
             this.InformationTabPage.Controls.Add(this.groupBox4);
             this.InformationTabPage.Controls.Add(this.AddInTitleLabel);
@@ -629,7 +631,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.AddInVersionLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.AddInVersionLabel.Location = new System.Drawing.Point(13, 61);
             this.AddInVersionLabel.Name = "AddInVersionLabel";
-            this.AddInVersionLabel.Size = new System.Drawing.Size(332, 25);
+            this.AddInVersionLabel.Size = new System.Drawing.Size(332, 16);
             this.AddInVersionLabel.TabIndex = 6;
             this.AddInVersionLabel.Text = "Version 0.0.0.0";
             this.AddInVersionLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
@@ -777,6 +779,16 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
+            // dotNetVersionLabel
+            // 
+            this.dotNetVersionLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.dotNetVersionLabel.Location = new System.Drawing.Point(13, 77);
+            this.dotNetVersionLabel.Name = "dotNetVersionLabel";
+            this.dotNetVersionLabel.Size = new System.Drawing.Size(332, 16);
+            this.dotNetVersionLabel.TabIndex = 7;
+            this.dotNetVersionLabel.Text = ".Net version 0.0.0";
+            this.dotNetVersionLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            // 
             // SettingsDialog
             // 
             this.AcceptButton = this.btnSave;
@@ -894,5 +906,6 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.ComboBox crmIdValidationSelector;
         private System.Windows.Forms.Label crmIdValidationLabel;
         private System.Windows.Forms.BindingSource policyBindingSource;
+        private System.Windows.Forms.Label dotNetVersionLabel;
     }
 }
