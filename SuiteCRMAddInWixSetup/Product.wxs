@@ -128,7 +128,7 @@ https://www.microsoft.com/en-us/download/details.aspx?id=55170">
 				<File Id="TidyHTML5Managed_dll" KeyPath="yes" Name="TidyHTML5Managed.dll" Source="$(var.AddinFiles)" />
 			</Component>
 			<Component Id="SuiteCRMClient_dll_Component">
-				<File Id="SuiteCRMClient_dll" KeyPath="yes" Name="SuiteCRMClient.dll" Source="$(var.AddinFiles)"></File>
+				<File Id="SuiteCRMClient_dll" KeyPath="yes" Name="SuiteCRMClient.dll" Source="$(var.ClientFiles)"></File>
 			</Component>
 			<Component Id="SuiteCRMAddIn_dll_manifest_Component">
 				<File Id="SuiteCRMAddIn_dll_manifest" KeyPath="yes" Name="SuiteCRMAddIn.dll.manifest" Source="$(var.AddinFiles)"></File>
@@ -143,7 +143,7 @@ https://www.microsoft.com/en-us/download/details.aspx?id=55170">
 				<File Id="SuiteCRMAddIn_dll" KeyPath="yes" Name="SuiteCRMAddIn.dll" Source="$(var.AddinFiles)" />
 			</Component>
 			<Component Id="SuiteCRMClient_config_Component" >
-				<File Id="SuiteCRMClient_config" KeyPath="yes" Name="SuiteCRMClient.dll.config" Source="$(var.AddinFiles)" />
+				<File Id="SuiteCRMClient_config" KeyPath="yes" Name="SuiteCRMClient.dll.config" Source="$(var.ClientFiles)" />
 			</Component>
 			<Component Id="SuiteCRMAddIn_config_Component" >
 				<File Id="SuiteCRMAddIn_config" KeyPath="yes" Name="SuiteCRMAddIn.dll.config" Source="$(var.AddinFiles)" />
