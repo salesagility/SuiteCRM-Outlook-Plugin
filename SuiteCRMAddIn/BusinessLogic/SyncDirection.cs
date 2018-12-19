@@ -89,6 +89,5 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             return (direction == Direction.Import || direction == Direction.BiDirectional);
         }
-
     }
 }
