@@ -137,11 +137,12 @@ namespace SuiteCRMAddIn.BusinessLogic
                         }
                     }
 
-                    Log.Debug($"OutlookItemAdded, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
+                    Log.Debug($"OutlookItemAdded: entry, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
                     if (olItem.IsCall())
                         base.OutlookItemAdded(olItem, Globals.ThisAddIn.CallsSynchroniser);
                     else
                         base.OutlookItemAdded(olItem, Globals.ThisAddIn.MeetingsSynchroniser);
+                    Log.Debug($"OutlookItemAdded: exit, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
                 }
                 finally
                 {
@@ -161,12 +162,14 @@ namespace SuiteCRMAddIn.BusinessLogic
                 try
                 {
                     var crmId = olItem.GetCrmId();
-                    Log.Debug($"OutlookItemChanged, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
+                    Log.Debug($"OutlookItemChanged: entry, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
 
                     if (olItem.IsCall())
                         base.OutlookItemChanged(olItem, Globals.ThisAddIn.CallsSynchroniser);
                     else
                         base.OutlookItemChanged(olItem, Globals.ThisAddIn.MeetingsSynchroniser);
+
+                    Log.Debug($"OutlookItemChanged: exit, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
                 }
                 catch (BadStateTransition bst)
                 {

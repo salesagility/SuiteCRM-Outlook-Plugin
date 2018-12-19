@@ -632,7 +632,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected void Items_ItemRemove()
         {
-            Log.Debug($"Outlook {folderName} ItemRemove");
+            Log.Debug($"Outlook {folderName} ItemRemove: entry");
             try
             {
                 RemoveDeletedItems();
@@ -641,6 +641,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 ErrorHandler.Handle($"Failed to handle item(s) removed from {folderName}", problem);
             }
+            Log.Debug($"Outlook {folderName} ItemRemove: exit");
         }
 
         /// <summary>
@@ -838,7 +839,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             var syncStatesCopy = SyncStateManager.Instance.GetSynchronisedItems<SyncStateType>();
             foreach (var syncState in syncStatesCopy)
             {
-                var shouldDeleteFromCrm = syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm;
+                var shouldDeleteFromCrm = this.IsEnabled() &&
+                    SyncDirection.AllowOutbound(this.Direction) && 
+                    (syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm);
                 if (shouldDeleteFromCrm) RemoveFromCrm(syncState);
                 if (syncState.IsDeletedInOutlook) SyncStateManager.Instance.RemoveSyncState(syncState);
             }
