@@ -147,6 +147,10 @@ namespace SuiteCRMAddIn
 
         public override void AddEntry(string message, LogEntryType type)
         {
+#if DEBUG
+            log.Debug($"Current memory usage: {System.Diagnostics.Process.GetCurrentProcess().WorkingSet64/1000000} Mb");
+#endif
+
             switch (type)
             {
                 case LogEntryType.Debug:

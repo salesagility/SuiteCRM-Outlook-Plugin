@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>03906f90-2afd-411d-b1d5-be9a934baf74</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>SuiteCRMAddInSetup</OutputName>
+    <OutputName>SuiteCRMAddIn</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">

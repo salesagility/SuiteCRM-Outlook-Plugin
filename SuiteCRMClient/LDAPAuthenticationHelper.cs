@@ -82,8 +82,13 @@ namespace SuiteCRMClient
                 user_auth = new
                 {
                     user_name = username,
-                    password = EncryptPassword(this.password,
-                        ConstructEncryptionAlgorithm(this.key, this.initialisationVector)),
+                    password = string.IsNullOrWhiteSpace(this.key) ?
+                        this.password:
+                        EncryptPassword(this.password,
+                        ConstructEncryptionAlgorithm(this.key, this.initialisationVector)), 
+                    encryption = string.IsNullOrWhiteSpace(this.key) ? 
+                        "PLAIN" :
+                        Boolean.TrueString,
                     application_name = this.applicationName
                 }
             };

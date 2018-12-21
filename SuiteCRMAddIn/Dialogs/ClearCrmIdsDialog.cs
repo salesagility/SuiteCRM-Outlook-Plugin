@@ -20,7 +20,7 @@
         /// </summary>
         static BackgroundWorker fred = new BackgroundWorker();
 
-        private IEnumerable<WithRemovableSynchronisationProperties> items = Globals.ThisAddIn.GetSynchronisableItems();
+        private readonly IEnumerable<WithRemovableSynchronisationProperties> items = Globals.ThisAddIn.GetSynchronisableItems();
 
         /// <summary>
         /// The total number of items which may have to be cleared.

@@ -20,13 +20,15 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using SuiteCRMAddIn.Exceptions;
+using SuiteCRMAddIn.Properties;
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Runtime.CompilerServices;
-    using System.Text.RegularExpressions;
-
     /// <summary>
     ///     A validated CRM id.
     /// </summary>
@@ -35,7 +37,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public static readonly CrmId Empty = new CrmId();
 
         private static readonly Regex Validator =
-            CrmIdValidationPolicy.GetValidationPattern(Properties.Settings.Default.CrmIdValidationPolicy);
+            CrmIdValidationPolicy.GetValidationPattern(Settings.Default.CrmIdValidationPolicy);
 
         private static readonly Dictionary<string, CrmId> Issued = new Dictionary<string, CrmId>();
 
@@ -53,11 +55,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Create a new instance of a CrmId with this id.
+        ///     Create a new instance of a CrmId with this id.
         /// </summary>
         /// <remarks>
-        /// This has to be public so that the JSON deserialiser can use it - but don't use it
-        /// otherwise
+        ///     This has to be public so that the JSON deserialiser can use it - but don't use it
+        ///     otherwise
         /// </remarks>
         /// <param name="id"></param>
         public CrmId(string id)
@@ -69,8 +71,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             else
             {
-                throw new TypeInitializationException(this.GetType().FullName,
-                    new Exception($"'{id}' does not appear to be a valid CRM id."));
+                throw new TypeInitializationException(GetType().FullName,
+                    new InvalidCrmIdException($"'{id}' does not appear to be a valid CRM id."));
             }
         }
 
@@ -123,13 +125,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// True if <see cref="CrmId.IsValid(CrmId)"/> is false of this id.
+        ///     True if <see cref="CrmId.IsValid(CrmId)" /> is false of this id.
         /// </summary>
         /// <param name="id">The object which may or may not be a valid CRM id.</param>
-        /// <returns>True if <see cref="CrmId.IsValid(CrmId)"/> is false of this id.</returns>
+        /// <returns>True if <see cref="CrmId.IsValid(CrmId)" /> is false of this id.</returns>
         public static bool IsInvalid(CrmId id)
         {
-            return !CrmId.IsValid(id);
+            return !IsValid(id);
         }
 
         public override bool Equals(object obj)
@@ -143,29 +145,25 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Get the single CrmId instance for this value.
+        ///     Get the single CrmId instance for this value.
         /// </summary>
         /// <param name="value">The value to seek.</param>
         /// <returns>A CrmId instance</returns>
         /// <exception cref="TypeInitializationException"> if `value` does not appear to be a valid CRM id.</exception>
         public static CrmId Get(string value)
         {
-            return string.IsNullOrEmpty(value) ?
-                CrmId.Empty :
-                CrmId.Issued.ContainsKey(value) ?
-                    CrmId.Issued[value] :
-                    new CrmId(value);
+            return string.IsNullOrEmpty(value) ? Empty : Issued.ContainsKey(value) ? Issued[value] : new CrmId(value);
         }
 
         /// <summary>
-        /// Get the single CrmId instance for this value.
+        ///     Get the single CrmId instance for this value.
         /// </summary>
         /// <param name="value">The value to seek.</param>
         /// <returns>A CrmId instance</returns>
         /// <exception cref="TypeInitializationException"> if `value` does not appear to be a valid CRM id.</exception>
         public static CrmId Get(object value)
         {
-            return value == null ? CrmId.Empty : CrmId.Get(value.ToString());
+            return value == null ? Empty : Get(value.ToString());
         }
     }
 }
