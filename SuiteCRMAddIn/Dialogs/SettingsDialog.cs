@@ -75,15 +75,15 @@ namespace SuiteCRMAddIn.Dialogs
                 return false;
             }
 
-            //if (chkEnableLDAPAuthentication.Checked)
-            //{
-            //    if (SafelyGetText(txtLDAPAuthenticationKey) == string.Empty)
-            //    {
-            //        MessageBox.Show("Please enter a valid LDAP authentication key");
-            //        txtLDAPAuthenticationKey.Focus();
-            //        return false;
-            //    }
-            //}
+            if (chkEnableLDAPAuthentication.Checked)
+            {
+                if (SafelyGetText(txtLDAPAuthenticationKey) == string.Empty)
+                {
+                    MessageBox.Show("Please enter a valid LDAP authentication key");
+                    txtLDAPAuthenticationKey.Focus();
+                    return false;
+                }
+            }
 
             return true;
         }
