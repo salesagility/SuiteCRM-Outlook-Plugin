@@ -21,33 +21,31 @@
  * @author SalesAgility <info@salesagility.com>
  */
 
+using System;
+using System.Runtime.Serialization;
+
 namespace SuiteCRMAddIn.Exceptions
 {
-    using System;
-    using System.Runtime.Serialization;
-    using SuiteCRMAddIn.BusinessLogic;
-
+    /// <summary>
+    /// An exception thrown if a supposed CRM id does not meet the expected pattern.
+    /// <see cref="SuiteCRMAddIn.BusinessLogic.CrmId.Validator"/>
+    /// </summary>
     [Serializable]
-    internal class DuplicateCrmIdException : Exception
+    internal class InvalidCrmIdException : Exception
     {
-        public DuplicateCrmIdException()
+        public InvalidCrmIdException()
         {
         }
 
-        public DuplicateCrmIdException(string message) : base(message)
+        public InvalidCrmIdException(string message) : base(message)
         {
         }
 
-        public DuplicateCrmIdException(SyncState syncState, CrmId id) : base(
-            $"Shouldn't happen: more than one Outlook object with CRM id '{id}' ({syncState.Description})")
+        public InvalidCrmIdException(string message, Exception innerException) : base(message, innerException)
         {
         }
 
-        public DuplicateCrmIdException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected DuplicateCrmIdException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected InvalidCrmIdException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

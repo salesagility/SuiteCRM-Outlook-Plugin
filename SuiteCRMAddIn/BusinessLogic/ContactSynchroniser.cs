@@ -241,12 +241,12 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                CrmId crmId = olItem.GetCrmId();
+                CrmId crmId = this.IsEnabled() ? olItem.GetCrmId() : CrmId.Empty;
                 if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
                 StringBuilder bob = new StringBuilder();
                 bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
-                    .Append($"\n\tCRM Id      : {crmId}")
+                    .Append(this.IsEnabled() ? $"\n\tCRM Id      : {crmId}" : string.Empty)
                     .Append($"\n\tFull name   : '{olItem.FullName}'")
                     .Append($"\n\tSensitivity : {olItem.Sensitivity}")
                     .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
@@ -417,7 +417,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
 
-        protected override void GetOutlookItems(Outlook.MAPIFolder taskFolder)
+        protected override void LinkOutlookItems(Outlook.MAPIFolder taskFolder)
         {
             try
             {
