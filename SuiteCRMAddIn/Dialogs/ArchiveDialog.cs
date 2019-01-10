@@ -44,7 +44,18 @@ namespace SuiteCRMAddIn.Dialogs
 
     public partial class ArchiveDialog : Form
     {
-        public readonly List<string> standardModules = new List<string> { "Accounts", "Bugs", "Cases", ContactSynchroniser.CrmModule, "Leads", "Opportunities", "Project", "Users" };
+        public static readonly List<string> standardModules =
+            new List<string>
+            {
+                "Accounts",
+                "Bugs",
+                "Cases",
+                ContactSynchroniser.CrmModule,
+                "Leads",
+                "Opportunities",
+                "Project",
+                "Users"
+            };
 
         /// <summary>
         /// The emails to be archived.
@@ -56,7 +67,8 @@ namespace SuiteCRMAddIn.Dialogs
         /// <summary>
         /// Chains of modules to expand in the search tree.
         /// </summary>
-        private IDictionary<string, ICollection<LinkSpec>> moduleChains = new Dictionary<string, ICollection<LinkSpec>>();
+        private IDictionary<string, ICollection<LinkSpec>> moduleChains =
+            new Dictionary<string, ICollection<LinkSpec>>();
 
         /// <summary>
         /// The reason for archiving.
@@ -74,7 +86,9 @@ namespace SuiteCRMAddIn.Dialogs
             }
             catch (Exception any)
             {
-                ErrorHandler.Handle($"Failed to parse Archiving Search Chains value '{Properties.Settings.Default.ArchivingSearchChains}':", any);
+                ErrorHandler.Handle(
+                    $"Failed to parse Archiving Search Chains value '{Properties.Settings.Default.ArchivingSearchChains}':",
+                    any);
             }
 
             this.archivableEmails = selectedEmails;
@@ -83,9 +97,9 @@ namespace SuiteCRMAddIn.Dialogs
 
             var alreadyArchived = selectedEmails.Where(x => !string.IsNullOrEmpty(x.GetCRMEntryId()));
             var anyArchived = alreadyArchived.Any();
-            this.legend.Text = anyArchived ?
-                $"{alreadyArchived.Count()} message(s) have already been archived; rearchiving will remove any existing relationships. You must select all contacts, accounts, leads, etc that you wish to archive the message(s) to." :
-                "";
+            this.legend.Text = anyArchived
+                ? $"{alreadyArchived.Count()} message(s) have already been archived; rearchiving will remove any existing relationships. You must select all contacts, accounts, leads, etc that you wish to archive the message(s) to."
+                : "";
             this.legend.Visible = anyArchived;
 
             if (!anyArchived)
@@ -103,10 +117,10 @@ namespace SuiteCRMAddIn.Dialogs
         {
             if (Properties.Settings.Default.CustomModules != null)
             {
-               //  StringEnumerator enumerator = .GetEnumerator();
+                //  StringEnumerator enumerator = .GetEnumerator();
                 foreach (string key in Properties.Settings.Default.CustomModules)
                 {
-                    string[] strArray = key.Split(new char[] { '|' });
+                    string[] strArray = key.Split(new char[] {'|'});
                     ListViewItem item = new ListViewItem
                     {
                         Tag = strArray[0],
@@ -124,16 +138,18 @@ namespace SuiteCRMAddIn.Dialogs
         private void AddStandardModules()
         {
             AvailableModules allModules = RestAPIWrapper.GetModules();
-            foreach (string moduleKey in this.standardModules.OrderBy(x => x))
+
+            foreach (string moduleKey in ArchiveDialog.standardModules.OrderBy(x => x))
             {
                 var module = allModules.items.FirstOrDefault(x => x.module_key == moduleKey);
                 if (module != null)
                 {
-                    this.lstViewSearchModules.Items.Add(new ListViewItem
+                    var listViewItem = new ListViewItem
                     {
                         Tag = module.module_key,
                         Text = module.module_label
-                    });
+                    };
+                    this.lstViewSearchModules.Items.Add(listViewItem);
                 }
                 else
                 {
@@ -149,10 +165,10 @@ namespace SuiteCRMAddIn.Dialogs
 
             if (Properties.Settings.Default.AutomaticSearch)
             {
-               this.BeginInvoke((MethodInvoker)delegate
-               {
-                   this.Search(this.txtSearch.Text);
-               });
+                this.BeginInvoke((MethodInvoker) delegate
+                {
+                    this.Search(this.txtSearch.Text);
+                });
             }
         }
 
@@ -162,7 +178,8 @@ namespace SuiteCRMAddIn.Dialogs
         private void PopulateUIComponents()
         {
             this.txtSearch.Text = ConstructSearchText();
-            if (Properties.Settings.Default.EmailCategories != null && Properties.Settings.Default.EmailCategories.IsImplemented)
+            if (Properties.Settings.Default.EmailCategories != null &&
+                Properties.Settings.Default.EmailCategories.IsImplemented)
             {
                 this.categoryInput.DataSource = Properties.Settings.Default.EmailCategories;
             }
@@ -181,7 +198,7 @@ namespace SuiteCRMAddIn.Dialogs
             }
             try
             {
-                foreach (string str in Properties.Settings.Default.SelectedSearchModules.Split(new char[] { ',' }))
+                foreach (string str in Properties.Settings.Default.SelectedSearchModules.Split(new char[] {','}))
                 {
                     int num = Convert.ToInt32(str);
                     this.lstViewSearchModules.Items[num].Checked = true;
@@ -234,15 +251,15 @@ namespace SuiteCRMAddIn.Dialogs
                         }
                         else
                         {
-                            ICollection<string> addresses = 
+                            ICollection<string> addresses =
                                 new HashSet<string>($"{ConstructInboundSearchTest()},{ConstructOutboundSearchText()}"
-                                .Split(','));
+                                    .Split(','));
                             addresses.Remove(currentUserSMTPAddress);
                             result = string.Join(",", addresses.OrderBy(address => address)
-                                        .GroupBy(address => address)
-                                        .Select(g => g.First()));
+                                .GroupBy(address => address)
+                                .Select(g => g.First()));
                         }
-                        }
+                    }
                     else
                     {
                         result = ConstructInboundSearchTest();
@@ -270,17 +287,17 @@ namespace SuiteCRMAddIn.Dialogs
                     addresses.Add(recipient.GetSmtpAddress());
             }
             result = string.Join(",", addresses.OrderBy(address => address)
-                        .GroupBy(address => address)
-                        .Select(g => g.First()));
+                .GroupBy(address => address)
+                .Select(g => g.First()));
             return result;
         }
 
         private string ConstructInboundSearchTest()
         {
             return string.Join(",", this.archivableEmails.Select(email => email.GetSenderSMTPAddress())
-                        .OrderBy(address => address)
-                        .GroupBy(address => address)
-                        .Select(g => g.First()));
+                .OrderBy(address => address)
+                .GroupBy(address => address)
+                .Select(g => g.First()));
         }
 
 
@@ -331,9 +348,9 @@ namespace SuiteCRMAddIn.Dialogs
             this.txtSearch.Enabled = false;
 
             foreach (string searchText in
-                allSearchText.Split(new char[] { ',', ';' })
-                .OrderBy(x => x)
-                .GroupBy(x => x).Select(g => g.First().Trim()))
+                allSearchText.Split(new char[] {',', ';'})
+                    .OrderBy(x => x)
+                    .GroupBy(x => x).Select(g => g.First().Trim()))
             {
 
                 try
@@ -341,7 +358,8 @@ namespace SuiteCRMAddIn.Dialogs
                     this.tsResults.CheckBoxes = true;
                     if (searchText == string.Empty)
                     {
-                        MessageBox.Show("Please enter some text to search", "Invalid search", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("Please enter some text to search", "Invalid search", MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
                     }
                     else
                     {
@@ -460,7 +478,8 @@ namespace SuiteCRMAddIn.Dialogs
                 }
                 catch (Exception secondFail)
                 {
-                    ErrorHandler.Handle($"Failure when custom module included (2); Query was '{searchQuery}'", secondFail);
+                    ErrorHandler.Handle($"Failure when custom module included (2); Query was '{searchQuery}'",
+                        secondFail);
                     queryResult = null;
                     throw;
                 }
@@ -549,15 +568,13 @@ namespace SuiteCRMAddIn.Dialogs
                 EntryValue entry = searchResult.entry_list[i];
                 string key = RestAPIWrapper.GetValueByKey(entry, "id");
 
-                ICollection<LinkSpec> links = moduleChains.ContainsKey(module) ? moduleChains[module] : new List<LinkSpec>();
+                ICollection<LinkSpec> links = moduleChains.ContainsKey(module)
+                    ? moduleChains[module]
+                    : new List<LinkSpec>();
 
                 if (!parent.Nodes.ContainsKey(key))
                 {
-                    TreeNode node = new TreeNode(ConstructNodeName(module, entry))
-                    {
-                        Name = key,
-                        Tag = key
-                    };
+                    TreeNode node = ConstructNode(module, entry, key);
                     parent.Nodes.Add(node);
 
                     foreach (var relationship in entry.relationships.link_list)
@@ -571,11 +588,12 @@ namespace SuiteCRMAddIn.Dialogs
                         {
                             var targetId = link != null ? link.TargetId : "id";
 
-                            TreeNode memberNode = new TreeNode(member.data.GetValueAsString(link != null ? link.Label : "name"))
-                            {
-                                Name = member.data.GetValueAsString(targetId),
-                                Tag = member.data.GetValueAsString(targetId)
-                            };
+                            TreeNode memberNode =
+                                new TreeNode(member.data.GetValueAsString(link != null ? link.Label : "name"))
+                                {
+                                    Name = member.data.GetValueAsString(targetId),
+                                    Tag = member.data.GetValueAsString(targetId)
+                                };
                             chainNode.Nodes.Add(memberNode);
                         }
                     }
@@ -593,9 +611,10 @@ namespace SuiteCRMAddIn.Dialogs
         /// <param name="module">The name of the module.</param>
         /// <param name="entry">The value in the module.</param>
         /// <returns>A canonical tree node label.</returns>
-        private static string ConstructNodeName(string module, EntryValue entry)
+        private static TreeNode ConstructNode(string module, EntryValue entry, string key)
         {
             StringBuilder nodeNameBuilder = new StringBuilder();
+            StringBuilder toolTipBuilder = new StringBuilder();
             string keyValue = string.Empty;
             nodeNameBuilder.Append(RestAPIWrapper.GetValueByKey(entry, "first_name"))
                 .Append(" ")
@@ -604,30 +623,44 @@ namespace SuiteCRMAddIn.Dialogs
             if (String.IsNullOrWhiteSpace(nodeNameBuilder.ToString()))
             {
                 nodeNameBuilder.Append(RestAPIWrapper.GetValueByKey(entry, "name"));
+                toolTipBuilder.Append("Name ");
+            }
+            else
+            {
+                toolTipBuilder.Append("First Name | Last Name ");
             }
 
             switch (module)
             {
                 case "Bugs":
                     keyValue = RestAPIWrapper.GetValueByKey(entry, "bug_number");
+                    toolTipBuilder.Append(" | Bug Number");
                     break;
                 case "Cases":
                     keyValue = RestAPIWrapper.GetValueByKey(entry, "case_number");
+                    toolTipBuilder.Append(" | Case Number");
                     break;
                 case "Contacts":
-                    keyValue = string.Empty;
+                    keyValue = " 5462 | True | 21/01/2019";
+                    toolTipBuilder.Append("Sample | Field | Names");
                     break;
                 default:
                     keyValue = RestAPIWrapper.GetValueByKey(entry, "account_name");
+                    toolTipBuilder.Append(" | Account Name");
                     break;
             }
 
-            if (keyValue != string.Empty)
+            if (!string.IsNullOrEmpty(keyValue))
             {
-                nodeNameBuilder.Append($" ({keyValue})");
+                nodeNameBuilder.Append($" | {keyValue}");
             }
 
-            return nodeNameBuilder.ToString();
+            return new TreeNode(nodeNameBuilder.ToString())
+            {
+                Name = key,
+                Tag = key,
+                ToolTipText = toolTipBuilder.ToString()
+            };
         }
 
         private List<CrmEntity> GetSelectedCrmEntities(TreeView tree)
@@ -642,7 +675,8 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void GetSelectedCrmEntitiesHelper(TreeNode node, List<CrmEntity> selectedCrmEntities)
         {
-            if (((node.Tag != null) && (node.Tag.ToString() != "root_node")) && ((node.Tag.ToString() != "sub_root_node") && node.Checked))
+            if (((node.Tag != null) && (node.Tag.ToString() != "root_node")) &&
+                ((node.Tag.ToString() != "sub_root_node") && node.Checked))
             {
                 selectedCrmEntities.Add(new CrmEntity(node.Parent.Text, node.Tag.ToString()));
             }
@@ -690,7 +724,8 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void tsResults_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            if (((e.Button == MouseButtons.Right) && (e.Node.Tag.ToString() != "root_node")) && (e.Node.Tag.ToString() != "sub_root_node"))
+            if (((e.Button == MouseButtons.Right) && (e.Node.Tag.ToString() != "root_node")) &&
+                (e.Node.Tag.ToString() != "sub_root_node"))
             {
                 this.tsResults.SelectedNode = e.Node;
             }
@@ -745,7 +780,8 @@ namespace SuiteCRMAddIn.Dialogs
         {
             try
             {
-                IEnumerable<MailItem> itemsToArchive = ConfirmRearchiveAlreadyArchivedEmails.ConfirmAlreadyArchivedEmails(archivableEmails);
+                IEnumerable<MailItem> itemsToArchive =
+                    ConfirmRearchiveAlreadyArchivedEmails.ConfirmAlreadyArchivedEmails(archivableEmails);
 
                 using (WaitCursor.For(this))
                 {
@@ -771,7 +807,8 @@ namespace SuiteCRMAddIn.Dialogs
                             var archiver = Globals.ThisAddIn.EmailArchiver;
                             bool success = this.ReportOnEmailArchiveSuccess(
                                 itemsToArchive.Select(mailItem =>
-                                        archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities, this.reason))
+                                        archiver.ArchiveEmailWithEntityRelationships(mailItem, selectedCrmEntities,
+                                            this.reason))
                                     .ToList());
                             string prefix = success ? "S" : "Uns";
                             Log.Debug($"ArchiveDialog: {prefix}uccessfully archived {selectedEmailsCount} emails");
@@ -884,7 +921,8 @@ namespace SuiteCRMAddIn.Dialogs
                     {
                         mail.UserProperties.Add(MailItemExtensions.CRMCategoryPropertyName, OlUserPropertyType.olText);
                     }
-                    mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName].Value = categoryInput.SelectedItem.ToString();
+                    mail.UserProperties[MailItemExtensions.CRMCategoryPropertyName].Value =
+                        categoryInput.SelectedItem.ToString();
                 }
                 catch (COMException)
                 {
@@ -893,6 +931,7 @@ namespace SuiteCRMAddIn.Dialogs
                 }
             }
         }
+
         private void RemoveSelection(Object obj)
         {
             TextBox textbox = obj as TextBox;
@@ -950,6 +989,21 @@ namespace SuiteCRMAddIn.Dialogs
 
         }
 
+
+        private void searchModules_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right && lstViewSearchModules.FocusedItem.Bounds.Contains(e.Location))
+            {
+                searchModulesContextStrip.Show(Cursor.Position);
+            }
+        }
+
+        private void showSelectFieldsDialog(object sender, EventArgs e)
+        {
+            new ArchiveModuleSelectFieldsDialog(lstViewSearchModules.FocusedItem.Text).ShowDialog();
+        }
+
+
         /// <summary>
         /// A query to search the server side database in response to a client 
         /// side (at this state, ArchiveDialog) query; a testable bean.
@@ -960,18 +1014,22 @@ namespace SuiteCRMAddIn.Dialogs
             /// The text we're seeking.
             /// </summary>
             private string searchText;
+
             /// <summary>
             /// The name of the module within which we're seeking it.
             /// </summary>
             private string moduleName;
+
             /// <summary>
             /// The fields within which we're seeking.
             /// </summary>
             private List<string> fieldsToSeek;
+
             /// <summary>
             /// The chains of modules we should traverse.
             /// </summary>
             private IDictionary<string, ICollection<LinkSpec>> moduleChains;
+
             /// <summary>
             /// A collection of substitutions to make in the constructed search text.
             /// </summary>
@@ -980,17 +1038,16 @@ namespace SuiteCRMAddIn.Dialogs
             /// <summary>
             /// A collection of modulename, fieldname pairs to order by.
             /// </summary>
-            private ISet<Tuple<string,string>> fieldsToOrderBy = new HashSet<Tuple<string,string>>();
+            private ISet<Tuple<string, string>> fieldsToOrderBy = new HashSet<Tuple<string, string>>();
 
- 
+
             /// <summary>
             /// An arguably redundant property wrapped around 
             /// ConstructSearchText, mainly for tesstability.
             /// </summary>
-            public string QueryText { get
-                {
-                    return this.ConstructQueryText();
-                }
+            public string QueryText
+            {
+                get { return this.ConstructQueryText(); }
             }
 
             /// <summary>
@@ -998,11 +1055,13 @@ namespace SuiteCRMAddIn.Dialogs
             /// </summary>
             /// <remarks>Note that the `order_by` clause of `get_entry_list` 
             /// doesn't work reliably, because of deduping.</remarks>
-            public string OrderClause { get
+            public string OrderClause
+            {
+                get
                 {
-                    return this.fieldsToOrderBy.Any() ? 
-                        String.Join(",", this.fieldsToOrderBy.Select(x=> x.Item2)) : 
-                        "date_entered DESC";
+                    return this.fieldsToOrderBy.Any()
+                        ? String.Join(",", this.fieldsToOrderBy.Select(x => x.Item2))
+                        : "date_entered DESC";
                 }
             }
 
@@ -1012,7 +1071,9 @@ namespace SuiteCRMAddIn.Dialogs
             /// <param name="searchText">The text entered to search for.</param>
             /// <param name="moduleName">The name of the module to search.</param>
             /// <param name="fieldsToSeek">The list of fields to pull back, which may be modified by this method.</param>
-            public SearchQuery(string searchText, string moduleName, List<string> fieldsToSeek, IDictionary<string, ICollection<LinkSpec>> moduleChains)
+            /// <param name="moduleChains">Any chains to follow.</param>
+            public SearchQuery(string searchText, string moduleName, List<string> fieldsToSeek,
+                IDictionary<string, ICollection<LinkSpec>> moduleChains)
             {
                 this.searchText = searchText;
                 this.moduleName = moduleName;
@@ -1046,7 +1107,9 @@ namespace SuiteCRMAddIn.Dialogs
                     fieldsToOrderBy.Add(new Tuple<string, string>(moduleLower, "first_name"));
                     fieldsToOrderBy.Add(new Tuple<string, string>("ea", "email_address"));
 
-                    result = $"({moduleLower}.first_name LIKE '%{firstName}%' {logicalOperator} {moduleLower}.last_name LIKE '%{lastName}%') OR ({moduleLower}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{emailAddress}%'))"; ;
+                    result =
+                        $"({moduleLower}.first_name LIKE '%{firstName}%' {logicalOperator} {moduleLower}.last_name LIKE '%{lastName}%') OR ({moduleLower}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = '{moduleName}' and ea.email_address LIKE '%{emailAddress}%'))";
+                    ;
                 }
 
                 return result;
@@ -1063,7 +1126,7 @@ namespace SuiteCRMAddIn.Dialogs
             /// <param name="fields">The list of field names.</param>
             private void AddFirstLastAndAccountNames(List<string> fields)
             {
-                foreach (string fieldName in new string[] { "first_name", "last_name", "name", "account_name" })
+                foreach (string fieldName in new string[] {"first_name", "last_name", "name", "account_name"})
                 {
                     fields.Add(fieldName);
                     this.fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
@@ -1083,7 +1146,7 @@ namespace SuiteCRMAddIn.Dialogs
             private string ConstructQueryText()
             {
                 string queryText = string.Empty;
-                List<string> searchTokens = searchText.Split(new char[] { ',', ';' }).ToList();
+                List<string> searchTokens = searchText.Split(new char[] {',', ';'}).ToList();
                 var escapedSearchText = RestAPIWrapper.MySqlEscape(searchText);
                 var firstTerm = RestAPIWrapper.MySqlEscape(searchTokens.First());
                 var lastTerm = RestAPIWrapper.MySqlEscape(searchTokens.Last());
@@ -1100,24 +1163,28 @@ namespace SuiteCRMAddIn.Dialogs
                         AddFirstLastAndAccountNames(fieldsToSeek);
                         break;
                     case "Cases":
-                        queryText = $"(cases.name LIKE '%{escapedSearchText}%' OR cases.case_number LIKE '{escapedSearchText}')";
-                        foreach (string fieldName in new string[] { "name", "case_number" })
+                        queryText =
+                            $"(cases.name LIKE '%{escapedSearchText}%' OR cases.case_number LIKE '{escapedSearchText}')";
+                        foreach (string fieldName in new string[] {"name", "case_number"})
                         {
                             fieldsToSeek.Add(fieldName);
                             fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
                         }
                         break;
                     case "Bugs":
-                        queryText = $"(bugs.name LIKE '%{escapedSearchText}%' {logicalOperator} bugs.bug_number LIKE '{escapedSearchText}')";
-                        foreach (string fieldName in new string[] { "name", "bug_number" })
+                        queryText =
+                            $"(bugs.name LIKE '%{escapedSearchText}%' {logicalOperator} bugs.bug_number LIKE '{escapedSearchText}')";
+                        foreach (string fieldName in new string[] {"name", "bug_number"})
                         {
                             fieldsToSeek.Add(fieldName);
                             fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
                         }
                         break;
                     case "Accounts":
-                        queryText = "(accounts.name LIKE '%" + firstTerm + "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" + escapedSearchText + "%'))";
-                        foreach (string fieldName in new string[] { "name", "account_name" })
+                        queryText = "(accounts.name LIKE '%" + firstTerm +
+                                    "%') OR (accounts.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id where eabr.bean_module = 'Accounts' and ea.email_address LIKE '%" +
+                                    escapedSearchText + "%'))";
+                        foreach (string fieldName in new string[] {"name", "account_name"})
                         {
                             this.fieldsToSeek.Add(fieldName);
                             this.fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
@@ -1130,7 +1197,7 @@ namespace SuiteCRMAddIn.Dialogs
                         {
                             /* This is Ian's suggestion */
                             queryText = ConstructQueryTextWithFirstAndLastNames(escapedSearchText, firstTerm, lastTerm);
-                            foreach (string fieldName in new string[] { "first_name", "last_name" })
+                            foreach (string fieldName in new string[] {"first_name", "last_name"})
                             {
                                 fieldsToSeek.Add(fieldName);
                                 fieldsToOrderBy.Add(new Tuple<string, string>(this.moduleName, fieldName));
@@ -1140,7 +1207,7 @@ namespace SuiteCRMAddIn.Dialogs
                         {
                             queryText = ConstructQueryTextForUnknownModule(moduleName, escapedSearchText);
 
-                            foreach (string fieldName in new string[] { "name", "description" })
+                            foreach (string fieldName in new string[] {"name", "description"})
                             {
                                 if (fieldNames.Contains(fieldName))
                                 {
@@ -1179,7 +1246,7 @@ namespace SuiteCRMAddIn.Dialogs
 
                     foreach (var link in chain)
                     {
-                        links.Add(new { @name = link.LinkName, @value = link.FieldNames });
+                        links.Add(new {@name = link.LinkName, @value = link.FieldNames});
                     }
 
                     result = links.ToArray();
@@ -1231,9 +1298,9 @@ namespace SuiteCRMAddIn.Dialogs
             /// <param name="pattern">The pattern to replace.</param>
             /// <param name="substitution">The substitution to replace it with.</param>
             /// <returns>Myself, to allow chaining.</returns>
-            public SearchQuery Replace(Regex attern, string substitution)
+            public SearchQuery Replace(Regex pattern, string substitution)
             {
-                this.replacements.Add(new Tuple<Regex, string>(attern, substitution));
+                this.replacements.Add(new Tuple<Regex, string>(pattern, substitution));
                 return this;
             }
         }

@@ -214,6 +214,12 @@
     <Compile Include="BusinessLogic\CallSyncState.cs" />
     <Compile Include="BusinessLogic\CrmId.cs" />
     <Compile Include="BusinessLogic\CrmIdValidationPolicy.cs" />
+    <Compile Include="Dialogs\ArchiveModuleSelectFieldsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ArchiveModuleSelectFieldsDialog.Designer.cs">
+      <DependentUpon>ArchiveModuleSelectFieldsDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Exceptions\InvalidCrmIdException.cs" />
     <Compile Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.cs">
       <SubType>Form</SubType>
@@ -362,6 +368,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\AdvancedArchiveSettingsDialog.resx">
       <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ArchiveModuleSelectFieldsDialog.resx">
+      <DependentUpon>ArchiveModuleSelectFieldsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ClearCrmIdsDialog.resx">
       <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
