@@ -133,7 +133,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.MinimumSize = new System.Drawing.Size(331, 321);
             this.Name = "CustomModulesDialog";
             this.ShowInTaskbar = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SuiteCRM Custom Modules";
             this.Load += new System.EventHandler(this.frmCustomModules_Load);
             this.ResumeLayout(false);

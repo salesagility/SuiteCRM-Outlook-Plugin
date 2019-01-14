@@ -1046,6 +1046,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                             result = false;
                         }
                     }
+                    else if (IsManualOverride(olItem))
+                    {
+                        result = true;
+                    }
                     else
                     {
                         Log.Info(
@@ -1061,6 +1065,21 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Returns true if this `olItem` has a manual override allowing it to be synced while synchronisation
+        ///  is disabled.
+        /// </summary>
+        /// <remarks>
+        /// #4754: We need to allow Contacts (but not, at present, other items) to be manually synced even when
+        /// synchronisation is otherwise disabled. 
+        /// </remarks>
+        /// <param name="olItem">The outlook item</param>
+        /// <returns>true if this `olItem` has a manual override.</returns>
+        protected virtual bool IsManualOverride(OutlookItemType olItem)
+        {
+            return false;
         }
 
         /// <summary>

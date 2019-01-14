@@ -67,11 +67,13 @@ namespace SuiteCRMAddIn
         /// <summary>
         /// #2246: Discriminate between calls and meetings when adding and updating.
         /// </summary>
-        internal CallsSynchroniser CallsSynchroniser { get { return callSynchroniser; } }
+        internal CallsSynchroniser CallsSynchroniser => this.callSynchroniser;
         /// <summary>
         /// #2246: Discriminate between calls and meetings when adding and updating.
         /// </summary>
-        internal MeetingsSynchroniser MeetingsSynchroniser { get { return meetingSynchroniser; } }
+        internal MeetingsSynchroniser MeetingsSynchroniser => this.meetingSynchroniser;
+
+        internal ContactSynchroniser ContactsSynchroniser => this.contactSynchroniser;
 
         /// <summary>
         /// Internationalisation (118n) strings dictionary
@@ -185,6 +187,11 @@ namespace SuiteCRMAddIn
                     ConstructOutlook2007MenuBar();
                 }
             }
+        }
+
+        internal void ManualSyncContact()
+        {
+            new ManualSyncContactForm(string.Join("; ", SelectedContacts.Select(x => $"{x.FullName}, {x.Email1Address}"))).ShowDialog();
         }
 
         /// <summary>
@@ -981,6 +988,22 @@ namespace SuiteCRMAddIn
                 }
             }
         }
+
+        public IEnumerable<Outlook.ContactItem> SelectedContacts
+        {
+            get
+            {
+                var selection = Application.ActiveExplorer()?.Selection;
+                if (selection == null) yield break;
+                foreach (object e in selection)
+                {
+                    var contact = e as Outlook.ContactItem;
+                    if (contact != null) yield return contact;
+                    Marshal.ReleaseComObject(e);
+                }
+            }
+        }
+
 
         /// <summary>
         /// True if this is a licensed copy of the add-in.

@@ -33,6 +33,7 @@ namespace SuiteCRMAddIn.Daemon
     /// does not already have a valid CRM id.
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of item I transmit.</typeparam>
+    /// <typeparam name="SyncStateType">The type of sync state which is appropriate to my item type.</typeparam>
     public class TransmitNewAction<OutlookItemType, SyncStateType> : AbstractDaemonAction
         where OutlookItemType : class
         where SyncStateType : SyncState<OutlookItemType>

@@ -220,6 +220,12 @@
     <Compile Include="Dialogs\ArchiveModuleSelectFieldsDialog.Designer.cs">
       <DependentUpon>ArchiveModuleSelectFieldsDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\ManualSyncContactForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ManualSyncContactForm.Designer.cs">
+      <DependentUpon>ManualSyncContactForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Exceptions\InvalidCrmIdException.cs" />
     <Compile Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.cs">
       <SubType>Form</SubType>
@@ -287,6 +293,9 @@
     <Compile Include="Extensions\Documentation.cs" />
     <Compile Include="Extensions\MailItemExtensions.cs" />
     <Compile Include="Extensions\RecipientExtensions.cs" />
+    <Compile Include="Extensions\TreeNodeExtensions.cs" />
+    <Compile Include="Extensions\TreeViewExtensions.cs" />
+    <Compile Include="Helpers\SearchHelper.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -378,6 +387,9 @@
     <EmbeddedResource Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.resx">
       <DependentUpon>ConfirmRearchiveAlreadyArchivedEmails.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ManualSyncContactForm.resx">
+      <DependentUpon>ManualSyncContactForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ShuttingDownDialog.resx">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
     </EmbeddedResource>
@@ -446,7 +458,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Images\manualSyncContact.svg.png" />
     <Content Include="Images\SuiteCRM.png" />
+    <None Include="Resources\ManualSyncContact.bmp" />
     <None Include="Images\AddressBook.png" />
     <None Include="Images\Archive.png" />
     <Content Include="Images\Cancel.png" />

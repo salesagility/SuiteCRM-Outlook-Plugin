@@ -404,7 +404,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(624, 431);
             this.Name = "frmAddressBook";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SuiteCRM Address Book";
             this.Load += new System.EventHandler(this.frmAddressBook_Load);
             this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.frmAddressBook_KeyPress);

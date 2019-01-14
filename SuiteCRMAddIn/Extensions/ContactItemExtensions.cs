@@ -20,10 +20,15 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using System.Xml.Serialization;
+
 namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
     using SuiteCRMClient;
+    using System;
+    using System.Globalization;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -34,6 +39,15 @@ namespace SuiteCRMAddIn.Extensions
     /// </remarks>
     public static class ContactItemExtensions
     {
+        /// <summary>
+        /// Name of the override property.
+        /// </summary>
+        private const string OverridePropertyName = "UserOverride";
+        /// <summary>
+        /// The duration of the override window in minutes.
+        /// </summary>
+        private const int OverrideWindowMinutes = 10;
+
         /// <summary>
         /// Remove all the synchronisation properties from this item.
         /// </summary>
@@ -67,6 +81,38 @@ namespace SuiteCRMAddIn.Extensions
             CrmId result = property != null ? CrmId.Get(property.Value) : CrmId.Empty;
 
             return result;
+        }
+
+        /// <summary>
+        /// True if the override window is open for this item.
+        /// </summary>
+        /// <remarks>In order to allow manual sync, we need to be able to override the disablement of syncing -
+        /// but only briefly.</remarks>
+        /// <param name="olItem">The item which we wish to sync.</param>
+        /// <returns>True if the manual sync window is open for this item.</returns>
+        public static bool IsManualOverride(this Outlook.ContactItem olItem)
+        {
+            bool result = false;
+            if (olItem.UserProperties[OverridePropertyName] != null)
+            {
+                DateTime value = olItem.UserProperties[OverridePropertyName].Value;
+                result = (DateTime.UtcNow - value).Minutes < OverrideWindowMinutes;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Set this item as manually syncable, briefly.
+        /// </summary>
+        /// <remarks>In order to allow manual sync, we need to be able to override the disablement of syncing -
+        /// but only briefly.</remarks>
+        /// <param name="olItem">The item which may be synced despite syncing being disabled</param>
+        public static void SetManualOverride(this Outlook.ContactItem olItem)
+        {
+            var p = olItem.UserProperties.Add(OverridePropertyName, Outlook.OlUserPropertyType.olDateTime);
+            p.Value = DateTime.UtcNow;
+            olItem.Save();
         }
     }
 }

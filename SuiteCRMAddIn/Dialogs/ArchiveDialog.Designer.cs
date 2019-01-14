@@ -57,6 +57,8 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnSearch = new System.Windows.Forms.Button();
             this.lstViewSearchModules = new System.Windows.Forms.ListView();
             this.colList = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.searchModulesContextStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.selectFieldsItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tsResults = new System.Windows.Forms.TreeView();
             this.btnArchive = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
@@ -64,8 +66,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.categoryInput = new System.Windows.Forms.ComboBox();
             this.legend = new System.Windows.Forms.TextBox();
             this.instructionLabel = new System.Windows.Forms.Label();
-            this.searchModulesContextStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.selectFieldsItem = new System.Windows.Forms.ToolStripMenuItem();
             this.searchModulesContextStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -112,6 +112,20 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             this.colList.Text = "Modules";
             this.colList.Width = 129;
+            // 
+            // searchModulesContextStrip
+            // 
+            this.searchModulesContextStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.selectFieldsItem});
+            this.searchModulesContextStrip.Name = "searchModulesContextStrip";
+            this.searchModulesContextStrip.Size = new System.Drawing.Size(148, 26);
+            // 
+            // selectFieldsItem
+            // 
+            this.selectFieldsItem.Name = "selectFieldsItem";
+            this.selectFieldsItem.Size = new System.Drawing.Size(147, 22);
+            this.selectFieldsItem.Text = "Select Fields...";
+            this.selectFieldsItem.Click += new System.EventHandler(this.showSelectFieldsDialog);
             // 
             // tsResults
             // 
@@ -198,20 +212,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.instructionLabel.TabIndex = 10;
             this.instructionLabel.Text = "Use the form below find records in CRM";
             // 
-            // searchModulesContextStrip
-            // 
-            this.searchModulesContextStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.selectFieldsItem});
-            this.searchModulesContextStrip.Name = "searchModulesContextStrip";
-            this.searchModulesContextStrip.Size = new System.Drawing.Size(148, 26);
-            // 
-            // selectFieldsItem
-            // 
-            this.selectFieldsItem.Name = "selectFieldsItem";
-            this.selectFieldsItem.Size = new System.Drawing.Size(147, 22);
-            this.selectFieldsItem.Text = "Select Fields...";
-            this.selectFieldsItem.Click += new System.EventHandler(this.showSelectFieldsDialog);
-            // 
             // ArchiveDialog
             // 
             this.AcceptButton = this.btnSearch;
@@ -237,7 +237,6 @@ namespace SuiteCRMAddIn.Dialogs
             this.MinimumSize = new System.Drawing.Size(481, 404);
             this.Name = "ArchiveDialog";
             this.ShowInTaskbar = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Archive to SuiteCRM";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.frmArchive_FormClosed);
             this.Load += new System.EventHandler(this.frmArchive_Load);

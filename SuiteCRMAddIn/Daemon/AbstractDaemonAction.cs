@@ -28,14 +28,9 @@ namespace SuiteCRMAddIn.Daemon
     /// </summary>
     public abstract class AbstractDaemonAction : DaemonAction
     {
-        /// <summary>
-        /// backing store for the MaxAttempts property.
-        /// </summary>
-        private int maxAttempts;
-
-        public AbstractDaemonAction(int maxAttempts)
+        protected AbstractDaemonAction(int maxAttempts)
         {
-            this.maxAttempts = maxAttempts;
+            this.MaxAttempts = maxAttempts;
         }
 
         /// <summary>
@@ -46,25 +41,14 @@ namespace SuiteCRMAddIn.Daemon
         /// <summary>
         /// Get a description of this action.
         /// </summary>
-        public virtual string Description
-        {
-            get
-            {
-                return this.GetType().Name;
-            }
-        }
+        public virtual string Description => this.GetType().Name;
 
         /// <summary>
         /// The maximum number of times this action can be attempted before
         /// being abandoned.
         /// </summary>
-        public int MaxAttempts
-        {
-            get
-            {
-                return this.maxAttempts;
-            }
-        }
+
+        public int MaxAttempts { get; }
 
         /// <summary>
         /// Perform this action.

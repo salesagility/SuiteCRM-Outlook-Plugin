@@ -35,6 +35,7 @@ using System.Windows.Forms;
 using Office = Microsoft.Office.Core;
 using Outlook = Microsoft.Office.Interop.Outlook;
 using System.Collections.Generic;
+using SuiteCRMAddIn.BusinessLogic;
 using SuiteCRMAddIn.Dialogs;
 
 // TODO:  Follow these steps to enable the Ribbon (XML) item:
@@ -94,6 +95,9 @@ namespace SuiteCRMAddIn
                 case "btnAddressBook":
                     result = RibbonImageHelper.Convert(Resources.AddressBook);
                     break;
+                case "manualSyncButton":
+                    result = RibbonImageHelper.Convert(Resources.manualSyncContact);
+                    break;
                 default:
                     result = RibbonImageHelper.Convert(Resources.Archive);
                     break;                
@@ -119,8 +123,12 @@ namespace SuiteCRMAddIn
                 case "Microsoft.Outlook.Mail.Compose":
                     result = GetResourceText("SuiteCRMAddIn.Menus.MailCompose.xml");
                     break;
+                case "Microsoft.Outlook.Contact":
+                    // We get this when a contact inspector is opened.
+                    result = string.Empty;
+                    break;
                 default:
-                    result = String.Empty;
+                    result = string.Empty;
                     break;
             }
 
@@ -140,9 +148,17 @@ namespace SuiteCRMAddIn
 
         #endregion
 
-        public bool btnArchive_Enabled()
+        public bool btnArchive_Enabled(IRibbonControl control)
         {
-            return Globals.ThisAddIn.SelectedEmails.Select(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null).ToList().Count() > 0;
+            return Globals.ThisAddIn.HasCrmUserSession &&
+                   Globals.ThisAddIn.SelectedEmails.Any(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null);
+        }
+
+        public bool manualSyncButton_Enabled(IRibbonControl control)
+        {
+            return Globals.ThisAddIn.HasCrmUserSession &&
+                   Globals.ThisAddIn.SelectedContacts.Any() &&
+                   Properties.Settings.Default.SyncContacts == SyncDirection.Direction.Neither;
         }
 
         #region Click Events
@@ -150,6 +166,11 @@ namespace SuiteCRMAddIn
         {
             DoOrLogError(() =>
                 Globals.ThisAddIn.ManualArchive());
+        }
+
+        public void manualSyncButton_Action(IRibbonControl control)
+        {
+            DoOrLogError(() => Globals.ThisAddIn.ManualSyncContact());
         }
 
         public void btnSettings_Action(IRibbonControl control)
