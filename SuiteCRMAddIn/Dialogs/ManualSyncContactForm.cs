@@ -32,6 +32,7 @@ using SuiteCRMAddIn.BusinessLogic;
 using SuiteCRMAddIn.Daemon;
 using SuiteCRMAddIn.Extensions;
 using SuiteCRMAddIn.Helpers;
+using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
 
 #endregion
@@ -46,21 +47,28 @@ namespace SuiteCRMAddIn.Dialogs
         {
             InitializeComponent();
             searchText.Text = searchString;
-            ClearAndSearch(searchString);
         }
 
         private void ClearAndSearch(string target)
         {
-            searchResults = new Dictionary<string, EntryValue>();
-
-            resultsTree.Nodes.Clear();
-            resultsTree.Nodes.Add("Create", "Create a new Contact");
-
-            if (!string.IsNullOrWhiteSpace(target))
+            using (WaitCursor.For(this, true))
             {
-                var contactsNode = resultsTree.Nodes.Add("Contacts", "Contacts");
+                searchResults = new Dictionary<string, EntryValue>();
 
-                SearchAddChildren(target, contactsNode);
+                resultsTree.Nodes.Clear();
+                resultsTree.Nodes.Add("Create", "Create a new Contact");
+
+                if (!string.IsNullOrWhiteSpace(target))
+                {
+                    var contactsNode = resultsTree.Nodes.Add("Contacts", "Contacts");
+
+                    SearchAddChildren(target, contactsNode);
+
+                    if (contactsNode.Nodes.Count == 0)
+                    {
+                        resultsTree.Nodes.Remove(contactsNode);
+                    }
+                }
             }
         }
 
@@ -92,48 +100,63 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void saveButton_click(object sender, EventArgs e)
         {
-            if (resultsTree.Nodes["create"].Checked)
+            var shouldClose = true;
+
+            foreach (var contactItem in Globals.ThisAddIn.SelectedContacts)
             {
-                foreach (var contactItem in Globals.ThisAddIn.SelectedContacts)
+                var state =
+                    (ContactSyncState) SyncStateManager.Instance.GetOrCreateSyncState(contactItem);
+                var proceed = true;
+                var crmId = contactItem.GetCrmId().ToString();
+
+                if (contactItem.Sensitivity == Microsoft.Office.Interop.Outlook.OlSensitivity.olPrivate)
                 {
-                    var state =
-                        (ContactSyncState) SyncStateManager.Instance.GetOrCreateSyncState(contactItem);
-                    if (!state.ExistedInCrm)
+                    if (MessageBox.Show($"Contact {contactItem.FullName} is marked 'private'. Are you sure?",
+                            "Private: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
+                        DialogResult.Cancel)
+                    {
+                        proceed = false;
+                    }
+                }
+                if (proceed)
+                {
+                    if (resultsTree.Nodes["create"].Checked)
+                    {
+                        if (!state.ExistedInCrm)
+                        {
+                            contactItem.SetManualOverride();
+                        }
+                        else
+                        {
+                            MessageBox.Show($"Contact {contactItem.FullName} already exists in CRM", "Contact Exists",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            shouldClose = false;
+                        }
+                    }
+                    else if (searchResults.ContainsKey(crmId))
                     {
                         contactItem.SetManualOverride();
-                        state.SetPending();
-                        DaemonWorker.Instance.AddTask(new TransmitUpdateAction<ContactItem, ContactSyncState>(
-                            Globals.ThisAddIn.ContactsSynchroniser,
-                            state));
-
-                        Close();
                     }
-                    else
+                    else if (string.IsNullOrEmpty(crmId))
                     {
-                        MessageBox.Show($"Contact {contactItem.FullName} already exists in CRM", "Contact Exists",
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        var p = contactItem.UserProperties[SyncStateManager.CrmIdPropertyName] ?? 
+                            contactItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, OlUserPropertyType.olText);
+                        try
+                        {
+                            p.Value = resultsTree.Nodes["Contacts"].Nodes[0].Name;
+                            contactItem.Save();
+                        }
+                        finally
+                        {
+                            contactItem.SetManualOverride();
+                        }
                     }
                 }
             }
-            else
-            {
-                foreach (var contactItem in Globals.ThisAddIn.SelectedContacts)
-                {
-                    var state =
-                        (ContactSyncState) SyncStateManager.Instance.GetOrCreateSyncState(contactItem);
-                    if (resultsTree.Nodes[state.CrmEntryId.ToString()].Checked)
-                    {
-                        contactItem.SetManualOverride();
-                        state.SetPending();
-                        DaemonWorker.Instance.AddTask(new TransmitUpdateAction<ContactItem, ContactSyncState>(
-                            Globals.ThisAddIn.ContactsSynchroniser,
-                            state));
-                    }
-                }
 
-                Close();
-            }
+            if (shouldClose) Close();
         }
+
 
         private void cancelButton_click(object sender, EventArgs e)
         {
@@ -142,19 +165,45 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void resultsTree_ItemClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            if (e.Node == resultsTree.Nodes["Create"])
+            var contactsNode = resultsTree.Nodes["Contacts"];
+            var createNode = resultsTree.Nodes["Create"];
+
+            if (e.Node == createNode)
+            {
+                if (e.Node.Checked && contactsNode != null)
+                    foreach (var node in contactsNode.GetAllNodes())
+                        node.Checked = false;
+            }
+            else if (e.Node == contactsNode)
             {
                 if (e.Node.Checked)
-                    foreach (var node in resultsTree.Nodes["Contacts"].GetAllNodes())
-                        node.Checked = false;
+                    foreach (var node in contactsNode.GetAllNodes())
+                        node.Checked = true;
             }
             else
             {
                 if (e.Node.Checked)
-                    resultsTree.Nodes["Create"].Checked = false;
+                {
+                    createNode.Checked = false;
+                }
+                else
+                {
+                    contactsNode.Checked = false;
+                }
             }
 
             saveButton.Enabled = resultsTree.GetAllNodes().Any(x => x.Checked);
+        }
+
+        private void manualSyncContactsForm_Load(object sender, EventArgs e)
+        {
+            if (Properties.Settings.Default.AutomaticSearch)
+            {
+                this.BeginInvoke((MethodInvoker)delegate
+                {
+                    ClearAndSearch(this.searchText.Text);
+                });
+            }
         }
     }
 }

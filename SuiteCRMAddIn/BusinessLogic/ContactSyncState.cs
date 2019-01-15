@@ -48,6 +48,19 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
+        /// <summary>
+        /// If transmission was successful, clear the manual override if set.
+        /// </summary>
+        internal override void SetTransmitted()
+        {
+            base.SetTransmitted();
+            this.OutlookItem.ClearManualOverride();
+        }
+
+        /// <summary>
+        /// True if the Outlook item wrapped by this state may be synchronised even when synchronisation is set to none.
+        /// </summary>
+        public override bool IsManualOverride => this.OutlookItem.IsManualOverride();
 
         public override string CrmType => ContactSynchroniser.CrmModule;
 

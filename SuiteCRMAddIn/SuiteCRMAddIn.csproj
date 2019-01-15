@@ -460,6 +460,9 @@
   <ItemGroup>
     <Content Include="Images\manualSyncContact.svg.png" />
     <Content Include="Images\SuiteCRM.png" />
+    <EmbeddedResource Include="Menus\ContactInspect.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <None Include="Resources\ManualSyncContact.bmp" />
     <None Include="Images\AddressBook.png" />
     <None Include="Images\Archive.png" />

@@ -114,5 +114,16 @@ namespace SuiteCRMAddIn.Extensions
             p.Value = DateTime.UtcNow;
             olItem.Save();
         }
+
+        /// <summary>
+        /// Clear the manually syncability of this item; does not break is manual sync was not set.
+        /// </summary>
+        /// <remarks>In order to allow manual sync, we need to be able to override the disablement of syncing -
+        /// but only briefly.</remarks>
+        /// <param name="olItem">The item which may be synced despite syncing being disabled</param>
+        public static void ClearManualOverride(this Outlook.ContactItem olItem)
+        {
+            olItem.UserProperties[OverridePropertyName]?.Delete();
+        }
     }
 }

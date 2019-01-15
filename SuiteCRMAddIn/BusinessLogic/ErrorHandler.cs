@@ -45,7 +45,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="badCredentials"></param>
         public static void Handle(BadCredentialsException badCredentials)
         {
-            if (Globals.ThisAddIn.ShowReconfigureOrDisable("Login failed; have your credentials changed?"))
+            if (Globals.ThisAddIn.ShowReconfigureOrDisable("Login failed; have your credentials changed?") == DialogResult.Cancel)
             {
                 Globals.ThisAddIn.Disable();
             }
@@ -62,7 +62,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             var errorClassName = error?.GetType().Name ?? string.Empty;
             StringBuilder bob = new StringBuilder(contextMessage);
 
-            for (Exception e = error; e != null; e = e.GetBaseException())
+            for (Exception e = error; e != null; e = e.InnerException)
             {
                 if (e != error)
                 {

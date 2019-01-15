@@ -20,6 +20,9 @@
 *
 * @author SalesAgility <info@salesagility.com>
 */
+
+using System.Runtime.InteropServices;
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using Exceptions;
@@ -129,6 +132,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public abstract string IdentifyingFields { get; }
 
+        /// <summary>
+        /// True if the Outlook item wrapped by this state may be synchronised even when synchronisation is set to none.
+        /// </summary>
+        /// <remarks>
+        /// At present, only Contacts have the manual override mechanism.
+        /// </remarks>
+        public virtual bool IsManualOverride => false;
+
 
         /// <summary>
         /// Delete the Outlook item associated with this SyncState.
@@ -204,6 +215,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             log.Debug(reallyChanged ? $"{prefix} has changed." : $"{prefix} has not changed.");
             log.Debug(isSyncable ? $"{prefix} is syncable." : $"{ prefix} is not syncable.");
+            log.Debug(IsManualOverride ? $"{prefix} is on manual override." : $"{prefix} is not on manual override.");
 
             bool result;
 
@@ -211,7 +223,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* result is set within the lock to prevent one thread capturing another thread's
                  * state change. */
-                result = isSyncable && reallyChanged && this.TxState == TransmissionState.Pending && modifiedSinceSeconds > 2;
+                result = (IsManualOverride || (isSyncable && reallyChanged)) && this.TxState == TransmissionState.Pending && modifiedSinceSeconds > 2;
                 if (result)
                 {
                     this.OModifiedDate = utcNow;
@@ -334,7 +346,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Set the transmission state of this SyncState object to <see cref="TransmissionState.Transmitted"/>.
         /// </summary>
-        internal void SetTransmitted()
+        internal virtual void SetTransmitted()
         {
             lock (this.txStateLock)
             {
@@ -479,11 +491,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         private void LogAndSetTxState(TransmissionState newState)
         {
 #if DEBUG
-            if (this.Cache == null)
+            try
             {
-                this.Cache = this.CreateProtoItem(this.OutlookItem);
+                if (this.Cache == null)
+                {
+                    this.Cache = this.CreateProtoItem(this.OutlookItem);
+                }
+                Globals.ThisAddIn.Log.Debug(
+                    $"{this.GetType().Name} '{this.Cache?.Description}': transition {this.TxState} => {newState}");
             }
-            Globals.ThisAddIn.Log.Debug($"{this.GetType().Name} '{this.Cache?.Description}': transition {this.TxState} => {newState}");
+            catch (InvalidComObjectException)
+            {
+                // ignore. It doesn't matter. Although TODO: I'd love to know what happens.
+            }
 #endif
             this.TxState = newState;
         }

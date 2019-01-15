@@ -96,6 +96,7 @@ namespace SuiteCRMAddIn
                     result = RibbonImageHelper.Convert(Resources.AddressBook);
                     break;
                 case "manualSyncButton":
+                case "manualSyncToolbar":
                     result = RibbonImageHelper.Convert(Resources.manualSyncContact);
                     break;
                 default:
@@ -125,7 +126,7 @@ namespace SuiteCRMAddIn
                     break;
                 case "Microsoft.Outlook.Contact":
                     // We get this when a contact inspector is opened.
-                    result = string.Empty;
+                    result = GetResourceText("SuiteCRMAddIn.Menus.ContactInspect.xml");
                     break;
                 default:
                     result = string.Empty;

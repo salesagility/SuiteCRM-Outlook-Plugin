@@ -55,36 +55,44 @@ namespace SuiteCRMAddIn.Daemon
         /// </summary>
         public override string Perform()
         {
-            try
+            if (Globals.ThisAddIn.HasCrmUserSession)
             {
-                Field field = RestAPIWrapper.GetFieldsForModule("Emails").moduleFields.FirstOrDefault(x => x.name == "category_id");
-
-                if (field != null)
+                try
                 {
-                    Properties.Settings.Default.EmailCategories.IsImplemented = true;
-                    Properties.Settings.Default.EmailCategories.Clear();
-                    Properties.Settings.Default.EmailCategories.AddRange(field.Options.Keys.OrderBy(x => x));
+                    Field field = RestAPIWrapper.GetFieldsForModule("Emails").moduleFields
+                        .FirstOrDefault(x => x.name == "category_id");
+
+                    if (field != null)
+                    {
+                        Properties.Settings.Default.EmailCategories.IsImplemented = true;
+                        Properties.Settings.Default.EmailCategories.Clear();
+                        Properties.Settings.Default.EmailCategories.AddRange(field.Options.Keys.OrderBy(x => x));
+                    }
+                    else
+                    {
+                        /* the CRM instance does not have the category_id field in its emails module */
+                        Properties.Settings.Default.EmailCategories.IsImplemented = false;
+                    }
+
+                    Properties.Settings.Default.Save();
+
+                    return "OK";
                 }
-                else
+                catch (WebException wex)
                 {
-                    /* the CRM instance does not have the category_id field in its emails module */
-                    Properties.Settings.Default.EmailCategories.IsImplemented = false;
+                    if (wex.Status == WebExceptionStatus.Timeout)
+                    {
+                        throw new ActionRetryableException("Temporary network error", wex);
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
-
-                Properties.Settings.Default.Save();
-
-                return "OK";
-            } 
-            catch (WebException wex)
+            }
+            else
             {
-                if (wex.Status == WebExceptionStatus.Timeout)
-                {
-                    throw new ActionRetryableException("Temporary network error", wex);
-                }
-                else
-                {
-                    throw;
-                }
+                throw new ActionRetryableException("No user session (yet?)");
             }
         }
     }
