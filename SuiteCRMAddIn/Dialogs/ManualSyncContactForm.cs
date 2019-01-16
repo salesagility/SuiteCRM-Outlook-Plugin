@@ -29,10 +29,9 @@ using System.Linq;
 using System.Windows.Forms;
 using Microsoft.Office.Interop.Outlook;
 using SuiteCRMAddIn.BusinessLogic;
-using SuiteCRMAddIn.Daemon;
 using SuiteCRMAddIn.Extensions;
 using SuiteCRMAddIn.Helpers;
-using SuiteCRMClient.Logging;
+using SuiteCRMAddIn.Properties;
 using SuiteCRMClient.RESTObjects;
 
 #endregion
@@ -41,17 +40,17 @@ namespace SuiteCRMAddIn.Dialogs
 {
     public partial class ManualSyncContactForm : Form
     {
-        private Dictionary<string, EntryValue> searchResults = new Dictionary<string, EntryValue>();
-
         /// <summary>
-        /// The key for the create node.
+        ///     The key for the create node.
         /// </summary>
         private static readonly string CreateNodeKey = "Create";
 
         /// <summary>
-        /// The key for the contacts node.
+        ///     The key for the contacts node.
         /// </summary>
         private static readonly string ContactsNodeKey = "Contacts";
+
+        private Dictionary<string, EntryValue> searchResults = new Dictionary<string, EntryValue>();
 
         public ManualSyncContactForm(string searchString)
         {
@@ -122,8 +121,7 @@ namespace SuiteCRMAddIn.Dialogs
                 var crmId = contactItem.GetCrmId().ToString();
                 var synchroniser = Globals.ThisAddIn.ContactsSynchroniser;
 
-                if (contactItem.Sensitivity == Microsoft.Office.Interop.Outlook.OlSensitivity.olPrivate)
-                {
+                if (contactItem.Sensitivity == OlSensitivity.olPrivate)
                     if (MessageBox.Show($"Contact {contactItem.FullName} is marked 'private'. Are you sure?",
                             "Private: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
                         DialogResult.Cancel)
@@ -131,16 +129,12 @@ namespace SuiteCRMAddIn.Dialogs
                         proceed = false;
                         shouldClose = false;
                     }
-                }
                 if (proceed)
-                {
                     if (resultsTree.Nodes["create"].Checked)
                     {
                         if (!state.ExistedInCrm)
                         {
                             contactItem.SetManualOverride();
-                            //DaemonWorker.Instance.AddTask(
-                            //    new TransmitNewAction<ContactItem, ContactSyncState>(synchroniser, state));
                         }
                         else
                         {
@@ -152,13 +146,12 @@ namespace SuiteCRMAddIn.Dialogs
                     else if (searchResults.ContainsKey(crmId))
                     {
                         contactItem.SetManualOverride();
-                        //DaemonWorker.Instance.AddTask(
-                        //    new TransmitUpdateAction<ContactItem, ContactSyncState>(synchroniser, state));
                     }
                     else if (string.IsNullOrEmpty(crmId))
                     {
                         var p = contactItem.UserProperties[SyncStateManager.CrmIdPropertyName] ??
-                            contactItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, OlUserPropertyType.olText);
+                                contactItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName,
+                                    OlUserPropertyType.olText);
                         try
                         {
                             p.Value = resultsTree.Nodes[ContactsNodeKey].Nodes[0].Name;
@@ -168,11 +161,8 @@ namespace SuiteCRMAddIn.Dialogs
                         finally
                         {
                             contactItem.SetManualOverride();
-                            //DaemonWorker.Instance.AddTask(
-                            //    new TransmitUpdateAction<ContactItem, ContactSyncState>(synchroniser, state));
                         }
                     }
-                }
             }
 
             if (shouldClose) Close();
@@ -204,13 +194,9 @@ namespace SuiteCRMAddIn.Dialogs
             else
             {
                 if (e.Node.Checked)
-                {
                     createNode.Checked = false;
-                }
                 else
-                {
                     contactsNode.Checked = false;
-                }
             }
 
             saveButton.Enabled = resultsTree.GetAllNodes().Any(x => x.Checked);
@@ -218,13 +204,14 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void manualSyncContactsForm_Load(object sender, EventArgs e)
         {
-            if (Properties.Settings.Default.AutomaticSearch)
-            {
-                this.BeginInvoke((MethodInvoker)delegate
-                {
-                    ClearAndSearch(this.searchText.Text);
-                });
-            }
+            if (Settings.Default.AutomaticSearch)
+                BeginInvoke((MethodInvoker) delegate { ClearAndSearch(searchText.Text); });
+        }
+
+        private void seachText_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter && !string.IsNullOrWhiteSpace(searchText.Text))
+                ClearAndSearch(searchText.Text);
         }
     }
 }

@@ -90,6 +90,7 @@
             this.searchText.Size = new System.Drawing.Size(176, 20);
             this.searchText.TabIndex = 1;
             this.searchText.Leave += new System.EventHandler(this.searchButton_click);
+            this.searchText.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.seachText_PreviewKeyDown);
             // 
             // searchButton
             // 
