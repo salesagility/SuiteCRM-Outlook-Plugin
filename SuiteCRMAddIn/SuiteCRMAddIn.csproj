@@ -244,6 +244,7 @@
     <Compile Include="Dialogs\AdvancedArchiveSettingsDialog.Designer.cs">
       <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Exceptions\MissingOutlookItemException.cs" />
     <Compile Include="Exceptions\ProbableDuplicateItemException.cs" />
     <Compile Include="BusinessLogic\SyncStateManager.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />

@@ -117,5 +117,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             this.OutlookItem?.Save();
         }
+
+        protected override void CacheOulookItemId(Outlook.TaskItem olItem)
+        {
+            this.outlookItemId = olItem.EntryID;
+        }
     }
 }

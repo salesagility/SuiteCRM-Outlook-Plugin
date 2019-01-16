@@ -78,22 +78,26 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public abstract Outlook.OlDefaultFolders DefaultFolder { get; }
 
-        int getItemFails = 0, getItemSuccesses = 0;
-
         /// <summary>
         /// The outlook item for which I maintain the synchronisation state.
         /// </summary>
-        public ItemType OutlookItem {
+        public virtual ItemType OutlookItem {
             get
             {
                 return this.item;
             }
-            private set
+            protected set
             {
                 this.item = value;
+                this.CacheOulookItemId(value);
             }
         }
 
+        /// <summary>
+        /// Cache the entry id of my outlook item on me.
+        /// </summary>
+        /// <param name="value"></param>
+        protected abstract void CacheOulookItemId(ItemType value);
 
         /// <summary>
         /// A lock that should be obtained before operations which operate on the TxState or the

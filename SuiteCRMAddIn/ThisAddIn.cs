@@ -114,16 +114,15 @@ namespace SuiteCRMAddIn
         /// <returns>true if licence key was verified, or if licence server could not be reached.</returns>
         private bool VerifyLicenceKey()
         {
-            bool result = false;
             try
             {
-                result = new LicenceValidationHelper(this.Log, Properties.Settings.Default.PublicKey, Properties.Settings.Default.LicenceKey).Validate();
+                this.IsLicensed = new LicenceValidationHelper(this.Log, Properties.Settings.Default.PublicKey, Properties.Settings.Default.LicenceKey).Validate();
             }
             catch (System.Configuration.SettingsPropertyNotFoundException ex)
             {
                 this.log.Error(catalogue.GetString("Licence key was not yet set up"), ex);
             }
-            return result;
+            return this.IsLicensed;
         }
 
         public bool HasCrmUserSession
@@ -298,9 +297,10 @@ namespace SuiteCRMAddIn
                 case DialogResult.OK:
                     log.Info(catalogue.GetString("Starting normal operations."));
 
-                    DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction());
+                    DoOrLogError(() => DaemonWorker.Instance.AddTask(new FetchEmailCategoriesAction()),
+                        catalogue.GetString("Fetching email categories"));
+
                     StartConfiguredSynchronisationProcesses();
-                    this.IsLicensed = true;
                     break;
                 case DialogResult.Cancel:
 

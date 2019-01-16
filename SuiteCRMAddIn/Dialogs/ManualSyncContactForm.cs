@@ -43,6 +43,16 @@ namespace SuiteCRMAddIn.Dialogs
     {
         private Dictionary<string, EntryValue> searchResults = new Dictionary<string, EntryValue>();
 
+        /// <summary>
+        /// The key for the create node.
+        /// </summary>
+        private static readonly string CreateNodeKey = "Create";
+
+        /// <summary>
+        /// The key for the contacts node.
+        /// </summary>
+        private static readonly string ContactsNodeKey = "Contacts";
+
         public ManualSyncContactForm(string searchString)
         {
             InitializeComponent();
@@ -56,17 +66,19 @@ namespace SuiteCRMAddIn.Dialogs
                 searchResults = new Dictionary<string, EntryValue>();
 
                 resultsTree.Nodes.Clear();
-                resultsTree.Nodes.Add("Create", "Create a new Contact");
+                resultsTree.Nodes.Add(CreateNodeKey, "Create a new Contact");
 
                 if (!string.IsNullOrWhiteSpace(target))
                 {
-                    var contactsNode = resultsTree.Nodes.Add("Contacts", "Contacts");
+                    var contactsNode = resultsTree.Nodes.Add(ContactsNodeKey, "Contacts");
 
                     SearchAddChildren(target, contactsNode);
 
                     if (contactsNode.Nodes.Count == 0)
                     {
                         resultsTree.Nodes.Remove(contactsNode);
+                        resultsTree.Nodes[CreateNodeKey].Checked = true;
+                        saveButton.Enabled = true;
                     }
                 }
             }
@@ -108,6 +120,7 @@ namespace SuiteCRMAddIn.Dialogs
                     (ContactSyncState) SyncStateManager.Instance.GetOrCreateSyncState(contactItem);
                 var proceed = true;
                 var crmId = contactItem.GetCrmId().ToString();
+                var synchroniser = Globals.ThisAddIn.ContactsSynchroniser;
 
                 if (contactItem.Sensitivity == Microsoft.Office.Interop.Outlook.OlSensitivity.olPrivate)
                 {
@@ -116,6 +129,7 @@ namespace SuiteCRMAddIn.Dialogs
                         DialogResult.Cancel)
                     {
                         proceed = false;
+                        shouldClose = false;
                     }
                 }
                 if (proceed)
@@ -125,6 +139,8 @@ namespace SuiteCRMAddIn.Dialogs
                         if (!state.ExistedInCrm)
                         {
                             contactItem.SetManualOverride();
+                            //DaemonWorker.Instance.AddTask(
+                            //    new TransmitNewAction<ContactItem, ContactSyncState>(synchroniser, state));
                         }
                         else
                         {
@@ -136,19 +152,24 @@ namespace SuiteCRMAddIn.Dialogs
                     else if (searchResults.ContainsKey(crmId))
                     {
                         contactItem.SetManualOverride();
+                        //DaemonWorker.Instance.AddTask(
+                        //    new TransmitUpdateAction<ContactItem, ContactSyncState>(synchroniser, state));
                     }
                     else if (string.IsNullOrEmpty(crmId))
                     {
-                        var p = contactItem.UserProperties[SyncStateManager.CrmIdPropertyName] ?? 
+                        var p = contactItem.UserProperties[SyncStateManager.CrmIdPropertyName] ??
                             contactItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName, OlUserPropertyType.olText);
                         try
                         {
-                            p.Value = resultsTree.Nodes["Contacts"].Nodes[0].Name;
+                            p.Value = resultsTree.Nodes[ContactsNodeKey].Nodes[0].Name;
+                            state.CrmEntryId = p.Value;
                             contactItem.Save();
                         }
                         finally
                         {
                             contactItem.SetManualOverride();
+                            //DaemonWorker.Instance.AddTask(
+                            //    new TransmitUpdateAction<ContactItem, ContactSyncState>(synchroniser, state));
                         }
                     }
                 }
@@ -165,8 +186,8 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void resultsTree_ItemClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            var contactsNode = resultsTree.Nodes["Contacts"];
-            var createNode = resultsTree.Nodes["Create"];
+            var contactsNode = resultsTree.Nodes[ContactsNodeKey];
+            var createNode = resultsTree.Nodes[CreateNodeKey];
 
             if (e.Node == createNode)
             {

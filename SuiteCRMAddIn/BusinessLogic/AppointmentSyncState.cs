@@ -37,7 +37,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     {
         public AppointmentSyncState(Outlook.AppointmentItem item, CrmId crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
         {
-            this.outlookItemId = item.EntryID;
         }
 
         /// <summary>
@@ -124,6 +123,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override void SaveItem()
         {
             this.OutlookItem?.Save();
+        }
+
+        protected override void CacheOulookItemId(Outlook.AppointmentItem olItem)
+        {
+            this.outlookItemId = olItem.EntryID;
         }
     }
 }

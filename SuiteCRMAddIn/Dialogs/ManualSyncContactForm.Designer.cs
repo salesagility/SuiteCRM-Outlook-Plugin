@@ -89,6 +89,7 @@
             this.searchText.Name = "searchText";
             this.searchText.Size = new System.Drawing.Size(176, 20);
             this.searchText.TabIndex = 1;
+            this.searchText.Leave += new System.EventHandler(this.searchButton_click);
             // 
             // searchButton
             // 

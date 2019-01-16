@@ -20,6 +20,10 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using System.Threading;
+using SuiteCRMAddIn.Exceptions;
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using System;
@@ -36,6 +40,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
+        private ILogger Log = Globals.ThisAddIn.Log;
         public ContactSyncState(Outlook.ContactItem oItem, CrmId crmId, DateTime modified) : base(oItem, crmId, modified)
         {
         }
@@ -45,6 +50,49 @@ namespace SuiteCRMAddIn.BusinessLogic
             get
             {
                 return Outlook.OlDefaultFolders.olFolderContacts;
+            }
+        }
+
+        public override Outlook.ContactItem OutlookItem
+        {
+            get
+            {
+                var result = base.OutlookItem;
+
+                try
+                {
+                    var check = result.EntryID;
+                }
+                catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+                {
+                    /* this is thrown if the reference for the item is not good in this thread */
+                    object r = null;
+
+                    for (var i = 0; r == null && i < 10; i++)
+                    {
+                        try
+                        {
+                            r = Globals.ThisAddIn.Application.Session.GetItemFromID(this.outlookItemId);
+                        }
+                        catch (Exception any)
+                        {
+                            Log.Error($"Failed to open item with id {this.outlookItemId} at attempt {i}", any);
+                            Thread.Sleep(10000);
+                        }
+                    }
+
+                    if (r is Outlook.ContactItem)
+                    {
+                        result = r as Outlook.ContactItem;
+                        base.OutlookItem = result;
+                    }
+                    else
+                    {
+                        throw new MissingOutlookItemException(this.outlookItemId);
+                    }
+                }
+
+                return result;
             }
         }
 
@@ -131,6 +179,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override void SaveItem()
         {
             this.OutlookItem?.Save();
+        }
+
+        protected override void CacheOulookItemId(Outlook.ContactItem olItem)
+        {
+            this.outlookItemId = olItem.EntryID;
         }
     }
 }
