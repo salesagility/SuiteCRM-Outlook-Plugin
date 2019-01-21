@@ -103,7 +103,7 @@ namespace SuiteCRMAddIn.Extensions
         }
 
         /// <summary>
-        /// Set this item as manually syncable, briefly.
+        /// Set this item as manually syncable, briefly. As a side effect of making the change triggers sync.
         /// </summary>
         /// <remarks>In order to allow manual sync, we need to be able to override the disablement of syncing -
         /// but only briefly.</remarks>

@@ -43,7 +43,7 @@ namespace SuiteCRMAddIn.Helpers
         public static IEnumerable<EntryValue> SearchContacts(string token)
         {
             return Search(ContactSynchroniser.CrmModule, token,
-                new[] {"first_name", "last_name", "email1"});
+                new[] {"first_name", "last_name", "email1" , "outlook_id" });
         }
 
         public static IEnumerable<EntryValue> Search(string module, string token, IEnumerable<string> fields,
@@ -56,15 +56,19 @@ namespace SuiteCRMAddIn.Helpers
             {
                 if (field.Equals("email1"))
                 {
+                    if (field != fieldsArray.First())
+                        bob.Append($"{logicalOperator} ");
                     bob.Append(
-                        $"({module.ToLower()}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id  where eabr.bean_module = '{module}' and ea.email_address LIKE '%{token}%'))");
+                        $"({module.ToLower()}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id  where eabr.bean_module = '{module}' and ea.email_address LIKE '%{token}%')) ");
                 }
-                else
+                else if (! field.Equals("outlook_id"))
                 {
+                    // don't search the outlook_id field; the user never knows what it contains,
+                    // so there's no point and it wastes time.
+                    if (field != fieldsArray.First())
+                        bob.Append($"{logicalOperator} ");
                     bob.Append($"{module.ToLower()}.{field} LIKE '%{token}%' ");
                 }
-                if (field != fieldsArray.Last())
-                    bob.Append($"{logicalOperator} ");
             }
             bob.Append(")");
 

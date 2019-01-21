@@ -96,12 +96,18 @@ namespace SuiteCRMAddIn.Dialogs
                 x => $"{x.GetValueAsString("last_name")} {x.GetValueAsString("first_name")}"))
             {
                 TreeNode node = contactsNode.Nodes.Add(result.id, CanonicalString(result));
-                if (result.id.Equals(Globals.ThisAddIn.SelectedContacts.First()
-                    .UserProperties[SyncStateManager.CrmIdPropertyName]?.Value))
+                var contactItem = Globals.ThisAddIn.SelectedContacts.First();
+
+                if (result.id.Equals(contactItem.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value) ||
+                    result.GetValueAsString("outlook_id").Equals(contactItem.EntryID))
                 {
                     node.BackColor = ColorTranslator.FromHtml("#a9ea56");
                 }
                 else if (!string.IsNullOrWhiteSpace(result.GetValueAsString("outlook_id")))
+                {
+                    node.BackColor = ColorTranslator.FromHtml("#ea6556");
+                }
+                else if (SyncStateManager.Instance.GetExistingSyncState(result) != null)
                 {
                     node.BackColor = ColorTranslator.FromHtml("#ea6556");
                 }
@@ -131,7 +137,6 @@ namespace SuiteCRMAddIn.Dialogs
                     (ContactSyncState) SyncStateManager.Instance.GetOrCreateSyncState(contactItem);
                 var proceed = true;
                 var crmId = contactItem.GetCrmId().ToString();
-                var synchroniser = Globals.ThisAddIn.ContactsSynchroniser;
 
                 if (contactItem.Sensitivity == OlSensitivity.olPrivate)
                     if (MessageBox.Show($"Contact {contactItem.FullName} is marked 'private'. Are you sure?",
@@ -142,6 +147,7 @@ namespace SuiteCRMAddIn.Dialogs
                         shouldClose = false;
                     }
                 if (proceed)
+                {
                     if (resultsTree.Nodes["create"].Checked)
                     {
                         if (!state.ExistedInCrm)
@@ -175,6 +181,7 @@ namespace SuiteCRMAddIn.Dialogs
                             contactItem.SetManualOverride();
                         }
                     }
+                }
             }
 
             if (shouldClose) Close();
