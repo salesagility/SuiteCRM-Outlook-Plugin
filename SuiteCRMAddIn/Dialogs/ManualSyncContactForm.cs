@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using Microsoft.Office.Interop.Outlook;
@@ -93,9 +94,20 @@ namespace SuiteCRMAddIn.Dialogs
 
             foreach (var result in searchResults.Values.OrderBy(
                 x => $"{x.GetValueAsString("last_name")} {x.GetValueAsString("first_name")}"))
-                contactsNode.Nodes.Add(result.id, CanonicalString(result));
+            {
+                TreeNode node = contactsNode.Nodes.Add(result.id, CanonicalString(result));
+                if (result.id.Equals(Globals.ThisAddIn.SelectedContacts.First()
+                    .UserProperties[SyncStateManager.CrmIdPropertyName]?.Value))
+                {
+                    node.BackColor = ColorTranslator.FromHtml("#a9ea56");
+                }
+                else if (!string.IsNullOrWhiteSpace(result.GetValueAsString("outlook_id")))
+                {
+                    node.BackColor = ColorTranslator.FromHtml("#ea6556");
+                }
 
-            contactsNode.Expand();
+                contactsNode.Expand();
+            }
         }
 
         private static string CanonicalString(EntryValue result)
@@ -196,7 +208,11 @@ namespace SuiteCRMAddIn.Dialogs
                 if (e.Node.Checked)
                     createNode.Checked = false;
                 else
+                {
                     contactsNode.Checked = false;
+                    foreach (var node in contactsNode.GetAllNodes())
+                        if (node != e.Node) node.Checked = false;
+                }
             }
 
             saveButton.Enabled = resultsTree.GetAllNodes().Any(x => x.Checked);
