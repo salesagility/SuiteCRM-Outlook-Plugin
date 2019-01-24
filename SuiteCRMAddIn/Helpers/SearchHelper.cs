@@ -43,7 +43,7 @@ namespace SuiteCRMAddIn.Helpers
         public static IEnumerable<EntryValue> SearchContacts(string token)
         {
             return Search(ContactSynchroniser.CrmModule, token,
-                new[] {"first_name", "last_name", "email1" , "outlook_id" });
+                new[] {"first_name", "last_name", "email1" , "sync_contact", "outlook_id" });
         }
 
         public static IEnumerable<EntryValue> Search(string module, string token, IEnumerable<string> fields,
@@ -54,20 +54,21 @@ namespace SuiteCRMAddIn.Helpers
 
             foreach (var field in fieldsArray)
             {
-                if (field.Equals("email1"))
+                switch (field)
                 {
-                    if (field != fieldsArray.First())
-                        bob.Append($"{logicalOperator} ");
-                    bob.Append(
-                        $"({module.ToLower()}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id  where eabr.bean_module = '{module}' and ea.email_address LIKE '%{token}%')) ");
-                }
-                else if (! field.Equals("outlook_id"))
-                {
-                    // don't search the outlook_id field; the user never knows what it contains,
-                    // so there's no point and it wastes time.
-                    if (field != fieldsArray.First())
-                        bob.Append($"{logicalOperator} ");
-                    bob.Append($"{module.ToLower()}.{field} LIKE '%{token}%' ");
+                    case "first_name":
+                    case "last_name":
+                    case "name":
+                        if (field != fieldsArray.First())
+                            bob.Append($"{logicalOperator} ");
+                        bob.Append($"{module.ToLower()}.{field} LIKE '%{token}%' ");
+                        break;
+                    case "email1":
+                        if (field != fieldsArray.First())
+                            bob.Append($"{logicalOperator} ");
+                        bob.Append(
+                            $"({module.ToLower()}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id  where eabr.bean_module = '{module}' and ea.email_address LIKE '%{token}%')) ");
+                        break;
                 }
             }
             bob.Append(")");

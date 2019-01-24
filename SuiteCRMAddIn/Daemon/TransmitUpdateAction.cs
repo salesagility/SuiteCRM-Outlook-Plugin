@@ -59,6 +59,7 @@ namespace SuiteCRMAddIn.Daemon
             state.SetQueued();
             this.synchroniser = synchroniser;
             this.state = state;
+            this.NotifyOnFailure = state.IsManualOverride;
 
             MeetingSyncState meeting = state as MeetingSyncState;
 

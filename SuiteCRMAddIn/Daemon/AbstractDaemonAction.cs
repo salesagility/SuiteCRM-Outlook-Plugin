@@ -20,6 +20,9 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using System.Windows.Forms;
+
 namespace SuiteCRMAddIn.Daemon
 {
     /// <summary>
@@ -28,6 +31,11 @@ namespace SuiteCRMAddIn.Daemon
     /// </summary>
     public abstract class AbstractDaemonAction : DaemonAction
     {
+        /// <summary>
+        /// If true, in the event of total failure, notify the user.
+        /// </summary>
+        public bool NotifyOnFailure { get; protected set; } = false;
+
         protected AbstractDaemonAction(int maxAttempts)
         {
             this.MaxAttempts = maxAttempts;

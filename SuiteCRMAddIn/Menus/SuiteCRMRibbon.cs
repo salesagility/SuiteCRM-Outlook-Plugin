@@ -96,6 +96,7 @@ namespace SuiteCRMAddIn
                     result = RibbonImageHelper.Convert(Resources.AddressBook);
                     break;
                 case "manualSyncButton":
+                case "manualSyncMultiButton":
                 case "manualSyncToolbar":
                     result = RibbonImageHelper.Convert(Resources.manualSyncContact);
                     break;
@@ -151,14 +152,13 @@ namespace SuiteCRMAddIn
 
         public bool btnArchive_Enabled(IRibbonControl control)
         {
-            return Globals.ThisAddIn.HasCrmUserSession &&
-                   Globals.ThisAddIn.SelectedEmails.Any(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null);
+            return Globals.ThisAddIn.HasCrmUserSession;
         }
 
         public bool manualSyncButton_Enabled(IRibbonControl control)
         {
             return Globals.ThisAddIn.HasCrmUserSession &&
-                   Globals.ThisAddIn.SelectedContacts.Any() &&
+                   Globals.ThisAddIn.SelectedContacts.Count() == 1 &&
                    Properties.Settings.Default.SyncContacts == SyncDirection.Direction.Neither;
         }
 

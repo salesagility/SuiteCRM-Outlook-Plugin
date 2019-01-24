@@ -53,10 +53,25 @@ namespace SuiteCRMAddIn.Dialogs
 
         private Dictionary<string, EntryValue> searchResults = new Dictionary<string, EntryValue>();
 
+        private bool dontClose = false;
+
+        /// <summary>
+        /// The contact we're going to operate on.
+        /// </summary>
+        ContactItem contactItem = Globals.ThisAddIn.SelectedContacts.First();
+
         public ManualSyncContactForm(string searchString)
         {
-            InitializeComponent();
-            searchText.Text = searchString;
+            if (contactItem != null)
+            {
+                InitializeComponent();
+                this.Text = $"Manually sync {contactItem.FullName}";
+                searchText.Text = searchString;
+            }
+            else
+            {
+                throw new System.Exception("No contact selected in ManualSyncContactForm");
+            }
         }
 
         private void ClearAndSearch(string target)
@@ -98,12 +113,11 @@ namespace SuiteCRMAddIn.Dialogs
                 TreeNode node = contactsNode.Nodes.Add(result.id, CanonicalString(result));
                 var contactItem = Globals.ThisAddIn.SelectedContacts.First();
 
-                if (result.id.Equals(contactItem.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value) ||
-                    result.GetValueAsString("outlook_id").Equals(contactItem.EntryID))
+                if (IsProbablySameItem(result, contactItem))
                 {
                     node.BackColor = ColorTranslator.FromHtml("#a9ea56");
                 }
-                else if (!string.IsNullOrWhiteSpace(result.GetValueAsString("outlook_id")))
+                else if (IsPreviouslySyncedItem(result))
                 {
                     node.BackColor = ColorTranslator.FromHtml("#ea6556");
                 }
@@ -114,6 +128,27 @@ namespace SuiteCRMAddIn.Dialogs
 
                 contactsNode.Expand();
             }
+        }
+
+        private bool IsPreviouslySyncedItem(string crmId)
+        {
+            return !string.IsNullOrEmpty(crmId) &&
+                   searchResults.ContainsKey(crmId) &&
+                   IsPreviouslySyncedItem(searchResults[crmId]);
+        }
+
+        private bool IsPreviouslySyncedItem(EntryValue result)
+        {
+            return !string.IsNullOrEmpty(result.GetValueAsString("outlook_id")) ||
+                   !string.IsNullOrEmpty(result.GetValueAsString("sync_contact")) ||
+                   SyncStateManager.Instance.GetExistingSyncState(result) != null;
+        }
+
+        private bool IsProbablySameItem(EntryValue result, ContactItem contactItem)
+        {
+            return result != null &&
+                (result.id.Equals(contactItem.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value) ||
+                   result.GetValueAsString("outlook_id")?.Equals(contactItem.EntryID));
         }
 
         private static string CanonicalString(EntryValue result)
@@ -129,64 +164,83 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void saveButton_click(object sender, EventArgs e)
         {
-            var shouldClose = true;
+            var state =
+                (ContactSyncState)SyncStateManager.Instance.GetOrCreateSyncState(contactItem);
+            var proceed = true;
+            var crmId = contactItem.GetCrmId().ToString();
+            string selectedId = resultsTree.GetAllNodes().FirstOrDefault(x => x.Checked)?.Name;
+            EntryValue selectedItem = searchResults.ContainsKey(selectedId) ? searchResults[selectedId] : null;
 
-            foreach (var contactItem in Globals.ThisAddIn.SelectedContacts)
+            if (contactItem.Sensitivity == OlSensitivity.olPrivate &&
+                MessageBox.Show($"Contact {contactItem.FullName} is marked 'private'. Are you sure?",
+                        "Private: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
+                    DialogResult.Cancel)
             {
-                var state =
-                    (ContactSyncState) SyncStateManager.Instance.GetOrCreateSyncState(contactItem);
-                var proceed = true;
-                var crmId = contactItem.GetCrmId().ToString();
-
-                if (contactItem.Sensitivity == OlSensitivity.olPrivate)
-                    if (MessageBox.Show($"Contact {contactItem.FullName} is marked 'private'. Are you sure?",
-                            "Private: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
-                        DialogResult.Cancel)
-                    {
-                        proceed = false;
-                        shouldClose = false;
-                    }
-                if (proceed)
+                proceed = false;
+            }
+            else if
+            (resultsTree.Nodes["create"].Checked && IsPreviouslySyncedItem(crmId) &&
+             MessageBox.Show($"A record for contact {contactItem.FullName} already exists in CRM. Are you sure you want to create a new record?", "Contact Exists: Are you sure?",
+                 MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.Cancel)
+            {
+                proceed = false;
+            }
+            else if (IsPreviouslySyncedItem(crmId))
+            {
+                if (!IsProbablySameItem(selectedItem, contactItem) &&
+                    MessageBox.Show(
+                        $"The record for {selectedItem.GetValueAsString("first_name")} {selectedItem.GetValueAsString("last_name")} will be overwritten with the details of {contactItem.FullName}. Are you sure?",
+                        "Already synced: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
+                    DialogResult.Cancel)
                 {
-                    if (resultsTree.Nodes["create"].Checked)
+                    proceed = false;
+                }
+                else if (selectedItem != null &&
+                    MessageBox.Show(
+                             $"Contact {selectedItem.GetValueAsString("first_name")} {selectedItem.GetValueAsString("last_name")} has previously been synced and will be overwritten. Are you sure?",
+                             "Already synced: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
+                         DialogResult.Cancel)
+                {
+                    proceed = false;
+                }
+
+            }
+            else if (!resultsTree.Nodes["create"].Checked &&
+                     IsPreviouslySyncedItem(crmId) && 
+                MessageBox.Show(
+                         $"Contact {contactItem.FullName} has previously been synced. Are you sure you want to create another copy?",
+                         "Already synced: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
+                     DialogResult.Cancel)
+            {
+                proceed = false;
+            }
+
+            if (proceed)
+            {
+                if (resultsTree.Nodes["create"].Checked)
+                {
+                    contactItem.SetManualOverride();
+                }
+                else
+                {
+                    var p = contactItem.UserProperties[SyncStateManager.CrmIdPropertyName] ??
+                            contactItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName,
+                                OlUserPropertyType.olText);
+                    try
                     {
-                        if (!state.ExistedInCrm)
-                        {
-                            contactItem.SetManualOverride();
-                        }
-                        else
-                        {
-                            MessageBox.Show($"Contact {contactItem.FullName} already exists in CRM", "Contact Exists",
-                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            shouldClose = false;
-                        }
+                        p.Value = resultsTree.GetAllNodes().FirstOrDefault(x => x.Checked).Name;
+                        state.CrmEntryId = new CrmId(p.Value);
+                        contactItem.Save();
                     }
-                    else if (searchResults.ContainsKey(crmId))
+                    finally
                     {
                         contactItem.SetManualOverride();
-                    }
-                    else if (string.IsNullOrEmpty(crmId))
-                    {
-                        var p = contactItem.UserProperties[SyncStateManager.CrmIdPropertyName] ??
-                                contactItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName,
-                                    OlUserPropertyType.olText);
-                        try
-                        {
-                            p.Value = resultsTree.Nodes[ContactsNodeKey].Nodes[0].Name;
-                            state.CrmEntryId = p.Value;
-                            contactItem.Save();
-                        }
-                        finally
-                        {
-                            contactItem.SetManualOverride();
-                        }
                     }
                 }
             }
 
-            if (shouldClose) Close();
+            dontClose = !proceed;
         }
-
 
         private void cancelButton_click(object sender, EventArgs e)
         {
@@ -198,28 +252,15 @@ namespace SuiteCRMAddIn.Dialogs
             var contactsNode = resultsTree.Nodes[ContactsNodeKey];
             var createNode = resultsTree.Nodes[CreateNodeKey];
 
-            if (e.Node == createNode)
+            if (e.Node == contactsNode)
             {
-                if (e.Node.Checked && contactsNode != null)
-                    foreach (var node in contactsNode.GetAllNodes())
-                        node.Checked = false;
-            }
-            else if (e.Node == contactsNode)
-            {
-                if (e.Node.Checked)
-                    foreach (var node in contactsNode.GetAllNodes())
-                        node.Checked = true;
+                e.Node.Checked = false;
+                // You can't check the 'Contacts' node.
             }
             else
             {
-                if (e.Node.Checked)
-                    createNode.Checked = false;
-                else
-                {
-                    contactsNode.Checked = false;
-                    foreach (var node in contactsNode.GetAllNodes())
-                        if (node != e.Node) node.Checked = false;
-                }
+                foreach (var node in resultsTree.GetAllNodes().Where( n => n != e.Node))
+                    node.Checked = false;
             }
 
             saveButton.Enabled = resultsTree.GetAllNodes().Any(x => x.Checked);
@@ -235,6 +276,12 @@ namespace SuiteCRMAddIn.Dialogs
         {
             if (e.KeyCode == Keys.Enter && !string.IsNullOrWhiteSpace(searchText.Text))
                 ClearAndSearch(searchText.Text);
+        }
+
+        private void FormClosingEvent(object sender, FormClosingEventArgs e)
+        {
+            e.Cancel = dontClose;
+            dontClose = false;
         }
     }
 }

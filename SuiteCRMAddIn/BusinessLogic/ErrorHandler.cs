@@ -20,6 +20,9 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using SuiteCRMAddIn.Daemon;
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using SuiteCRMClient.Logging;
@@ -56,10 +59,44 @@ namespace SuiteCRMAddIn.BusinessLogic
             Handle(message, null);
         }
 
-        public static void Handle(string contextMessage, Exception error)
+        /// <summary>
+        /// Handle this error in the context described in this contextMessage.
+        /// </summary>
+        /// <param name="contextMessage">A message describing what was being attempted when the error occurred.</param>
+        /// <param name="error">The error.</param>
+        /// <param name="notify">If true, notify the user anyway, overriding the ShowExceptions setting.</param>
+        public static void Handle(string contextMessage, Exception error, bool notify = false)
         {
             Globals.ThisAddIn.Log.Error(contextMessage, error);
-            var errorClassName = error?.GetType().Name ?? string.Empty;
+
+            if (notify)
+            {
+                MessageBox.Show(composeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                switch (Properties.Settings.Default.ShowExceptions)
+                {
+                    case PopupWhen.Never:
+                        break;
+                    case PopupWhen.FirstTime:
+                        var errorClassName = error?.GetType().Name ?? string.Empty;
+
+                        if (!SeenExceptions.Contains(errorClassName))
+                        {
+                            SeenExceptions.Add(errorClassName);
+                            MessageBox.Show(composeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        break;
+                    default:
+                        MessageBox.Show(composeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        break;
+                }
+            }
+        }
+
+        private static string composeErrorDescription(string contextMessage, Exception error)
+        {
             StringBuilder bob = new StringBuilder(contextMessage);
 
             for (Exception e = error; e != null; e = e.InnerException)
@@ -71,22 +108,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 bob.Append(e.GetType().Name).Append(e.Message);
             }
             string text = bob.ToString();
-
-            switch (Properties.Settings.Default.ShowExceptions)
-            {
-                case PopupWhen.Never:
-                    break;
-                case PopupWhen.FirstTime:
-                    if (!SeenExceptions.Contains(errorClassName))
-                    {
-                        SeenExceptions.Add(errorClassName);
-                        MessageBox.Show(text, "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                    break;
-                default:
-                    MessageBox.Show(text, "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    break;
-            }
+            return text;
         }
 
         public enum PopupWhen

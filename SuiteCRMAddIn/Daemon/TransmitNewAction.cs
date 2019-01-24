@@ -41,6 +41,11 @@ namespace SuiteCRMAddIn.Daemon
         private SyncState<OutlookItemType> syncState;
         private Synchroniser<OutlookItemType, SyncStateType> synchroniser;
 
+        /// <summary>
+        /// Create a new instance of the TransmitNewAction class, wrapping this state.
+        /// </summary>
+        /// <param name="synchroniser">The synchroniser I will call to perform this action.</param>
+        /// <param name="state">The sync state on which this action should be performed.</param>
         public TransmitNewAction(Synchroniser<OutlookItemType, SyncStateType> synchroniser, SyncStateType state) : base(1)
         {
             /* step the state transition engine forward to queued */
@@ -51,6 +56,7 @@ namespace SuiteCRMAddIn.Daemon
             }
             this.syncState = state;
             this.synchroniser = synchroniser;
+            this.NotifyOnFailure = state.IsManualOverride;
         }
 
         public override string Description

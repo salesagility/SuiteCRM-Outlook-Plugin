@@ -28,9 +28,14 @@ namespace SuiteCRMAddIn.Daemon
 	/// (intended to be limited) in case, for example due to network problems, the first attempt(s) fail. 
 	/// However, DaemonActions are not intended for things which are to be run repeatedly. For that, 
 	/// specialise [RepeatingProcess](class_suite_c_r_m_add_in_1_1_business_logic_1_1_repeating_process.html).
-    /// <remarks>
+    /// </remarks>
     public interface DaemonAction
     {
+        /// <summary>
+        /// If true, in the event of total failure, notify the user.
+        /// </summary>
+        bool NotifyOnFailure { get; }
+
         /// <summary>
         /// The number of times this item has been attempted.
         /// </summary>

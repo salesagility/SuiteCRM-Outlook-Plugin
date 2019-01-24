@@ -120,6 +120,7 @@
             this.MinimumSize = new System.Drawing.Size(300, 300);
             this.Name = "ManualSyncContactForm";
             this.Text = "Manually Sync a Contact";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormClosingEvent);
             this.Load += new System.EventHandler(this.manualSyncContactsForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
