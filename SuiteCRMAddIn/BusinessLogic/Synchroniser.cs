@@ -445,16 +445,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName,
-                    modifiedDate);
-                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
-
                 if (CrmId.IsValid(entryId))
                 {
                     EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
                     SyncStateManager.Instance.SetByCrmId(entryId,
                         SyncStateManager.Instance.GetOrCreateSyncState(olItem));
                 }
+
+                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName,
+                    modifiedDate);
+                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
             }
             catch (Exception any)
             {
