@@ -148,11 +148,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         ///     Get the single CrmId instance for this value.
         /// </summary>
         /// <param name="value">The value to seek.</param>
-        /// <returns>A CrmId instance</returns>
-        /// <exception cref="TypeInitializationException"> if `value` does not appear to be a valid CRM id.</exception>
+        /// <returns>A CrmId instance, or Empty if the offered value is invalid.</returns>
         public static CrmId Get(string value)
         {
-            return string.IsNullOrEmpty(value) ? Empty : Issued.ContainsKey(value) ? Issued[value] : new CrmId(value);
+            return IsValid(value) ? Empty : Issued.ContainsKey(value) ? Issued[value] : new CrmId(value);
         }
 
         /// <summary>

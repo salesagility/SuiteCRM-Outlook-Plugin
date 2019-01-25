@@ -668,11 +668,15 @@ namespace SuiteCRMAddIn.BusinessLogic
                 /* get the offset of the next page */
                 nextOffset = entriesPage.next_offset;
 
-                result.AddRange(entriesPage.entry_list);
+                if (entriesPage.entry_list != null)
+                {
+                    /* it should not be, but it has happened that entry_list has been null */
+                    result.AddRange(entriesPage.entry_list);
+                }
             }
             /* when there are no more entries, we'll get a zero-length entry list and nextOffset
              * will have the same value as thisOffset */
-            while (thisOffset != nextOffset);
+                    while (thisOffset != nextOffset);
 
             return result;
         }
@@ -1024,7 +1028,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else
                 {
-                    if (SyncDirection.AllowOutbound(Direction))
+                    if (IsManualOverride(olItem))
+                    {
+                        result = true;
+                    }
+                    else if (SyncDirection.AllowOutbound(Direction))
                     {
                         if (permissionsCache.HasImportAccess(DefaultCrmModule))
                         {
@@ -1045,10 +1053,6 @@ namespace SuiteCRMAddIn.BusinessLogic
                                 $"{prefix}: {DefaultCrmModule} not added to CRM because import access is not granted.");
                             result = false;
                         }
-                    }
-                    else if (IsManualOverride(olItem))
-                    {
-                        result = true;
                     }
                     else
                     {

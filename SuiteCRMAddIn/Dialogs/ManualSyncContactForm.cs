@@ -34,6 +34,7 @@ using SuiteCRMAddIn.Extensions;
 using SuiteCRMAddIn.Helpers;
 using SuiteCRMAddIn.Properties;
 using SuiteCRMClient.RESTObjects;
+using System.Text;
 
 #endregion
 
@@ -164,73 +165,53 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void saveButton_click(object sender, EventArgs e)
         {
-            var state =
-                (ContactSyncState)SyncStateManager.Instance.GetOrCreateSyncState(contactItem);
-            var proceed = true;
             var crmId = contactItem.GetCrmId().ToString();
             string selectedId = resultsTree.GetAllNodes().FirstOrDefault(x => x.Checked)?.Name;
             EntryValue selectedItem = searchResults.ContainsKey(selectedId) ? searchResults[selectedId] : null;
+            List<string> problems = new List<string>();
 
-            if (contactItem.Sensitivity == OlSensitivity.olPrivate &&
-                MessageBox.Show($"Contact {contactItem.FullName} is marked 'private'. Are you sure?",
-                        "Private: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
-                    DialogResult.Cancel)
+            if (contactItem.Sensitivity == OlSensitivity.olPrivate)
             {
-                proceed = false;
-            }
-            else if
-            (resultsTree.Nodes["create"].Checked && IsPreviouslySyncedItem(crmId) &&
-             MessageBox.Show($"A record for contact {contactItem.FullName} already exists in CRM. Are you sure you want to create a new record?", "Contact Exists: Are you sure?",
-                 MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.Cancel)
-            {
-                proceed = false;
-            }
-            else if (IsPreviouslySyncedItem(crmId))
-            {
-                if (!IsProbablySameItem(selectedItem, contactItem) &&
-                    MessageBox.Show(
-                        $"The record for {selectedItem.GetValueAsString("first_name")} {selectedItem.GetValueAsString("last_name")} will be overwritten with the details of {contactItem.FullName}. Are you sure?",
-                        "Already synced: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
-                    DialogResult.Cancel)
-                {
-                    proceed = false;
-                }
-                else if (selectedItem != null &&
-                    MessageBox.Show(
-                             $"Contact {selectedItem.GetValueAsString("first_name")} {selectedItem.GetValueAsString("last_name")} has previously been synced and will be overwritten. Are you sure?",
-                             "Already synced: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
-                         DialogResult.Cancel)
-                {
-                    proceed = false;
-                }
-
-            }
-            else if (!resultsTree.Nodes["create"].Checked &&
-                     IsPreviouslySyncedItem(crmId) && 
-                MessageBox.Show(
-                         $"Contact {contactItem.FullName} has previously been synced. Are you sure you want to create another copy?",
-                         "Already synced: are you sure?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) ==
-                     DialogResult.Cancel)
-            {
-                proceed = false;
+                problems.Add($"Contact {contactItem.FullName} is marked 'private'. Are you sure?");
             }
 
-            if (proceed)
+            if (resultsTree.Nodes["create"].Checked && IsPreviouslySyncedItem(crmId))
+            {
+                problems.Add($"A record for contact {contactItem.FullName} already exists in CRM. Are you sure you want to create a new record?");
+            }
+            if (selectedItem != null && 
+                     !IsProbablySameItem(selectedItem, contactItem))
+            {
+                problems.Add($"The record for {selectedItem.GetValueAsString("first_name")} {selectedItem.GetValueAsString("last_name")} will be overwritten with the details of {contactItem.FullName}.");
+            }
+            if (IsPreviouslySyncedItem(crmId) && selectedItem != null)
+            {
+                problems.Add($"Contact {selectedItem.GetValueAsString("first_name")} {selectedItem.GetValueAsString("last_name")} has previously been synced and will be overwritten.");
+            }
+
+            if (!resultsTree.Nodes["create"].Checked &&
+                     IsPreviouslySyncedItem(crmId) )
+            {
+                problems.Add($"Contact {contactItem.FullName} has previously been synced. Are you sure you want to create another copy?");
+            }
+
+            if (problems.Count == 0 || MessageBox.Show(
+                    string.Join("\n", problems.Select(p => $"• {p}\n").ToArray()),
+                    "Problems found: are you sure?",
+                    MessageBoxButtons.OKCancel,
+                    MessageBoxIcon.Warning) ==
+                DialogResult.OK)
             {
                 if (resultsTree.Nodes["create"].Checked)
                 {
+                    contactItem.ClearCrmId();
                     contactItem.SetManualOverride();
                 }
                 else
                 {
-                    var p = contactItem.UserProperties[SyncStateManager.CrmIdPropertyName] ??
-                            contactItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName,
-                                OlUserPropertyType.olText);
                     try
                     {
-                        p.Value = resultsTree.GetAllNodes().FirstOrDefault(x => x.Checked).Name;
-                        state.CrmEntryId = new CrmId(p.Value);
-                        contactItem.Save();
+                        contactItem.ChangeCrmId(resultsTree.GetAllNodes().FirstOrDefault(x => x.Checked).Name);
                     }
                     finally
                     {
@@ -238,8 +219,10 @@ namespace SuiteCRMAddIn.Dialogs
                     }
                 }
             }
-
-            dontClose = !proceed;
+            else
+            {
+                dontClose = true;
+            }
         }
 
         private void cancelButton_click(object sender, EventArgs e)

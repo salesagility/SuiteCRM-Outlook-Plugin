@@ -43,6 +43,7 @@ namespace SuiteCRMAddIn.Extensions
         /// Name of the override property.
         /// </summary>
         private const string OverridePropertyName = "UserOverride";
+
         /// <summary>
         /// The duration of the override window in minutes.
         /// </summary>
@@ -124,6 +125,37 @@ namespace SuiteCRMAddIn.Extensions
         public static void ClearManualOverride(this Outlook.ContactItem olItem)
         {
             olItem.UserProperties[OverridePropertyName]?.Delete();
+        }
+
+        public static void ClearCrmId(this Outlook.ContactItem olItem)
+        {
+            var state = SyncStateManager.Instance.GetExistingSyncState(olItem);
+
+            olItem.ClearUserProperty(SyncStateManager.CrmIdPropertyName);
+
+            if (state != null)
+            {
+                state.CrmEntryId = null;
+            }
+
+            olItem.Save();
+        }
+
+        public static void ChangeCrmId(this Outlook.ContactItem olItem, string text)
+        {
+            var crmId = new CrmId(text);
+            var state = SyncStateManager.Instance.GetExistingSyncState(olItem);
+            var userProperty = olItem.UserProperties.Find(SyncStateManager.CrmIdPropertyName) ??
+                               olItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName,
+                                   Outlook.OlUserPropertyType.olText);
+            userProperty.Value = crmId.ToString();
+
+            if (state != null)
+            {
+                state.CrmEntryId = crmId;
+            }
+
+            olItem.Save();
         }
     }
 }
