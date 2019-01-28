@@ -76,7 +76,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         private ItemType item;
 
-        public abstract Outlook.OlDefaultFolders DefaultFolder { get; }
+        private static Outlook.NameSpace mapiNs = null;
+
+        protected static Outlook.NameSpace MapiNs
+        {
+            get
+            {
+                if (mapiNs == null)
+                {
+                    mapiNs = Globals.ThisAddIn.Application.GetNamespace("MAPI");
+                }
+
+                return mapiNs;
+            }
+        }
+
+        public abstract Outlook.Folder DefaultFolder { get; }
 
         /// <summary>
         /// The outlook item for which I maintain the synchronisation state.
@@ -84,7 +99,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         public virtual ItemType OutlookItem {
             get
             {
-                return this.item;
+                try
+                {
+                    return this.item;
+                }
+                catch (COMException)
+                {
+                    return MapiNs.GetItemFromID(this.outlookItemId, this.DefaultFolder.StoreID) as ItemType;
+                }
             }
             protected set
             {

@@ -46,13 +46,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string crmType;
 
 
-        public override Outlook.OlDefaultFolders DefaultFolder
-        {
-            get
-            {
-                return Outlook.OlDefaultFolders.olFolderCalendar;
-            }
-        }
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
 
 
         /// <summary>

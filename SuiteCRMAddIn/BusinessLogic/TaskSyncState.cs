@@ -74,13 +74,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public override Outlook.OlDefaultFolders DefaultFolder
-        {
-            get
-            {
-                return Outlook.OlDefaultFolders.olFolderTasks;
-            }
-        }
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
 
         public override void DeleteItem()
         {
