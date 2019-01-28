@@ -47,47 +47,19 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
 
-        public override Outlook.ContactItem OutlookItem
+        protected override bool VerifyItem()
         {
-            get
+            bool result;
+            try
             {
-                var result = base.OutlookItem;
-
-                try
-                {
-                    var check = result.EntryID;
-                }
-                catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
-                {
-                    /* this is thrown if the reference for the item is not good in this thread */
-                    object r = null;
-
-                    for (var i = 0; r == null && i < 10; i++)
-                    {
-                        try
-                        {
-                            r = Globals.ThisAddIn.Application.Session.GetItemFromID(this.outlookItemId);
-                        }
-                        catch (Exception any)
-                        {
-                            Log.Error($"Failed to open item with id {this.outlookItemId} at attempt {i}", any);
-                            Thread.Sleep(10000);
-                        }
-                    }
-
-                    if (r is Outlook.ContactItem)
-                    {
-                        result = r as Outlook.ContactItem;
-                        base.OutlookItem = result;
-                    }
-                    else
-                    {
-                        throw new MissingOutlookItemException(this.outlookItemId);
-                    }
-                }
-
-                return result;
+                result = !string.IsNullOrEmpty(this.Item?.EntryID);
             }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                result = false;
+            }
+
+            return result;
         }
 
         /// <summary>

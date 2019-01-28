@@ -15,11 +15,11 @@
     <contextMenu idMso="ContextMenuMailItem">
       <button id="btnArchive1" getImage="GetImage" label="SuiteCRM Archive" onAction="btnArchive_Action" getEnabled="btnArchive_Enabled" />
   </contextMenu>
-  -->
     <contextMenu idMso="ContextMenuMultipleItems">
       <button id="manualSyncMultiButton" getImage="GetImage" label="Manual Sync to CRM" enabled="false" />
     </contextMenu>
-
+ -->
+ 
   <contextMenu idMso="ContextMenuContactItem">
     <button id="manualSyncButton" getImage="GetImage" label="Manual Sync to CRM" onAction="manualSyncButton_Action" enabled="false" getEnabled="manualSyncButton_Enabled"/>
   </contextMenu>

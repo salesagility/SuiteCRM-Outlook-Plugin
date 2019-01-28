@@ -97,7 +97,16 @@ namespace SuiteCRMAddIn.Extensions
             if (olItem.UserProperties[OverridePropertyName] != null)
             {
                 DateTime value = olItem.UserProperties[OverridePropertyName].Value;
-                result = (DateTime.UtcNow - value).Minutes < OverrideWindowMinutes;
+
+                if ((DateTime.UtcNow - value).Minutes < OverrideWindowMinutes)
+                {
+                    result = true;
+                }
+                else
+                {
+                    /* no point holding on to a timed-out manual override property */
+                    olItem.ClearManualOverride();
+                }                
             }
 
             return result;

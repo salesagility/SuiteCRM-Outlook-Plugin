@@ -664,14 +664,15 @@ namespace SuiteCRMAddIn.BusinessLogic
                 thisOffset = nextOffset;
 
                 var entriesPage = GetEntriesPage(thisOffset);
+                var entryList = entriesPage.entry_list;
 
                 /* get the offset of the next page */
                 nextOffset = entriesPage.next_offset;
 
-                if (entriesPage.entry_list != null)
+                if (entryList != null && entryList.Length > 0)
                 {
                     /* it should not be, but it has happened that entry_list has been null */
-                    result.AddRange(entriesPage.entry_list);
+                    result.AddRange(entryList);
                 }
             }
             /* when there are no more entries, we'll get a zero-length entry list and nextOffset
