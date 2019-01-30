@@ -37,7 +37,6 @@ namespace SuiteCRMAddIn.BusinessLogic
     {
         public AppointmentSyncState(Outlook.AppointmentItem item, CrmId crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
         {
-            this.outlookItemId = item.EntryID;
         }
 
         /// <summary>
@@ -47,13 +46,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string crmType;
 
 
-        public override Outlook.OlDefaultFolders DefaultFolder
-        {
-            get
-            {
-                return Outlook.OlDefaultFolders.olFolderCalendar;
-            }
-        }
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
 
 
         /// <summary>
@@ -124,6 +117,26 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override void SaveItem()
         {
             this.OutlookItem?.Save();
+        }
+
+        protected override bool VerifyItem()
+        {
+            bool result;
+            try
+            {
+                result = !string.IsNullOrEmpty(this.Item?.EntryID);
+            }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                result = false;
+            }
+
+            return result;
+        }
+
+        protected override void CacheOulookItemId(Outlook.AppointmentItem olItem)
+        {
+            this.outlookItemId = olItem.EntryID;
         }
     }
 }

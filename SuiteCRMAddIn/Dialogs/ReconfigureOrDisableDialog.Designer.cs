@@ -56,6 +56,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.question = new System.Windows.Forms.TextBox();
             this.DisableButton = new System.Windows.Forms.Button();
             this.ReconfigureButton = new System.Windows.Forms.Button();
+            this.retryButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.icon)).BeginInit();
             this.SuspendLayout();
             // 
@@ -79,6 +80,9 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // question
             // 
+            this.question.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.question.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.question.Enabled = false;
             this.question.Location = new System.Drawing.Point(80, 36);
@@ -92,25 +96,36 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // DisableButton
             // 
+            this.DisableButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.DisableButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.DisableButton.Location = new System.Drawing.Point(455, 85);
+            this.DisableButton.Location = new System.Drawing.Point(455, 84);
             this.DisableButton.Name = "DisableButton";
             this.DisableButton.Size = new System.Drawing.Size(75, 23);
-            this.DisableButton.TabIndex = 2;
+            this.DisableButton.TabIndex = 3;
             this.DisableButton.Text = "Disable";
             this.DisableButton.UseVisualStyleBackColor = true;
-            this.DisableButton.Click += new System.EventHandler(this.DisableButton_Click);
             // 
             // ReconfigureButton
             // 
+            this.ReconfigureButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.ReconfigureButton.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.ReconfigureButton.Location = new System.Drawing.Point(374, 84);
             this.ReconfigureButton.Name = "ReconfigureButton";
             this.ReconfigureButton.Size = new System.Drawing.Size(75, 23);
-            this.ReconfigureButton.TabIndex = 1;
+            this.ReconfigureButton.TabIndex = 2;
             this.ReconfigureButton.Text = "Reconfigure";
             this.ReconfigureButton.UseVisualStyleBackColor = true;
-            this.ReconfigureButton.Click += new System.EventHandler(this.ReconfigureButton_Click);
+            // 
+            // retryButton
+            // 
+            this.retryButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.retryButton.DialogResult = System.Windows.Forms.DialogResult.Retry;
+            this.retryButton.Location = new System.Drawing.Point(293, 84);
+            this.retryButton.Name = "retryButton";
+            this.retryButton.Size = new System.Drawing.Size(75, 23);
+            this.retryButton.TabIndex = 1;
+            this.retryButton.Text = "Retry";
+            this.retryButton.UseVisualStyleBackColor = true;
             // 
             // ReconfigureOrDisableDialog
             // 
@@ -118,6 +133,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(542, 116);
+            this.Controls.Add(this.retryButton);
             this.Controls.Add(this.ReconfigureButton);
             this.Controls.Add(this.DisableButton);
             this.Controls.Add(this.question);
@@ -145,5 +161,6 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.TextBox question;
         private System.Windows.Forms.Button DisableButton;
         private System.Windows.Forms.Button ReconfigureButton;
+        private System.Windows.Forms.Button retryButton;
     }
 }

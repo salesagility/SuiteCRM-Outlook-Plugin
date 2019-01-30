@@ -33,6 +33,7 @@ namespace SuiteCRMAddIn.Daemon
     /// does not already have a valid CRM id.
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of item I transmit.</typeparam>
+    /// <typeparam name="SyncStateType">The type of sync state which is appropriate to my item type.</typeparam>
     public class TransmitNewAction<OutlookItemType, SyncStateType> : AbstractDaemonAction
         where OutlookItemType : class
         where SyncStateType : SyncState<OutlookItemType>
@@ -40,6 +41,11 @@ namespace SuiteCRMAddIn.Daemon
         private SyncState<OutlookItemType> syncState;
         private Synchroniser<OutlookItemType, SyncStateType> synchroniser;
 
+        /// <summary>
+        /// Create a new instance of the TransmitNewAction class, wrapping this state.
+        /// </summary>
+        /// <param name="synchroniser">The synchroniser I will call to perform this action.</param>
+        /// <param name="state">The sync state on which this action should be performed.</param>
         public TransmitNewAction(Synchroniser<OutlookItemType, SyncStateType> synchroniser, SyncStateType state) : base(1)
         {
             /* step the state transition engine forward to queued */
@@ -50,6 +56,7 @@ namespace SuiteCRMAddIn.Daemon
             }
             this.syncState = state;
             this.synchroniser = synchroniser;
+            this.NotifyOnFailure = state.IsManualOverride;
         }
 
         public override string Description

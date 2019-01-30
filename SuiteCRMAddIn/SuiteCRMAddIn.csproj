@@ -151,7 +151,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="NGettext, Version=0.6.1.0, Culture=neutral, PublicKeyToken=08d3d1c89dfd2985, processorArchitecture=MSIL">
-      <HintPath>..\packages\NGettext.0.6.3\lib\net45\NGettext.dll</HintPath>
+      <HintPath>..\packages\NGettext.0.6.3\lib\net46\NGettext.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -167,7 +167,7 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="TidyHTML5Managed, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\TidyHtml5ManagedRepack.1.1.4\lib\net45\TidyHTML5Managed.dll</HintPath>
+      <HintPath>..\packages\TidyHtml5ManagedRepack.1.1.4\lib\net46\TidyHTML5Managed.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -214,6 +214,18 @@
     <Compile Include="BusinessLogic\CallSyncState.cs" />
     <Compile Include="BusinessLogic\CrmId.cs" />
     <Compile Include="BusinessLogic\CrmIdValidationPolicy.cs" />
+    <Compile Include="Dialogs\ArchiveModuleSelectFieldsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ArchiveModuleSelectFieldsDialog.Designer.cs">
+      <DependentUpon>ArchiveModuleSelectFieldsDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\ManualSyncContactForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ManualSyncContactForm.Designer.cs">
+      <DependentUpon>ManualSyncContactForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Exceptions\InvalidCrmIdException.cs" />
     <Compile Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.cs">
       <SubType>Form</SubType>
@@ -232,6 +244,7 @@
     <Compile Include="Dialogs\AdvancedArchiveSettingsDialog.Designer.cs">
       <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Exceptions\MissingOutlookItemException.cs" />
     <Compile Include="Exceptions\ProbableDuplicateItemException.cs" />
     <Compile Include="BusinessLogic\SyncStateManager.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
@@ -281,6 +294,9 @@
     <Compile Include="Extensions\Documentation.cs" />
     <Compile Include="Extensions\MailItemExtensions.cs" />
     <Compile Include="Extensions\RecipientExtensions.cs" />
+    <Compile Include="Extensions\TreeNodeExtensions.cs" />
+    <Compile Include="Extensions\TreeViewExtensions.cs" />
+    <Compile Include="Helpers\SearchHelper.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -363,11 +379,17 @@
     <EmbeddedResource Include="Dialogs\AdvancedArchiveSettingsDialog.resx">
       <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ArchiveModuleSelectFieldsDialog.resx">
+      <DependentUpon>ArchiveModuleSelectFieldsDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ClearCrmIdsDialog.resx">
       <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.resx">
       <DependentUpon>ConfirmRearchiveAlreadyArchivedEmails.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ManualSyncContactForm.resx">
+      <DependentUpon>ManualSyncContactForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ShuttingDownDialog.resx">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
@@ -437,7 +459,12 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Images\manualSyncContact.svg.png" />
     <Content Include="Images\SuiteCRM.png" />
+    <EmbeddedResource Include="Menus\ContactInspect.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <None Include="Resources\ManualSyncContact.bmp" />
     <None Include="Images\AddressBook.png" />
     <None Include="Images\Archive.png" />
     <Content Include="Images\Cancel.png" />
@@ -493,8 +520,8 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-    <Error Condition="!Exists('..\packages\TidyHtml5ManagedRepack.1.1.4\build\TidyHtml5ManagedRepack.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\TidyHtml5ManagedRepack.1.1.4\build\TidyHtml5ManagedRepack.targets'))" />
     <Error Condition="!Exists('..\packages\NUnit3TestAdapter.3.11.2\build\net35\NUnit3TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit3TestAdapter.3.11.2\build\net35\NUnit3TestAdapter.props'))" />
+    <Error Condition="!Exists('..\packages\TidyHtml5ManagedRepack.1.1.4\build\TidyHtml5ManagedRepack.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\TidyHtml5ManagedRepack.1.1.4\build\TidyHtml5ManagedRepack.targets'))" />
   </Target>
   <UsingTask TaskName="BumpVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>

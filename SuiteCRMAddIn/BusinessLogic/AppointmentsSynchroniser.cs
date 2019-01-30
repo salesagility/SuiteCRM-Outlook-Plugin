@@ -900,6 +900,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 AddOrUpdateItemsFromCrmToOutlook(records, folder, untouched, crmModule);
 
+                /* You can add invitees to Appointments in Outlook, so this is not just for
+                 * Meetings. */
                 var invited = RestAPIWrapper.GetRelationships("Users",
                     RestAPIWrapper.GetUserId(), crmModule.ToLower(),
                     RestAPIWrapper.GetSugarFields(crmModule));

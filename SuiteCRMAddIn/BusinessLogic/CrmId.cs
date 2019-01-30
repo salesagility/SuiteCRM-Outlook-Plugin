@@ -96,7 +96,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </returns>
         public static bool IsValid(string id)
         {
-            return !string.IsNullOrEmpty(id) && Validator.IsMatch(id);
+            bool result = !string.IsNullOrEmpty(id);
+            result = result && Validator.IsMatch(id);
+
+            return result;
         }
 
         /// <summary>
@@ -148,11 +151,26 @@ namespace SuiteCRMAddIn.BusinessLogic
         ///     Get the single CrmId instance for this value.
         /// </summary>
         /// <param name="value">The value to seek.</param>
-        /// <returns>A CrmId instance</returns>
-        /// <exception cref="TypeInitializationException"> if `value` does not appear to be a valid CRM id.</exception>
+        /// <returns>A CrmId instance, or Empty if the offered value is invalid.</returns>
         public static CrmId Get(string value)
         {
-            return string.IsNullOrEmpty(value) ? Empty : Issued.ContainsKey(value) ? Issued[value] : new CrmId(value);
+            CrmId result = Empty;
+
+            if (IsValid(value))
+            {
+                if (Issued.ContainsKey(value))
+                {
+                    result = Issued[value];
+                }
+                else
+                {
+                    result = new CrmId(value);
+                }
+            }
+            // This breaks, and I can't understand why:
+            // return IsValid(value) ? Empty : Issued.ContainsKey(value) ? Issued[value] : new CrmId(value);
+
+            return result;
         }
 
         /// <summary>
