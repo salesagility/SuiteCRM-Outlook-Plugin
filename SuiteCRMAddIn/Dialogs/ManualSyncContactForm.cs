@@ -189,7 +189,7 @@ namespace SuiteCRMAddIn.Dialogs
                 problems.Add($"Contact {selectedItem.GetValueAsString("first_name")} {selectedItem.GetValueAsString("last_name")} has previously been synced and will be overwritten.");
             }
 
-            if (!resultsTree.Nodes["create"].Checked &&
+            if (resultsTree.Nodes["create"].Checked &&
                      IsPreviouslySyncedItem(crmId) )
             {
                 problems.Add($"Contact {contactItem.FullName} has previously been synced. Are you sure you want to create another copy?");

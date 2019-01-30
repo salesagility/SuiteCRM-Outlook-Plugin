@@ -543,7 +543,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                ErrorHandler.Handle($"Failure while checking for items matching id '{crmItem.id}'", any);
+                ErrorHandler.Handle($"Failure while checking for items matching id '{crmItem.id}' {Environment.NewLine}", any);
                 result = new List<SyncState<OutlookItemType>>();
             }
 

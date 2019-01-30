@@ -61,13 +61,16 @@ namespace SuiteCRMAddIn.Helpers
                     case "name":
                         if (field != fieldsArray.First())
                             bob.Append($"{logicalOperator} ");
-                        bob.Append($"{module.ToLower()}.{field} LIKE '%{token}%' ");
+                        bob.Append($"{module.ToLower()}.{field} ").Append(token.Length < 4
+                            ? $"= '{token}' "
+                            : $"LIKE '%{token}%' ");
                         break;
                     case "email1":
                         if (field != fieldsArray.First())
                             bob.Append($"{logicalOperator} ");
                         bob.Append(
-                            $"({module.ToLower()}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id  where eabr.bean_module = '{module}' and ea.email_address LIKE '%{token}%')) ");
+                            $"({module.ToLower()}.id in (select eabr.bean_id from email_addr_bean_rel eabr INNER JOIN email_addresses ea on eabr.email_address_id = ea.id  where eabr.bean_module = '{module}' and ea.email_address ");
+                        bob.Append(token.Length < 4 ? $"= '{token}'))" : $"LIKE '%{token}%'))");
                         break;
                 }
             }

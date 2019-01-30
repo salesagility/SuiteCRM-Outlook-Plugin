@@ -22,6 +22,7 @@
  */
 
 using SuiteCRMAddIn.Daemon;
+using SuiteCRMAddIn.Exceptions;
 
 namespace SuiteCRMAddIn.BusinessLogic
 {
@@ -56,7 +57,12 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public static void Handle(string message)
         {
-            Handle(message, null);
+            Handle(message, (Exception)null);
+        }
+
+        public static void Handle(string contextMessage, NeverShowUserException error, bool notify = false)
+        {
+            Globals.ThisAddIn.Log.Error(contextMessage, error);
         }
 
         /// <summary>
@@ -85,7 +91,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                         if (!SeenExceptions.Contains(errorClassName))
                         {
                             SeenExceptions.Add(errorClassName);
-                            MessageBox.Show(composeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                MessageBox.Show(composeErrorDescription(contextMessage, error), "SuiteCRM Addin Error",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                         break;
                     default:

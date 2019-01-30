@@ -284,20 +284,17 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         /// <summary>
         /// Set the transmission state of this SyncState object to <see cref="TransmissionState.PresentAtStartup"/>.
+        /// If the synchroniser starts (or restarts) when a sync has already been done, e.g. a manual sync, some 
+        /// sync states will be active. Those should be left in the state in which they were found. Those which are
+        /// genuinely fresh, however, should be set to 'present at startup'.
         /// </summary>
         internal void SetPresentAtStartup()
         {
             lock (this.txStateLock)
             {
-                switch (this.TxState)
+                if (this.TxState == TransmissionState.NewFromOutlook)
                 {
-                    case TransmissionState.NewFromOutlook:
-                    case TransmissionState.PresentAtStartup:
-                    case TransmissionState.Pending:
-                        this.LogAndSetTxState(TransmissionState.PresentAtStartup);
-                        break;
-                    default:
-                        throw new BadStateTransition(this, this.TxState, TransmissionState.PresentAtStartup);
+                    this.LogAndSetTxState(TransmissionState.PresentAtStartup);
                 }
             }
         }
