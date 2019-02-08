@@ -65,7 +65,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                olItem.Save();
+                olItem?.Save();
             }
             catch (System.Exception any)
             {

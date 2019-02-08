@@ -60,6 +60,17 @@ namespace SuiteCRMAddIn.BusinessLogic
             Handle(message, (Exception)null);
         }
 
+        public static void Handle(OutOfMemoryException error)
+        {
+            Handle( "SuiteSRM AddIn recovered from an out of memory error; no work was lost, but some tasks may not have been completed", error);
+        }
+
+        public static void Handle(string contextMessage, OutOfMemoryException error, bool notify = false)
+        {
+            Globals.ThisAddIn.Log.Error(contextMessage, error);
+            MessageBox.Show(ComposeErrorDescription(contextMessage, error), "SuiteCRM  AddIn ran out of memory", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         public static void Handle(string contextMessage, NeverShowUserException error, bool notify = false)
         {
             Globals.ThisAddIn.Log.Error(contextMessage, error);
@@ -77,7 +88,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             if (notify)
             {
-                MessageBox.Show(composeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(ComposeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             else
             {
@@ -91,18 +102,18 @@ namespace SuiteCRMAddIn.BusinessLogic
                         if (!SeenExceptions.Contains(errorClassName))
                         {
                             SeenExceptions.Add(errorClassName);
-                                MessageBox.Show(composeErrorDescription(contextMessage, error), "SuiteCRM Addin Error",
+                                MessageBox.Show(ComposeErrorDescription(contextMessage, error), "SuiteCRM Addin Error",
                                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }
                         break;
                     default:
-                        MessageBox.Show(composeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(ComposeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         break;
                 }
             }
         }
 
-        private static string composeErrorDescription(string contextMessage, Exception error)
+        private static string ComposeErrorDescription(string contextMessage, Exception error)
         {
             StringBuilder bob = new StringBuilder(contextMessage);
 
@@ -117,6 +128,29 @@ namespace SuiteCRMAddIn.BusinessLogic
             string text = bob.ToString();
             return text;
         }
+
+        /// <summary>
+        /// Do this action and, if an error occurs, invoke the error handler on it with this message.
+        /// </summary>
+        /// <remarks>
+        /// \todo this method is duplicated in Robustness, but the copy in ErrorHandler is preferred;
+        /// in the next release it is intended to remove the Robustness class and move its functionality
+        /// to ErrorHandler.
+        /// </remarks>
+        /// <param name="action">The action to perform</param>
+        /// <param name="message">A string describing what the action was intended to achieve.</param>
+        public static void DoOrHandleError(Action action, string message)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception problem)
+            {
+                ErrorHandler.Handle(message, problem);
+            }
+        }
+
 
         public enum PopupWhen
         {

@@ -1,4 +1,5 @@
 ﻿using System;
+using SuiteCRMAddIn.BusinessLogic;
 using SuiteCRMClient.Logging;
 
 namespace SuiteCRMAddIn
@@ -23,6 +24,28 @@ namespace SuiteCRMAddIn
             catch (Exception problem)
             {
                 log.Error(message, problem);
+            }
+        }
+
+        /// <summary>
+        /// Do this action and, if an error occurs, invoke the error handler on it with this message.
+        /// </summary>
+        /// <remarks>
+        /// \todo this method is duplicated in ErrorHandler, and the copy in ErrorHandler is preferred;
+        /// in the next release it is intended to remove the Robustness class and move its functionality
+        /// to ErrorHandler.
+        /// </remarks>
+        /// <param name="action">The action to perform</param>
+        /// <param name="message">A string describing what the action was intended to achieve.</param>
+        public static void DoOrHandleError(Action action, string message)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception problem)
+            {
+                ErrorHandler.Handle(message, problem);
             }
         }
     }

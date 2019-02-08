@@ -189,7 +189,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                olItem.Save();
+                olItem?.Save();
                 try
                 {
                     LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
