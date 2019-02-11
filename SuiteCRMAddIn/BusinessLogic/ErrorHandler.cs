@@ -20,6 +20,10 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using SuiteCRMAddIn.Daemon;
+using SuiteCRMAddIn.Exceptions;
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using SuiteCRMClient.Logging;
@@ -45,7 +49,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="badCredentials"></param>
         public static void Handle(BadCredentialsException badCredentials)
         {
-            if (Globals.ThisAddIn.ShowReconfigureOrDisable("Login failed; have your credentials changed?"))
+            if (Globals.ThisAddIn.ShowReconfigureOrDisable("Login failed; have your credentials changed?") == DialogResult.Cancel)
             {
                 Globals.ThisAddIn.Disable();
             }
@@ -53,16 +57,67 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public static void Handle(string message)
         {
-            Handle(message, null);
+            Handle(message, (Exception)null);
         }
 
-        public static void Handle(string contextMessage, Exception error)
+        public static void Handle(OutOfMemoryException error)
+        {
+            Handle( "SuiteSRM AddIn recovered from an out of memory error; no work was lost, but some tasks may not have been completed", error);
+        }
+
+        public static void Handle(string contextMessage, OutOfMemoryException error, bool notify = false)
         {
             Globals.ThisAddIn.Log.Error(contextMessage, error);
-            var errorClassName = error?.GetType().Name ?? string.Empty;
+            MessageBox.Show(ComposeErrorDescription(contextMessage, error), "SuiteCRM  AddIn ran out of memory", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        public static void Handle(string contextMessage, NeverShowUserException error, bool notify = false)
+        {
+            Globals.ThisAddIn.Log.Error(contextMessage, error);
+        }
+
+        /// <summary>
+        /// Handle this error in the context described in this contextMessage.
+        /// </summary>
+        /// <param name="contextMessage">A message describing what was being attempted when the error occurred.</param>
+        /// <param name="error">The error.</param>
+        /// <param name="notify">If true, notify the user anyway, overriding the ShowExceptions setting.</param>
+        public static void Handle(string contextMessage, Exception error, bool notify = false)
+        {
+            Globals.ThisAddIn.Log.Error(contextMessage, error);
+
+            if (notify)
+            {
+                MessageBox.Show(ComposeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                switch (Properties.Settings.Default.ShowExceptions)
+                {
+                    case PopupWhen.Never:
+                        break;
+                    case PopupWhen.FirstTime:
+                        var errorClassName = error?.GetType().Name ?? string.Empty;
+
+                        if (!SeenExceptions.Contains(errorClassName))
+                        {
+                            SeenExceptions.Add(errorClassName);
+                                MessageBox.Show(ComposeErrorDescription(contextMessage, error), "SuiteCRM Addin Error",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        break;
+                    default:
+                        MessageBox.Show(ComposeErrorDescription(contextMessage, error), "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        break;
+                }
+            }
+        }
+
+        private static string ComposeErrorDescription(string contextMessage, Exception error)
+        {
             StringBuilder bob = new StringBuilder(contextMessage);
 
-            for (Exception e = error; e != null; e = e.GetBaseException())
+            for (Exception e = error; e != null; e = e.InnerException)
             {
                 if (e != error)
                 {
@@ -71,23 +126,31 @@ namespace SuiteCRMAddIn.BusinessLogic
                 bob.Append(e.GetType().Name).Append(e.Message);
             }
             string text = bob.ToString();
+            return text;
+        }
 
-            switch (Properties.Settings.Default.ShowExceptions)
+        /// <summary>
+        /// Do this action and, if an error occurs, invoke the error handler on it with this message.
+        /// </summary>
+        /// <remarks>
+        /// \todo this method is duplicated in Robustness, but the copy in ErrorHandler is preferred;
+        /// in the next release it is intended to remove the Robustness class and move its functionality
+        /// to ErrorHandler.
+        /// </remarks>
+        /// <param name="action">The action to perform</param>
+        /// <param name="message">A string describing what the action was intended to achieve.</param>
+        public static void DoOrHandleError(Action action, string message)
+        {
+            try
             {
-                case PopupWhen.Never:
-                    break;
-                case PopupWhen.FirstTime:
-                    if (!SeenExceptions.Contains(errorClassName))
-                    {
-                        SeenExceptions.Add(errorClassName);
-                        MessageBox.Show(text, "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                    break;
-                default:
-                    MessageBox.Show(text, "SuiteCRM Addin Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    break;
+                action();
+            }
+            catch (Exception problem)
+            {
+                ErrorHandler.Handle(message, problem);
             }
         }
+
 
         public enum PopupWhen
         {

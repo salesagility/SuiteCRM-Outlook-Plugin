@@ -20,6 +20,10 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using System.Threading;
+using SuiteCRMAddIn.Exceptions;
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using System;
@@ -36,18 +40,41 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
+        private ILogger Log = Globals.ThisAddIn.Log;
         public ContactSyncState(Outlook.ContactItem oItem, CrmId crmId, DateTime modified) : base(oItem, crmId, modified)
         {
         }
 
-        public override Outlook.OlDefaultFolders DefaultFolder
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
+
+        protected override bool VerifyItem()
         {
-            get
+            bool result;
+            try
             {
-                return Outlook.OlDefaultFolders.olFolderContacts;
+                result = !string.IsNullOrEmpty(this.Item?.EntryID);
             }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                result = false;
+            }
+
+            return result;
         }
 
+        /// <summary>
+        /// If transmission was successful, clear the manual override if set.
+        /// </summary>
+        internal override void SetTransmitted()
+        {
+            base.SetTransmitted();
+            this.OutlookItem.ClearManualOverride();
+        }
+
+        /// <summary>
+        /// True if the Outlook item wrapped by this state may be synchronised even when synchronisation is set to none.
+        /// </summary>
+        public override bool IsManualOverride => this.OutlookItem.IsManualOverride();
 
         public override string CrmType => ContactSynchroniser.CrmModule;
 
@@ -118,6 +145,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override void SaveItem()
         {
             this.OutlookItem?.Save();
+        }
+
+        protected override void CacheOulookItemId(Outlook.ContactItem olItem)
+        {
+            this.outlookItemId = olItem.EntryID;
         }
     }
 }

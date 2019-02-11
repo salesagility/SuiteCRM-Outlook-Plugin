@@ -30,7 +30,7 @@ namespace SuiteCRMAddIn.Exceptions
     /// An exception thrown when an unexpected transition is made on a syncstate.
     /// </summary>
     [Serializable]
-    internal class BadStateTransition : Exception
+    internal class BadStateTransition : NeverShowUserException
     {
         public TransmissionState From { get; private set; } = TransmissionState.Invalid;
 

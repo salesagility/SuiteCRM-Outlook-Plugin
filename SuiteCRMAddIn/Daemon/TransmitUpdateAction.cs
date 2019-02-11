@@ -34,6 +34,7 @@ namespace SuiteCRMAddIn.Daemon
     /// already has a SyncState.
     /// </summary>
     /// <typeparam name="OutlookItemType">The type of item I transmit.</typeparam>
+    /// <typeparam name="SyncStateType">The type of sync state which is appropriate to my item type.</typeparam>
     public class TransmitUpdateAction<OutlookItemType, SyncStateType> : AbstractDaemonAction
         where OutlookItemType : class
         where SyncStateType : SyncState<OutlookItemType>
@@ -58,6 +59,7 @@ namespace SuiteCRMAddIn.Daemon
             state.SetQueued();
             this.synchroniser = synchroniser;
             this.state = state;
+            this.NotifyOnFailure = state.IsManualOverride;
 
             MeetingSyncState meeting = state as MeetingSyncState;
 

@@ -20,6 +20,8 @@
 *
 * @author SalesAgility <info@salesagility.com>
 */
+
+
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using Exceptions;
@@ -27,8 +29,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using System;
     using Outlook = Microsoft.Office.Interop.Outlook;
-    using System.Collections.Generic;
-    using SuiteCRMClient;
+    using System.Runtime.InteropServices;
+    using System.Threading;
 
     /// <summary>
     /// The sync state of an item of the specified type.
@@ -50,7 +52,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// <item>If a state is created from a CRM record, it is set to <see cref="TransmissionState.NewFromCRM"/></item>
     /// <item>When a change has been made to it Outlook side, the relevant 
     /// <see cref="Synchroniser{OutlookItemType, SyncStateType}"/> sets it to <see cref="TransmissionState.Pending"/> , and passes it to an
-    /// <see cref="Daemon.AbstractTransmissionAction{OutlookItemType, SyncStateType}"/>.</item>
+    /// <see cref="Daemon.TransmitNewAction{OutlookItemType, SyncStateType}"/>.</item>
     /// <item>The AbstractTransmissionAction sets it to <see cref="TransmissionState.Queued"/> , and in due course) sends it back to 
     /// the same Synchroniser.</item>
     /// <item>The Synchroniser sets it to <see cref="TransmissionState.Transmitted"/> and transmits 
@@ -64,6 +66,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// these are items which had presumably failed to be synced earlier.</item>
     /// </list>
     /// </para>
+    /// </remarks>
     /// <typeparam name="ItemType">The type of the item to be/being synced.</typeparam>
     public abstract class SyncState<ItemType> : SyncState
         where ItemType : class
@@ -71,26 +74,70 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Underlying store for my <see cref="OutlookItem"/> property. 
         /// </summary>
-        private ItemType item;
+        protected ItemType Item;
 
-        public abstract Outlook.OlDefaultFolders DefaultFolder { get; }
+        /// <summary>
+        /// Handle onto the MAPI namespace.
+        /// </summary>
+        private static Outlook.NameSpace mapiNs = null;
 
-        int getItemFails = 0, getItemSuccesses = 0;
+        /// <summary>
+        /// Handle onto the MAPI namespace, guaranteed to exist.
+        /// </summary>
+        protected static Outlook.NameSpace MapiNs => mapiNs ?? (mapiNs = Globals.ThisAddIn.Application.GetNamespace("MAPI"));
+
+        public abstract Outlook.Folder DefaultFolder { get; }
 
         /// <summary>
         /// The outlook item for which I maintain the synchronisation state.
         /// </summary>
-        public ItemType OutlookItem {
+        public ItemType OutlookItem
+        {
             get
             {
-                return this.item;
+                if (!this.VerifyItem())
+                {
+                    this.Item = null;
+
+                    for (var i = 0; this.Item == null && i < 10; i++)
+                    {
+                        try
+                        {
+                            this.Item = MapiNs.GetItemFromID(this.outlookItemId, this.DefaultFolder.StoreID) as ItemType;
+                        }
+                        catch (Exception any)
+                        {
+                            Globals.ThisAddIn.Log.Error($"Failed to open item with id {this.outlookItemId} at attempt {i}", any);
+                            Thread.Sleep(10000);
+                        }
+                    }
+
+                    if (this.Item == null)
+                    {
+                        throw new MissingOutlookItemException(this.outlookItemId);
+                    }
+                }
+
+                return this.Item;
             }
-            private set
+            protected set
             {
-                this.item = value;
+                this.Item = value;
+                this.CacheOulookItemId(value);
             }
         }
 
+        /// <summary>
+        /// Varify that item has not become detached (does not throw a COMException when interrogated).
+        /// </summary>
+        /// <returns>false </returns>
+        protected abstract bool VerifyItem();
+   
+        /// <summary>
+        /// Cache the entry id of my outlook item on me.
+        /// </summary>
+        /// <param name="value"></param>
+        protected abstract void CacheOulookItemId(ItemType value);
 
         /// <summary>
         /// A lock that should be obtained before operations which operate on the TxState or the
@@ -128,6 +175,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// A string constructed from fields which uniquely describe my item.
         /// </summary>
         public abstract string IdentifyingFields { get; }
+
+        /// <summary>
+        /// True if the Outlook item wrapped by this state may be synchronised even when synchronisation is set to none.
+        /// </summary>
+        /// <remarks>
+        /// At present, only Contacts have the manual override mechanism.
+        /// </remarks>
+        public virtual bool IsManualOverride => false;
 
 
         /// <summary>
@@ -204,6 +259,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             log.Debug(reallyChanged ? $"{prefix} has changed." : $"{prefix} has not changed.");
             log.Debug(isSyncable ? $"{prefix} is syncable." : $"{ prefix} is not syncable.");
+            log.Debug(IsManualOverride ? $"{prefix} is on manual override." : $"{prefix} is not on manual override.");
 
             bool result;
 
@@ -211,7 +267,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* result is set within the lock to prevent one thread capturing another thread's
                  * state change. */
-                result = isSyncable && reallyChanged && this.TxState == TransmissionState.Pending && modifiedSinceSeconds > 2;
+                result = (IsManualOverride || (isSyncable && reallyChanged)) && this.TxState == TransmissionState.Pending && modifiedSinceSeconds > 2;
                 if (result)
                 {
                     this.OModifiedDate = utcNow;
@@ -228,20 +284,17 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         /// <summary>
         /// Set the transmission state of this SyncState object to <see cref="TransmissionState.PresentAtStartup"/>.
+        /// If the synchroniser starts (or restarts) when a sync has already been done, e.g. a manual sync, some 
+        /// sync states will be active. Those should be left in the state in which they were found. Those which are
+        /// genuinely fresh, however, should be set to 'present at startup'.
         /// </summary>
         internal void SetPresentAtStartup()
         {
             lock (this.txStateLock)
             {
-                switch (this.TxState)
+                if (this.TxState == TransmissionState.NewFromOutlook)
                 {
-                    case TransmissionState.NewFromOutlook:
-                    case TransmissionState.PresentAtStartup:
-                    case TransmissionState.Pending:
-                        this.LogAndSetTxState(TransmissionState.PresentAtStartup);
-                        break;
-                    default:
-                        throw new BadStateTransition(this, this.TxState, TransmissionState.PresentAtStartup);
+                    this.LogAndSetTxState(TransmissionState.PresentAtStartup);
                 }
             }
         }
@@ -334,7 +387,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Set the transmission state of this SyncState object to <see cref="TransmissionState.Transmitted"/>.
         /// </summary>
-        internal void SetTransmitted()
+        internal virtual void SetTransmitted()
         {
             lock (this.txStateLock)
             {
@@ -479,11 +532,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         private void LogAndSetTxState(TransmissionState newState)
         {
 #if DEBUG
-            if (this.Cache == null)
+            try
             {
-                this.Cache = this.CreateProtoItem(this.OutlookItem);
+                if (this.Cache == null)
+                {
+                    this.Cache = this.CreateProtoItem(this.OutlookItem);
+                }
+                Globals.ThisAddIn.Log.Debug(
+                    $"{this.GetType().Name} '{this.Cache?.Description}': transition {this.TxState} => {newState}");
             }
-            Globals.ThisAddIn.Log.Debug($"{this.GetType().Name} '{this.Cache?.Description}': transition {this.TxState} => {newState}");
+            catch (InvalidComObjectException)
+            {
+                // ignore. It doesn't matter. Although TODO: I'd love to know what happens.
+            }
 #endif
             this.TxState = newState;
         }

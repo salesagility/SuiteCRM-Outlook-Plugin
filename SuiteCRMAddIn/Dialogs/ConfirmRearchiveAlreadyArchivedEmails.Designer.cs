@@ -154,7 +154,6 @@
             this.MinimumSize = new System.Drawing.Size(620, 250);
             this.Name = "ConfirmRearchiveAlreadyArchivedEmails";
             this.ShowInTaskbar = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Confirm Rearchive Already Archived Emails";
             ((System.ComponentModel.ISupportInitialize)(this.alreadyArchivedEmailsGrid)).EndInit();
             this.ResumeLayout(false);
