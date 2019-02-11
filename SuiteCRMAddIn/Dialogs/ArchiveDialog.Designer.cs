@@ -51,11 +51,14 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ArchiveDialog));
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.btnSearch = new System.Windows.Forms.Button();
             this.lstViewSearchModules = new System.Windows.Forms.ListView();
             this.colList = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.searchModulesContextStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.selectFieldsItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tsResults = new System.Windows.Forms.TreeView();
             this.btnArchive = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
@@ -63,6 +66,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.categoryInput = new System.Windows.Forms.ComboBox();
             this.legend = new System.Windows.Forms.TextBox();
             this.instructionLabel = new System.Windows.Forms.Label();
+            this.searchModulesContextStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // txtSearch
@@ -94,6 +98,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.lstViewSearchModules.CheckBoxes = true;
             this.lstViewSearchModules.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colList});
+            this.lstViewSearchModules.ContextMenuStrip = this.searchModulesContextStrip;
             this.lstViewSearchModules.Location = new System.Drawing.Point(304, 60);
             this.lstViewSearchModules.Name = "lstViewSearchModules";
             this.lstViewSearchModules.Size = new System.Drawing.Size(156, 250);
@@ -101,11 +106,26 @@ namespace SuiteCRMAddIn.Dialogs
             this.lstViewSearchModules.UseCompatibleStateImageBehavior = false;
             this.lstViewSearchModules.View = System.Windows.Forms.View.Details;
             this.lstViewSearchModules.ItemChecked += new System.Windows.Forms.ItemCheckedEventHandler(this.lstViewSearchModules_ItemChecked);
+            this.lstViewSearchModules.MouseClick += new System.Windows.Forms.MouseEventHandler(this.searchModules_MouseClick);
             // 
             // colList
             // 
             this.colList.Text = "Modules";
             this.colList.Width = 129;
+            // 
+            // searchModulesContextStrip
+            // 
+            this.searchModulesContextStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.selectFieldsItem});
+            this.searchModulesContextStrip.Name = "searchModulesContextStrip";
+            this.searchModulesContextStrip.Size = new System.Drawing.Size(148, 26);
+            // 
+            // selectFieldsItem
+            // 
+            this.selectFieldsItem.Name = "selectFieldsItem";
+            this.selectFieldsItem.Size = new System.Drawing.Size(147, 22);
+            this.selectFieldsItem.Text = "Select Fields...";
+            this.selectFieldsItem.Click += new System.EventHandler(this.showSelectFieldsDialog);
             // 
             // tsResults
             // 
@@ -217,10 +237,10 @@ namespace SuiteCRMAddIn.Dialogs
             this.MinimumSize = new System.Drawing.Size(481, 404);
             this.Name = "ArchiveDialog";
             this.ShowInTaskbar = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Archive to SuiteCRM";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.frmArchive_FormClosed);
             this.Load += new System.EventHandler(this.frmArchive_Load);
+            this.searchModulesContextStrip.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -239,5 +259,7 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.ComboBox categoryInput;
         private System.Windows.Forms.TextBox legend;
         private System.Windows.Forms.Label instructionLabel;
+        private System.Windows.Forms.ContextMenuStrip searchModulesContextStrip;
+        private System.Windows.Forms.ToolStripMenuItem selectFieldsItem;
     }
 }

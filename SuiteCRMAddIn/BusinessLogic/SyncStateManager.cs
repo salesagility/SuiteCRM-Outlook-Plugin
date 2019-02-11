@@ -144,9 +144,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                             break;
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // should log it but not critical.
+                    Globals.ThisAddIn.Log.Warn("Exception during save all (probably not important)", ex);
                 }
             }
         }

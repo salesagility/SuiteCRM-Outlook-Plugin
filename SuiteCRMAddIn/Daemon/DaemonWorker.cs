@@ -117,12 +117,14 @@ namespace SuiteCRMAddIn.Daemon
                     }
                     else
                     {
-                        ErrorHandler.Handle($"{task.Description} failed with error {retryable.GetType().Name}: {retryable.Message}; too many retries, aborting", retryable);
+                        ErrorHandler.Handle($"{task.Description} failed with error {retryable.GetType().Name}: {retryable.Message}; too many retries, aborting", 
+                            retryable, task.NotifyOnFailure);
                     }
                 }
                 catch (Exception any)
                 {
-                    ErrorHandler.Handle($"{task.Description} failed with error {any.GetType().Name}: {any.Message}; Not retryable, aborting", any);
+                    ErrorHandler.Handle($"{task.Description} failed with error {any.GetType().Name}: {any.Message}; Not retryable, aborting", 
+                        any, task.NotifyOnFailure);
                 }
             }
         }

@@ -97,7 +97,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                olItem.Save();
+                olItem?.Save();
                 LogItemAction(olItem, "TaskSyncing.SaveItem, saved item");
             }
             catch (System.Exception any)

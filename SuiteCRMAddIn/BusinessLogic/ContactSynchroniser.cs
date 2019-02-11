@@ -65,12 +65,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                olItem.Save();
+                olItem?.Save();
             }
             catch (System.Exception any)
             {
                 ErrorHandler.Handle($"Error while saving contact {olItem?.Email1Address}", any);
             }
+        }
+
+        /// <summary>
+        /// You can manually override the disablement of the contact synchroniser for particular items, but only for limited time.
+        /// </summary>
+        /// <param name="olItem">The Outlook item</param>
+        /// <returns>True if the item has had manual override set recently.</returns>
+        protected override bool IsManualOverride(Outlook.ContactItem olItem)
+        {
+            return olItem.IsManualOverride();
         }
 
         /// <summary>

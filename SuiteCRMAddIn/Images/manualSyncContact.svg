@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="48"
+   height="48"
+   viewBox="0 0 12.7 12.7"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+   sodipodi:docname="manualSyncContact.svg"
+   inkscape:export-filename="C:\Users\Simon\Workspace\SuiteCRM-Outlook-Plugin\SuiteCRMAddIn\Images\manualSyncContact.svg.png"
+   inkscape:export-xdpi="128"
+   inkscape:export-ydpi="128">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="11.2"
+     inkscape:cx="21.475501"
+     inkscape:cy="24.426774"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     units="px"
+     inkscape:window-width="1920"
+     inkscape:window-height="1018"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid10" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-284.3)">
+    <circle
+       id="path3701"
+       cx="7.2760415"
+       cy="288.40103"
+       r="1.984375"
+       style="fill:#ea6556;fill-opacity:1;stroke:none;stroke-width:0.26458332" />
+    <path
+       style="fill:#6856ea;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 2.6458333,294.88333 c 0,-1.32291 1.3229164,-4.23333 4.4979164,-4.23333 3.4395833,0 4.7625003,2.91042 4.7624993,4.23333 -1e-6,1.32291 -9.2604157,1.5875 -9.2604157,0 z"
+       id="path3703"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="sszs" />
+    <path
+       style="fill:#778591;stroke:none;stroke-width:0.3968747px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1"
+       d="M 0.79374993,288.00416 H 2.38125 v -1.58749 h 0.7937499 v 1.58749 H 4.7625 v 0.79376 H 3.1749999 v 1.58749 H 2.38125 v -1.58749 H 0.79374993 Z"
+       id="path4510"
+       inkscape:connector-curvature="0" />
+  </g>
+</svg>

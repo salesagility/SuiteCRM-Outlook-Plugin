@@ -445,16 +445,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName,
-                    modifiedDate);
-                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
-
                 if (CrmId.IsValid(entryId))
                 {
                     EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.CrmIdPropertyName, entryId);
                     SyncStateManager.Instance.SetByCrmId(entryId,
                         SyncStateManager.Instance.GetOrCreateSyncState(olItem));
                 }
+
+                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName,
+                    modifiedDate);
+                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
             }
             catch (Exception any)
             {
@@ -543,7 +543,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                ErrorHandler.Handle($"Failure while checking for items matching id '{crmItem.id}'", any);
+                ErrorHandler.Handle($"Failure while checking for items matching id '{crmItem.id}' {Environment.NewLine}", any);
                 result = new List<SyncState<OutlookItemType>>();
             }
 
@@ -664,15 +664,20 @@ namespace SuiteCRMAddIn.BusinessLogic
                 thisOffset = nextOffset;
 
                 var entriesPage = GetEntriesPage(thisOffset);
+                var entryList = entriesPage.entry_list;
 
                 /* get the offset of the next page */
                 nextOffset = entriesPage.next_offset;
 
-                result.AddRange(entriesPage.entry_list);
+                if (entryList != null && entryList.Length > 0)
+                {
+                    /* it should not be, but it has happened that entry_list has been null */
+                    result.AddRange(entryList);
+                }
             }
             /* when there are no more entries, we'll get a zero-length entry list and nextOffset
              * will have the same value as thisOffset */
-            while (thisOffset != nextOffset);
+                    while (thisOffset != nextOffset);
 
             return result;
         }
@@ -1024,7 +1029,11 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else
                 {
-                    if (SyncDirection.AllowOutbound(Direction))
+                    if (IsManualOverride(olItem))
+                    {
+                        result = true;
+                    }
+                    else if (SyncDirection.AllowOutbound(Direction))
                     {
                         if (permissionsCache.HasImportAccess(DefaultCrmModule))
                         {
@@ -1061,6 +1070,21 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Returns true if this `olItem` has a manual override allowing it to be synced while synchronisation
+        ///  is disabled.
+        /// </summary>
+        /// <remarks>
+        /// #4754: We need to allow Contacts (but not, at present, other items) to be manually synced even when
+        /// synchronisation is otherwise disabled. 
+        /// </remarks>
+        /// <param name="olItem">The outlook item</param>
+        /// <returns>true if this `olItem` has a manual override.</returns>
+        protected virtual bool IsManualOverride(OutlookItemType olItem)
+        {
+            return false;
         }
 
         /// <summary>

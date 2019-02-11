@@ -424,7 +424,7 @@ namespace SuiteCRMAddIn.Dialogs
 
             try
             {
-                CheckUrlChanged(true);
+                ErrorHandler.DoOrHandleError(() => CheckUrlChanged(true), "checking whether CRM URL has changed");
 
                 string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
                 if (LDAPAuthenticationKey == string.Empty)
@@ -435,7 +435,7 @@ namespace SuiteCRMAddIn.Dialogs
                 /* save settings before, and regardless of, test that login succeeds. 
                  * Otherwise in cases where login is impossible (e.g. network failure) 
                  * settings get lost. See bug #187 */
-                this.SaveSettings();
+                ErrorHandler.DoOrHandleError(() => this.SaveSettings(), "saving settings");
 
                 Globals.ThisAddIn.SuiteCRMUserSession =
                     new SuiteCRMClient.UserSession(
@@ -519,55 +519,55 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void SaveSettings()
         {
-            Properties.Settings.Default.Host = SafelyGetText(txtURL);
-            Properties.Settings.Default.Username = SafelyGetText(txtUsername);
-            Properties.Settings.Default.Password = SafelyGetText(txtPassword);
-            Properties.Settings.Default.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked;
-            Properties.Settings.Default.LDAPKey = SafelyGetText(txtLDAPAuthenticationKey);
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Host = SafelyGetText(txtURL), "Saving Host");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Username = SafelyGetText(txtUsername), "Saving Username");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Password = SafelyGetText(txtPassword), "Saving Password");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked, "Saving IsLDAPAuthentication");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.LDAPKey = SafelyGetText(txtLDAPAuthenticationKey), "Saving LDAPKey");
 
-            Properties.Settings.Default.LicenceKey = SafelyGetText(licenceText);
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.LicenceKey = SafelyGetText(licenceText), "Saving LicenceKey");
 
-            Properties.Settings.Default.ArchiveAttachments = this.cbEmailAttachments.Checked;
-            Properties.Settings.Default.AutomaticSearch = this.checkBoxAutomaticSearch.Checked;
-            Properties.Settings.Default.ShowCustomModules = this.cbShowCustomModules.Checked;
-            Properties.Settings.Default.PopulateContextLookupList = this.checkBoxShowRightClick.Checked;
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.ArchiveAttachments = this.cbEmailAttachments.Checked, "Saving ArchiveAttachments");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.AutomaticSearch = this.checkBoxAutomaticSearch.Checked, "Saving AutomaticSearch");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.ShowCustomModules = this.cbShowCustomModules.Checked, "Saving CRM URL");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.PopulateContextLookupList = this.checkBoxShowRightClick.Checked, "Saving PopulateContextLookupList");
 
-            Properties.Settings.Default.ExcludedEmails = this.SafelyGetText(txtAutoSync);
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.ExcludedEmails = this.SafelyGetText(txtAutoSync), "Saving ExcludedEmails");
 
-            Properties.Settings.Default.AutoArchiveFolders = new List<string>();
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.AutoArchiveFolders = new List<string>(), "Saving AutoArchiveFolders");
 
-            SaveAccountAutoArchivingSettings();
+            ErrorHandler.DoOrHandleError(() => SaveAccountAutoArchivingSettings(), "Saving AccountAutoArchivingSettings");
 
-            Properties.Settings.Default.SyncCalls = (SyncDirection.Direction)this.syncCallsMenu.SelectedValue;
-            Properties.Settings.Default.SyncMeetings = (SyncDirection.Direction)this.syncMeetingsMenu.SelectedValue;
-            Properties.Settings.Default.SyncTasks = (SyncDirection.Direction)this.syncTasksMenu.SelectedValue;
-            Properties.Settings.Default.SyncContacts = (SyncDirection.Direction)this.syncContactsMenu.SelectedValue;
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.SyncCalls = (SyncDirection.Direction)this.syncCallsMenu.SelectedValue, "Saving SyncCalls");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.SyncMeetings = (SyncDirection.Direction)this.syncMeetingsMenu.SelectedValue, "Saving SyncMeetings");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.SyncTasks = (SyncDirection.Direction)this.syncTasksMenu.SelectedValue, "Saving SyncTasks");
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.SyncContacts = (SyncDirection.Direction)this.syncContactsMenu.SelectedValue, "Saving SyncContacts");
 
-            Properties.Settings.Default.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked;
-            if (this.txtSyncMaxRecords.Text != string.Empty)
-            {
-                Properties.Settings.Default.SyncMaxRecords = Convert.ToInt32(this.txtSyncMaxRecords.Text);
-            }
-            else
-            {
-                Properties.Settings.Default.SyncMaxRecords = 0;
-            }
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.ShowConfirmationMessageArchive = this.chkShowConfirmationMessageArchive.Checked, "saving ShowConfirmationMessageArchive");
+            ErrorHandler.DoOrHandleError(() => SaveSyncMaxRecords(), "saving SyncMaxRecords");
 
-            Properties.Settings.Default.LogLevel = (LogEntryType)logLevelSelector.SelectedValue;
-            Globals.ThisAddIn.Log.Level = Properties.Settings.Default.LogLevel;
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.LogLevel = (LogEntryType)logLevelSelector.SelectedValue, "Saving LogLevel");
+            ErrorHandler.DoOrHandleError(() => Globals.ThisAddIn.Log.Level = Properties.Settings.Default.LogLevel, "Setting active log level");
 
-            Properties.Settings.Default.ShowExceptions = (ErrorHandler.PopupWhen)showErrorsSelector.SelectedValue;
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.ShowExceptions = (ErrorHandler.PopupWhen)showErrorsSelector.SelectedValue, "Saving ShowExceptions");
 
-            Properties.Settings.Default.CrmIdValidationPolicy =
-                (CrmIdValidationPolicy.Policy) crmIdValidationSelector.SelectedValue;
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.CrmIdValidationPolicy =
+                (CrmIdValidationPolicy.Policy) crmIdValidationSelector.SelectedValue, "Saving CrmIdValidationPolicy");
 
-            Properties.Settings.Default.DaysOldEmailToAutoArchive =
-                (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0));
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.DaysOldEmailToAutoArchive =
+                (int)Math.Ceiling(Math.Max((DateTime.Today - dtpAutoArchiveFrom.Value).TotalDays, 0)), "Saving DaysOldEmailToAutoArchive");
 
-            Properties.Settings.Default.Save();
+            ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Save(), "Storing all settings to disk");
 
-            Globals.ThisAddIn.StopUnconfiguredSynchronisationProcesses();
-            Globals.ThisAddIn.StartConfiguredSynchronisationProcesses();
+            ErrorHandler.DoOrHandleError(() => Globals.ThisAddIn.StopUnconfiguredSynchronisationProcesses(), "stopping sync processes which are no longer required");
+            ErrorHandler.DoOrHandleError(() => Globals.ThisAddIn.StartConfiguredSynchronisationProcesses(), "starting sync processes which are now required"); ;
+        }
+
+        private void SaveSyncMaxRecords()
+        {
+            Properties.Settings.Default.SyncMaxRecords = this.txtSyncMaxRecords.Text != string.Empty ?
+                  Convert.ToInt32(this.txtSyncMaxRecords.Text):
+                  0;
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
