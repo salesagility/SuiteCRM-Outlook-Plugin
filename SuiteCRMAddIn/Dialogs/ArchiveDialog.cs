@@ -630,25 +630,26 @@ namespace SuiteCRMAddIn.Dialogs
                 toolTipBuilder.Append("First Name | Last Name ");
             }
 
-            switch (module)
-            {
-                case "Bugs":
-                    keyValue = RestAPIWrapper.GetValueByKey(entry, "bug_number");
-                    toolTipBuilder.Append(" | Bug Number");
-                    break;
-                case "Cases":
-                    keyValue = RestAPIWrapper.GetValueByKey(entry, "case_number");
-                    toolTipBuilder.Append(" | Case Number");
-                    break;
-                case "Contacts":
-                    keyValue = " 5462 | True | 21/01/2019";
-                    toolTipBuilder.Append("Sample | Field | Names");
-                    break;
-                default:
-                    keyValue = RestAPIWrapper.GetValueByKey(entry, "account_name");
-                    toolTipBuilder.Append(" | Account Name");
-                    break;
-            }
+            // #4755
+            //switch (module)
+            //{
+            //    case "Bugs":
+            //        keyValue = RestAPIWrapper.GetValueByKey(entry, "bug_number");
+            //        toolTipBuilder.Append(" | Bug Number");
+            //        break;
+            //    case "Cases":
+            //        keyValue = RestAPIWrapper.GetValueByKey(entry, "case_number");
+            //        toolTipBuilder.Append(" | Case Number");
+            //        break;
+            //    case "Contacts":
+            //        keyValue = " 5462 | True | 21/01/2019";
+            //        toolTipBuilder.Append("Sample | Field | Names");
+            //        break;
+            //    default:
+            //        keyValue = RestAPIWrapper.GetValueByKey(entry, "account_name");
+            //        toolTipBuilder.Append(" | Account Name");
+            //        break;
+            //}
 
             if (!string.IsNullOrEmpty(keyValue))
             {
