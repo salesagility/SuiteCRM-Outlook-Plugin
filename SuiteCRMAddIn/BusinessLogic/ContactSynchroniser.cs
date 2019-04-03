@@ -65,7 +65,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                olItem.Save();
+                olItem?.Save();
             }
             catch (System.Exception any)
             {
@@ -487,13 +487,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM.
+        /// Construct a JSON packet representing the Outlook item of this sync state, and despatch 
+        /// it to CRM.
         /// </summary>
-        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="syncState">The sync state.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override CrmId ConstructAndDespatchCrmItem(Outlook.ContactItem olItem)
+        protected override CrmId ConstructAndDespatchCrmItem(SyncState<Outlook.ContactItem> syncState)
         {
-            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoContact(olItem).AsNameValues(), this.DefaultCrmModule));
+            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoContact(syncState.OutlookItem).AsNameValues(), this.DefaultCrmModule));
         }
 
 

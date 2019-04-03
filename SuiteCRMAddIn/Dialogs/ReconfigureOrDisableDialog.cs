@@ -45,10 +45,11 @@ namespace SuiteCRMAddIn.Dialogs
         /// taken from this summary.
         /// </summary>
         /// <param name="summary">Summary of the problem.</param>
-        public ReconfigureOrDisableDialog(string summary) :this()
+        public ReconfigureOrDisableDialog(string summary, bool allowRetry) :this()
         {
             this.heading.Text = $"{summary} for the SuiteCRM add-in";
             this.Text = summary;
+            this.RetryButton.Enabled = allowRetry;
         }
 
         private void DisableButton_Click(object sender, EventArgs e)

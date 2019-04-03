@@ -20,6 +20,9 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
+
+using System.Windows.Forms;
+
 namespace SuiteCRMAddIn.Daemon
 {
     /// <summary>
@@ -29,13 +32,13 @@ namespace SuiteCRMAddIn.Daemon
     public abstract class AbstractDaemonAction : DaemonAction
     {
         /// <summary>
-        /// backing store for the MaxAttempts property.
+        /// If true, in the event of total failure, notify the user.
         /// </summary>
-        private int maxAttempts;
+        public bool NotifyOnFailure { get; protected set; } = false;
 
-        public AbstractDaemonAction(int maxAttempts)
+        protected AbstractDaemonAction(int maxAttempts)
         {
-            this.maxAttempts = maxAttempts;
+            this.MaxAttempts = maxAttempts;
         }
 
         /// <summary>
@@ -46,25 +49,14 @@ namespace SuiteCRMAddIn.Daemon
         /// <summary>
         /// Get a description of this action.
         /// </summary>
-        public virtual string Description
-        {
-            get
-            {
-                return this.GetType().Name;
-            }
-        }
+        public virtual string Description => this.GetType().Name;
 
         /// <summary>
         /// The maximum number of times this action can be attempted before
         /// being abandoned.
         /// </summary>
-        public int MaxAttempts
-        {
-            get
-            {
-                return this.maxAttempts;
-            }
-        }
+
+        public int MaxAttempts { get; }
 
         /// <summary>
         /// Perform this action.

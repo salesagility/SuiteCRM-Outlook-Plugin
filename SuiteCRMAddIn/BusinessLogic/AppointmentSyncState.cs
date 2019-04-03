@@ -47,13 +47,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string crmType;
 
 
-        public override Outlook.OlDefaultFolders DefaultFolder
-        {
-            get
-            {
-                return Outlook.OlDefaultFolders.olFolderCalendar;
-            }
-        }
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
 
 
         /// <summary>
@@ -124,6 +118,21 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override void SaveItem()
         {
             this.OutlookItem?.Save();
+        }
+
+        protected override bool VerifyItem()
+        {
+            bool result;
+            try
+            {
+                result = !string.IsNullOrEmpty(this.Item?.EntryID);
+            }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                result = false;
+            }
+
+            return result;
         }
     }
 }

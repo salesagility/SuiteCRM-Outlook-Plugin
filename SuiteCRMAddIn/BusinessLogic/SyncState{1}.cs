@@ -27,8 +27,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using System;
     using Outlook = Microsoft.Office.Interop.Outlook;
-    using System.Collections.Generic;
-    using SuiteCRMClient;
+    using System.Runtime.InteropServices;
+    using System.Threading;
 
     /// <summary>
     /// The sync state of an item of the specified type.
@@ -50,7 +50,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// <item>If a state is created from a CRM record, it is set to <see cref="TransmissionState.NewFromCRM"/></item>
     /// <item>When a change has been made to it Outlook side, the relevant 
     /// <see cref="Synchroniser{OutlookItemType, SyncStateType}"/> sets it to <see cref="TransmissionState.Pending"/> , and passes it to an
-    /// <see cref="Daemon.AbstractTransmissionAction{OutlookItemType, SyncStateType}"/>.</item>
+    /// <see cref="Daemon.TransmitNewAction{OutlookItemType, SyncStateType}"/>.</item>
     /// <item>The AbstractTransmissionAction sets it to <see cref="TransmissionState.Queued"/> , and in due course) sends it back to 
     /// the same Synchroniser.</item>
     /// <item>The Synchroniser sets it to <see cref="TransmissionState.Transmitted"/> and transmits 
@@ -64,6 +64,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// these are items which had presumably failed to be synced earlier.</item>
     /// </list>
     /// </para>
+    /// </remarks>
     /// <typeparam name="ItemType">The type of the item to be/being synced.</typeparam>
     public abstract class SyncState<ItemType> : SyncState
         where ItemType : class
@@ -71,11 +72,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Underlying store for my <see cref="OutlookItem"/> property. 
         /// </summary>
-        private ItemType item;
+        protected ItemType Item;
 
-        public abstract Outlook.OlDefaultFolders DefaultFolder { get; }
+        /// <summary>
+        /// Handle onto the MAPI namespace.
+        /// </summary>
+        private static Outlook.NameSpace mapiNs = null;
 
-        int getItemFails = 0, getItemSuccesses = 0;
+        /// <summary>
+        /// Handle onto the MAPI namespace, guaranteed to exist.
+        /// </summary>
+        protected static Outlook.NameSpace MapiNs => mapiNs ?? (mapiNs = Globals.ThisAddIn.Application.GetNamespace("MAPI"));
+
+        public abstract Outlook.Folder DefaultFolder { get; }
 
         /// <summary>
         /// The outlook item for which I maintain the synchronisation state.
@@ -83,14 +92,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         public ItemType OutlookItem {
             get
             {
-                return this.item;
+                return this.Item;
             }
             private set
             {
-                this.item = value;
+                this.Item = value;
             }
         }
 
+        /// <summary>
+        /// Varify that item has not become detached (does not throw a COMException when interrogated).
+        /// </summary>
+        /// <returns>false </returns>
+        protected abstract bool VerifyItem();
 
         /// <summary>
         /// A lock that should be obtained before operations which operate on the TxState or the
@@ -334,7 +348,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Set the transmission state of this SyncState object to <see cref="TransmissionState.Transmitted"/>.
         /// </summary>
-        internal void SetTransmitted()
+        internal virtual void SetTransmitted()
         {
             lock (this.txStateLock)
             {
@@ -479,11 +493,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         private void LogAndSetTxState(TransmissionState newState)
         {
 #if DEBUG
-            if (this.Cache == null)
+            try
             {
-                this.Cache = this.CreateProtoItem(this.OutlookItem);
+                if (this.Cache == null)
+                {
+                    this.Cache = this.CreateProtoItem(this.OutlookItem);
+                }
+                Globals.ThisAddIn.Log.Debug(
+                    $"{this.GetType().Name} '{this.Cache?.Description}': transition {this.TxState} => {newState}");
             }
-            Globals.ThisAddIn.Log.Debug($"{this.GetType().Name} '{this.Cache?.Description}': transition {this.TxState} => {newState}");
+            catch (InvalidComObjectException)
+            {
+                // ignore. It doesn't matter. Although TODO: I'd love to know what happens.
+            }
 #endif
             this.TxState = newState;
         }

@@ -43,6 +43,21 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override string OutlookItemEntryId => OutlookItem.EntryID;
 
+        protected override bool VerifyItem()
+        {
+            bool result;
+            try
+            {
+                result = !string.IsNullOrEmpty(this.Item?.EntryID);
+            }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                result = false;
+            }
+
+            return result;
+        }
+
         public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
 
         public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
@@ -74,13 +89,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public override Outlook.OlDefaultFolders DefaultFolder
-        {
-            get
-            {
-                return Outlook.OlDefaultFolders.olFolderTasks;
-            }
-        }
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
 
         public override void DeleteItem()
         {

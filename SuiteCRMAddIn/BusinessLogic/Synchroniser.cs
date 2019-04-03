@@ -243,7 +243,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             syncState.SetTransmitted();
 
-                            result = ConstructAndDespatchCrmItem(olItem);
+                            result = ConstructAndDespatchCrmItem(syncState);
                             if (CrmId.IsValid(result))
                             {
                                 var utcNow = DateTime.UtcNow;
@@ -426,9 +426,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         ///     method here, but because Outlook items are not really objects and don't have a common
         ///     superclass you can't. So it has to be implemented in subclasses.
         /// </remarks>
-        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="syncState">The synchronisation state.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected abstract CrmId ConstructAndDespatchCrmItem(OutlookItemType olItem);
+        protected abstract CrmId ConstructAndDespatchCrmItem(SyncState<OutlookItemType> syncState);
 
         /// <summary>
         ///     Every Outlook item which is to be synchronised must have a property SOModifiedDate,
@@ -455,6 +455,10 @@ namespace SuiteCRMAddIn.BusinessLogic
                     SyncStateManager.Instance.SetByCrmId(entryId,
                         SyncStateManager.Instance.GetOrCreateSyncState(olItem));
                 }
+
+                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.ModifiedDatePropertyName,
+                    modifiedDate);
+                EnsureSynchronisationPropertyForOutlookItem(olItem, SyncStateManager.TypePropertyName, type);
             }
             catch (Exception any)
             {
@@ -543,7 +547,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
             catch (Exception any)
             {
-                ErrorHandler.Handle($"Failure while checking for items matching id '{crmItem.id}'", any);
+                ErrorHandler.Handle($"Failure while checking for items matching id '{crmItem.id}' {Environment.NewLine}", any);
                 result = new List<SyncState<OutlookItemType>>();
             }
 
@@ -664,11 +668,16 @@ namespace SuiteCRMAddIn.BusinessLogic
                 thisOffset = nextOffset;
 
                 var entriesPage = GetEntriesPage(thisOffset);
+                var entryList = entriesPage.entry_list;
 
                 /* get the offset of the next page */
                 nextOffset = entriesPage.next_offset;
 
-                result.AddRange(entriesPage.entry_list);
+                if (entryList != null && entryList.Length > 0)
+                {
+                    /* it should not be, but it has happened that entry_list has been null */
+                    result.AddRange(entryList);
+                }
             }
             /* when there are no more entries, we'll get a zero-length entry list and nextOffset
              * will have the same value as thisOffset */

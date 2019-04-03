@@ -30,22 +30,35 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using SuiteCRMClient;
+    using System.Threading;
+    using SuiteCRMAddIn.Exceptions;
+
 
     /// <summary>
     /// A SyncState for Contact items.
     /// </summary>
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
+        private ILogger Log = Globals.ThisAddIn.Log;
         public ContactSyncState(Outlook.ContactItem oItem, CrmId crmId, DateTime modified) : base(oItem, crmId, modified)
         {
         }
 
-        public override Outlook.OlDefaultFolders DefaultFolder
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
+
+        protected override bool VerifyItem()
         {
-            get
+            bool result;
+            try
             {
-                return Outlook.OlDefaultFolders.olFolderContacts;
+                result = !string.IsNullOrEmpty(this.Item?.EntryID);
             }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                result = false;
+            }
+
+            return result;
         }
 
 

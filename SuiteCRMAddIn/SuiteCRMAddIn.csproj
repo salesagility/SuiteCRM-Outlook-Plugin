@@ -232,6 +232,7 @@
     <Compile Include="Dialogs\AdvancedArchiveSettingsDialog.Designer.cs">
       <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Exceptions\NeverShowUserException.cs" />
     <Compile Include="Exceptions\ProbableDuplicateItemException.cs" />
     <Compile Include="BusinessLogic\SyncStateManager.cs" />
     <Compile Include="BusinessLogic\WithRemovableSynchronisationProperties.cs" />
@@ -574,7 +575,6 @@
     <Delete Files="$(DocDirectory)\*.tmp" />
   </Target>
   <Target Name="Bump">
-    <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\SuiteCRMAddinSetup\SuiteCRMAddinSetup.isl" />
     <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\SuiteCrmClient\Properties\AssemblyInfo.cs" />
     <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\SuiteCrmAddinWixSetup\Product.wxs" />
     <BumpVersion ReleaseLevel="$(ReleaseLevel)" TargetFileName="..\Doxyfile" />

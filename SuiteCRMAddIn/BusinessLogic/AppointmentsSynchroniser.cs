@@ -189,7 +189,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                olItem.Save();
+                olItem?.Save();
                 try
                 {
                     LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
@@ -467,13 +467,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        ///     Construct a JSON packet representing this Outlook item, and despatch it to CRM.
+        /// Construct a JSON packet representing the Outlook item of this sync state, and despatch 
+        /// it to CRM.
         /// </summary>
-        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="syncState">The sync state.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override CrmId ConstructAndDespatchCrmItem(AppointmentItem olItem)
+        protected override CrmId ConstructAndDespatchCrmItem(SyncState<AppointmentItem> syncState)
         {
-            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoAppointment<SyncStateType>(olItem).AsNameValues(),
+            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoAppointment<SyncStateType>(syncState.OutlookItem).AsNameValues(),
                 DefaultCrmModule));
         }
 
