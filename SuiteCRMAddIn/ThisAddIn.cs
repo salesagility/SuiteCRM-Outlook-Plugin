@@ -130,6 +130,20 @@ namespace SuiteCRMAddIn
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
+             /* we need logging before we start the daemon */
+            StartLogging();
+
+            DaemonWorker.Instance.AddTask(new DeferredStartupAction());
+        }
+
+        /// <summary>
+        ///  Actually perform the startup of all the addin's services.
+        /// </summary>
+        /// <remarks>
+        /// Called by <see cref="Daemon.DeferredStartupAction"/>, q.v.
+        /// </remarks>
+        internal void DeferredStartup()
+        {
             try
             {
                 Prepare();
@@ -154,8 +168,6 @@ namespace SuiteCRMAddIn
             this.MaybeUpgradeSettings();
 
             OutlookVersion = (OutlookMajorVersion)Convert.ToInt32(outlookApp.Version.Split('.')[0]);
-
-            StartLogging();
 
             synchronisationContext = new SyncContext(outlookApp);
             callSynchroniser = new CallsSynchroniser("AS", synchronisationContext);

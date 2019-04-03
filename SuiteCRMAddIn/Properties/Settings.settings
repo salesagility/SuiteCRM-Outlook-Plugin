@@ -92,5 +92,14 @@
     <Setting Name="ArchivingSearchChains" Type="System.String" Scope="User">
       <Value Profile="(Default)">{ "Contacts": [ { "linkName": "accounts_contacts_1", "targetName": "accounts", "fields": ["id", "name" ]}]}</Value>
     </Setting>
+    <Setting Name="StartupDeferral" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">30</Value>
+    </Setting>
+    <Setting Name="ShowExceptions" Type="SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen" Scope="User">
+      <Value Profile="Never" />
+    </Setting>
+    <Setting Name="CrmIdValidationPolicy" Type="SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy" Scope="User">
+      <Value Profile="Strict" />
+    </Setting>
   </Settings>
 </SettingsFile>

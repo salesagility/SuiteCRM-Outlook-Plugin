@@ -214,6 +214,7 @@
     <Compile Include="BusinessLogic\CallSyncState.cs" />
     <Compile Include="BusinessLogic\CrmId.cs" />
     <Compile Include="BusinessLogic\CrmIdValidationPolicy.cs" />
+    <Compile Include="Daemon\DeferredStartupAction.cs" />
     <Compile Include="Exceptions\InvalidCrmIdException.cs" />
     <Compile Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.cs">
       <SubType>Form</SubType>

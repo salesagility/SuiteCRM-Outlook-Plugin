@@ -27,6 +27,8 @@ namespace SuiteCRMAddIn.Daemon
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// A thing which maintains a queue of tasks (instances of DaemonAction) and executes them in turn. Explicitly
@@ -43,7 +45,7 @@ namespace SuiteCRMAddIn.Daemon
         /// <summary>
         /// tasks waiting to be executed.
         /// </summary>
-        private ConcurrentQueue<DaemonAction> tasks = new ConcurrentQueue<DaemonAction>();
+        private readonly ConcurrentQueue<DaemonAction> tasks = new ConcurrentQueue<DaemonAction>();
 
         /// <summary>
         /// A public accessor for my instance.
@@ -58,14 +60,14 @@ namespace SuiteCRMAddIn.Daemon
         /// <summary>
         /// The period (in milliseconds) for which I sleep between jobs.
         /// </summary>
-        public int intervalMs = 5000;
+        public readonly int IntervalMs = 5000;
 
         /// <summary>
         /// Construct (the one, singleton) instance of the DaemonWorker class
         /// </summary>
         private DaemonWorker() : base("Daemon", Globals.ThisAddIn.Log)
         {
-            Interval = TimeSpan.FromMilliseconds(intervalMs);
+            Interval = TimeSpan.FromMilliseconds(IntervalMs);
             this.Start();
         }
 
@@ -77,6 +79,12 @@ namespace SuiteCRMAddIn.Daemon
         {
             tasks.Enqueue(task);
         }
+
+        /// <summary>
+        /// Return an enumerable of the descriptions of my pending tasks.
+        /// </summary>
+        /// <returns> an enumerable of the descriptions of my pending tasks.</returns>
+        public IEnumerable<string> PendingTaskDescriptions => this.tasks.Select(t => t.Description);
 
         /// <summary>
         /// Put me into a mode where I finish all the work I have to do quickly.
