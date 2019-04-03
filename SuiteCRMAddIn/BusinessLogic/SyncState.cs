@@ -78,10 +78,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         public DateTime OModifiedDate { get; set; }
 
         /// <summary>
-        /// Precisely 'this.OutlookItem.EntryId'.
+        /// The EntryId of the Outlook item I wrap.
         /// </summary>
-        /// <remarks>Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.EntryId'.</remarks>
-        public abstract string OutlookItemEntryId { get; }
+        public readonly string OutlookItemEntryId;
 
         /// <summary>
         /// Precisely 'this.OutlookItem.Sensitivity'.
@@ -92,6 +91,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         public abstract Outlook.UserProperties OutlookUserProperties { get; }
 
         public virtual bool ShouldSyncWithCrm => IsPublic;
+
+        /// <summary>
+        /// Create a new instance of a SyncState, with this itemId, expected to be the EntryId of the item I wrap.
+        /// </summary>
+        /// <param name="itemId">the EntryId of the item I wrap</param>
+        public SyncState(string itemId)
+        {
+            this.OutlookItemEntryId = itemId;
+        }
 
         public void RemoveCrmLink()
         {

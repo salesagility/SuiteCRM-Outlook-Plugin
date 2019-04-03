@@ -223,9 +223,13 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 bob.Append($"\t{p}\n");
 
-                foreach (string d in (p as DaemonWorker)?.PendingTaskDescriptions)
+                if (p is DaemonWorker)
                 {
-                    bob.Append($"\t\t{d}\n");
+                    var descriptions = (p as DaemonWorker).PendingTaskDescriptions;
+                    foreach (string d in descriptions)
+                    {
+                        bob.Append($"\t\t{d}\n");
+                    }
                 }
             }
             log.Debug(bob.ToString());

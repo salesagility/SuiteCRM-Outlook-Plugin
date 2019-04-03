@@ -92,7 +92,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         public ItemType OutlookItem {
             get
             {
-                return this.Item;
+                return this.VerifyItem() ? this.Item : null;
             }
             private set
             {
@@ -113,18 +113,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         private object txStateLock = new object();
 
         /// <summary>
-        /// The id of my Outlook item, so I can recover it if it becomes invalid.
+        /// Create a new instance of a SyncState wrapping this item.
         /// </summary>
-        protected string outlookItemId;
-
-        public SyncState(ItemType item, CrmId crmId, DateTime modifiedDate)
+        /// <param name="item">The item to wrap.</param>
+        /// <param name="itemId">The EntryId of that item.</param>
+        /// <param name="crmId">The CRM Id of that item, if known, else null.</param>
+        /// <param name="modifiedDate">When that item was last modified.</param>
+        public SyncState(ItemType item, string itemId, CrmId crmId, DateTime modifiedDate): base(itemId)
         {
             this.OutlookItem = item;
             this.CrmEntryId = crmId;
             this.OModifiedDate = modifiedDate;
         }
-
-
 
         /// <remarks>
         /// The state transition engine.

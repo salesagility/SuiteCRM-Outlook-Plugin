@@ -29,6 +29,7 @@ namespace SuiteCRMAddIn.Extensions
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Text;
     using System.Threading.Tasks;
     using Outlook = Microsoft.Office.Interop.Outlook;
@@ -73,14 +74,22 @@ namespace SuiteCRMAddIn.Extensions
         public static CrmId GetCrmId(this Outlook.AppointmentItem olItem)
         {
             string result;
-            Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-            if (property != null && !string.IsNullOrEmpty(property.Value))
+
+            if (olItem.IsValid())
             {
-                result = property.Value;
+                Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+                if (property != null && !string.IsNullOrEmpty(property.Value))
+                {
+                    result = property.Value;
+                }
+                else
+                {
+                    result = olItem.GetVCalId();
+                }
             }
             else
             {
-                result = olItem.GetVCalId();
+                result = null;
             }
 
             return CrmId.Get(result);
@@ -195,6 +204,26 @@ namespace SuiteCRMAddIn.Extensions
             else
             {
                 Globals.ThisAddIn.Log.Warn($"Failed to find vCal-Uid in short GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Am I actually a valid Outlook item at all?
+        /// </summary>
+        /// <param name="item">The item</param>
+        /// <returns>True if the item is a valid COM object representing an AppointmentItem.</returns>
+        public static bool IsValid(this Outlook.AppointmentItem item)
+        {
+            bool result;
+            try
+            {
+                result = !string.IsNullOrEmpty(item.EntryID);
+            }
+            catch (COMException)
+            {
+                result = false;
             }
 
             return result;

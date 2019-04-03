@@ -35,13 +35,11 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class TaskSyncState: SyncState<Outlook.TaskItem>
     {
-        public TaskSyncState(Outlook.TaskItem item, CrmId crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
+        public TaskSyncState(Outlook.TaskItem item, CrmId crmId, DateTime modifiedDate) : base(item, item.EntryID, crmId, modifiedDate)
         {
         }
 
         public override string CrmType => TaskSynchroniser.CrmModule;
-
-        public override string OutlookItemEntryId => OutlookItem.EntryID;
 
         protected override bool VerifyItem()
         {

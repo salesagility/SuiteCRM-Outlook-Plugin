@@ -118,35 +118,39 @@ namespace SuiteCRMAddIn.BusinessLogic
         protected override void OutlookItemAdded(AppointmentItem olItem)
         {
             if (Globals.ThisAddIn.IsLicensed)
-                try
+                lock (enqueueingLock)
                 {
-                    var crmId = olItem.GetCrmId();
-
-                    if (CrmId.IsValid(crmId))
+                    try
                     {
-                        var existing =
-                            SyncStateManager.Instance.GetExistingSyncState(string.Empty, crmId) as AppointmentSyncState;
+                        var crmId = olItem.GetCrmId();
+                        var entryId = olItem.EntryID;
 
-                        /* we have an existing item with the same CRM id: suspicious */
-                        if (existing != null && existing.OutlookItem.GetVCalId() != crmId.ToString())
+                        if (CrmId.IsValid(crmId))
                         {
-                            /* OK, its GlobalAppointmentId is wrong, it must have come via sync. Delete it. */
-                            Log.Debug(
-                                $"Apparent case of item synced from CRM and then received via email/vCal. CRM id is {crmId}. Deleting bad copy.");
-                            RemoveItemAndSyncState(existing);
-                        }
-                    }
+                            var existing =
+                                SyncStateManager.Instance.GetExistingSyncState(string.Empty, crmId) as AppointmentSyncState;
 
-                    Log.Debug($"OutlookItemAdded: entry, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
-                    if (olItem.IsCall())
-                        base.OutlookItemAdded(olItem, Globals.ThisAddIn.CallsSynchroniser);
-                    else
-                        base.OutlookItemAdded(olItem, Globals.ThisAddIn.MeetingsSynchroniser);
-                    Log.Debug($"OutlookItemAdded: exit, CRM id = {crmId}; Outlook ID = {olItem.EntryID}");
-                }
-                finally
-                {
-                    SaveItem(olItem);
+                            /* we have an existing item with the same CRM id: suspicious */
+                            if (existing != null && existing.OutlookItem.GetVCalId() != crmId.ToString())
+                            {
+                                /* OK, its GlobalAppointmentId is wrong, it must have come via sync. Delete it. */
+                                Log.Debug(
+                                    $"Apparent case of item synced from CRM and then received via email/vCal. CRM id is {crmId}. Deleting bad copy.");
+                                RemoveItemAndSyncState(existing);
+                            }
+                        }
+
+                        Log.Debug($"OutlookItemAdded: entry, CRM id = {crmId}; Outlook ID = {entryId}");
+                        if (olItem.IsCall())
+                            base.OutlookItemAdded(olItem, Globals.ThisAddIn.CallsSynchroniser);
+                        else
+                            base.OutlookItemAdded(olItem, Globals.ThisAddIn.MeetingsSynchroniser);
+                        Log.Debug($"OutlookItemAdded: exit, CRM id = {crmId}; Outlook ID = {entryId}");
+                    }
+                    finally
+                    {
+                        SaveItem(olItem);
+                    }
                 }
             else
                 Log.Warn(
@@ -189,15 +193,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                olItem?.Save();
-                try
+                if (olItem != null && olItem.IsValid())
                 {
-                    LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
-                }
-                catch (InvalidCrmIdException)
-                {
-                    Log.Debug(
-                        $"AppointmentSyncing.SaveItem, saved item '{olItem.Subject}' {olItem.EntryID} (no valid CRM id)");
+                    olItem?.Save();
+                    try
+                    {
+                        LogItemAction(olItem, "AppointmentSyncing.SaveItem, saved item");
+                    }
+                    catch (InvalidCrmIdException)
+                    {
+                        Log.Debug(
+                            $"AppointmentSyncing.SaveItem, saved item '{olItem.Subject}' {olItem.EntryID} (no valid CRM id)");
+                    }
                 }
             }
             catch (Exception any)
@@ -332,13 +339,13 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                     /* set the SEntryID property quickly, create the sync state and save the item, to reduce howlaround */
                     EnsureSynchronisationPropertiesForOutlookItem(olItem, crmItem, crmType);
-                }
 
-                LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
-                if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
-                {
-                    olItem.Start = dateStart;
-                    SetOutlookItemDuration(crmType, crmItem, olItem);
+                    LogItemAction(olItem, "AppointmentSyncing.AddNewItemFromCrmToOutlook");
+                    if (!string.IsNullOrWhiteSpace(crmItem.GetValueAsString("date_start")))
+                    {
+                        olItem.Start = dateStart;
+                        SetOutlookItemDuration(crmType, crmItem, olItem);
+                    }
                 }
             }
             catch (Exception any)
@@ -785,8 +792,18 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         protected override bool IsMatch(AppointmentItem olItem, EntryValue crmItem)
         {
-            return olItem.Subject == crmItem.GetValueAsString("name") &&
-                   crmItem.GetValueAsDateTime("date_start") == olItem.Start;
+            bool result;
+            try
+            {
+                result = olItem.Subject == crmItem.GetValueAsString("name") &&
+                       crmItem.GetValueAsDateTime("date_start") == olItem.Start;
+            }
+            catch (COMException)
+            {
+                result = false;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -942,7 +959,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (!syncState.IsDeletedInOutlook)
             {
                 var olItem = syncState.OutlookItem;
-                var olPropertyModifiedDate = olItem.UserProperties[SyncStateManager.ModifiedDatePropertyName];
+                var olPropertyModifiedDate = olItem!= null && olItem.IsValid() ? olItem.UserProperties[SyncStateManager.ModifiedDatePropertyName] : null;
 
                 if (olPropertyModifiedDate == null || olPropertyModifiedDate.Value !=
                     crmItem.GetValueAsString("date_modified"))

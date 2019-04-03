@@ -43,11 +43,11 @@ namespace SuiteCRMAddIn.ProtoItems
 
         private readonly string priority;
 
-        private readonly string status;
+        private readonly string taskStatus;
         private readonly string subject;
         private readonly CrmId crmEntryId;
 
-        public override string Description => $"{this.subject} ({this.status})";
+        public override string Description => $"{this.subject} ({this.taskStatus})";
 
         public ProtoTask(Outlook.TaskItem oItem)
         {
@@ -103,19 +103,19 @@ namespace SuiteCRMAddIn.ProtoItems
             switch (oItem.Status)
             {
                 case Outlook.OlTaskStatus.olTaskNotStarted:
-                    status = "Not Started";
+                    taskStatus = "Not Started";
                     break;
                 case Outlook.OlTaskStatus.olTaskInProgress:
-                    status = "In Progress";
+                    taskStatus = "In Progress";
                     break;
                 case Outlook.OlTaskStatus.olTaskComplete:
-                    status = "Completed";
+                    taskStatus = "Completed";
                     break;
                 case Outlook.OlTaskStatus.olTaskDeferred:
-                    status = "Deferred";
+                    taskStatus = "Deferred";
                     break;
                 default:
-                    status = string.Empty;
+                    taskStatus = string.Empty;
                     break;
             }
 
@@ -189,7 +189,7 @@ namespace SuiteCRMAddIn.ProtoItems
             {
                 RestAPIWrapper.SetNameValuePair("name", this.subject),
                 RestAPIWrapper.SetNameValuePair("description", this.description),
-                RestAPIWrapper.SetNameValuePair("status", this.status),
+                RestAPIWrapper.SetNameValuePair("status", this.taskStatus),
                 RestAPIWrapper.SetNameValuePair("date_due", this.dateDue),
                 RestAPIWrapper.SetNameValuePair("date_start", this.dateStart),
                 RestAPIWrapper.SetNameValuePair("priority", this.priority),

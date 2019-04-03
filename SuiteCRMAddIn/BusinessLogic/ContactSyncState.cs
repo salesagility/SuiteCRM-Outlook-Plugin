@@ -40,7 +40,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
         private ILogger Log = Globals.ThisAddIn.Log;
-        public ContactSyncState(Outlook.ContactItem oItem, CrmId crmId, DateTime modified) : base(oItem, crmId, modified)
+        public ContactSyncState(Outlook.ContactItem oItem, CrmId crmId, DateTime modified) : base(oItem, oItem.EntryID, crmId, modified)
         {
         }
 
@@ -65,8 +65,6 @@ namespace SuiteCRMAddIn.BusinessLogic
         public override string CrmType => ContactSynchroniser.CrmModule;
 
         public override bool ShouldSyncWithCrm => IsPublic;
-
-        public override string OutlookItemEntryId => OutlookItem.EntryID;
 
         public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
 

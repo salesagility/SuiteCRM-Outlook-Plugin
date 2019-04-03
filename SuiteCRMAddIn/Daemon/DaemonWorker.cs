@@ -84,7 +84,7 @@ namespace SuiteCRMAddIn.Daemon
         /// Return an enumerable of the descriptions of my pending tasks.
         /// </summary>
         /// <returns> an enumerable of the descriptions of my pending tasks.</returns>
-        public IEnumerable<string> PendingTaskDescriptions => this.tasks.Select(t => t.Description);
+        public IEnumerable<string> PendingTaskDescriptions => this.tasks.Select(t => t.Description).ToList();
 
         /// <summary>
         /// Put me into a mode where I finish all the work I have to do quickly.
