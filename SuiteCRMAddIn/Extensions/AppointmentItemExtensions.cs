@@ -221,7 +221,7 @@ namespace SuiteCRMAddIn.Extensions
             {
                 result = !string.IsNullOrEmpty(item.EntryID);
             }
-            catch (COMException)
+            catch (Exception e) when (e is COMException || e is NullReferenceException)
             {
                 result = false;
             }

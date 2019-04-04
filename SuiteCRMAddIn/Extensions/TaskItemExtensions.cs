@@ -27,6 +27,7 @@ namespace SuiteCRMAddIn.Extensions
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Text;
     using System.Threading.Tasks;
     using Outlook = Microsoft.Office.Interop.Outlook;
@@ -84,6 +85,27 @@ namespace SuiteCRMAddIn.Extensions
             }
 
             return CrmId.Get(result);
+        }
+
+
+        /// <summary>
+        /// Am I actually a valid Outlook item at all?
+        /// </summary>
+        /// <param name="item">The item</param>
+        /// <returns>True if the item is a valid COM object representing an AppointmentItem.</returns>
+        public static bool IsValid(this Outlook.TaskItem item)
+        {
+            bool result;
+            try
+            {
+                result = !string.IsNullOrEmpty(item.EntryID);
+            }
+            catch (COMException)
+            {
+                result = false;
+            }
+
+            return result;
         }
     }
 }

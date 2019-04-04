@@ -49,30 +49,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public bool ExistedInCrm => CrmId.IsValid(CrmEntryId);
 
-        public bool IsDeletedInOutlook
-        {
-            get
-            {
-                bool result;
-                if (_wasDeleted) return true;
-                // TODO: Make this logic more robust. Perhaps check HRESULT of COMException?
-                try
-                {
-                    // Has the side-effect of throwing an exception if the item has been deleted:
-                    var entryId = OutlookItemEntryId;
-                    result = false;
-                }
-                catch (COMException com)
-                {
-                    Globals.ThisAddIn.Log.Debug($"Object has probably been deleted: {com.ErrorCode}, {com.Message}; HResult {com.HResult}");
-                    _wasDeleted = true;
-                    result = true;
-                }
-
-                return result;
-            }
-        }
-
         public bool IsPublic => OutlookItemSensitivity == Outlook.OlSensitivity.olNormal;
 
         public DateTime OModifiedDate { get; set; }
@@ -81,6 +57,11 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// The EntryId of the Outlook item I wrap.
         /// </summary>
         public readonly string OutlookItemEntryId;
+
+        /// <summary>
+        /// True if the Outlook item I represent has been deleted.
+        /// </summary>
+        public abstract bool IsDeletedInOutlook { get; }
 
         /// <summary>
         /// Precisely 'this.OutlookItem.Sensitivity'.

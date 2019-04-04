@@ -46,7 +46,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
 
-        protected override bool VerifyItem()
+        public override bool VerifyItem()
         {
             bool result;
             try
@@ -66,9 +66,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override bool ShouldSyncWithCrm => IsPublic;
 
-        public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
+        public override Outlook.OlSensitivity OutlookItemSensitivity =>
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.Sensitivity : Outlook.OlSensitivity.olPrivate;
 
-        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
+        public override Outlook.UserProperties OutlookUserProperties =>
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.UserProperties : null;
 
         public override string Description
         {

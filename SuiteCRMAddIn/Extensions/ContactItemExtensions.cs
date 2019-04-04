@@ -24,6 +24,7 @@ namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
     using SuiteCRMClient;
+    using System.Runtime.InteropServices;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -65,6 +66,27 @@ namespace SuiteCRMAddIn.Extensions
         {
             Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
             CrmId result = property != null ? CrmId.Get(property.Value) : CrmId.Empty;
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Am I actually a valid Outlook item at all?
+        /// </summary>
+        /// <param name="item">The item</param>
+        /// <returns>True if the item is a valid COM object representing an AppointmentItem.</returns>
+        public static bool IsValid(this Outlook.ContactItem item)
+        {
+            bool result;
+            try
+            {
+                result = !string.IsNullOrEmpty(item.EntryID);
+            }
+            catch (COMException)
+            {
+                result = false;
+            }
 
             return result;
         }

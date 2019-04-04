@@ -41,7 +41,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override string CrmType => TaskSynchroniser.CrmModule;
 
-        protected override bool VerifyItem()
+        public override bool VerifyItem()
         {
             bool result;
             try
@@ -56,9 +56,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             return result;
         }
 
-        public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
+        public override Outlook.OlSensitivity OutlookItemSensitivity =>
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.Sensitivity : Outlook.OlSensitivity.olPrivate;
 
-        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
+        public override Outlook.UserProperties OutlookUserProperties =>
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.UserProperties : null;
 
         public override string Description
         {

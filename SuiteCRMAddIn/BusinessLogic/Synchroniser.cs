@@ -36,6 +36,7 @@ using SuiteCRMClient;
 using SuiteCRMClient.Logging;
 using SuiteCRMClient.RESTObjects;
 using Exception = System.Exception;
+using System.Runtime.InteropServices;
 
 #endregion
 
@@ -229,13 +230,17 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             var result = CrmId.Empty;
 
-            if (ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem))
+            lock (enqueueingLock)
             {
-                var olItem = syncState.OutlookItem;
-
-                try
+                if (!syncState.VerifyItem())
                 {
-                    lock (enqueueingLock)
+                    // TODO: this puts us into a death spiral, if item is a meeting. HandleItemMissingFromOutlook(syncState);
+                }
+                else if (ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem))
+                {
+                    var olItem = syncState.OutlookItem;
+
+                    try
                     {
                         LogItemAction(olItem, "Synchroniser.AddOrUpdateItemFromOutlookToCrm, Despatching");
 
@@ -271,15 +276,15 @@ namespace SuiteCRMAddIn.BusinessLogic
                             Log.Warn($"Unexpected error while transmitting {DefaultCrmModule}.", any);
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    ErrorHandler.Handle("Failed while trying to add or update an item from Outlook to CRM", ex);
-                    syncState.SetPending(true);
-                }
-                finally
-                {
-                    SaveItem(olItem);
+                    catch (Exception ex)
+                    {
+                        ErrorHandler.Handle("Failed while trying to add or update an item from Outlook to CRM", ex);
+                        syncState.SetPending(true);
+                    }
+                    finally
+                    {
+                        SaveItem(olItem);
+                    }
                 }
             }
 
@@ -542,7 +547,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 result = SyncStateManager.Instance.GetSynchronisedItems<SyncState<OutlookItemType>>()
-                    .Where(a => IsMatch(a.OutlookItem, crmItem))
+                    .Where(a => a.VerifyItem() && IsMatch(a.OutlookItem, crmItem))
                     .ToList();
             }
             catch (Exception any)
@@ -627,6 +632,12 @@ namespace SuiteCRMAddIn.BusinessLogic
             try
             {
                 OutlookItemChanged(olItem as OutlookItemType);
+            }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                // invalid item passed into Items_ItemChange, which is odd and 
+                // worrying but not much we can do.
+                Log.Debug("invalid item passed into Items_ItemChange");
             }
             catch (Exception problem)
             {
@@ -850,7 +861,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 var shouldDeleteFromCrm = this.IsEnabled() &&
                     SyncDirection.AllowOutbound(this.Direction) && 
-                    (syncState.IsDeletedInOutlook || !syncState.ShouldSyncWithCrm);
+                    (syncState.IsDeletedInOutlook || !syncState.VerifyItem() || !syncState.ShouldSyncWithCrm);
                 if (shouldDeleteFromCrm) RemoveFromCrm(syncState);
                 if (syncState.IsDeletedInOutlook) SyncStateManager.Instance.RemoveSyncState(syncState);
             }

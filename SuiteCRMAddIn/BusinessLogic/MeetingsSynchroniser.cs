@@ -141,7 +141,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             int result = 0;
 
-            foreach (MeetingSyncState state in SyncStateManager.Instance.GetSynchronisedItems<MeetingSyncState>())
+            foreach (MeetingSyncState state in SyncStateManager.Instance.GetSynchronisedItems<MeetingSyncState>().Where(s => s.VerifyItem()))
             {
                 Outlook.AppointmentItem item = state.OutlookItem;
 
@@ -184,7 +184,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         internal override CrmId AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
         {
-            CrmId previousCrmId = syncState.OutlookItem.GetCrmId();
+            CrmId previousCrmId = syncState.CrmEntryId;
             CrmId result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
 
             if (CrmId.IsValid(result))

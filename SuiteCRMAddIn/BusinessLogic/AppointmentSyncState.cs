@@ -97,9 +97,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.IsValid() ? OutlookItem.Sensitivity : Outlook.OlSensitivity.olPrivate;
+        public override Outlook.OlSensitivity OutlookItemSensitivity => 
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.Sensitivity : Outlook.OlSensitivity.olPrivate;
 
-        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.IsValid() ? OutlookItem.UserProperties : null;
+        public override Outlook.UserProperties OutlookUserProperties => 
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.UserProperties : null;
 
         public override void DeleteItem()
         {
@@ -116,7 +118,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             if (this.OutlookItem != null && this.OutlookItem.IsValid()) this.OutlookItem?.Save();
         }
 
-        protected override bool VerifyItem()
+        public override bool VerifyItem()
         {
             bool result;
             try

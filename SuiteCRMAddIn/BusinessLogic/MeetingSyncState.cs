@@ -62,7 +62,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         internal override ProtoItem<AppointmentItem> CreateProtoItem(AppointmentItem outlookItem)
         {
-            return new ProtoAppointment<MeetingSyncState>(outlookItem);
+            return this.VerifyItem() ?  new ProtoAppointment<MeetingSyncState>(outlookItem) : null;
         }
 
 

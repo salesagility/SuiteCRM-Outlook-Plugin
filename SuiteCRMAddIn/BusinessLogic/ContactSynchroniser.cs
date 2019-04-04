@@ -239,23 +239,26 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="message">The message to be logged.</param>
         internal override void LogItemAction(Outlook.ContactItem olItem, string message)
         {
-            try
+            if (olItem != null && olItem.IsValid())
             {
-                CrmId crmId = this.IsEnabled() ? olItem.GetCrmId() : CrmId.Empty;
-                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
+                try
+                {
+                    CrmId crmId = this.IsEnabled() ? olItem.GetCrmId() : CrmId.Empty;
+                    if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
-                StringBuilder bob = new StringBuilder();
-                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
-                    .Append(this.IsEnabled() ? $"\n\tCRM Id      : {crmId}" : string.Empty)
-                    .Append($"\n\tFull name   : '{olItem.FullName}'")
-                    .Append($"\n\tSensitivity : {olItem.Sensitivity}")
-                    .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
+                    StringBuilder bob = new StringBuilder();
+                    bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
+                        .Append(this.IsEnabled() ? $"\n\tCRM Id      : {crmId}" : string.Empty)
+                        .Append($"\n\tFull name   : '{olItem.FullName}'")
+                        .Append($"\n\tSensitivity : {olItem.Sensitivity}")
+                        .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
 
-                Log.Info(bob.ToString());
-            }
-            catch (COMException)
-            {
-                // Ignore: happens if the outlook item is already deleted.
+                    Log.Info(bob.ToString());
+                }
+                catch (COMException)
+                {
+                    // Ignore: happens if the outlook item is already deleted.
+                }
             }
         }
 

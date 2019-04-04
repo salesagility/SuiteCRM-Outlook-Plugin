@@ -104,7 +104,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// Varify that item has not become detached (does not throw a COMException when interrogated).
         /// </summary>
         /// <returns>false </returns>
-        protected abstract bool VerifyItem();
+        public abstract bool VerifyItem();
 
         /// <summary>
         /// A lock that should be obtained before operations which operate on the TxState or the
@@ -174,7 +174,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var current = this.CreateProtoItem(this.OutlookItem)
                     .AsNameValues()
                     .AsDictionary();
-                unchanged = older.Keys.Count.Equals(current.Keys.Count);
+                unchanged = current != null && older.Keys.Count.Equals(current.Keys.Count);
 
                 if (unchanged)
                 {
@@ -196,6 +196,18 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="outlookItem">The outlook item to copy.</param>
         /// <returns>the proto-item.</returns>
         internal abstract ProtoItem<ItemType> CreateProtoItem(ItemType outlookItem);
+
+        /// <summary>
+        /// True if the Outlook item I represent has been deleted.
+        /// </summary>
+        public override bool IsDeletedInOutlook
+        {
+            get
+            {
+                return !this.VerifyItem();
+            }
+        }
+
 
         /// <summary>
         /// Don't send updates immediately on change, to prevent jitter; don't send updates if nothing
