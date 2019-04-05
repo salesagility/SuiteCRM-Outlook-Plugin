@@ -16,7 +16,7 @@
         /// <summary>
         /// (For meetings only) the meeting status.
         /// </summary>
-        public readonly Outlook.OlMeetingStatus status;
+        public Outlook.OlMeetingStatus Status;
 
         /// <summary>
         /// Super-Constructor for a ProtoItem which is not a meeting; sets status to `olNonMeeting`.
@@ -25,7 +25,7 @@
 
         public ProtoItem(Outlook.OlMeetingStatus meetingStatus)
         {
-            this.status = meetingStatus;
+            this.Status = meetingStatus;
         }
     }
 }

@@ -751,21 +751,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        ///     Override: we get notified of a removal, for a Meeting item, when the meeting is
-        ///     cancelled. We do NOT want to remove such an item; instead, we want to update it.
-        /// </summary>
-        /// <param name="state"></param>
-        protected override void RemoveFromCrm(SyncState state)
-        {
-            if (state.CrmType == MeetingsSynchroniser.CrmModule)
-                // TODO: this is the death spiral right here
-                AddOrUpdateItemFromOutlookToCrm((SyncState<AppointmentItem>) state);
-            else
-                base.RemoveFromCrm(state);
-        }
-
-
-        /// <summary>
         ///     Typically, when handling an item missing from outlook, the outlook item is missing and so can't
         ///     be relied on; treat this record as representing the current, known state of the item.
         /// </summary>

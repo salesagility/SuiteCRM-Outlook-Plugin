@@ -234,7 +234,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (!syncState.VerifyItem())
                 {
-                    // TODO: this puts us into a death spiral, if item is a meeting. HandleItemMissingFromOutlook(syncState);
+                    // TODO: this puts us into a death spiral, if item is a meeting. 
+                    HandleItemMissingFromOutlook(syncState);
                 }
                 else if (ShouldAddOrUpdateItemFromOutlookToCrm(syncState.OutlookItem))
                 {

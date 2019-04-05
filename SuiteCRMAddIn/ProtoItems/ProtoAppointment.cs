@@ -149,7 +149,7 @@ namespace SuiteCRMAddIn.ProtoItems
             string statusString;
             string name;
 
-            switch (this.status)
+            switch (this.Status)
             {
                 case Outlook.OlMeetingStatus.olMeetingCanceled:
                     statusString = "Not Held";
