@@ -1092,9 +1092,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                 {
                     CacheAddressResolutionData(list.name, record);
                 }
-                catch (TypeInitializationException tix)
+                catch (Exception e) when (e is TypeInitializationException || e is InvalidCrmIdException)
                 {
-                    ErrorHandler.Handle("Probable invalid CRM ID", tix);
+                    ErrorHandler.Handle("Probable invalid CRM ID", e);
                 }
                 catch (KeyNotFoundException kex)
                 {

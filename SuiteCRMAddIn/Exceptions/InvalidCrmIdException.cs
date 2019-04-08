@@ -31,7 +31,7 @@ namespace SuiteCRMAddIn.Exceptions
     /// <see cref="SuiteCRMAddIn.BusinessLogic.CrmId.Validator"/>
     /// </summary>
     [Serializable]
-    internal class InvalidCrmIdException : Exception
+    internal class InvalidCrmIdException : NeverShowUserException
     {
         public InvalidCrmIdException()
         {
@@ -42,10 +42,6 @@ namespace SuiteCRMAddIn.Exceptions
         }
 
         public InvalidCrmIdException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected InvalidCrmIdException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }
