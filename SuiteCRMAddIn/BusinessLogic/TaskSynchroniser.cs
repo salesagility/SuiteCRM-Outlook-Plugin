@@ -97,7 +97,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                olItem.Save();
+                olItem?.Save();
                 LogItemAction(olItem, "TaskSyncing.SaveItem, saved item");
             }
             catch (System.Exception any)
@@ -144,23 +144,26 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="message">The message to be logged.</param>
         internal override void LogItemAction(Outlook.TaskItem olItem, string message)
         {
-            try
+            if (olItem != null && olItem.IsValid())
             {
-                CrmId crmId = this.IsEnabled() ? olItem.GetCrmId() : CrmId.Empty;
-                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
+                try
+                {
+                    CrmId crmId = this.IsEnabled() ? olItem.GetCrmId() : CrmId.Empty;
+                    if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
-                StringBuilder bob = new StringBuilder();
-                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
-                    .Append(this.IsEnabled() ? $"\n\tCRM Id      : {crmId}" : string.Empty)
-                    .Append($"\n\tSubject     : '{olItem.Subject}'")
-                    .Append($"\n\tStatus      : {olItem.Status}")
-                    .Append($"\n\tSensitivity : {olItem.Sensitivity}")
-                    .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
-                Log.Info(bob.ToString());
-            }
-            catch (COMException)
-            {
-                // Ignore: happens if the outlook item is already deleted.
+                    StringBuilder bob = new StringBuilder();
+                    bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
+                        .Append(this.IsEnabled() ? $"\n\tCRM Id      : {crmId}" : string.Empty)
+                        .Append($"\n\tSubject     : '{olItem.Subject}'")
+                        .Append($"\n\tStatus      : {olItem.Status}")
+                        .Append($"\n\tSensitivity : {olItem.Sensitivity}")
+                        .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
+                    Log.Info(bob.ToString());
+                }
+                catch (COMException)
+                {
+                    // Ignore: happens if the outlook item is already deleted.
+                }
             }
         }
 
@@ -259,9 +262,9 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 olItem.Subject = crmItem.GetValueAsString("name");
 
-                olItem.StartDate = MaybeChangeDate(dateStart, olItem.StartDate, "olItem.StartDate");
+                olItem.StartDate = MaybeChangeDate(dateStart, olItem.StartDate, "syncState.StartDate");
 
-                olItem.DueDate = MaybeChangeDate(dateDue, olItem.DueDate, "olItem.DueDate");
+                olItem.DueDate = MaybeChangeDate(dateDue, olItem.DueDate, "syncState.DueDate");
 
                 string body = crmItem.GetValueAsString("description");
                 olItem.Body = string.Concat(body, "#<", timeStart, "#", timeDue);
@@ -341,13 +344,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM.
+        /// Construct a JSON packet representing the Outlook item of this sync state, and despatch 
+        /// it to CRM.
         /// </summary>
-        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="syncState">The Outlook item.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override CrmId ConstructAndDespatchCrmItem(Outlook.TaskItem olItem)
+        protected override CrmId ConstructAndDespatchCrmItem(SyncState<Outlook.TaskItem> syncState)
         {
-            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoTask(olItem).AsNameValues(), this.DefaultCrmModule));
+            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoTask(syncState.OutlookItem).AsNameValues(), this.DefaultCrmModule));
         }
 
 

@@ -97,7 +97,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                     parameters["public_key"] = this.applicationKey;
                     parameters["key"] = this.licenceKey;
 
-                    using (var response = this.service.CreateGetRequest(parameters).GetResponse() as HttpWebResponse)
+                    using (var response =
+                        this.service.CreateGetRequest(parameters).GetResponse() as HttpWebResponse)
                     {
                         result = InterpretStatusCode(response);
                     }

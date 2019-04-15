@@ -35,17 +35,32 @@ namespace SuiteCRMAddIn.BusinessLogic
     /// </summary>
     public class TaskSyncState: SyncState<Outlook.TaskItem>
     {
-        public TaskSyncState(Outlook.TaskItem item, CrmId crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
+        public TaskSyncState(Outlook.TaskItem item, CrmId crmId, DateTime modifiedDate) : base(item, item.EntryID, crmId, modifiedDate)
         {
         }
 
         public override string CrmType => TaskSynchroniser.CrmModule;
 
-        public override string OutlookItemEntryId => OutlookItem.EntryID;
+        public override bool VerifyItem()
+        {
+            bool result;
+            try
+            {
+                result = !string.IsNullOrEmpty(this.Item?.EntryID);
+            }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                result = false;
+            }
 
-        public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
+            return result;
+        }
 
-        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
+        public override Outlook.OlSensitivity OutlookItemSensitivity =>
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.Sensitivity : Outlook.OlSensitivity.olPrivate;
+
+        public override Outlook.UserProperties OutlookUserProperties =>
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.UserProperties : null;
 
         public override string Description
         {
@@ -74,13 +89,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public override Outlook.OlDefaultFolders DefaultFolder
-        {
-            get
-            {
-                return Outlook.OlDefaultFolders.olFolderTasks;
-            }
-        }
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
 
         public override void DeleteItem()
         {
@@ -90,9 +99,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct a JSON-serialisable representation of my task item.
         /// </summary>
-        internal override ProtoItem<Outlook.TaskItem> CreateProtoItem(Outlook.TaskItem outlookItem)
+        internal override ProtoItem<Outlook.TaskItem> CreateProtoItem()
         {
-            return new ProtoTask(outlookItem);
+            return new ProtoTask(OutlookItem);
         }
 
         public override void RemoveSynchronisationProperties()

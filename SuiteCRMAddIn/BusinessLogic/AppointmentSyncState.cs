@@ -35,9 +35,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 
     public abstract class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
-        public AppointmentSyncState(Outlook.AppointmentItem item, CrmId crmId, DateTime modifiedDate) : base(item, crmId, modifiedDate)
+        public AppointmentSyncState(Outlook.AppointmentItem item, CrmId crmId, DateTime modifiedDate) : base(item, item.EntryID, crmId, modifiedDate)
         {
-            this.outlookItemId = item.EntryID;
         }
 
         /// <summary>
@@ -47,13 +46,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         private string crmType;
 
 
-        public override Outlook.OlDefaultFolders DefaultFolder
-        {
-            get
-            {
-                return Outlook.OlDefaultFolders.olFolderCalendar;
-            }
-        }
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderCalendar);
 
 
         /// <summary>
@@ -91,11 +84,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             get
             {
-                CrmId crmId = OutlookItem.GetCrmId();
-                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
+                if (CrmId.IsInvalid(this.CrmEntryId)) { this.CrmEntryId = CrmId.Empty; }
 
                 StringBuilder bob = new StringBuilder();
-                bob.Append($"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {crmId}\n\tSubject     : '{OutlookItem.Subject}'\n\tSensitivity : {OutlookItem.Sensitivity}\n\tStatus     : {OutlookItem.MeetingStatus}\n\tReminder set {OutlookItem.ReminderSet}\n\tState      : {this.TxState}\n\tRecipients:\n");
+                bob.Append($"\tOutlook Id  : {OutlookItem.EntryID}\n\tCRM Id      : {this.CrmEntryId}\n\tSubject     : '{OutlookItem.Subject}'\n\tSensitivity : {OutlookItem.Sensitivity}\n\tStatus     : {OutlookItem.MeetingStatus}\n\tReminder set {OutlookItem.ReminderSet}\n\tState      : {this.TxState}\n\tRecipients:\n");
                 foreach (Outlook.Recipient recipient in OutlookItem.Recipients)
                 {
                     bob.Append($"\t\t{recipient.Name}: {recipient.GetSmtpAddress()} - ({recipient.MeetingResponseStatus})\n");
@@ -105,11 +97,11 @@ namespace SuiteCRMAddIn.BusinessLogic
             }
         }
 
-        public override string OutlookItemEntryId => OutlookItem.EntryID;
+        public override Outlook.OlSensitivity OutlookItemSensitivity => 
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.Sensitivity : Outlook.OlSensitivity.olPrivate;
 
-        public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
-
-        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
+        public override Outlook.UserProperties OutlookUserProperties => 
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.UserProperties : null;
 
         public override void DeleteItem()
         {
@@ -123,7 +115,22 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         internal override void SaveItem()
         {
-            this.OutlookItem?.Save();
+            if (this.OutlookItem != null && this.OutlookItem.IsValid()) this.OutlookItem?.Save();
+        }
+
+        public override bool VerifyItem()
+        {
+            bool result;
+            try
+            {
+                result = !string.IsNullOrEmpty(this.Item?.EntryID);
+            }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                result = false;
+            }
+
+            return result;
         }
     }
 }

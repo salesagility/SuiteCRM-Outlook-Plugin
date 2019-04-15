@@ -30,22 +30,35 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
     using SuiteCRMClient;
+    using System.Threading;
+    using SuiteCRMAddIn.Exceptions;
+
 
     /// <summary>
     /// A SyncState for Contact items.
     /// </summary>
     public class ContactSyncState: SyncState<Outlook.ContactItem>
     {
-        public ContactSyncState(Outlook.ContactItem oItem, CrmId crmId, DateTime modified) : base(oItem, crmId, modified)
+        private ILogger Log = Globals.ThisAddIn.Log;
+        public ContactSyncState(Outlook.ContactItem oItem, CrmId crmId, DateTime modified) : base(oItem, oItem.EntryID, crmId, modified)
         {
         }
 
-        public override Outlook.OlDefaultFolders DefaultFolder
+        public override Outlook.Folder DefaultFolder => (Outlook.Folder)MapiNS.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderContacts);
+
+        public override bool VerifyItem()
         {
-            get
+            bool result;
+            try
             {
-                return Outlook.OlDefaultFolders.olFolderContacts;
+                result = !string.IsNullOrEmpty(this.Item?.EntryID);
             }
+            catch (Exception ex) when (ex is InvalidComObjectException || ex is COMException)
+            {
+                result = false;
+            }
+
+            return result;
         }
 
 
@@ -53,11 +66,11 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override bool ShouldSyncWithCrm => IsPublic;
 
-        public override string OutlookItemEntryId => OutlookItem.EntryID;
+        public override Outlook.OlSensitivity OutlookItemSensitivity =>
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.Sensitivity : Outlook.OlSensitivity.olPrivate;
 
-        public override Outlook.OlSensitivity OutlookItemSensitivity => OutlookItem.Sensitivity;
-
-        public override Outlook.UserProperties OutlookUserProperties => OutlookItem.UserProperties;
+        public override Outlook.UserProperties OutlookUserProperties =>
+            OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.UserProperties : null;
 
         public override string Description
         {
@@ -91,9 +104,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct a JSON-serialisable representation of this contact item.
         /// </summary>
-        internal override ProtoItem<Outlook.ContactItem> CreateProtoItem(Outlook.ContactItem outlookItem)
+        internal override ProtoItem<Outlook.ContactItem> CreateProtoItem()
         {
-            return new ProtoContact(outlookItem);
+            return new ProtoContact(OutlookItem);
         }
 
         public override void RemoveSynchronisationProperties()

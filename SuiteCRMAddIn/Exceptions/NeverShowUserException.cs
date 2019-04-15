@@ -20,28 +20,26 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-
 using System;
-using System.Runtime.Serialization;
 
 namespace SuiteCRMAddIn.Exceptions
 {
     /// <summary>
-    /// An exception thrown if a supposed CRM id does not meet the expected pattern.
-    /// <see cref="SuiteCRMAddIn.BusinessLogic.CrmId.Validator"/>
+    /// Abstract superclass for exceptions which may be logged but should never appear
+    /// in a pop-up. This implies that they are exceptions we are confident the system
+    /// can recover from without problems.
     /// </summary>
-    [Serializable]
-    internal class InvalidCrmIdException : NeverShowUserException
+    public abstract class NeverShowUserException : Exception
     {
-        public InvalidCrmIdException()
+        protected NeverShowUserException() : base()
         {
         }
 
-        public InvalidCrmIdException(string message) : base(message)
+        protected NeverShowUserException(string message) : base(message)
         {
         }
 
-        public InvalidCrmIdException(string message, Exception innerException) : base(message, innerException)
+        protected NeverShowUserException(string message, Exception cause) : base(message, cause)
         {
         }
     }

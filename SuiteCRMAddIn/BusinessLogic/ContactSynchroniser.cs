@@ -65,7 +65,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             try
             {
-                olItem.Save();
+                olItem?.Save();
             }
             catch (System.Exception any)
             {
@@ -239,23 +239,26 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="message">The message to be logged.</param>
         internal override void LogItemAction(Outlook.ContactItem olItem, string message)
         {
-            try
+            if (olItem != null && olItem.IsValid())
             {
-                CrmId crmId = this.IsEnabled() ? olItem.GetCrmId() : CrmId.Empty;
-                if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
+                try
+                {
+                    CrmId crmId = this.IsEnabled() ? olItem.GetCrmId() : CrmId.Empty;
+                    if (CrmId.IsInvalid(crmId)) { crmId = CrmId.Empty; }
 
-                StringBuilder bob = new StringBuilder();
-                bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
-                    .Append(this.IsEnabled() ? $"\n\tCRM Id      : {crmId}" : string.Empty)
-                    .Append($"\n\tFull name   : '{olItem.FullName}'")
-                    .Append($"\n\tSensitivity : {olItem.Sensitivity}")
-                    .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
+                    StringBuilder bob = new StringBuilder();
+                    bob.Append($"{message}:\n\tOutlook Id  : {olItem.EntryID}")
+                        .Append(this.IsEnabled() ? $"\n\tCRM Id      : {crmId}" : string.Empty)
+                        .Append($"\n\tFull name   : '{olItem.FullName}'")
+                        .Append($"\n\tSensitivity : {olItem.Sensitivity}")
+                        .Append($"\n\tTxState     : {SyncStateManager.Instance.GetExistingSyncState(olItem)?.TxState}");
 
-                Log.Info(bob.ToString());
-            }
-            catch (COMException)
-            {
-                // Ignore: happens if the outlook item is already deleted.
+                    Log.Info(bob.ToString());
+                }
+                catch (COMException)
+                {
+                    // Ignore: happens if the outlook item is already deleted.
+                }
             }
         }
 
@@ -487,13 +490,14 @@ namespace SuiteCRMAddIn.BusinessLogic
 
 
         /// <summary>
-        /// Construct a JSON packet representing this Outlook item, and despatch it to CRM.
+        /// Construct a JSON packet representing the Outlook item of this sync state, and despatch 
+        /// it to CRM.
         /// </summary>
-        /// <param name="olItem">The Outlook item.</param>
+        /// <param name="syncState">The sync state.</param>
         /// <returns>The CRM id of the object created or modified.</returns>
-        protected override CrmId ConstructAndDespatchCrmItem(Outlook.ContactItem olItem)
+        protected override CrmId ConstructAndDespatchCrmItem(SyncState<Outlook.ContactItem> syncState)
         {
-            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoContact(olItem).AsNameValues(), this.DefaultCrmModule));
+            return CrmId.Get(RestAPIWrapper.SetEntry(new ProtoContact(syncState.OutlookItem).AsNameValues(), this.DefaultCrmModule));
         }
 
 

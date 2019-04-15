@@ -1,5 +1,7 @@
 ﻿namespace SuiteCRMAddIn.ProtoItems
 {
+    using Outlook = Microsoft.Office.Interop.Outlook;
+
     /// <summary>
     /// A C# proxy for a CRM object.
     /// </summary>
@@ -11,5 +13,19 @@
     /// <typeparam name="OutlookItemType">The type of outlook item this proto-item transduces.</typeparam>
     public abstract class ProtoItem<OutlookItemType> : ProtoItem
     {
+        /// <summary>
+        /// (For meetings only) the meeting status.
+        /// </summary>
+        public Outlook.OlMeetingStatus Status;
+
+        /// <summary>
+        /// Super-Constructor for a ProtoItem which is not a meeting; sets status to `olNonMeeting`.
+        /// </summary>
+        public ProtoItem() : this(Outlook.OlMeetingStatus.olNonMeeting) { }
+
+        public ProtoItem(Outlook.OlMeetingStatus meetingStatus)
+        {
+            this.Status = meetingStatus;
+        }
     }
 }

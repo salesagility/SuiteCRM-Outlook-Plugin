@@ -130,6 +130,20 @@ namespace SuiteCRMAddIn
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
+             /* we need logging before we start the daemon */
+            StartLogging();
+
+            DaemonWorker.Instance.AddTask(new DeferredStartupAction());
+        }
+
+        /// <summary>
+        ///  Actually perform the startup of all the addin's services.
+        /// </summary>
+        /// <remarks>
+        /// Called by <see cref="Daemon.DeferredStartupAction"/>, q.v.
+        /// </remarks>
+        internal void DeferredStartup()
+        {
             try
             {
                 Prepare();
@@ -154,8 +168,6 @@ namespace SuiteCRMAddIn
             this.MaybeUpgradeSettings();
 
             OutlookVersion = (OutlookMajorVersion)Convert.ToInt32(outlookApp.Version.Split('.')[0]);
-
-            StartLogging();
 
             synchronisationContext = new SyncContext(outlookApp);
             callSynchroniser = new CallsSynchroniser("AS", synchronisationContext);
@@ -273,13 +285,13 @@ namespace SuiteCRMAddIn
                     }
                     else
                     {
-                        disable = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed"));
+                        disable = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed")) == DialogResult.Cancel;
                         Log.Info(catalogue.GetString("User chose to disable add-in after licence check succeeded but login to CRM failed."));
                     }
                 }
                 else
                 {
-                    disable = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed"));
+                    disable = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed")) == DialogResult.Cancel;
                     Log.Info(catalogue.GetString("User chose to disable add-in after licence check failed."));
                 }
             }
@@ -338,27 +350,30 @@ namespace SuiteCRMAddIn
         /// Show the reconfigure or disable dialogue with this summary of the problem.
         /// </summary>
         /// <param name="summary">A summary of the problem that caused the dialogue to be shown.</param>
+        /// <param name="allowRetry">if true, the action may be retried.</param>
         /// <returns>true if the user chose to disable the add-in.</returns>
-        internal bool ShowReconfigureOrDisable(string summary)
+        internal DialogResult ShowReconfigureOrDisable(string summary, bool allowRetry = false)
         {
-            bool result;
+            DialogResult result;
 
-            switch (new ReconfigureOrDisableDialog(summary).ShowDialog())
+            result = new ReconfigureOrDisableDialog(summary, allowRetry).ShowDialog();
+            switch (result)
             {
+                case DialogResult.Retry:
+                    Log.Info(catalogue.GetString("User chose to retry connection"));
+                    break;
                 case DialogResult.OK:
                     /* if licence key does not validate, show the settings form to allow the user to enter
                      * a (new) key, and retry. */
                     Log.Info(catalogue.GetString("User chose to reconfigure add-in"));
                     this.ShowSettingsForm();
-                    result = false;
                     break;
                 case DialogResult.Cancel:
                     Log.Info(catalogue.GetString("User chose to disable add-in"));
-                    result = true;
                     break;
                 default:
                     log.Warn(catalogue.GetString("Unexpected response from ReconfigureOrDisableDialog"));
-                    result = true;
+                    result = DialogResult.OK;
                     break;
             }
 
@@ -530,11 +545,11 @@ namespace SuiteCRMAddIn
             }
         }
 
-        public void ShowSettingsForm()
+        public DialogResult ShowSettingsForm()
         {
             var settingsForm = new SettingsDialog();
             settingsForm.SettingsChanged += (sender, args) => this.LogKeySettings();
-            settingsForm.ShowDialog();
+            return settingsForm.ShowDialog();
         }
 
         public void ShowArchiveForm()
@@ -559,16 +574,29 @@ namespace SuiteCRMAddIn
 
         private void ReconfigureOrDisable()
         {
+            DialogResult result;
             if (!HasCrmUserSession)
             {
-                if (this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed")))
+                for (result = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed", true));
+                    result != DialogResult.Retry;
+                    result = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed", true)))
+                {
+                    this.Authenticate();
+                }
+                if (result == DialogResult.Cancel)
                 {
                     this.Disable();
                 }
             }
             else if (!IsLicensed)
             {
-                if (this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed")))
+                for (result = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed", true));
+                    result != DialogResult.Retry;
+                    result = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed", true)))
+                {
+                    this.VerifyLicenceKey();
+                }
+                if (result == DialogResult.Cancel)
                 {
                     this.Disable();
                 }
@@ -880,10 +908,7 @@ namespace SuiteCRMAddIn
             return new SuiteCRMRibbon();
         }
 
-        public bool SuiteCRMAuthenticate()
-        {
-            return HasCrmUserSession ? true : Authenticate();
-        }
+        public bool SuiteCRMAuthenticate() => HasCrmUserSession ? true : Authenticate();
 
         public bool Authenticate()
         {
@@ -922,10 +947,7 @@ namespace SuiteCRMAddIn
                     }
                     catch (Exception any)
                     {
-                        ShowAndLogError(
-                            any, 
-                            catalogue.GetString("Failure while trying to authenticate to CRM"), 
-                            catalogue.GetString("Login failure"));
+                        Log.Error("Failure while trying to authenticate to CRM", any);
                     }
                 }
                 else
@@ -981,6 +1003,22 @@ namespace SuiteCRMAddIn
                 }
             }
         }
+
+        public IEnumerable<Outlook.ContactItem> SelectedContacts
+        {
+            get
+            {
+                var selection = Application.ActiveExplorer()?.Selection;
+                if (selection == null) yield break;
+                foreach (object e in selection)
+                {
+                    var contact = e as Outlook.ContactItem;
+                    if (contact != null) yield return contact;
+                    Marshal.ReleaseComObject(e);
+                }
+            }
+        }
+
 
         /// <summary>
         /// True if this is a licensed copy of the add-in.

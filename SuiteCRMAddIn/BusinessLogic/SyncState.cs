@@ -49,39 +49,19 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public bool ExistedInCrm => CrmId.IsValid(CrmEntryId);
 
-        public bool IsDeletedInOutlook
-        {
-            get
-            {
-                bool result;
-                if (_wasDeleted) return true;
-                // TODO: Make this logic more robust. Perhaps check HRESULT of COMException?
-                try
-                {
-                    // Has the side-effect of throwing an exception if the item has been deleted:
-                    var entryId = OutlookItemEntryId;
-                    result = false;
-                }
-                catch (COMException com)
-                {
-                    Globals.ThisAddIn.Log.Debug($"Object has probably been deleted: {com.ErrorCode}, {com.Message}; HResult {com.HResult}");
-                    _wasDeleted = true;
-                    result = true;
-                }
-
-                return result;
-            }
-        }
-
         public bool IsPublic => OutlookItemSensitivity == Outlook.OlSensitivity.olNormal;
 
         public DateTime OModifiedDate { get; set; }
 
         /// <summary>
-        /// Precisely 'this.OutlookItem.EntryId'.
+        /// The EntryId of the Outlook item I wrap.
         /// </summary>
-        /// <remarks>Outlook item classes do not inherit from a common base class, so generic client code cannot refer to 'OutlookItem.EntryId'.</remarks>
-        public abstract string OutlookItemEntryId { get; }
+        public readonly string OutlookItemEntryId;
+
+        /// <summary>
+        /// True if the Outlook item I represent has been deleted.
+        /// </summary>
+        public abstract bool IsDeletedInOutlook { get; }
 
         /// <summary>
         /// Precisely 'this.OutlookItem.Sensitivity'.
@@ -92,6 +72,15 @@ namespace SuiteCRMAddIn.BusinessLogic
         public abstract Outlook.UserProperties OutlookUserProperties { get; }
 
         public virtual bool ShouldSyncWithCrm => IsPublic;
+
+        /// <summary>
+        /// Create a new instance of a SyncState, with this itemId, expected to be the EntryId of the item I wrap.
+        /// </summary>
+        /// <param name="itemId">the EntryId of the item I wrap</param>
+        public SyncState(string itemId)
+        {
+            this.OutlookItemEntryId = itemId;
+        }
 
         public void RemoveCrmLink()
         {

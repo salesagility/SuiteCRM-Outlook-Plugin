@@ -101,6 +101,7 @@ namespace SuiteCRMAddIn.Dialogs
             this.syncContactsLabel = new System.Windows.Forms.Label();
             this.syncLabel = new System.Windows.Forms.Label();
             this.InformationTabPage = new System.Windows.Forms.TabPage();
+            this.dotNetVersionLabel = new System.Windows.Forms.Label();
             this.AddInVersionLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.crmIdValidationSelector = new System.Windows.Forms.ComboBox();
@@ -117,7 +118,10 @@ namespace SuiteCRMAddIn.Dialogs
             this.AddInTitleLabel = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
-            this.dotNetVersionLabel = new System.Windows.Forms.Label();
+            this.startupDeferralGroup = new System.Windows.Forms.GroupBox();
+            this.startupDeferralLabel = new System.Windows.Forms.Label();
+            this.startupDeferralInput = new System.Windows.Forms.NumericUpDown();
+            this.startupDeferralHelp = new System.Windows.Forms.Label();
             this.tabPage3.SuspendLayout();
             this.EmailArchiveAccountTabs.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -133,6 +137,8 @@ namespace SuiteCRMAddIn.Dialogs
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.policyBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).BeginInit();
+            this.startupDeferralGroup.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.startupDeferralInput)).BeginInit();
             this.SuspendLayout();
             // 
             // tabPage3
@@ -519,6 +525,7 @@ namespace SuiteCRMAddIn.Dialogs
             // 
             // synchronisationTab
             // 
+            this.synchronisationTab.Controls.Add(this.startupDeferralGroup);
             this.synchronisationTab.Controls.Add(this.syncTasksMenu);
             this.synchronisationTab.Controls.Add(this.syncTasksLabel);
             this.synchronisationTab.Controls.Add(this.syncMeetingsMenu);
@@ -625,6 +632,16 @@ namespace SuiteCRMAddIn.Dialogs
             this.InformationTabPage.TabIndex = 3;
             this.InformationTabPage.Text = "Information";
             this.InformationTabPage.UseVisualStyleBackColor = true;
+            // 
+            // dotNetVersionLabel
+            // 
+            this.dotNetVersionLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.dotNetVersionLabel.Location = new System.Drawing.Point(13, 77);
+            this.dotNetVersionLabel.Name = "dotNetVersionLabel";
+            this.dotNetVersionLabel.Size = new System.Drawing.Size(332, 16);
+            this.dotNetVersionLabel.TabIndex = 7;
+            this.dotNetVersionLabel.Text = ".Net version 0.0.0";
+            this.dotNetVersionLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // AddInVersionLabel
             // 
@@ -779,15 +796,46 @@ namespace SuiteCRMAddIn.Dialogs
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // dotNetVersionLabel
+            // startupDeferralGroup
             // 
-            this.dotNetVersionLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.dotNetVersionLabel.Location = new System.Drawing.Point(13, 77);
-            this.dotNetVersionLabel.Name = "dotNetVersionLabel";
-            this.dotNetVersionLabel.Size = new System.Drawing.Size(332, 16);
-            this.dotNetVersionLabel.TabIndex = 7;
-            this.dotNetVersionLabel.Text = ".Net version 0.0.0";
-            this.dotNetVersionLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.startupDeferralGroup.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.startupDeferralGroup.Controls.Add(this.startupDeferralHelp);
+            this.startupDeferralGroup.Controls.Add(this.startupDeferralInput);
+            this.startupDeferralGroup.Controls.Add(this.startupDeferralLabel);
+            this.startupDeferralGroup.Location = new System.Drawing.Point(20, 182);
+            this.startupDeferralGroup.Name = "startupDeferralGroup";
+            this.startupDeferralGroup.Size = new System.Drawing.Size(334, 186);
+            this.startupDeferralGroup.TabIndex = 9;
+            this.startupDeferralGroup.TabStop = false;
+            this.startupDeferralGroup.Text = "Startup Deferral";
+            // 
+            // startupDeferralLabel
+            // 
+            this.startupDeferralLabel.AutoSize = true;
+            this.startupDeferralLabel.Location = new System.Drawing.Point(18, 22);
+            this.startupDeferralLabel.Name = "startupDeferralLabel";
+            this.startupDeferralLabel.Size = new System.Drawing.Size(118, 13);
+            this.startupDeferralLabel.TabIndex = 11;
+            this.startupDeferralLabel.Text = "Startup delay (seconds)";
+            // 
+            // startupDeferralInput
+            // 
+            this.startupDeferralInput.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.startupDeferralInput.Location = new System.Drawing.Point(142, 22);
+            this.startupDeferralInput.Name = "startupDeferralInput";
+            this.startupDeferralInput.Size = new System.Drawing.Size(186, 20);
+            this.startupDeferralInput.TabIndex = 13;
+            // 
+            // startupDeferralHelp
+            // 
+            this.startupDeferralHelp.AutoSize = true;
+            this.startupDeferralHelp.Location = new System.Drawing.Point(18, 63);
+            this.startupDeferralHelp.Name = "startupDeferralHelp";
+            this.startupDeferralHelp.Size = new System.Drawing.Size(0, 13);
+            this.startupDeferralHelp.TabIndex = 14;
             // 
             // SettingsDialog
             // 
@@ -835,6 +883,9 @@ namespace SuiteCRMAddIn.Dialogs
             this.groupBox4.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.policyBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.popupWhenBindingSource)).EndInit();
+            this.startupDeferralGroup.ResumeLayout(false);
+            this.startupDeferralGroup.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.startupDeferralInput)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -907,5 +958,9 @@ namespace SuiteCRMAddIn.Dialogs
         private System.Windows.Forms.Label crmIdValidationLabel;
         private System.Windows.Forms.BindingSource policyBindingSource;
         private System.Windows.Forms.Label dotNetVersionLabel;
+        private System.Windows.Forms.GroupBox startupDeferralGroup;
+        private System.Windows.Forms.Label startupDeferralHelp;
+        private System.Windows.Forms.NumericUpDown startupDeferralInput;
+        private System.Windows.Forms.Label startupDeferralLabel;
     }
 }

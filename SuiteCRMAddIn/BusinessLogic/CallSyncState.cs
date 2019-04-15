@@ -59,9 +59,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct a JSON-serialisable representation of my appointment item.
         /// </summary>
-        internal override ProtoItem<AppointmentItem> CreateProtoItem(AppointmentItem outlookItem)
+        internal override ProtoItem<AppointmentItem> CreateProtoItem()
         {
-            return new ProtoAppointment<CallSyncState>(outlookItem);
+            return this.VerifyItem() ? new ProtoAppointment<CallSyncState>(OutlookItem) : null;
         }
 
 

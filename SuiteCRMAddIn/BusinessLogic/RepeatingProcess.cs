@@ -22,9 +22,11 @@
  */
 namespace SuiteCRMAddIn.BusinessLogic
 {
+    using Daemon;
     using SuiteCRMClient.Logging;
     using System;
     using System.Collections.Generic;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -214,6 +216,24 @@ namespace SuiteCRMAddIn.BusinessLogic
             /* make a copy of all instances so I can remove items from it as I iterate */
             List<RepeatingProcess> stillAlive = new List<RepeatingProcess>();
             stillAlive.AddRange(RepeatingProcess.allInstances);
+
+#if DEBUG
+            StringBuilder bob = new StringBuilder($"{stillAlive.Count} tasks remaining:\n");
+            foreach (RepeatingProcess p in stillAlive)
+            {
+                bob.Append($"\t{p}\n");
+
+                if (p is DaemonWorker)
+                {
+                    var descriptions = (p as DaemonWorker).PendingTaskDescriptions;
+                    foreach (string d in descriptions)
+                    {
+                        bob.Append($"\t\t{d}\n");
+                    }
+                }
+            }
+            log.Debug(bob.ToString());
+#endif
 
             foreach (RepeatingProcess process in stillAlive)
             {

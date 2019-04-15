@@ -36,7 +36,8 @@ namespace SuiteCRMAddIn.BusinessLogic
             Neither = 0,
             Export = 1,
             Import = 2,
-            BiDirectional = 3
+            BiDirectional = 3,
+            Manual = 4 // note that 'Manual' might be better termed 'Manual Import'.
         }
 
         /// <summary>
@@ -61,6 +62,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                     break;
                 case Direction.BiDirectional:
                     result = "Both";
+                    break;
+                case Direction.Manual:
+                    result = "Manual";
                     break;
                 default:
                     result = "Shouldn't happen";
@@ -87,7 +91,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>True if this direction allows outbound transfers.</returns>
         public static bool AllowOutbound(Direction direction)
         {
-            return (direction == Direction.Import || direction == Direction.BiDirectional);
+            return (direction == Direction.Import || 
+                direction == Direction.BiDirectional || 
+                direction == Direction.Manual);
         }
     }
 }

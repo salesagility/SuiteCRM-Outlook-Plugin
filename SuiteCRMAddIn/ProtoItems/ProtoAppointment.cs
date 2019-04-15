@@ -27,7 +27,6 @@ namespace SuiteCRMAddIn.ProtoItems
         private readonly DateTime start;
         private readonly string subject;
         private readonly string globalId;
-        private readonly Outlook.OlMeetingStatus status;
         private readonly string CancelledPrefix = "CANCELLED";
         private readonly ISet<string> recipientAddresses = new HashSet<string>();
         private CrmId CrmEntryId;
@@ -58,7 +57,7 @@ namespace SuiteCRMAddIn.ProtoItems
         /// Create a new instance of ProtoAppointment, taking values from this Outlook item.
         /// </summary>
         /// <param name="olItem">The Outlook item to take values from.</param>
-        public ProtoAppointment(Outlook.AppointmentItem olItem)
+        public ProtoAppointment(Outlook.AppointmentItem olItem) : base(olItem.MeetingStatus)
         {
             this.olItem = olItem;
             this.body = olItem.Body;
@@ -69,9 +68,7 @@ namespace SuiteCRMAddIn.ProtoItems
             this.start = olItem.Start;
             this.subject = olItem.Subject;
             this.globalId = olItem.GlobalAppointmentID;
-            // this is resolved to the correct string in AsNameValues().
-            this.status = olItem.MeetingStatus;
-
+ 
             var organiserProperty = olItem.UserProperties[AppointmentsSynchroniser<SyncStateType>.OrganiserPropertyName];
 
             if (organiserProperty == null || string.IsNullOrWhiteSpace(organiserProperty.Value))
@@ -152,7 +149,7 @@ namespace SuiteCRMAddIn.ProtoItems
             string statusString;
             string name;
 
-            switch (this.status)
+            switch (this.Status)
             {
                 case Outlook.OlMeetingStatus.olMeetingCanceled:
                     statusString = "Not Held";

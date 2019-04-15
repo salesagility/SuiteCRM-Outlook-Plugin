@@ -23,6 +23,7 @@
 namespace SuiteCRMAddIn.BusinessLogic
 {
     using Extensions;
+    using Microsoft.Office.Interop.Outlook;
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient.RESTObjects;
@@ -80,7 +81,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 olItem.Location = crmItem.GetValueAsString("location");
                 olItem.End = olItem.Start.AddMinutes(olItem.Duration);
             }
-            catch (Exception any)
+            catch (System.Exception any)
             {
                 ErrorHandler.Handle("Failed while setting Outlook item duration", any);
             }
@@ -141,7 +142,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             int result = 0;
 
-            foreach (MeetingSyncState state in SyncStateManager.Instance.GetSynchronisedItems<MeetingSyncState>())
+            foreach (MeetingSyncState state in SyncStateManager.Instance.GetSynchronisedItems<MeetingSyncState>().Where(s => s.VerifyItem()))
             {
                 Outlook.AppointmentItem item = state.OutlookItem;
 
@@ -181,10 +182,26 @@ namespace SuiteCRMAddIn.BusinessLogic
                 this.AddOrUpdateMeetingAcceptanceFromOutlookToCRM(meeting.GetAssociatedAppointment(false));
         }
 
+        /// <summary>
+        ///     Override: we get notified of a removal, for a Meeting item, when the meeting is
+        ///     cancelled. We do NOT want to remove such an item; instead, we want to update it.
+        /// </summary>
+        /// <param name="state"></param>
+        protected override void RemoveFromCrm(SyncState state)
+        {
+            var meeting = state as MeetingSyncState;
+
+            if (meeting != null)
+            {
+                meeting.Cache.Status = OlMeetingStatus.olMeetingCanceled;
+
+                RestAPIWrapper.SetEntry(meeting.Cache.AsNameValues(), DefaultCrmModule);
+            }
+        }
 
         internal override CrmId AddOrUpdateItemFromOutlookToCrm(SyncState<Outlook.AppointmentItem> syncState)
         {
-            CrmId previousCrmId = syncState.OutlookItem.GetCrmId();
+            CrmId previousCrmId = syncState.CrmEntryId;
             CrmId result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
 
             if (CrmId.IsValid(result))
@@ -250,7 +267,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         RestAPIWrapper.SetMeetingAcceptance(meetingId.ToString(), resolution.ModuleName, resolution.ModuleId.ToString(), acceptance);
                         count++;
                     }
-                    catch (Exception any)
+                    catch (System.Exception any)
                     {
                         ErrorHandler.Handle($"Failed to resolve meeting invitee {smtpAddress}:", any);
                     }
