@@ -99,9 +99,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct a JSON-serialisable representation of my task item.
         /// </summary>
-        internal override ProtoItem<Outlook.TaskItem> CreateProtoItem(Outlook.TaskItem outlookItem)
+        internal override ProtoItem<Outlook.TaskItem> CreateProtoItem()
         {
-            return new ProtoTask(outlookItem);
+            return new ProtoTask(OutlookItem);
         }
 
         public override void RemoveSynchronisationProperties()

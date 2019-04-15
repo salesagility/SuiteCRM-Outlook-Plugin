@@ -104,9 +104,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct a JSON-serialisable representation of this contact item.
         /// </summary>
-        internal override ProtoItem<Outlook.ContactItem> CreateProtoItem(Outlook.ContactItem outlookItem)
+        internal override ProtoItem<Outlook.ContactItem> CreateProtoItem()
         {
-            return new ProtoContact(outlookItem);
+            return new ProtoContact(OutlookItem);
         }
 
         public override void RemoveSynchronisationProperties()

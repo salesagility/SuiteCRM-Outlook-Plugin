@@ -171,7 +171,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var older = this.Cache.AsNameValues()
                     .AsDictionary();
 
-                var current = this.CreateProtoItem(this.OutlookItem)
+                var current = this.CreateProtoItem()
                     .AsNameValues()
                     .AsDictionary();
                 unchanged = current != null && older.Keys.Count.Equals(current.Keys.Count);
@@ -191,11 +191,10 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
-        /// Create an appropriate proto-item for this outlook item.
+        /// Create an appropriate proto-item for my outlook item.
         /// </summary>
-        /// <param name="outlookItem">The outlook item to copy.</param>
         /// <returns>the proto-item.</returns>
-        internal abstract ProtoItem<ItemType> CreateProtoItem(ItemType outlookItem);
+        internal abstract ProtoItem<ItemType> CreateProtoItem();
 
         /// <summary>
         /// True if the Outlook item I represent has been deleted.
@@ -406,7 +405,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                              * synchronisation run, it should be set back to synced */
                         case TransmissionState.PendingDeletion:
                             /* if ol item is transmitted to CRM, it will be 'Transmitted' then 'Synced' */
-                            this.Cache = this.CreateProtoItem(this.OutlookItem);
+                            this.Cache = this.CreateProtoItem();
                             this.LogAndSetTxState(TransmissionState.Synced);
                             this.OModifiedDate = DateTime.UtcNow;
                             break;
@@ -509,7 +508,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 if (this.Cache == null)
                 {
-                    this.Cache = this.CreateProtoItem(this.OutlookItem);
+                    this.Cache = this.CreateProtoItem();
                 }
                 Globals.ThisAddIn.Log.Debug(
                     $"{this.GetType().Name} '{this.Cache?.Description}': transition {this.TxState} => {newState}");

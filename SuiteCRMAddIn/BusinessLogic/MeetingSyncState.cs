@@ -25,7 +25,8 @@ namespace SuiteCRMAddIn.BusinessLogic
 {
     using System;
     using Microsoft.Office.Interop.Outlook;
-    using SuiteCRMAddIn.ProtoItems;
+    using ProtoItems;
+    using Extensions;
     using SuiteCRMClient.RESTObjects;
     using SuiteCRMClient;
 
@@ -60,9 +61,9 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <summary>
         /// Construct a JSON-serialisable representation of my appointment item.
         /// </summary>
-        internal override ProtoItem<AppointmentItem> CreateProtoItem(AppointmentItem outlookItem)
+        internal override ProtoItem<AppointmentItem> CreateProtoItem()
         {
-            return this.VerifyItem() ?  new ProtoAppointment<MeetingSyncState>(outlookItem) : null;
+            return this.VerifyItem() ?  new ProtoAppointment<MeetingSyncState>(OutlookItem) : null;
         }
 
 
@@ -84,7 +85,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else
                 {
-                    var current = this.CreateProtoItem(this.OutlookItem) as ProtoAppointment<MeetingSyncState>;
+                    var current = this.CreateProtoItem() as ProtoAppointment<MeetingSyncState>;
 
                     if (cacheValues.RecipientAddresses.Count == current.RecipientAddresses.Count)
                     {
