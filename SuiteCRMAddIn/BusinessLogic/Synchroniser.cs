@@ -1045,7 +1045,13 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 else
                 {
-                    if (SyncDirection.AllowOutbound(Direction))
+                    if (IsManualOverride(olItem))
+                    {
+                        Log.Info(
+                            $"{prefix}: {DefaultCrmModule} added to CRM because it is set to manual override.");
+                        result = true;
+                    }
+                    else if (SyncDirection.AllowOutbound(Direction))
                     {
                         if (permissionsCache.HasImportAccess(DefaultCrmModule))
                         {
@@ -1083,6 +1089,22 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             return result;
         }
+
+        /// <summary>
+        /// Returns true if this `olItem` has a manual override allowing it to be synced while synchronisation
+        ///  is disabled.
+        /// </summary>
+        /// <remarks>
+        /// #4754: We need to allow Contacts (but not, at present, other items) to be manually synced even when
+        /// synchronisation is otherwise disabled. 
+        /// </remarks>
+        /// <param name="olItem">The outlook item</param>
+        /// <returns>true if this `olItem` has a manual override.</returns>
+        protected virtual bool IsManualOverride(OutlookItemType olItem)
+        {
+            return false;
+        }
+
 
         /// <summary>
         ///     Should the item represented by this sync state be synchronised now?

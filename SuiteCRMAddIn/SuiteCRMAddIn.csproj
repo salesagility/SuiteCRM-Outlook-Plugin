@@ -215,6 +215,12 @@
     <Compile Include="BusinessLogic\CrmId.cs" />
     <Compile Include="BusinessLogic\CrmIdValidationPolicy.cs" />
     <Compile Include="Daemon\DeferredStartupAction.cs" />
+    <Compile Include="Dialogs\ManualSyncContactForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ManualSyncContactForm.Designer.cs">
+      <DependentUpon>ManualSyncContactForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Exceptions\InvalidCrmIdException.cs" />
     <Compile Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.cs">
       <SubType>Form</SubType>
@@ -283,6 +289,8 @@
     <Compile Include="Extensions\Documentation.cs" />
     <Compile Include="Extensions\MailItemExtensions.cs" />
     <Compile Include="Extensions\RecipientExtensions.cs" />
+    <Compile Include="Extensions\TreeNodeExtensions.cs" />
+    <Compile Include="Extensions\TreeViewExtensions.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -354,6 +362,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Robustness.cs" />
+    <Compile Include="Helpers\SearchHelper.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="WaitCursor.cs" />
     <Compile Include="Dialogs\WithCustomModulesSelectorForm.cs">
@@ -370,6 +379,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.resx">
       <DependentUpon>ConfirmRearchiveAlreadyArchivedEmails.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ManualSyncContactForm.resx">
+      <DependentUpon>ManualSyncContactForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ShuttingDownDialog.resx">
       <DependentUpon>ShuttingDownDialog.cs</DependentUpon>
@@ -445,6 +457,7 @@
     <Content Include="Images\Cancel.png" />
     <Content Include="Images\Check.png" />
     <Content Include="Images\Contacts.jpg" />
+    <None Include="Images\manualSyncContact.png" />
     <Content Include="Images\Search_Button.png" />
     <Content Include="Images\SendAndArchive.png" />
     <Content Include="Images\Settings.png" />

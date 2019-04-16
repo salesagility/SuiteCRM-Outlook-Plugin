@@ -70,3 +70,5 @@ SuiteCRMAddIn/Documentation/latex/
 *.psess
 
 *.vsp
+
+SuiteCRMAddIn/Images/*_old\.png

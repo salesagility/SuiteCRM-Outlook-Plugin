@@ -20,22 +20,28 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn
+
+#region
+
+using System.Collections.Generic;
+using System.Windows.Forms;
+
+#endregion
+
+namespace SuiteCRMAddIn.Extensions
 {
-    using stdole;
-    using System.Drawing;
-    using System.Windows.Forms;
-
-    public sealed class RibbonImageHelper : AxHost
+    /// <summary>
+    ///     Stolen shamelessly from
+    ///     https://stackoverflow.com/questions/4702051/get-a-list-of-all-tree-nodes-in-all-levels-in-treeview-controls
+    /// </summary>
+    public static class TreeViewExtensions
     {
-        private RibbonImageHelper()
-            : base(null)
+        public static List<TreeNode> GetAllNodes(this TreeView _self)
         {
-        }
-
-        public static IPictureDisp Convert(Image image)
-        {
-            return (IPictureDisp)AxHost.GetIPictureDispFromPicture(image);
+            var result = new List<TreeNode>();
+            foreach (TreeNode child in _self.Nodes)
+                result.AddRange(child.GetAllNodes());
+            return result;
         }
     }
 }

@@ -5,9 +5,9 @@
       <tab idMso="TabNewMailMessage" label="SuiteCRM">
         <group id="SuiteCRMGroup"
                label="SuiteCRM">
-          <button id="btnAddressBook" getImage="GetImage" label="Address Book" size="normal" onAction ="btnAddressBook_Action"/>
-          <button id="btnSettings" getImage="GetImage" label="Settings" size="normal" onAction ="btnSettings_Action"/>
-          <button id="btnSendAndArchive" getImage="GetImage" label="Send and Archive" size="normal" onAction ="btnSendAndArchive_Action"/>
+          <button id="btnSettings" getImage="GetImage" label="Settings" size="large" onAction="btnSettings_Action"/>
+          <button id="btnAddressBook" getImage="GetImage" label="Address Book" size="large" onAction="btnAddressBook_Action"/>
+          <button id="btnSendAndArchive" getImage="GetImage" label="Send and Archive" size="large" onAction ="btnSendAndArchive_Action"/>
         </group>
       </tab>
     </tabs>

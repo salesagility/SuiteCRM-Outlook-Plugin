@@ -101,6 +101,14 @@ namespace SuiteCRMAddIn.BusinessLogic
             this.OutlookItem.Sensitivity = Microsoft.Office.Interop.Outlook.OlSensitivity.olPrivate;
         }
 
+        public override bool IsManualOverride
+        {
+            get
+            {
+                return this.OutlookItem.IsManualOverride();
+            }
+        }
+
         /// <summary>
         /// Construct a JSON-serialisable representation of this contact item.
         /// </summary>

@@ -5,8 +5,8 @@
       <tab idMso="TabAddIns" label="SuiteCRM">
         <group id="SuiteCRMGroup"
                label="SuiteCRM">
-          <button id="btnArchive" getImage="GetImage" label="Archive" size="normal" onAction ="btnArchive_Action"/>
-          <button id="btnSettings" getImage="GetImage" label="Settings" size="normal" onAction ="btnSettings_Action"/>
+          <button id="btnArchive" getImage="GetImage" label="Archive" size="large" onAction ="btnArchive_Action"/>
+          <button id="btnSettings" getImage="GetImage" label="Settings" size="large" onAction ="btnSettings_Action"/>
         </group>
       </tab>
     </tabs>
