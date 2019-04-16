@@ -74,6 +74,16 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <summary>
+        /// You can manually override the disablement of the contact synchroniser for particular items, but only for limited time.
+        /// </summary>
+        /// <param name="olItem">The Outlook item</param>
+        /// <returns>True if the item has had manual override set recently.</returns>
+        protected override bool IsManualOverride(Outlook.ContactItem olItem)
+        {
+            return olItem.IsManualOverride();
+        }
+
+        /// <summary>
         /// Synchronise items in the specified folder with the specified SuiteCRM module.
         /// </summary>
         /// <param name="folder">The folder.</param>

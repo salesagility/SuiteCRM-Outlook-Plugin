@@ -585,9 +585,9 @@ namespace SuiteCRMAddIn
             DialogResult result;
             if (!HasCrmUserSession)
             {
-                for (result = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed", true));
+                for (result = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed"), true);
                     result != DialogResult.Retry;
-                    result = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed", true)))
+                    result = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed"), true))
                 {
                     this.Authenticate();
                 }

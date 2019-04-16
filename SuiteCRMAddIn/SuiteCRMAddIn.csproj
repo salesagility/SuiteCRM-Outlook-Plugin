@@ -452,7 +452,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Images\SuiteCRM.png" />
-    <Content Include="Menus\General.xml" />
     <None Include="Images\AddressBook.png" />
     <None Include="Images\Archive.png" />
     <Content Include="Images\Cancel.png" />

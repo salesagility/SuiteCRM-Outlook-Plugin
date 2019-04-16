@@ -6,14 +6,15 @@
         <group id="SuiteCRMGroup"
                label="SuiteCRM">
           <button id="btnSettings" getImage="GetImage" label="Settings" size="large" onAction ="btnSettings_Action"/>       
-          <button id="btnArchive" getImage="GetImage" label="Archive" size="large" onAction ="btnArchive_Action" getEnabled="btnArchive_Enabled"/>
+          <button id="btnArchive" getImage="GetImage" label="Archive" size="large" onAction ="btnArchive_Action"/>
+          <!-- getEnabled="btnArchive_Enabled"-->
         </group>
       </tab>
     </tabs>
   </ribbon>
   <contextMenus>
     <contextMenu idMso="ContextMenuMailItem">
-      <button id="btnArchive1" getImage="GetImage" label="SuiteCRM Archive" onAction="btnArchive_Action" getEnabled="btnArchive_Enabled" />
+      <button id="btnArchive1" getImage="GetImage" label="SuiteCRM Archive" onAction="btnArchive_Action"/> <!-- getEnabled="btnArchive_Enabled"--> 
     </contextMenu>
     <contextMenu idMso="ContextMenuContactItem">
       <button id="manualSyncButton" getImage="GetImage" label="Manual Sync to CRM" onAction="manualSyncButton_Action" getEnabled="manualSyncButton_Enabled"/>

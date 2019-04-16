@@ -150,9 +150,8 @@ namespace SuiteCRMAddIn
         public bool btnArchive_Enabled()
         {
             return Globals.ThisAddIn.HasCrmUserSession &&
-                Globals.ThisAddIn.Application.ActiveInspector().CurrentItem is Outlook.MailItem;
-
-//                Globals.ThisAddIn.SelectedEmails.Select(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null).ToList().Any();
+//                Globals.ThisAddIn.Application.ActiveInspector().CurrentItem is Outlook.MailItem &&
+                Globals.ThisAddIn.SelectedEmails.Select(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null).Any();
         }
 
         public bool manualSyncButton_Enabled(IRibbonControl control)

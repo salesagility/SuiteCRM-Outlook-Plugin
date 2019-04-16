@@ -35,7 +35,7 @@ namespace SuiteCRMAddIn
 
         public static IPictureDisp Convert(Image image)
         {
-            return (IPictureDisp) GetIPictureDispFromPicture(image);
+            return (IPictureDisp)AxHost.GetIPictureDispFromPicture(image);
         }
     }
 }
