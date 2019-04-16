@@ -28,6 +28,8 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System;
     using Outlook = Microsoft.Office.Interop.Outlook;
     using System.Runtime.InteropServices;
+    using System.Collections.Generic;
+    using SuiteCRMClient;
     using System.Threading;
 
     /// <summary>
@@ -143,6 +145,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </summary>
         public abstract string IdentifyingFields { get; }
 
+        /// <summary>
+        /// True if the Outlook item wrapped by this state may be synchronised even when synchronisation is set to none.
+        /// </summary>
+        /// <remarks>
+        /// At present, only Contacts have the manual override mechanism.
+        /// </remarks>
+        public virtual bool IsManualOverride => false;
 
         /// <summary>
         /// Delete the Outlook item associated with this SyncState.
@@ -229,6 +238,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
             log.Debug(reallyChanged ? $"{prefix} has changed." : $"{prefix} has not changed.");
             log.Debug(isSyncable ? $"{prefix} is syncable." : $"{ prefix} is not syncable.");
+            log.Debug(IsManualOverride ? $"{prefix} is on manual override." : $"{prefix} is not on manual override.");
 
             bool result;
 
@@ -236,7 +246,7 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 /* result is set within the lock to prevent one thread capturing another thread's
                  * state change. */
-                result = isSyncable && reallyChanged && this.TxState == TransmissionState.Pending && modifiedSinceSeconds > 2;
+                result = (IsManualOverride || (isSyncable && reallyChanged)) && this.TxState == TransmissionState.Pending && modifiedSinceSeconds > 2;
                 if (result)
                 {
                     this.OModifiedDate = utcNow;
