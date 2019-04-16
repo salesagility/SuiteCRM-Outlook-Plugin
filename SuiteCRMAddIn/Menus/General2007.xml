@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui" onLoad="Ribbon_Load">
+  <!-- General.xml - default ribbon and context menu set for Outlook 2007, which has less UI customisation than later variants -->
+  <ribbon>
+    <tabs>
+      <tab idMso="TabAddIns" label="SuiteCRM">
+        <group id="SuiteCRMGroup"
+               label="SuiteCRM">
+          <button id="btnArchive" getImage="GetImage" label="Archive" size="normal" onAction ="btnArchive_Action"/>
+          <button id="btnSettings" getImage="GetImage" label="Settings" size="normal" onAction ="btnSettings_Action"/>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

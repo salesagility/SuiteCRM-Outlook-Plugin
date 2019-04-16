@@ -28,6 +28,7 @@ namespace SuiteCRMAddIn
     using Daemon;
     using Dialogs;
     using Extensions;
+    using Helpers;
     using Microsoft.Office.Core;
     using NGettext;
     using Properties;
@@ -67,11 +68,13 @@ namespace SuiteCRMAddIn
         /// <summary>
         /// #2246: Discriminate between calls and meetings when adding and updating.
         /// </summary>
-        internal CallsSynchroniser CallsSynchroniser { get { return callSynchroniser; } }
+        internal CallsSynchroniser CallsSynchroniser => this.callSynchroniser;
         /// <summary>
         /// #2246: Discriminate between calls and meetings when adding and updating.
         /// </summary>
-        internal MeetingsSynchroniser MeetingsSynchroniser { get { return meetingSynchroniser; } }
+        internal MeetingsSynchroniser MeetingsSynchroniser => this.meetingSynchroniser;
+
+        internal ContactSynchroniser ContactsSynchroniser => this.contactSynchroniser;
 
         /// <summary>
         /// Internationalisation (118n) strings dictionary
@@ -130,8 +133,8 @@ namespace SuiteCRMAddIn
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
-             /* we need logging before we start the daemon */
-            StartLogging();
+            /* we need logging before we start the daemon */
+            StartLogging(); 
 
             DaemonWorker.Instance.AddTask(new DeferredStartupAction());
         }
@@ -197,6 +200,11 @@ namespace SuiteCRMAddIn
                     ConstructOutlook2007MenuBar();
                 }
             }
+        }
+
+        internal void ManualSyncContact()
+        {
+            new ManualSyncContactForm(string.Join("; ", SelectedContacts.Select(x => $"{x.FullName}, {x.Email1Address}"))).ShowDialog();
         }
 
         /// <summary>
@@ -417,7 +425,7 @@ namespace SuiteCRMAddIn
 
         private IEnumerable<string> GetKeySettings()
         {
-            yield return catalogue.GetString("Auto-archiving: ") + 
+            yield return catalogue.GetString("Auto-archiving: ") +
                 (Settings.Default.AutoArchive ? catalogue.GetString("ON") : catalogue.GetString("off"));
             yield return catalogue.GetString("Logging level: {0}", Settings.Default.LogLevel);
         }
@@ -467,12 +475,12 @@ namespace SuiteCRMAddIn
         /// <param name="synchroniser">The synchroniser to start.</param>
         private void StartSynchroniserIfConfigured(Synchroniser synchroniser)
         {
-            if (synchroniser != null && 
+            if (synchroniser != null &&
                 synchroniser.Direction != SyncDirection.Direction.Neither &&
                 !synchroniser.IsActive)
             {
-                DoOrLogError(() => 
-                    synchroniser.Start(), 
+                DoOrLogError(() =>
+                    synchroniser.Start(),
                     catalogue.GetString("Starting {0}", new object[] { synchroniser.GetType().Name }));
             }
         }
@@ -689,7 +697,7 @@ namespace SuiteCRMAddIn
             try
             {
                 Log.Info(catalogue.GetString("{0}: Removing context menu display event handler", methodName));
-                this.Application.ItemContextMenuDisplay -= 
+                this.Application.ItemContextMenuDisplay -=
                     new Outlook.ApplicationEvents_11_ItemContextMenuDisplayEventHandler(this.Application_ItemContextMenuDisplay);
             }
             catch (Exception ex)
@@ -704,7 +712,7 @@ namespace SuiteCRMAddIn
             {
                 Log.Info(catalogue.GetString("{0}: Removing new mail event handler", methodName));
 
-                Outlook.ApplicationEvents_11_NewMailExEventHandler handler = 
+                Outlook.ApplicationEvents_11_NewMailExEventHandler handler =
                     new Outlook.ApplicationEvents_11_NewMailExEventHandler(this.Application_NewMail);
 
                 if (handler != null)
@@ -847,7 +855,7 @@ namespace SuiteCRMAddIn
 
                     if (item is Outlook.MailItem && Properties.Settings.Default.AutoArchive)
                     {
-                        ProcessNewMailItem( EmailArchiveReason.Inbound,
+                        ProcessNewMailItem(EmailArchiveReason.Inbound,
                                             item as Outlook.MailItem,
                                             Settings.Default.ExcludedEmails);
                     }
@@ -917,12 +925,12 @@ namespace SuiteCRMAddIn
             {
                 if (Properties.Settings.Default.Host != String.Empty)
                 {
-                    SuiteCRMUserSession = 
+                    SuiteCRMUserSession =
                         new SuiteCRMClient.UserSession(
                             Properties.Settings.Default.Host,
                             Properties.Settings.Default.Username,
-                            Properties.Settings.Default.Password, 
-                            Properties.Settings.Default.LDAPKey, 
+                            Properties.Settings.Default.Password,
+                            Properties.Settings.Default.LDAPKey,
                             ThisAddIn.AddInTitle,
                             log,
                             Properties.Settings.Default.RestTimeout);
@@ -955,10 +963,10 @@ namespace SuiteCRMAddIn
                     // We don't have a URL to connect to, dummy the connection.
                     SuiteCRMUserSession =
                         new SuiteCRMClient.UserSession(
-                            String.Empty, 
-                            String.Empty, 
-                            String.Empty, 
-                            String.Empty, 
+                            String.Empty,
+                            String.Empty,
+                            String.Empty,
+                            String.Empty,
                             ThisAddIn.AddInTitle,
                             log,
                             Properties.Settings.Default.RestTimeout);

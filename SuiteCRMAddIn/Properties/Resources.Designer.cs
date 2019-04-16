@@ -103,6 +103,16 @@ namespace SuiteCRMAddIn.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap manualSyncContact {
+            get {
+                object obj = ResourceManager.GetObject("manualSyncContact", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Search_Button {
             get {
                 object obj = ResourceManager.GetObject("Search_Button", resourceCulture);

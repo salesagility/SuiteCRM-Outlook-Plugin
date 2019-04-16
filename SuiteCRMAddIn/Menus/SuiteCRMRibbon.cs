@@ -35,7 +35,9 @@ using System.Windows.Forms;
 using Office = Microsoft.Office.Core;
 using Outlook = Microsoft.Office.Interop.Outlook;
 using System.Collections.Generic;
+using SuiteCRMAddIn.BusinessLogic;
 using SuiteCRMAddIn.Dialogs;
+using SuiteCRMAddIn.Helpers;
 
 // TODO:  Follow these steps to enable the Ribbon (XML) item:
 
@@ -94,6 +96,11 @@ namespace SuiteCRMAddIn
                 case "btnAddressBook":
                     result = RibbonImageHelper.Convert(Resources.AddressBook);
                     break;
+                case "manualSyncButton":
+                case "manualSyncMultiButton":
+                case "manualSyncToolbar":
+                    result = RibbonImageHelper.Convert(Resources.manualSyncContact);
+                    break;
                 default:
                     result = RibbonImageHelper.Convert(Resources.Archive);
                     break;                
@@ -113,8 +120,8 @@ namespace SuiteCRMAddIn
                 case "Microsoft.Outlook.Mail.Read":
                 case "Microsoft.Outlook.Explorer":
                     result = (Globals.ThisAddIn.OutlookVersion <= OutlookMajorVersion.Outlook2007) ?
-                        GetResourceText("SuiteCRMAddIn.Menus.MailRead2007.xml") :
-                        GetResourceText("SuiteCRMAddIn.Menus.MailRead.xml");
+                        GetResourceText("SuiteCRMAddIn.Menus.MailRead.xml") :
+                        GetResourceText("SuiteCRMAddIn.Menus.MailRead2007.xml");
                     break;
                 case "Microsoft.Outlook.Mail.Compose":
                     result = GetResourceText("SuiteCRMAddIn.Menus.MailCompose.xml");
@@ -142,7 +149,17 @@ namespace SuiteCRMAddIn
 
         public bool btnArchive_Enabled()
         {
-            return Globals.ThisAddIn.SelectedEmails.Select(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null).ToList().Count() > 0;
+            return Globals.ThisAddIn.HasCrmUserSession &&
+                Globals.ThisAddIn.Application.ActiveInspector().CurrentItem is Outlook.MailItem;
+
+//                Globals.ThisAddIn.SelectedEmails.Select(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null).ToList().Any();
+        }
+
+        public bool manualSyncButton_Enabled(IRibbonControl control)
+        {
+            return Globals.ThisAddIn.HasCrmUserSession &&
+                   Globals.ThisAddIn.SelectedContacts.Count() == 1 &&
+                   Settings.Default.SyncContacts == SyncDirection.Direction.Neither;
         }
 
         #region Click Events
@@ -150,6 +167,11 @@ namespace SuiteCRMAddIn
         {
             DoOrLogError(() =>
                 Globals.ThisAddIn.ManualArchive());
+        }
+
+        public void manualSyncButton_Action(IRibbonControl control)
+        {
+            DoOrLogError(() => Globals.ThisAddIn.ManualSyncContact());
         }
 
         public void btnSettings_Action(IRibbonControl control)

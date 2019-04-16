@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="20"
+   height="20"
+   id="svg3026"
+   version="1.1"
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+   sodipodi:docname="Cancel.svg"
+   inkscape:export-filename="C:\Users\Simon\Workspace\SuiteCRM-Outlook-Plugin\SuiteCRMAddIn\Images\Cancel.png"
+   inkscape:export-xdpi="317.34879"
+   inkscape:export-ydpi="317.34879">
+  <metadata
+     id="metadata3038">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3036" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1018"
+     id="namedview3034"
+     showgrid="false"
+     inkscape:zoom="37.2"
+     inkscape:cx="5.6317204"
+     inkscape:cy="10"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g3028">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3040" />
+  </sodipodi:namedview>
+  <g
+     id="g3028"
+     stroke-width="2.23"
+     stroke="#d40000">
+    <circle
+       cx="10"
+       cy="10"
+       r="8.5652"
+       id="circle3030"
+       style="fill:#6856ea;fill-opacity:1;stroke:#ea6556;stroke-opacity:1"
+       fill="#ffffff"
+       d="m 18.5652,10 c 0,4.730429 -3.834771,8.5652 -8.5652,8.5652 -4.7304293,0 -8.5651999,-3.834771 -8.5651999,-8.5652 0,-4.7304293 3.8347706,-8.5651999 8.5651999,-8.5651999 4.730429,0 8.5652,3.8347706 8.5652,8.5651999 z"
+       inkscape:export-xdpi="317.34879"
+       inkscape:export-ydpi="317.34879" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path3818"
+       d="M 3.3505052,15.112268 4.9414954,16.703258 16.757022,4.8877321 15.166031,3.2967418 z"
+       style="font-size:medium;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:normal;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#ea6556;fill-opacity:1;stroke:none;stroke-width:2.23000002;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Sans;-inkscape-font-specification:Sans"
+       sodipodi:nodetypes="ccccc" />
+  </g>
+</svg>

@@ -24,7 +24,10 @@ namespace SuiteCRMAddIn.Extensions
 {
     using BusinessLogic;
     using SuiteCRMClient;
+    using System;
+    using System.Globalization;
     using System.Runtime.InteropServices;
+    using System.Xml.Serialization;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
     /// <summary>
@@ -35,6 +38,16 @@ namespace SuiteCRMAddIn.Extensions
     /// </remarks>
     public static class ContactItemExtensions
     {
+        /// <summary>
+        /// Name of the override property.
+        /// </summary>
+        private const string OverridePropertyName = "UserOverride";
+
+        /// <summary>
+        /// The duration of the override window in minutes.
+        /// </summary>
+        private const int OverrideWindowMinutes = 10;
+
         /// <summary>
         /// Remove all the synchronisation properties from this item.
         /// </summary>
@@ -68,6 +81,89 @@ namespace SuiteCRMAddIn.Extensions
             CrmId result = property != null ? CrmId.Get(property.Value) : CrmId.Empty;
 
             return result;
+        }
+
+        /// <summary>
+        /// True if the override window is open for this item.
+        /// </summary>
+        /// <remarks>In order to allow manual sync, we need to be able to override the disablement of syncing -
+        /// but only briefly.</remarks>
+        /// <param name="olItem">The item which we wish to sync.</param>
+        /// <returns>True if the manual sync window is open for this item.</returns>
+        public static bool IsManualOverride(this Outlook.ContactItem olItem)
+        {
+            bool result = false;
+            if (olItem.UserProperties[OverridePropertyName] != null)
+            {
+                DateTime value = olItem.UserProperties[OverridePropertyName].Value;
+
+                if ((DateTime.UtcNow - value).Minutes < OverrideWindowMinutes)
+                {
+                    result = true;
+                }
+                else
+                {
+                    /* no point holding on to a timed-out manual override property */
+                    olItem.ClearManualOverride();
+                }                
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Set this item as manually syncable, briefly. As a side effect of making the change triggers sync.
+        /// </summary>
+        /// <remarks>In order to allow manual sync, we need to be able to override the disablement of syncing -
+        /// but only briefly.</remarks>
+        /// <param name="olItem">The item which may be synced despite syncing being disabled</param>
+        public static void SetManualOverride(this Outlook.ContactItem olItem)
+        {
+            var p = olItem.UserProperties.Add(OverridePropertyName, Outlook.OlUserPropertyType.olDateTime);
+            p.Value = DateTime.UtcNow;
+            olItem.Save();
+        }
+
+        /// <summary>
+        /// Clear the manually syncability of this item; does not break is manual sync was not set.
+        /// </summary>
+        /// <remarks>In order to allow manual sync, we need to be able to override the disablement of syncing -
+        /// but only briefly.</remarks>
+        /// <param name="olItem">The item which may be synced despite syncing being disabled</param>
+        public static void ClearManualOverride(this Outlook.ContactItem olItem)
+        {
+            olItem.UserProperties[OverridePropertyName]?.Delete();
+        }
+
+        public static void ClearCrmId(this Outlook.ContactItem olItem)
+        {
+            var state = SyncStateManager.Instance.GetExistingSyncState(olItem);
+
+            olItem.ClearUserProperty(SyncStateManager.CrmIdPropertyName);
+
+            if (state != null)
+            {
+                state.CrmEntryId = null;
+            }
+
+            olItem.Save();
+        }
+
+        public static void ChangeCrmId(this Outlook.ContactItem olItem, string text)
+        {
+            var crmId = new CrmId(text);
+            var state = SyncStateManager.Instance.GetExistingSyncState(olItem);
+            var userProperty = olItem.UserProperties.Find(SyncStateManager.CrmIdPropertyName) ??
+                               olItem.UserProperties.Add(SyncStateManager.CrmIdPropertyName,
+                                   Outlook.OlUserPropertyType.olText);
+            userProperty.Value = crmId.ToString();
+
+            if (state != null)
+            {
+                state.CrmEntryId = crmId;
+            }
+
+            olItem.Save();
         }
 
 
