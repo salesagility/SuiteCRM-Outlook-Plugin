@@ -152,7 +152,7 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <exception cref="TypeInitializationException"> if `value` does not appear to be a valid CRM id.</exception>
         public static CrmId Get(string value)
         {
-            return string.IsNullOrEmpty(value) ? Empty : Issued.ContainsKey(value) ? Issued[value] : new CrmId(value);
+            return IsValid(value) ? Issued.ContainsKey(value) ? Issued[value] : new CrmId(value) : Empty;
         }
 
         /// <summary>

@@ -195,15 +195,17 @@ namespace SuiteCRMAddIn.Extensions
                     //remove vCal-Uid from start string and special symbols
                     result = decoded.Replace("vCal-Uid", string.Empty).Replace("\u0001", string.Empty).Replace("\0", string.Empty);
                 }
+#if DEBUG
                 else
                 {
                     // Bad format!!!
-                    Globals.ThisAddIn.Log.Warn($"Failed to find vCal-Uid in GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
+                    Globals.ThisAddIn.Log.Debug($"Failed to find vCal-Uid in GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
                 }
+#endif
             }
             else
             {
-                Globals.ThisAddIn.Log.Warn($"Failed to find vCal-Uid in short GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
+                Globals.ThisAddIn.Log.Debug($"Failed to find vCal-Uid in short GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
             }
 
             return result;

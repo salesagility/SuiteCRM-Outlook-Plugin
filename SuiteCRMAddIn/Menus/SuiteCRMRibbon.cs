@@ -20,46 +20,42 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-using Microsoft.Office.Core;
-using stdole;
-using SuiteCRMAddIn.Properties;
-using SuiteCRMClient.Email;
-using SuiteCRMClient.Logging;
-using SuiteCRMAddIn.Extensions;
-using System;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
-using Office = Microsoft.Office.Core;
-using Outlook = Microsoft.Office.Interop.Outlook;
-using System.Collections.Generic;
-using SuiteCRMAddIn.BusinessLogic;
-using SuiteCRMAddIn.Dialogs;
-using SuiteCRMAddIn.Helpers;
-
-// TODO:  Follow these steps to enable the Ribbon (XML) item:
-
-// 1: Copy the following code block into the ThisAddin, ThisWorkbook, or ThisDocument class.
-
-//  protected override Microsoft.Office.Core.IRibbonExtensibility CreateRibbonExtensibilityObject()
-//  {
-//      return new SuiteCRMRibbon();
-//  }
-
-// 2. Create callback methods in the "Ribbon Callbacks" region of this class to handle user
-//    actions, such as clicking a button. Note: if you have exported this Ribbon from the Ribbon designer,
-//    move your code from the event handlers to the callback methods and modify the code to work with the
-//    Ribbon extensibility (RibbonX) programming model.
-
-// 3. Assign attributes to the control tags in the Ribbon XML file to identify the appropriate callback methods in your code.  
-
-// For more information, see the Ribbon XML documentation in the Visual Studio Tools for Office Help.
-
 
 namespace SuiteCRMAddIn
 {
+    using Microsoft.Office.Core;
+    using stdole;
+    using SuiteCRMAddIn.BusinessLogic;
+    using SuiteCRMAddIn.Dialogs;
+    using SuiteCRMAddIn.Extensions;
+    using SuiteCRMAddIn.Properties;
+    using SuiteCRMClient.Email;
+    using SuiteCRMClient.Logging;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
+    using System.Runtime.InteropServices;
+    using System.Windows.Forms;
+    using Office = Microsoft.Office.Core;
+    using Outlook = Microsoft.Office.Interop.Outlook;
+
+    /// <summary>
+    /// Code for our user interfave (ribbon, context menus) items. See also 
+    /// MailRead.xml and MailRead2007.xml in this directory.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Note that the names `MailRead.xml` and `MailRead2007.xml` appear to be 
+    /// magic; the files do not deal with the mail reading interface 
+    /// exclusively, if they are renamed Outlook disables the addin.
+    /// </para>
+    /// <para>
+    /// For more information, see the Ribbon XML documentation in the Visual 
+    /// Studio Tools for Office Help.
+    /// </para>
+    /// </remarks>
     [ComVisible(true)]
     public class SuiteCRMRibbon : Office.IRibbonExtensibility
     {
