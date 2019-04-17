@@ -353,10 +353,19 @@ namespace SuiteCRMAddIn.BusinessLogic
                 }
                 finally
                 {
-                    if (olItem != null && olItem.IsValid())
+                    if (olItem != null)
                     {
-                        newState = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as SyncStateType;
-                        newState.SetNewFromCRM();
+                        try
+                        {
+                            olItem.Save();
+                            newState = SyncStateManager.Instance.GetOrCreateSyncState(olItem) as SyncStateType;
+                            newState.SetNewFromCRM();
+                        }
+                        catch (COMException comx)
+                        {
+                            // this really, really shouldn't happen!
+                            ErrorHandler.Handle(comx);
+                        }
                     }
                 }
             }
@@ -627,7 +636,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                     /* check for howlaround */
                     var matches = FindMatches(crmItem);
 
-                    if (matches.Count == 0)
+                    if (!matches.Any())
                     {
                         /* didn't find it, so add it to Outlook */
                         result = AddNewItemFromCrmToOutlook(folder, crmType, crmItem, dateStart);

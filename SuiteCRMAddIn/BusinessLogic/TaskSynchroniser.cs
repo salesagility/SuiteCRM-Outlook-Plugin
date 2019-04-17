@@ -235,20 +235,28 @@ namespace SuiteCRMAddIn.BusinessLogic
                                     .ToString(@"hh\:mm");
         }
 
-        private SyncState<Outlook.TaskItem> UpdateExistingOutlookItemFromCrm(EntryValue crmItem, SyncState<Outlook.TaskItem> syncStateForItem)
+        private SyncState<Outlook.TaskItem> UpdateExistingOutlookItemFromCrm(EntryValue crmItem, SyncState<Outlook.TaskItem> syncState)
         {
-            if (!syncStateForItem.IsDeletedInOutlook)
+            if (!syncState.IsDeletedInOutlook)
             {
-                Outlook.TaskItem olItem = syncStateForItem.OutlookItem;
-                Outlook.UserProperty oProp = olItem.UserProperties[SyncStateManager.ModifiedDatePropertyName];
+                Outlook.TaskItem olItem = syncState.OutlookItem;
 
-                if (oProp.Value != crmItem.GetValueAsString("date_modified"))
+                if (olItem.IsValid())
                 {
-                    SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
+                    Outlook.UserProperty oProp = olItem.UserProperties[SyncStateManager.ModifiedDatePropertyName];
+
+                    if (oProp.Value != crmItem.GetValueAsString("date_modified"))
+                    {
+                        SetOutlookItemPropertiesFromCrmItem(crmItem, olItem);
+                    }
+                    syncState.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
                 }
-                syncStateForItem.OModifiedDate = DateTime.ParseExact(crmItem.GetValueAsString("date_modified"), "yyyy-MM-dd HH:mm:ss", null);
+                else
+                {
+                    Log.Error($"Attempting to update invalid Outlook item '{crmItem.GetValueAsString("name")}'");
+                }
             }
-            return syncStateForItem;
+            return syncState;
         }
 
         private void SetOutlookItemPropertiesFromCrmItem(EntryValue crmItem, Outlook.TaskItem olItem)
@@ -262,9 +270,26 @@ namespace SuiteCRMAddIn.BusinessLogic
 
                 olItem.Subject = crmItem.GetValueAsString("name");
 
-                olItem.StartDate = MaybeChangeDate(dateStart, olItem.StartDate, "syncState.StartDate");
+                try
+                {
+                    olItem.StartDate = MaybeChangeDate(dateStart, olItem.StartDate, "syncState.StartDate");
+                }
+                catch (COMException comx)
+                {
+#if DEBUG
+                    Log.Debug($"COM Exception while trying to set start date of task: '{comx.Message}'. Some otherwise-valid tasks don't support this");
+#endif
+                }
 
+                try { 
                 olItem.DueDate = MaybeChangeDate(dateDue, olItem.DueDate, "syncState.DueDate");
+                }
+                catch (COMException comx)
+                {
+#if DEBUG
+                    Log.Debug($"COM Exception while trying to set start date of task: '{comx.Message}'. Do some otherwise-valid tasks not support this?");
+#endif
+                }
 
                 string body = crmItem.GetValueAsString("description");
                 olItem.Body = string.Concat(body, "#<", timeStart, "#", timeDue);
@@ -290,9 +315,9 @@ namespace SuiteCRMAddIn.BusinessLogic
             DateTime result = oldValue;
             try
             {
-                if (newValue.HasValue && newValue.Value > DateTime.MinValue)
+                if (newValue != null && newValue.HasValue && newValue.Value > DateTime.MinValue)
                 {
-                    Log.Warn($"\tt{nameOfValue}= {oldValue}, newValue= {newValue.Value}");
+                    Log.Info($"\tt{nameOfValue}= {oldValue}, newValue= {newValue.Value}");
                     result = newValue.Value;
                 }
             }

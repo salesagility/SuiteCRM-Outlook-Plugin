@@ -605,40 +605,33 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             AppointmentSyncState result;
 
-            if (appointment.IsValid())
+            CrmId crmId = appointment.GetCrmId();
+
+            if (CrmId.IsValid(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
             {
-                CrmId crmId = appointment.GetCrmId();
-
-                if (CrmId.IsValid(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
-                {
-                    result = CheckUnexpectedFoundState<Outlook.AppointmentItem, AppointmentSyncState>(appointment, crmId);
-                }
-                else
-                {
-                    var modifiedDate = ParseDateTimeFromUserProperty(appointment.UserProperties[ModifiedDatePropertyName]);
-                    if (appointment.IsCall())
-                    {
-                        result = this.SetByOutlookId<AppointmentSyncState>(appointment.EntryID,
-                            new CallSyncState(appointment, crmId, modifiedDate));
-                    }
-                    else
-                    {
-                        result = this.SetByOutlookId<AppointmentSyncState>(appointment.EntryID,
-                            new MeetingSyncState(appointment, crmId, modifiedDate));
-                    }
-                    this.byGlobalId[appointment.GlobalAppointmentID] = result;
-                }
-
-                if (result != null && CrmId.IsValid(crmId))
-                {
-                    this.byCrmId[crmId] = result;
-                }
+                result = CheckUnexpectedFoundState<Outlook.AppointmentItem, AppointmentSyncState>(appointment, crmId);
             }
             else
             {
-                result = null;
+                var modifiedDate = ParseDateTimeFromUserProperty(appointment.UserProperties[ModifiedDatePropertyName]);
+                if (appointment.IsCall())
+                {
+                    result = this.SetByOutlookId<AppointmentSyncState>(appointment.EntryID,
+                        new CallSyncState(appointment, crmId, modifiedDate));
+                }
+                else
+                {
+                    result = this.SetByOutlookId<AppointmentSyncState>(appointment.EntryID,
+                        new MeetingSyncState(appointment, crmId, modifiedDate));
+                }
+                this.byGlobalId[appointment.GlobalAppointmentID] = result;
             }
-            
+
+            if (result != null && CrmId.IsValid(crmId))
+            {
+                this.byCrmId[crmId] = result;
+            }
+
             return result;
         }
 
@@ -728,28 +721,21 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             ContactSyncState result;
 
-            if (contact.IsValid())
+            CrmId crmId = contact.GetCrmId();
+            if (CrmId.IsValid(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
             {
-                CrmId crmId = contact.GetCrmId();
-                if (CrmId.IsValid(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
-                {
-                    result = CheckUnexpectedFoundState<Outlook.ContactItem, ContactSyncState>(contact, crmId);
-                }
-                else
-                {
-                    result = this.SetByOutlookId<ContactSyncState>(contact.EntryID,
-                        new ContactSyncState(contact, crmId,
-                            ParseDateTimeFromUserProperty(contact.UserProperties[ModifiedDatePropertyName])));
-                }
-
-                if (result != null && CrmId.IsValid(crmId))
-                {
-                    this.byCrmId[crmId] = result;
-                }
+                result = CheckUnexpectedFoundState<Outlook.ContactItem, ContactSyncState>(contact, crmId);
             }
             else
             {
-                result = null;
+                result = this.SetByOutlookId<ContactSyncState>(contact.EntryID,
+                    new ContactSyncState(contact, crmId,
+                        ParseDateTimeFromUserProperty(contact.UserProperties[ModifiedDatePropertyName])));
+            }
+
+            if (result != null && CrmId.IsValid(crmId))
+            {
+                this.byCrmId[crmId] = result;
             }
 
             return result;
@@ -767,29 +753,22 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             TaskSyncState result;
 
-            if (task.IsValid())
+            CrmId crmId = task.GetCrmId();
+
+            if (CrmId.IsValid(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
             {
-                CrmId crmId = task.GetCrmId();
-
-                if (CrmId.IsValid(crmId) && this.byCrmId.ContainsKey(crmId) && this.byCrmId[crmId] != null)
-                {
-                    result = CheckUnexpectedFoundState<Outlook.TaskItem, TaskSyncState>(task, crmId);
-                }
-                else
-                {
-                    result = this.SetByOutlookId<TaskSyncState>(task.EntryID,
-                        new TaskSyncState(task, crmId,
-                            ParseDateTimeFromUserProperty(task.UserProperties[ModifiedDatePropertyName])));
-                }
-
-                if (result != null && CrmId.IsValid(crmId))
-                {
-                    this.byCrmId[crmId] = result;
-                }
+                result = CheckUnexpectedFoundState<Outlook.TaskItem, TaskSyncState>(task, crmId);
             }
             else
             {
-                result = null;
+                result = this.SetByOutlookId<TaskSyncState>(task.EntryID,
+                    new TaskSyncState(task, crmId,
+                        ParseDateTimeFromUserProperty(task.UserProperties[ModifiedDatePropertyName])));
+            }
+
+            if (result != null && CrmId.IsValid(crmId))
+            {
+                this.byCrmId[crmId] = result;
             }
 
             return result;
