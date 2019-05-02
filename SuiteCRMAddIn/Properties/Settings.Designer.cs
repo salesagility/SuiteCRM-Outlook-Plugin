@@ -393,7 +393,6 @@ namespace SuiteCRMAddIn.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Never")]
         public global::SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen ShowExceptions {
             get {
                 return ((global::SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen)(this["ShowExceptions"]));
@@ -402,18 +401,14 @@ namespace SuiteCRMAddIn.Properties {
                 this["ShowExceptions"] = value;
             }
         }
-
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Strict")]
-        public global::SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy CrmIdValidationPolicy
-        {
-            get
-            {
+        public global::SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy CrmIdValidationPolicy {
+            get {
                 return ((global::SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy)(this["CrmIdValidationPolicy"]));
             }
-            set
-            {
+            set {
                 this["CrmIdValidationPolicy"] = value;
             }
         }
