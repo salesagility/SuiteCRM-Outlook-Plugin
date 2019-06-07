@@ -60,7 +60,6 @@ namespace SuiteCRMAddIn.Tests
                             ThisAddIn.AddInTitle,
                             Log,
                             settings.RestTimeout);
-                    SuiteCRMUserSession.AwaitingAuthentication = true;
                     try
                     {
                         SuiteCRMUserSession.Login();
@@ -88,8 +87,6 @@ namespace SuiteCRMAddIn.Tests
                             Log,
                             settings.RestTimeout);
                 }
-
-                SuiteCRMUserSession.AwaitingAuthentication = false;
             }
             catch (Exception ex)
             {

@@ -88,10 +88,8 @@ namespace SuiteCRMClient
         /// Logs in to the CRM server.
         /// </summary>
         /// <returns>if the server returned a 'polling_interval' value in the response packet, then that value, else null.</returns>
-        public int? Login()
+        public bool Login()
         {
-            int? result = null;
-
             try
             {
                 if (! String.IsNullOrWhiteSpace(LDAPKey))
@@ -100,7 +98,7 @@ namespace SuiteCRMClient
                 }
                 else
                 {
-                    result = AuthenticateCRM();
+                    AuthenticateCRM();
                 }
             }
             catch (BadCredentialsException)
@@ -114,17 +112,20 @@ namespace SuiteCRMClient
                 SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = null;
                 throw;
             }
+            finally
+            {
+                AwaitingAuthentication = false;
+            }
 
-            return result;
+            return this.IsLoggedIn;
         }
 
         /// <summary>
         /// Authenticate against CRM.
         /// </summary>
         /// <returns>A polling interval value, if returned by the host (currently it isn't)</returns>
-        private int? AuthenticateCRM()
+        private void AuthenticateCRM()
         {
-            int? result;
             AwaitingAuthentication = true;
             var username = SuiteCRMUsername != null ? SuiteCRMUsername : string.Empty;
             var password = this.SuiteCRMPassword != null ? this.SuiteCRMPassword : string.Empty;
@@ -138,7 +139,6 @@ namespace SuiteCRMClient
 
                 id = loginReturn.SessionID;
                 SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = this;
-                result = loginReturn.PollingInterval;
             }
             catch (BadCredentialsException)
             {
@@ -153,7 +153,6 @@ namespace SuiteCRMClient
 
                     id = loginReturn.SessionID;
                     SuiteCRMClient.RestAPIWrapper.SuiteCRMUserSession = this;
-                    result = loginReturn.PollingInterval;
 
                 }
                 catch (BadCredentialsException)
@@ -168,9 +167,6 @@ namespace SuiteCRMClient
                     throw;
                 }
             }
-
-            AwaitingAuthentication = false;
-            return result;
         }
 
         /// <summary>
@@ -196,7 +192,7 @@ namespace SuiteCRMClient
         /// <summary>
         /// Authenticate against LDAP using my configured credentials.
         /// </summary>
-        public void AuthenticateLDAP()
+        private void AuthenticateLDAP()
         {
             try
             {

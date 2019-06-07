@@ -948,16 +948,7 @@ namespace SuiteCRMAddIn
                     ReinitialiseSession(host, username, password, ldapKey);
                     try
                     {
-                        if (Properties.Settings.Default.IsLDAPAuthentication)
-                        {
-                            SuiteCRMUserSession.AuthenticateLDAP();
-                        }
-                        else
-                        {
-                            SuiteCRMUserSession.Login();
-                        }
-
-                        if (SuiteCRMUserSession.IsLoggedIn)
+                        if (SuiteCRMUserSession.Login())
                         {
                             LogServerVersion();
 
@@ -1013,6 +1004,10 @@ namespace SuiteCRMAddIn
             if (!string.IsNullOrWhiteSpace(info.SuiteCRMVersion))
             {
                 log.Info($"Connected to an instance of SuiteCRM version {info.SuiteCRMVersion}.");
+            }
+            else if (!string.IsNullOrWhiteSpace(info.SugarVersion))
+            {
+                log.Info($"Connected to an instance of Sugar version {info.SugarVersion}.");
             }
         }
 

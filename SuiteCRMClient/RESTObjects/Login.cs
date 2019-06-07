@@ -34,6 +34,8 @@ namespace SuiteCRMClient.RESTObjects
         public int ErrorNumber { get; set; }
         [JsonProperty("description")]
         public string ErrorDescription { get; set; }
+
+        // TODO: As far as I know this was never implemented CRM side, and should be removed. 
         [JsonProperty("polling_interval")]
         public int? PollingInterval { get; set; }
     }
