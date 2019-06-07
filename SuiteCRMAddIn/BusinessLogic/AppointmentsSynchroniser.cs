@@ -131,7 +131,9 @@ namespace SuiteCRMAddIn.BusinessLogic
                                 SyncStateManager.Instance.GetExistingSyncState(string.Empty, crmId) as AppointmentSyncState;
 
                             /* we have an existing item with the same CRM id: suspicious */
-                            if (existing != null && existing.OutlookItem.GetVCalId() != crmId.ToString())
+                            var fromVcal = existing.OutlookItem.GetVCalId();
+
+                            if (existing != null && !string.IsNullOrEmpty(fromVcal) && fromVcal != crmId.ToString())
                             {
                                 /* OK, its GlobalAppointmentId is wrong, it must have come via sync. Delete it. */
                                 Log.Debug(
@@ -464,7 +466,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                                 Log.Warn(
                                     "AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
                             else if (CrmId.IsValid(olItem.GetCrmId()))
-                                if (syncState.OutlookItem.IsCall())
+                                if (syncState is CallSyncState)
                                     SetCrmRelationshipFromOutlook(Globals.ThisAddIn.CallsSynchroniser, result, "Users",
                                         CrmId.Get(RestAPIWrapper.GetUserId()));
                                 else

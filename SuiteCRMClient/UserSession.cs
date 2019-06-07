@@ -32,11 +32,11 @@ namespace SuiteCRMClient
     {
         private readonly ILogger _log;
 
-        public string SuiteCRMUsername { get; set; }
-        public string SuiteCRMPassword { get; set; }
-        public string LDAPKey { get; set; }
+        public string SuiteCRMUsername { get; private set; }
+        public string SuiteCRMPassword { get; private set; }
+        public string LDAPKey { get; private set; }
         public string LDAPIV = "password";
-        public bool AwaitingAuthentication { get; set; } = true;
+        public bool AwaitingAuthentication { get; private set; } = true;
 
         private CrmRestServer restServer;
 
@@ -78,7 +78,7 @@ namespace SuiteCRMClient
                 this.restServer.SuiteCRMURL = new Uri(URL);
                 this.SuiteCRMUsername = Username;
                 this.SuiteCRMPassword = Password;
-                this.LDAPKey = ldapKey;
+                this.LDAPKey = string.IsNullOrWhiteSpace(ldapKey) ? null : ldapKey;
                 this.ApplicationName = applicationName;
             }
             id = String.Empty;
@@ -275,6 +275,18 @@ namespace SuiteCRMClient
                 builder.Append(buffer2[i].ToString("X2"));
             }
             return builder.ToString();
+        }
+
+        /// <summary>
+        /// AwaitingAuthentication was public write, which it really shouldn't 
+        /// have been; I've fixed that, but it was set false in 
+        /// <see cref="SuiteCRMAddIn.Dialogs.SettingsDialog#frmSettings_FormClosing"/>;
+        /// I'm not certain why but it may have been important so I've
+        /// (reluctantly) added this to enable it.
+        /// </summary>
+        public void ClearAwaitingAuthentication()
+        {
+            this.AwaitingAuthentication = false;
         }
     }
 }

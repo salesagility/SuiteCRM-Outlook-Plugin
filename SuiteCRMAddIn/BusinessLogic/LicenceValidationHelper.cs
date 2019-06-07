@@ -20,7 +20,7 @@
  *
  * @author SalesAgility <info@salesagility.com>
  */
-namespace SuiteCRMAddIn.BusinessLogic
+namespace SuiteCRMAddIn.Helpers
 {
     using SuiteCRMClient;
     using SuiteCRMClient.Logging;

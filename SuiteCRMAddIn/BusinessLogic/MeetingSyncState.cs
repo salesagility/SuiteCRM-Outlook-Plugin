@@ -28,6 +28,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using ProtoItems;
     using Extensions;
     using SuiteCRMClient.RESTObjects;
+    using SuiteCRMClient.Logging;
     using SuiteCRMClient;
 
     /// <summary>
@@ -74,6 +75,20 @@ namespace SuiteCRMAddIn.BusinessLogic
         internal override bool ReallyChanged()
         {
             bool result = base.ReallyChanged();
+
+#if DEBUG
+            if (result)
+            {
+                var cached = this.Cache as ProtoAppointment<MeetingSyncState>;
+                var current = this.CreateProtoItem() as ProtoAppointment<MeetingSyncState>;
+
+                if (cached.Duration != current.Duration && current.Duration == 0)
+                {
+                    Globals.ThisAddIn.Log.Warn(
+                        $"Meeting id {this.OutlookItemEntryId} (CRM id {this.CrmEntryId}) changed to zero duration");
+                }
+            }
+#endif
 
             if (!result)
             {

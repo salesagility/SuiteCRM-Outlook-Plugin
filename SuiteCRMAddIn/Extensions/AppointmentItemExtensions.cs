@@ -47,6 +47,8 @@ namespace SuiteCRMAddIn.Extensions
         /// </summary>
         /// <param name="olItem">The item</param>
         /// <returns>True if this item represents an appointment/call.</returns>
+        /// <exception cref="COMException">Shouldn't happen, but it does, and 
+        /// needs to be trapped for.</exception> 
         public static bool IsCall(this Outlook.AppointmentItem olItem)
         {
             return olItem.MeetingStatus == Microsoft.Office.Interop.Outlook.OlMeetingStatus.olNonMeeting;
@@ -70,21 +72,37 @@ namespace SuiteCRMAddIn.Extensions
         /// Get the CRM id for this item, if known, else the empty string.
         /// </summary>
         /// <param name="olItem">The Outlook item under consideration.</param>
-        /// <returns>the CRM id for this item, if known, else the empty string.</returns>
+        /// <returns>the CRM id for this item, if known, else null.</returns>
         public static CrmId GetCrmId(this Outlook.AppointmentItem olItem)
         {
             string result;
 
             if (olItem.IsValid())
             {
-                Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-                if (property != null && !string.IsNullOrEmpty(property.Value))
+                try
                 {
-                    result = property.Value;
-                }
-                else
+                    Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+                    if (property != null && !string.IsNullOrEmpty(property.Value))
+                    {
+                        result = property.Value;
+                    }
+                    else
+                    {
+                        result = olItem.GetVCalId();
+                    }
+                } 
+                catch (COMException)
                 {
-                    result = olItem.GetVCalId();
+                    /* this is bad! It shouldn't be possible to get here, but 
+                     * it is. */
+                    try
+                    {
+                        result = olItem.GetVCalId();
+                    }
+                    catch (COMException)
+                    {
+                        result = null;
+                    }
                 }
             }
             else
@@ -198,7 +216,7 @@ namespace SuiteCRMAddIn.Extensions
 #if DEBUG
                 else
                 {
-                    // Bad format!!!
+                    // Bad format!
                     Globals.ThisAddIn.Log.Debug($"Failed to find vCal-Uid in GlobalAppointmentId '{Encoding.UTF8.GetString(bytes)}' in appointment '{item.Subject}'");
                 }
 #endif

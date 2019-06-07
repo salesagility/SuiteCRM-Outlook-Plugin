@@ -34,6 +34,11 @@ namespace SuiteCRMAddIn.ProtoItems
         private readonly Outlook.AppointmentItem olItem;
 
         /// <summary>
+        /// Public read access for duration.
+        /// </summary>
+        public int Duration => this.duration;
+
+        /// <summary>
         /// Readonly access to an ordered list of my recipient addresses.
         /// </summary>
         public List<string> RecipientAddresses

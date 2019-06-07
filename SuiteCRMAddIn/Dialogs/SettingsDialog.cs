@@ -100,12 +100,10 @@ namespace SuiteCRMAddIn.Dialogs
 
                     if (Globals.ThisAddIn.SuiteCRMUserSession == null)
                     {
-                        Globals.ThisAddIn.SuiteCRMUserSession =
-                            new SuiteCRMClient.UserSession(
-                                string.Empty, string.Empty, string.Empty, string.Empty, ThisAddIn.AddInTitle, Log, Properties.Settings.Default.RestTimeout);
+                        Globals.ThisAddIn.ReinitialiseSession(
+                                string.Empty, string.Empty, string.Empty, string.Empty);
                     }
 
-                    Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = true;
                     LoadSettings();
                     LinkToLogFileDir.Text = ThisAddIn.LogDirPath;
                 }
@@ -329,7 +327,7 @@ namespace SuiteCRMAddIn.Dialogs
 
         private void frmSettings_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Globals.ThisAddIn.SuiteCRMUserSession.AwaitingAuthentication = false;
+            Globals.ThisAddIn.SuiteCRMUserSession.ClearAwaitingAuthentication();
         }
 
         private void btnTestLogin_Click(object sender, EventArgs e)
@@ -340,36 +338,21 @@ namespace SuiteCRMAddIn.Dialogs
                 {
                     this.CheckUrlChanged(false);
 
-                    if (SafelyGetText(txtLDAPAuthenticationKey) == string.Empty)
+                    using (WaitCursor.For(this))
                     {
-                        txtLDAPAuthenticationKey.Text = null;
-                    }
-                    Globals.ThisAddIn.SuiteCRMUserSession = 
-                        new SuiteCRMClient.UserSession(
-                            SafelyGetText(txtURL), 
+                        Globals.ThisAddIn.Authenticate(SafelyGetText(txtURL), 
                             SafelyGetText(txtUsername), 
                             SafelyGetText(txtPassword), 
-                            SafelyGetText(txtLDAPAuthenticationKey), 
-                            ThisAddIn.AddInTitle,
-                            Log, 
-                            Properties.Settings.Default.RestTimeout);
-
-                    if (chkEnableLDAPAuthentication.Checked && SafelyGetText(txtLDAPAuthenticationKey).Length != 0)
-                    {
-                        Globals.ThisAddIn.SuiteCRMUserSession.AuthenticateLDAP();
-                    }
-                    else
-                    {
-                        Globals.ThisAddIn.SuiteCRMUserSession.Login();
+                            SafelyGetText(txtLDAPAuthenticationKey));
                     }
                     if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                     {
-                        MessageBox.Show("Authentication failed!!!", "Authentication failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("Authentication failed!", "Authentication failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
                     else
                     {
-                        MessageBox.Show("Login Successful!!!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        MessageBox.Show("Login Successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     }
                     Properties.Settings.Default.Host = SafelyGetText(txtURL);
                     Properties.Settings.Default.Username = SafelyGetText(txtUsername);
@@ -382,6 +365,7 @@ namespace SuiteCRMAddIn.Dialogs
                 }
             }
         }
+
         private void cbShowCustomModules_Click(object sender, EventArgs e)
         {
             if (cbShowCustomModules.Checked)
@@ -426,32 +410,22 @@ namespace SuiteCRMAddIn.Dialogs
 
             try
             {
-                ErrorHandler.DoOrHandleError(() => CheckUrlChanged(true), "checking whether CRM URL has changed");
-
-                string LDAPAuthenticationKey = SafelyGetText(txtLDAPAuthenticationKey);
-                if (LDAPAuthenticationKey == string.Empty)
+                using (WaitCursor.For(this))
                 {
-                    LDAPAuthenticationKey = null;
+
+                    ErrorHandler.DoOrHandleError(() => CheckUrlChanged(true), "checking whether CRM URL has changed");
+
+                    /* save settings before, and regardless of, test that login succeeds. 
+                     * Otherwise in cases where login is impossible (e.g. network failure) 
+                     * settings get lost. See bug #187 */
+                    ErrorHandler.DoOrHandleError(() => this.SaveSettings(), "saving settings");
+
+                    Globals.ThisAddIn.Authenticate();
                 }
 
-                /* save settings before, and regardless of, test that login succeeds. 
-                 * Otherwise in cases where login is impossible (e.g. network failure) 
-                 * settings get lost. See bug #187 */
-                ErrorHandler.DoOrHandleError(() => this.SaveSettings(), "saving settings");
-
-                Globals.ThisAddIn.SuiteCRMUserSession =
-                    new SuiteCRMClient.UserSession(
-                        SafelyGetText(txtURL),
-                        SafelyGetText(txtUsername),
-                        SafelyGetText(txtPassword),
-                        LDAPAuthenticationKey,
-                        ThisAddIn.AddInTitle,
-                        Log,
-                        Properties.Settings.Default.RestTimeout);
-                Globals.ThisAddIn.SuiteCRMUserSession.Login();
                 if (Globals.ThisAddIn.SuiteCRMUserSession.NotLoggedIn)
                 {
-                    MessageBox.Show("Authentication failed!!!", "Authentication failed", MessageBoxButtons.OK,
+                    MessageBox.Show("Authentication failed!", "Authentication failed", MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                     this.DialogResult = DialogResult.None;
                     return;

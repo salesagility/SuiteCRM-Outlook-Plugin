@@ -1,7 +1,7 @@
 ﻿namespace SuiteCRMAddIn.BusinessLogic.Tests
 {
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using SuiteCRMAddIn.BusinessLogic;
+    using Helpers;
     using SuiteCRMAddIn.Tests;
     using SuiteCRMAddInTests.Properties;
 

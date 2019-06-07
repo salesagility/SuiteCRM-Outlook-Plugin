@@ -119,7 +119,8 @@ namespace SuiteCRMAddIn
             try
             {
                 result = new LicenceValidationHelper(this.Log, Properties.Settings.Default.PublicKey, Properties.Settings.Default.LicenceKey).Validate();
-            } catch (System.Configuration.SettingsPropertyNotFoundException ex)
+            }
+            catch (System.Configuration.SettingsPropertyNotFoundException ex)
             {
                 this.log.Error(catalogue.GetString("Licence key was not yet set up"), ex);
             }
@@ -134,7 +135,7 @@ namespace SuiteCRMAddIn
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             /* we need logging before we start the daemon */
-            StartLogging(); 
+            StartLogging();
 
             DaemonWorker.Instance.AddTask(new DeferredStartupAction());
         }
@@ -293,13 +294,13 @@ namespace SuiteCRMAddIn
                     }
                     else
                     {
-                        disable = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed")) == DialogResult.Cancel;
+                        disable = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed"), true) == DialogResult.Cancel;
                         Log.Info(catalogue.GetString("User chose to disable add-in after licence check succeeded but login to CRM failed."));
                     }
                 }
                 else
                 {
-                    disable = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed")) == DialogResult.Cancel;
+                    disable = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed"), true) == DialogResult.Cancel;
                     Log.Info(catalogue.GetString("User chose to disable add-in after licence check failed."));
                 }
             }
@@ -326,7 +327,7 @@ namespace SuiteCRMAddIn
                     catalogue.GetString(
                         "In {0}: success is {1}; disable is {2}; impossible state, disabling.",
                         "ThisAddIn.Run",
-                        success, 
+                        success,
                         disable));
                 this.Disable();
             }
@@ -918,23 +919,33 @@ namespace SuiteCRMAddIn
 
         public bool SuiteCRMAuthenticate() => HasCrmUserSession ? true : Authenticate();
 
-        public bool Authenticate()
+        /// <summary>
+        /// Authenticate against CRM using parameters taken from default settings.
+        /// </summary>
+        /// <returns>true on success</returns>
+        public bool Authenticate() {
+            return Authenticate(Properties.Settings.Default.Host,
+                    Properties.Settings.Default.Username,
+                    Properties.Settings.Default.Password,
+                    Properties.Settings.Default.LDAPKey);
+        }
+
+        /// <summary>
+        /// Authenticate against CRM using these parameters.
+        /// </summary>
+        /// <param name="host"></param>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <param name="ldapKey"></param>
+        /// <returns>True on success.</returns>
+        public bool Authenticate(string host, string username, string password, string ldapKey)
         {
             bool result = false;
             try
             {
                 if (Properties.Settings.Default.Host != String.Empty)
                 {
-                    SuiteCRMUserSession =
-                        new SuiteCRMClient.UserSession(
-                            Properties.Settings.Default.Host,
-                            Properties.Settings.Default.Username,
-                            Properties.Settings.Default.Password,
-                            Properties.Settings.Default.LDAPKey,
-                            ThisAddIn.AddInTitle,
-                            log,
-                            Properties.Settings.Default.RestTimeout);
-                    SuiteCRMUserSession.AwaitingAuthentication = true;
+                    ReinitialiseSession(host, username, password, ldapKey);
                     try
                     {
                         if (Properties.Settings.Default.IsLDAPAuthentication)
@@ -971,8 +982,6 @@ namespace SuiteCRMAddIn
                             log,
                             Properties.Settings.Default.RestTimeout);
                 }
-
-                SuiteCRMUserSession.AwaitingAuthentication = false;
             }
             catch (Exception ex)
             {
@@ -980,6 +989,18 @@ namespace SuiteCRMAddIn
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Replace the existing user session, if any, with a new one using 
+        /// these parameters.
+        /// </summary>
+        public void ReinitialiseSession(string host, string username, string password, string ldapKey)
+        {
+            SuiteCRMUserSession = new SuiteCRMClient.UserSession(host, username, password, ldapKey,
+                ThisAddIn.AddInTitle,
+                log,
+                Properties.Settings.Default.RestTimeout);
         }
 
         /// <summary>
