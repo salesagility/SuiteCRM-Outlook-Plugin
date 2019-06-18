@@ -96,10 +96,22 @@
       <Value Profile="(Default)">30</Value>
     </Setting>
     <Setting Name="ShowExceptions" Type="SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen" Scope="User">
-      <Value Profile="Never" />
+      <Value Profile="(Default)" />
     </Setting>
     <Setting Name="CrmIdValidationPolicy" Type="SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy" Scope="User">
-      <Value Profile="Strict" />
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="LVSPeriod" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">31</Value>
+    </Setting>
+    <Setting Name="LVSStarts" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="LVSLastStart" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">2000-01-01</Value>
+    </Setting>
+    <Setting Name="LVSStartsRemaining" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
   </Settings>
 </SettingsFile>

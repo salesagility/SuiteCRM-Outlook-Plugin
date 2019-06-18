@@ -412,5 +412,53 @@ namespace SuiteCRMAddIn.Properties {
                 this["CrmIdValidationPolicy"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("31")]
+        public int LVSPeriod {
+            get {
+                return ((int)(this["LVSPeriod"]));
+            }
+            set {
+                this["LVSPeriod"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int LVSStarts {
+            get {
+                return ((int)(this["LVSStarts"]));
+            }
+            set {
+                this["LVSStarts"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("2000-01-01")]
+        public global::System.DateTime LVSLastStart {
+            get {
+                return ((global::System.DateTime)(this["LVSLastStart"]));
+            }
+            set {
+                this["LVSLastStart"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int LVSStartsRemaining {
+            get {
+                return ((int)(this["LVSStartsRemaining"]));
+            }
+            set {
+                this["LVSStartsRemaining"] = value;
+            }
+        }
     }
 }

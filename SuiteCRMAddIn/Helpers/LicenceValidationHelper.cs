@@ -74,6 +74,20 @@ namespace SuiteCRMAddIn.Helpers
             this.licenceKey = licenceKey;
         }
 
+        public bool ShouldValidate()
+        {
+            DateTime lastStart = Properties.Settings.Default.LVSLastStart;
+            int startsRemaining = Properties.Settings.Default.LVSStartsRemaining;
+
+            bool result = startsRemaining > 0 &&
+                DateTime.Now.Subtract(lastStart).TotalDays > Properties.Settings.Default.LVSPeriod;
+
+            Properties.Settings.Default.LVSStartsRemaining--;
+            Properties.Settings.Default.Save();
+
+            return result;
+        }
+
         /// <summary>
         /// Validate my key pair.
         /// </summary>
@@ -87,52 +101,63 @@ namespace SuiteCRMAddIn.Helpers
         public bool Validate()
         {
             /* Generally, assume that validation will fail. */
-            bool result = false;
+            bool result = !ShouldValidate();
 
-            try
+            if (!result)
             {
                 try
                 {
-                    IDictionary<string,string> parameters = new Dictionary<string, string>();
-                    parameters["public_key"] = this.applicationKey;
-                    parameters["key"] = this.licenceKey;
-
-                    using (var response =
-                        this.service.CreateGetRequest(parameters).GetResponse() as HttpWebResponse)
+                    try
                     {
-                        result = InterpretStatusCode(response);
+                        IDictionary<string, string> parameters = new Dictionary<string, string>();
+                        parameters["public_key"] = this.applicationKey;
+                        parameters["key"] = this.licenceKey;
+
+                        using (var response =
+                            this.service.CreateGetRequest(parameters).GetResponse() as HttpWebResponse)
+                        {
+                            result = InterpretStatusCode(response);
+                        }
+                    }
+                    catch (WebException badConnection)
+                    {
+                        logger.Error($"Failed to connect to licence server because {badConnection.Status}", badConnection);
+                        switch (badConnection.Status)
+                        {
+                            case WebExceptionStatus.ProtocolError:
+                                result = InterpretStatusCode((HttpWebResponse)badConnection.Response);
+                                break;
+                            case WebExceptionStatus.Timeout:
+                                /* if the licence validation server fails to respond, treat that as OK */
+                                result = true;
+                                break;
+                            case WebExceptionStatus.ConnectFailure:
+                                /* if we can't connect, treat that as OK */
+                                result = true;
+                                break;
+                            case WebExceptionStatus.NameResolutionFailure:
+                                /* if the licence validation server cannot be found, treat that as OK */
+                                result = true;
+                                break;
+                            default:
+                                throw;
+                        }
                     }
                 }
-                catch (WebException badConnection)
+                catch (Exception any)
                 {
-                    logger.Error($"Failed to connect to licence server because {badConnection.Status}", badConnection);
-                    switch(badConnection.Status)
+                    this.logger.Error("LicenceValidationHelper.Validate ", any);
+                }
+                finally
+                {
+                    if (result)
                     {
-                        case WebExceptionStatus.ProtocolError:
-                            result = InterpretStatusCode((HttpWebResponse)badConnection.Response);
-                            break;
-                        case WebExceptionStatus.Timeout:
-                            /* if the licence validation server fails to respond, treat that as OK */
-                            result = true;
-                            break;
-                        case WebExceptionStatus.ConnectFailure:
-                            /* if we can't connect, treat that as OK */
-                            result = true;
-                            break;
-                        case WebExceptionStatus.NameResolutionFailure:
-                            /* if the licence validation server cannot be found, treat that as OK */
-                            result = true;
-                            break;
-                        default:
-                            throw;
+                        Properties.Settings.Default.LVSLastStart = DateTime.Now;
+                        Properties.Settings.Default.LVSStartsRemaining = Properties.Settings.Default.LVSStarts;
+                        Properties.Settings.Default.Save();
                     }
                 }
             }
-            catch (Exception any)
-            {
-                this.logger.Error("LicenceValidationHelper.Validate ", any);
-            }
-
             logger.Info(
                 String.Format(
                     "LicenceValidationHelper.Validate: returning {0}", result));
