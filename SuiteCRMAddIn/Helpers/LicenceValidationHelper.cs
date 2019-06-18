@@ -74,13 +74,14 @@ namespace SuiteCRMAddIn.Helpers
             this.licenceKey = licenceKey;
         }
 
-        public bool ShouldValidate()
+        public bool NeedNotRevlidate()
         {
             DateTime lastStart = Properties.Settings.Default.LVSLastStart;
             int startsRemaining = Properties.Settings.Default.LVSStartsRemaining;
+            var daysSinceLastValidation = Math.Floor( DateTime.Now.Subtract(lastStart).TotalDays);
 
             bool result = startsRemaining > 0 &&
-                DateTime.Now.Subtract(lastStart).TotalDays > Properties.Settings.Default.LVSPeriod;
+                daysSinceLastValidation < Properties.Settings.Default.LVSPeriod;
 
             Properties.Settings.Default.LVSStartsRemaining--;
             Properties.Settings.Default.Save();
@@ -101,7 +102,7 @@ namespace SuiteCRMAddIn.Helpers
         public bool Validate()
         {
             /* Generally, assume that validation will fail. */
-            bool result = !ShouldValidate();
+            bool result = NeedNotRevlidate();
 
             if (!result)
             {
