@@ -306,8 +306,8 @@
     <Compile Include="Daemon\DaemonAction.cs" />
     <Compile Include="Daemon\DaemonWorker.cs" />
     <Compile Include="BusinessLogic\RunState.cs" />
-    <Compile Include="BusinessLogic\LicenceValidation.cs" />
-    <Compile Include="BusinessLogic\LicenceValidationHelper.cs" />
+    <Compile Include="Helpers\LicenceValidation.cs" />
+    <Compile Include="Helpers\LicenceValidationHelper.cs" />
     <Compile Include="BusinessLogic\ContactSynchroniser.cs" />
     <Compile Include="BusinessLogic\ContactSyncState.cs" />
     <Compile Include="BusinessLogic\EmailAccountsArchiveSettings.cs" />
