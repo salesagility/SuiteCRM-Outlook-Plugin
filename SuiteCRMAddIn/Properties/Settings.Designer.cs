@@ -460,5 +460,17 @@ namespace SuiteCRMAddIn.Properties {
                 this["LVSStartsRemaining"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool LVSDisable {
+            get {
+                return ((bool)(this["LVSDisable"]));
+            }
+            set {
+                this["LVSDisable"] = value;
+            }
+        }
     }
 }
