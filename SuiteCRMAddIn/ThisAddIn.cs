@@ -253,6 +253,7 @@ namespace SuiteCRMAddIn
             this.btnArchive.Style = Office.MsoButtonStyle.msoButtonIconAndCaption;
             this.btnArchive.Caption = catalogue.GetString("Archive");
             this.btnArchive.Picture = RibbonImageHelper.Convert(Resources.SuiteCRMLogo);
+            this.btnArchive.Enabled &= this.HasCrmUserSession;
             this.btnArchive.Click += new Office._CommandBarButtonEvents_ClickEventHandler(this.cbtnArchive_Click);
             this.btnArchive.Visible = true;
             this.btnArchive.BeginGroup = true;
@@ -533,25 +534,13 @@ namespace SuiteCRMAddIn
 
         private void cbtnArchive_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
-            ManualArchive();
+            ShowArchiveForm();
         }
 
         private void cbtnSettings_Click(Office.CommandBarButton Ctrl, ref bool CancelDefault)
         {
             DoOrLogError(() =>
                 ShowSettingsForm());
-        }
-
-        public void ShowAddressBook()
-        {
-            if (HasCrmUserSession && this.IsLicensed)
-            {
-                new frmAddressBook().Show();
-            }
-            else
-            {
-                ReconfigureOrDisable();
-            }
         }
 
         public DialogResult ShowSettingsForm()
@@ -561,56 +550,53 @@ namespace SuiteCRMAddIn
             return settingsForm.ShowDialog();
         }
 
+        public void ShowAddressBook()
+        {
+            if (this.HasCrmUserSession)
+            {
+                DoOrLogError(() =>
+                new frmAddressBook().ShowDialog());
+            }
+            else
+            {
+                MessageBox.Show("Please wait: SuiteSRM AddIn has not yet completed connections", 
+                    "Waiting for connection", 
+                    MessageBoxButtons.OK);
+            }
+        }
+
         public void ShowArchiveForm()
         {
-            if (this.SelectedEmails.Any())
+            if (this.HasCrmUserSession)
             {
-                new ArchiveDialog(this.SelectedEmails, EmailArchiveReason.Manual).ShowDialog();
+                if (this.SelectedEmails.Any())
+            {
+                DoOrLogError( () => 
+                new ArchiveDialog(this.SelectedEmails, EmailArchiveReason.Manual).ShowDialog());
+            }
+            }
+            else
+            {
+                MessageBox.Show("Please wait: SuiteSRM AddIn has not yet completed connections",
+                    "Waiting for connection",
+                    MessageBoxButtons.OK);
             }
         }
 
         internal void ManualArchive()
         {
-            if (HasCrmUserSession && IsLicensed)
+            if (HasCrmUserSession)
             {
                 ShowArchiveForm();
             }
             else
             {
-                ReconfigureOrDisable();
+                MessageBox.Show("Please wait: SuiteSRM AddIn has not yet completed connections",
+                    "Waiting for connection",
+                    MessageBoxButtons.OK);
             }
         }
 
-        private void ReconfigureOrDisable()
-        {
-            DialogResult result;
-            if (!HasCrmUserSession)
-            {
-                for (result = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed"), true);
-                    result != DialogResult.Retry;
-                    result = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed"), true))
-                {
-                    this.Authenticate();
-                }
-                if (result == DialogResult.Cancel)
-                {
-                    this.Disable();
-                }
-            }
-            else if (!IsLicensed)
-            {
-                for (result = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed", true));
-                    result != DialogResult.Retry;
-                    result = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed", true)))
-                {
-                    this.VerifyLicenceKey();
-                }
-                if (result == DialogResult.Cancel)
-                {
-                    this.Disable();
-                }
-            }
-        }
 
         /// <summary>
         /// Handle the quit signal.

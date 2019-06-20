@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -160,8 +160,7 @@ namespace SuiteCRMAddIn
         #region Click Events
         public void btnArchive_Action(IRibbonControl control)
         {
-            DoOrLogError(() =>
-                Globals.ThisAddIn.ManualArchive());
+            DoOrLogError(() => Globals.ThisAddIn.ShowArchiveForm());
         }
 
         public void manualSyncButton_Action(IRibbonControl control)

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com

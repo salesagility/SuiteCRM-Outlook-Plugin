@@ -65,6 +65,8 @@ namespace SuiteCRMAddIn.Dialogs
 
         public ArchiveDialog(IEnumerable<MailItem> selectedEmails, EmailArchiveReason reason)
         {
+            InitializeComponent();
+
             try
             {
                 using (WaitCursor.For(this))
@@ -79,7 +81,6 @@ namespace SuiteCRMAddIn.Dialogs
 
             this.archivableEmails = selectedEmails;
             this.reason = reason;
-            InitializeComponent();
 
             var alreadyArchived = selectedEmails.Where(x => !string.IsNullOrEmpty(x.GetCRMEntryId()));
             var anyArchived = alreadyArchived.Any();
