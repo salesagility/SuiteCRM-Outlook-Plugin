@@ -495,6 +495,13 @@ namespace SuiteCRMAddIn.Dialogs
         /// </summary>
         private void SaveSettings()
         {
+            if (!SafelyGetText(licenceText).Equals(Properties.Settings.Default.LicenceKey))
+            {
+                // if the license key has changed, force a new license check on next start.
+                Properties.Settings.Default.LVSStartsRemaining = 0;
+                Properties.Settings.Default.LVSLastStart = DateTime.MinValue;
+            }
+
             ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Host = SafelyGetText(txtURL), "Saving Host");
             ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Username = SafelyGetText(txtUsername), "Saving Username");
             ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Password = SafelyGetText(txtPassword), "Saving Password");

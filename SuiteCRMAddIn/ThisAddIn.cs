@@ -296,13 +296,11 @@ namespace SuiteCRMAddIn
                     else
                     {
                         disable = this.ShowReconfigureOrDisable(catalogue.GetString("Login to CRM failed"), true) == DialogResult.Cancel;
-                        Log.Info(catalogue.GetString("User chose to disable add-in after licence check succeeded but login to CRM failed."));
                     }
                 }
                 else
                 {
                     disable = this.ShowReconfigureOrDisable(catalogue.GetString("Licence check failed"), true) == DialogResult.Cancel;
-                    Log.Info(catalogue.GetString("User chose to disable add-in after licence check failed."));
                 }
             }
 

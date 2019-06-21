@@ -80,7 +80,8 @@ namespace SuiteCRMAddIn.Helpers
             int startsRemaining = Properties.Settings.Default.LVSStartsRemaining;
             var daysSinceLastValidation = Math.Floor( DateTime.Now.Subtract(lastStart).TotalDays);
 
-            bool result = Properties.Settings.Default.LVSDisable || (startsRemaining > 0 &&
+            bool result = // Properties.Settings.Default.LVSDisable ||
+                (startsRemaining > 0 &&
                 daysSinceLastValidation < Properties.Settings.Default.LVSPeriod);
 
             Properties.Settings.Default.LVSStartsRemaining--;
