@@ -502,7 +502,12 @@ namespace SuiteCRMAddIn.Dialogs
                 Properties.Settings.Default.LVSLastStart = DateTime.MinValue;
             }
 
+
             ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Host = SafelyGetText(txtURL), "Saving Host");
+            /* #6661: Forcing CurrentCrmIdPropertyName to "" will cause it to be recomputed from 
+             * of the host URL */
+            Properties.Settings.Default.CurrentCrmIdPropertyName = string.Empty;
+
             ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Username = SafelyGetText(txtUsername), "Saving Username");
             ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.Password = SafelyGetText(txtPassword), "Saving Password");
             ErrorHandler.DoOrHandleError(() => Properties.Settings.Default.IsLDAPAuthentication = chkEnableLDAPAuthentication.Checked, "Saving IsLDAPAuthentication");

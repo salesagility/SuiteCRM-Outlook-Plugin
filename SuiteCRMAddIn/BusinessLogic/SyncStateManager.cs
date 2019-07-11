@@ -35,6 +35,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Globalization;
     using System.Linq;
     using System.Runtime.InteropServices;
+    using System.Security.Cryptography;
     using System.Text;
     using Outlook = Microsoft.Office.Interop.Outlook;
 
@@ -61,7 +62,38 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// The name of the CRM ID synchronisation property.
         /// </summary>
         /// <see cref="SuiteCRMAddIn.Extensions.MailItemExtensions.CrmIdPropertyName"/> 
-        public const string CrmIdPropertyName = "SEntryID";
+        public static string CrmIdPropertyName => string.IsNullOrWhiteSpace(Properties.Settings.Default.CurrentCrmIdPropertyName)? ConstructAndSetCrmEntryIdPropertyName() : Properties.Settings.Default.CurrentCrmIdPropertyName;
+
+        /// <summary>
+        /// Construct a new name for the CRM id property based on the hist url,
+        /// set it in settings, and return it.
+        /// </summary>
+        /// <remarks>
+        /// <para>#6661: when we change the CRM URL, we also need to change the name 
+        /// of the property on which the CRM Id is held, in order neither to 
+        /// use the wrong CRM ids, nor to spend a lot of time clearing old ones.</para>
+        /// <para>This is a private method, which cannot be called directly from 
+        /// outside this class. To force a reset of the property name, set the setting
+        /// value to null or <see cref="string.Empty"/>.</para>
+        /// </remarks>
+        /// <seealso cref="Properties.Settings.Default.CurrentCrmIdPropertyName"/> 
+        /// <returns>The value set.</returns>
+        private static string ConstructAndSetCrmEntryIdPropertyName()
+        {
+            HashAlgorithm algorithm = MD5.Create();
+            string previous = Properties.Settings.Default.CurrentCrmIdPropertyName;
+            byte[] bytes = algorithm.ComputeHash(Encoding.UTF8.GetBytes(Properties.Settings.Default.Host));
+            string hash = BitConverter.ToString(bytes);
+
+            string result = $"CrmId_{hash}";
+            Properties.Settings.Default.CurrentCrmIdPropertyName = result;
+
+            Globals.ThisAddIn.Log.Info($"Updated CRM Id property name from {previous} to {result}");
+
+            return result;
+        }
+
+        public const string LegacyCrmIdPropertyName = "SEntryID";
 
         /// <summary>
         /// If set, don't sync with CRM.

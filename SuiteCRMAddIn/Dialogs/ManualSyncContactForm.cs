@@ -147,9 +147,10 @@ namespace SuiteCRMAddIn.Dialogs
 
         private bool IsProbablySameItem(EntryValue result, ContactItem contactItem)
         {
+            string crmIdStr = contactItem.GetCrmId().ToString();
             return result != null &&
-                (result.id.Equals(contactItem.UserProperties[SyncStateManager.CrmIdPropertyName]?.Value) ||
-                   result.GetValueAsString("outlook_id")?.Equals(contactItem.EntryID));
+                (result.id.Equals(crmIdStr) ||
+                   result.GetValueAsString("outlook_id").Equals(contactItem.EntryID));
         }
 
         private static string CanonicalString(EntryValue result)

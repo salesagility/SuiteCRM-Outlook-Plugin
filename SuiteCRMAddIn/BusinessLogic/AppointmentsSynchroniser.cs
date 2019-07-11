@@ -543,7 +543,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             {
                                 var olPropertyModified = olItem.UserProperties[SyncStateManager.ModifiedDatePropertyName];
                                 var olPropertyType = olItem.UserProperties[SyncStateManager.TypePropertyName];
-                                var olPropertyEntryId = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+                                var olPropertyEntryId = olItem.GetCrmId();
                                 if (olPropertyModified != null &&
                                     olPropertyType != null &&
                                     olPropertyEntryId != null)

@@ -126,7 +126,22 @@ namespace SuiteCRMAddIn.Properties {
                 this["Host"] = value;
             }
         }
-        
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string CurrentCrmIdPropertyName
+        {
+            get
+            {
+                return ((string)(this["CurrentCrmIdPropertyName"]));
+            }
+            set
+            {
+                this["CurrentCrmIdPropertyName"] = value;
+            }
+        }
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
