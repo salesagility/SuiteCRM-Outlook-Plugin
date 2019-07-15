@@ -80,13 +80,14 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <returns>The value set.</returns>
         private static string ConstructAndSetCrmEntryIdPropertyName()
         {
-            HashAlgorithm algorithm = MD5.Create();
-            string previous = Properties.Settings.Default.CurrentCrmIdPropertyName;
-            byte[] bytes = algorithm.ComputeHash(Encoding.UTF8.GetBytes(Properties.Settings.Default.Host));
-            string hash = BitConverter.ToString(bytes);
+            string previous = string.IsNullOrWhiteSpace(Properties.Settings.Default.CurrentCrmIdPropertyName) ? 
+                LegacyCrmIdPropertyName : 
+                Properties.Settings.Default.CurrentCrmIdPropertyName;
+            byte[] bytes = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Properties.Settings.Default.Host));
 
-            string result = $"CrmId_{hash}";
+            string result = $"CrmId{BitConverter.ToString(bytes)}".Replace("-", string.Empty);
             Properties.Settings.Default.CurrentCrmIdPropertyName = result;
+            Properties.Settings.Default.Save();
 
             Globals.ThisAddIn.Log.Info($"Updated CRM Id property name from {previous} to {result}");
 

@@ -259,12 +259,6 @@
     <Compile Include="Daemon\FetchEmailCategoriesAction.cs" />
     <Compile Include="Daemon\TransmitNewAction.cs" />
     <Compile Include="Daemon\TransmitUpdateAction.cs" />
-    <Compile Include="Dialogs\ClearCrmIdsDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Dialogs\ClearCrmIdsDialog.Designer.cs">
-      <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
-    </Compile>
     <Compile Include="Dialogs\Documentation.cs" />
     <Compile Include="Dialogs\ShuttingDownDialog.cs">
       <SubType>Form</SubType>
@@ -373,9 +367,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\AdvancedArchiveSettingsDialog.resx">
       <DependentUpon>AdvancedArchiveSettingsDialog.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Dialogs\ClearCrmIdsDialog.resx">
-      <DependentUpon>ClearCrmIdsDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ConfirmRearchiveAlreadyArchivedEmails.resx">
       <DependentUpon>ConfirmRearchiveAlreadyArchivedEmails.cs</DependentUpon>

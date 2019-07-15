@@ -336,7 +336,7 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 try
                 {
-                    this.CheckUrlChanged(false);
+                    this.CheckUrlChanged();
 
                     using (WaitCursor.For(this))
                     {
@@ -413,7 +413,7 @@ namespace SuiteCRMAddIn.Dialogs
                 using (WaitCursor.For(this))
                 {
 
-                    ErrorHandler.DoOrHandleError(() => CheckUrlChanged(true), "checking whether CRM URL has changed");
+                    ErrorHandler.DoOrHandleError(() => CheckUrlChanged(), "checking whether CRM URL has changed");
 
                     /* save settings before, and regardless of, test that login succeeds. 
                      * Otherwise in cases where login is impossible (e.g. network failure) 
@@ -450,10 +450,7 @@ namespace SuiteCRMAddIn.Dialogs
         /// <summary>
         /// Check whether the URL has changed; if it has, offer to clear down existing CRM ids.
         /// </summary>
-        /// <param name="offerToClearCRMIds">
-        /// If true and the URL has changed, offer to clear the CRM ids.
-        /// </param>
-        private void CheckUrlChanged(bool offerToClearCRMIds)
+        private void CheckUrlChanged()
         {
             var newUrl = SafelyGetText(txtURL);
 
@@ -461,11 +458,6 @@ namespace SuiteCRMAddIn.Dialogs
             {
                 txtURL.Text = newUrl + "/";
                 newUrl = SafelyGetText(txtURL);
-            }
-
-            if (offerToClearCRMIds && newUrl != oldUrl)
-            {
-                new ClearCrmIdsDialog(this.Log).ShowDialog();
             }
         }
 
