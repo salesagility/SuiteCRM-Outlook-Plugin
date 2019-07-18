@@ -108,7 +108,10 @@ namespace SuiteCRMAddIn.Daemon
                 try
                 {
                     var id = state.CrmEntryId;
-                    synchroniser.AddOrUpdateItemFromOutlookToCrm(state);
+                    if (!synchroniser.AddOrUpdateItemFromOutlookToCrm(state).IsValid())
+                    {
+                        throw new ActionRetryableException($"Unexpected response from CRM while attempting to sync item {id}");
+                    }
                 }
                 catch (COMException comx)
                 {

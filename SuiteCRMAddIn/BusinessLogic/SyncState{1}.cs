@@ -227,11 +227,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </remarks>
         /// <returns>True if this item should be synced with CRM, there has been a real change,
         /// and some time has elapsed.</returns>
-        internal bool ShouldPerformSyncNow()
+        internal virtual bool ShouldPerformSyncNow()
         {
             DateTime utcNow = DateTime.UtcNow;
             double modifiedSinceSeconds = Math.Abs((utcNow - OModifiedDate).TotalSeconds);
             ILogger log = Globals.ThisAddIn.Log;
+
+            bool result;
             bool reallyChanged = this.ReallyChanged();
             bool isSyncable = this.ShouldSyncWithCrm;
             string prefix = $"SyncState.ShouldPerformSyncNow: {this.CrmType} {this.CrmEntryId}";
@@ -239,8 +241,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             log.Debug(reallyChanged ? $"{prefix} has changed." : $"{prefix} has not changed.");
             log.Debug(isSyncable ? $"{prefix} is syncable." : $"{ prefix} is not syncable.");
             log.Debug(IsManualOverride ? $"{prefix} is on manual override." : $"{prefix} is not on manual override.");
-
-            bool result;
 
             lock (this.txStateLock)
             {
@@ -328,8 +328,8 @@ namespace SuiteCRMAddIn.BusinessLogic
                         case TransmissionState.PresentAtStartup:
                         /* any new item may, and often will, be set to 'Pending'. */
                         case TransmissionState.Pending:
-                        /* If 'Pending', may remain 'Pending'. */
-                        case TransmissionState.Queued:
+                            /* If 'Pending', may remain 'Pending'. */
+                        // case TransmissionState.Queued:
                         /* If it's in the queue and is modified, it's probably best to
                          * go back to pending, because other modifications are likely */
                         case TransmissionState.Synced:
