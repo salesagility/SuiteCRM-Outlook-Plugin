@@ -96,10 +96,10 @@
       <Value Profile="(Default)">30</Value>
     </Setting>
     <Setting Name="ShowExceptions" Type="SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">EveryTime</Value>
     </Setting>
     <Setting Name="CrmIdValidationPolicy" Type="SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">Strict</Value>
     </Setting>
     <Setting Name="LVSPeriod" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">31</Value>
@@ -115,6 +115,9 @@
     </Setting>
     <Setting Name="LVSDisable" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="CurrentCrmIdPropertyName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">SEntryID</Value>
     </Setting>
   </Settings>
 </SettingsFile>
