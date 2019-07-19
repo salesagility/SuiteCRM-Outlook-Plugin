@@ -979,7 +979,15 @@ namespace SuiteCRMAddIn.BusinessLogic
                         break;
 
                     default:
-                        unresolved.SetPending();
+                        try
+                        {
+                            unresolved.SetPending();
+                        }
+                        catch (BadStateTransition bst)
+                        {
+                            if (bst.From != TransmissionState.Transmitted)
+                                throw;
+                        }
                         break;
                 }
 
