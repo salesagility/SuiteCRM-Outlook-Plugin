@@ -228,7 +228,15 @@ namespace SuiteCRMAddIn.Dialogs
                 .ToList();
             logLevelSelector.DisplayMember = "Value";
             logLevelSelector.ValueMember = "Key";
-            logLevelSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.LogLevel);
+
+            try
+            {
+                logLevelSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.LogLevel);
+            }
+            catch (NullReferenceException)
+            {
+                logLevelSelector.SelectedValue = LogEntryType.Error;
+            }
 
             showErrorsSelector.DataSource = Enum.GetValues(typeof(ErrorHandler.PopupWhen))
                 .Cast<ErrorHandler.PopupWhen>()
@@ -237,7 +245,15 @@ namespace SuiteCRMAddIn.Dialogs
                 .ToList();
             showErrorsSelector.DisplayMember = "Value";
             showErrorsSelector.ValueMember = "Key";
-            showErrorsSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.ShowExceptions);
+
+            try
+            {
+                showErrorsSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.ShowExceptions);
+            }
+            catch (NullReferenceException)
+            {
+                showErrorsSelector.SelectedValue = ErrorHandler.PopupWhen.EveryTime;
+            }
 
             startupDeferralInput.Value = Properties.Settings.Default.StartupDeferral;
 
@@ -248,7 +264,15 @@ namespace SuiteCRMAddIn.Dialogs
                 .ToList();
             crmIdValidationSelector.DisplayMember = "Value";
             crmIdValidationSelector.ValueMember = "Key";
-            crmIdValidationSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.CrmIdValidationPolicy);
+
+            try
+            {
+                crmIdValidationSelector.SelectedValue = Convert.ToInt32(Properties.Settings.Default.CrmIdValidationPolicy);
+            }
+            catch (NullReferenceException)
+            {
+                crmIdValidationSelector.SelectedValue = CrmIdValidationPolicy.Policy.Strict;
+            }
 
             this.PopulateDirectionsMenu(syncCallsMenu, Properties.Settings.Default.SyncCalls);
             this.PopulateDirectionsMenu(syncContactsMenu, Properties.Settings.Default.SyncContacts);
@@ -272,7 +296,15 @@ namespace SuiteCRMAddIn.Dialogs
             directionMenu.ValueMember = "Key";
             directionMenu.DisplayMember = "Value";
             directionMenu.DataSource = syncDirectionItems;
-            directionMenu.SelectedValue = Convert.ToInt32(setting);
+
+            try
+            {
+                directionMenu.SelectedValue = Convert.ToInt32(setting);
+            }
+            catch (NullReferenceException)
+            {
+                directionMenu.SelectedValue = SyncDirection.Direction.BiDirectional;
+            }
         }
 
         private void GetAccountAutoArchivingSettings()
