@@ -129,9 +129,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <remarks>
-        /// The state transition engine.
+        /// The state transition engine. If we're building a DEBUG build, log all state transitions;
+        /// OBVIOUSLY, the semantics of this, apart from the side effect, must be identical between
+        /// DEBUG and non DEBUG builds.
         /// </remarks>
+#if DEBUG
+        private TransmissionState ts = TransmissionState.NewFromOutlook;
+        internal TransmissionState TxState 
+        { 
+            get { return this.ts; } 
+            private set {
+                Globals.ThisAddIn.Log.Debug(
+                    $"{this.GetType().Name} '{this.Cache?.Description}': transition {this.ts} => {value}");
+                this.ts = value;
+            }
+        }
+#else
         internal TransmissionState TxState { get; private set; } = TransmissionState.NewFromOutlook;
+#endif
 
 
         /// <summary>
@@ -329,7 +344,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         /* any new item may, and often will, be set to 'Pending'. */
                         case TransmissionState.Pending:
                             /* If 'Pending', may remain 'Pending'. */
-                        // case TransmissionState.Queued:
+                        case TransmissionState.Queued:
                         /* If it's in the queue and is modified, it's probably best to
                          * go back to pending, because other modifications are likely */
                         case TransmissionState.Synced:
@@ -513,7 +528,7 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private void LogAndSetTxState(TransmissionState newState)
         {
-#if DEBUG
+#if DEBUGxxx
             try
             {
                 if (this.Cache == null)
