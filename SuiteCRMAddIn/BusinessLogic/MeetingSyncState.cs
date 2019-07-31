@@ -82,7 +82,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                 var cached = this.Cache as ProtoAppointment<MeetingSyncState>;
                 var current = this.CreateProtoItem() as ProtoAppointment<MeetingSyncState>;
 
-                if (cached.Duration != current.Duration && current.Duration == 0)
+                if (cached != null && cached.Duration != current.Duration && current.Duration == 0)
                 {
                     Globals.ThisAddIn.Log.Warn(
                         $"Meeting id {this.OutlookItemEntryId} (CRM id {this.CrmEntryId}) changed to zero duration");
