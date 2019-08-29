@@ -936,59 +936,72 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// <param name="itemsToResolve">The list of items to resolve.</param>
         protected virtual void ResolveUnmatchedItems(IEnumerable<SyncState<OutlookItemType>> itemsToResolve)
         {
-            foreach (var unresolved in itemsToResolve)
-                switch (unresolved.TxState)
-                {
-                    case TransmissionState.PendingDeletion:
-                        /* If it's to resolve and marked pending deletion, we delete it
-                         * (unresolved on two successive iterations): */
-                        RemoveItemAndSyncState(unresolved);
-                        break;
+            try
+            {
+                foreach (var unresolved in itemsToResolve)
+                    switch (unresolved.TxState)
+                    {
+                        case TransmissionState.PendingDeletion:
+                            /* If it's to resolve and marked pending deletion, we delete it
+                             * (unresolved on two successive iterations): */
+                            RemoveItemAndSyncState(unresolved);
+                            break;
 
-                    case TransmissionState.Synced:
-                        if (unresolved.ExistedInCrm)
-                            unresolved.SetPendingDeletion();
-                        break;
+                        case TransmissionState.Synced:
+                            if (unresolved.ExistedInCrm)
+                                unresolved.SetPendingDeletion();
+                            break;
 
-                    case TransmissionState.Pending:
-                    case TransmissionState.PresentAtStartup:
-                        if (unresolved.ShouldSyncWithCrm)
+                        case TransmissionState.Pending:
+                        case TransmissionState.PresentAtStartup:
+                            if (unresolved.ShouldSyncWithCrm)
+                                try
+                                {
+                                    /* if it's unresolved, pending, and should be synced send it. */
+                                    unresolved.SetQueued();
+                                    AddOrUpdateItemFromOutlookToCrm(unresolved);
+                                }
+                                catch (BadStateTransition)
+                                {
+                                    // ignore.
+                                }
+                            break;
+
+                        case TransmissionState.Queued:
+                            if (unresolved.ShouldSyncWithCrm)
+                                try
+                                {
+                                    /* if it's queued and should be synced send it. */
+                                    AddOrUpdateItemFromOutlookToCrm(unresolved);
+                                }
+                                catch (BadStateTransition bst)
+                                {
+                                    ErrorHandler.Handle($"Failure while seeking to resolve unmatched items", bst);
+                                }
+                            break;
+
+                        default:
                             try
                             {
-                                /* if it's unresolved, pending, and should be synced send it. */
-                                unresolved.SetQueued();
-                                AddOrUpdateItemFromOutlookToCrm(unresolved);
-                            }
-                            catch (BadStateTransition)
-                            {
-                                // ignore.
-                            }
-                        break;
-
-                    case TransmissionState.Queued:
-                        if (unresolved.ShouldSyncWithCrm)
-                            try
-                            {
-                                /* if it's queued and should be synced send it. */
-                                AddOrUpdateItemFromOutlookToCrm(unresolved);
+                                unresolved.SetPending();
                             }
                             catch (BadStateTransition bst)
                             {
-                                ErrorHandler.Handle($"Failure while seeking to resolve unmatched items", bst);
+                                if (bst.From != TransmissionState.Transmitted)
+                                    ErrorHandler.Handle($"Failure while seeking to resolve unmatched items", bst);
                             }
-                        break;
-
-                    default:
-                        unresolved.SetPending();
-                        break;
-                }
-
-            foreach (SyncState resolved in SyncStateManager.Instance.GetSynchronisedItems<SyncStateType>()
-                    .Where(s => s.TxState == TransmissionState.PendingDeletion &&
-                                !itemsToResolve.Contains(s)))
-                /* finally, if there exists an item which had been marked pending deletion, but it has
+                            break;
+                    }
+            }
+            finally
+            {
+                foreach (SyncState resolved in SyncStateManager.Instance.GetSynchronisedItems<SyncStateType>()
+                        .Where(s => s.TxState == TransmissionState.PendingDeletion &&
+                                    !itemsToResolve.Contains(s)))
+                    /* finally, if there exists an item which had been marked pending deletion, but it has
                      *  been found in CRM (i.e. not in unresolved), mark it as synced */
-                ((SyncState<OutlookItemType>) resolved).SetSynced();
+                    ((SyncState<OutlookItemType>)resolved).SetSynced();
+            }
         }
 
         /// <summary>

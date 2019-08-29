@@ -78,6 +78,14 @@ namespace SuiteCRMAddIn.Extensions
         public static CrmId GetCrmId(this Outlook.ContactItem olItem)
         {
             Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+
+            if (property == null)
+            {
+                /* #6661: fail over to legacy property name if current property 
+                 * name not found */
+                property = olItem.UserProperties[SyncStateManager.LegacyCrmIdPropertyName];
+            }
+
             CrmId result = property != null ? CrmId.Get(property.Value) : CrmId.Empty;
 
             return result;

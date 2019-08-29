@@ -30,6 +30,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using SuiteCRMClient.RESTObjects;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient;
+    using Exceptions;
 
     /// <summary>
     /// A sync state which syncs an appointment which is a meeting.
@@ -76,21 +77,19 @@ namespace SuiteCRMAddIn.BusinessLogic
         {
             bool result = base.ReallyChanged();
 
-#if DEBUG
             if (result)
             {
                 var cached = this.Cache as ProtoAppointment<MeetingSyncState>;
                 var current = this.CreateProtoItem() as ProtoAppointment<MeetingSyncState>;
 
-                if (cached.Duration != current.Duration && current.Duration == 0)
+                if (cached != null && cached.Duration != current.Duration && current.Duration == 0)
                 {
                     Globals.ThisAddIn.Log.Warn(
                         $"Meeting id {this.OutlookItemEntryId} (CRM id {this.CrmEntryId}) changed to zero duration");
+                    throw new DurationSetToZeroException(cached.Duration);
                 }
             }
-#endif
-
-            if (!result)
+            else
             {
                 var cacheValues = this.Cache as ProtoAppointment<MeetingSyncState>;
 

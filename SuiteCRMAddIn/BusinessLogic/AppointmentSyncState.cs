@@ -32,6 +32,7 @@ namespace SuiteCRMAddIn.BusinessLogic
     using System.Runtime.InteropServices;
     using SuiteCRMClient.Logging;
     using SuiteCRMClient;
+    using Exceptions;
 
     public abstract class AppointmentSyncState: SyncState<Outlook.AppointmentItem>
     {
@@ -102,6 +103,37 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         public override Outlook.UserProperties OutlookUserProperties => 
             OutlookItem != null && OutlookItem.IsValid() ? OutlookItem.UserProperties : null;
+
+        /// <summary>
+        /// #6034: occasionally we get spurious ItemChange events where the 
+        /// value of Duration appear as zero, although nothing has occured to
+        /// make this change. This is a hack around the problem while we try
+        /// to understand it better.
+        /// </summary>
+        /// <returns>false if duration was set to zero; as a side effect,
+        /// resets Duration to its last known good value.</returns>
+        internal override bool ShouldPerformSyncNow()
+        {
+            bool result;
+
+            try
+            {
+                result = base.ShouldPerformSyncNow();
+            }
+            catch (DurationSetToZeroException dz)
+            {
+                Outlook.AppointmentItem appt = (this.OutlookItem as Outlook.AppointmentItem);
+
+                if (appt != null)
+                {
+                    appt.Duration = dz.Duration;
+                }
+
+                result = false;
+            }
+
+            return result;
+        }
 
         public override void DeleteItem()
         {

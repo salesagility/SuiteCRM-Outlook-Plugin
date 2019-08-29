@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Outlook integration for SuiteCRM.
  * @package Outlook integration for SuiteCRM
  * @copyright SalesAgility Ltd http://www.salesagility.com
@@ -54,12 +54,6 @@ namespace SuiteCRMAddIn.Extensions
         /// The name of the magic category we set when a mail is successfully archived.
         /// </summary>
         public const string SuiteCRMCategoryName = "SuiteCRM";
-
-        /// <summary>
-        /// The name of the CRM ID synchronisation property.
-        /// </summary>
-        /// <see cref="SuiteCRMAddIn.BusinessLogic.Synchroniser{OutlookItemType}.CrmIdPropertyName"/> 
-        public const string CrmIdPropertyName = "SEntryID";
 
         /// <summary>
         /// The name of the Outlook user property on which we will store the CRM Category associated
@@ -377,12 +371,20 @@ namespace SuiteCRMAddIn.Extensions
         public static string GetCRMEntryId(this Outlook.MailItem olItem)
         {
             string result;
-            Outlook.UserProperty olProperty = null;
+            Outlook.UserProperty property = null;
             
             try
             {
-                olProperty = olItem.UserProperties[CrmIdPropertyName];
-                result = olProperty != null ? olProperty.Value.ToString() : string.Empty;
+                property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+
+                if (property == null)
+                {
+                    /* #6661: fail over to legacy property name if current property 
+                     * name not found */
+                    property = olItem.UserProperties[SyncStateManager.LegacyCrmIdPropertyName];
+                }
+
+                result = property != null ? property.Value.ToString() : string.Empty;
             }
             catch (COMException cex)
             {
@@ -418,7 +420,7 @@ namespace SuiteCRMAddIn.Extensions
                         olItem.Categories = $"{olItem.Categories},{SuiteCRMCategoryName}";
                     }
 
-                    olItem.EnsureProperty(CrmIdPropertyName, result.EmailId);
+                    olItem.EnsureProperty(SyncStateManager.CrmIdPropertyName, result.EmailId);
                 }
                 catch (COMException cex)
                 {

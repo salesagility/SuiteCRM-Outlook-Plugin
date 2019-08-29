@@ -393,6 +393,7 @@ namespace SuiteCRMAddIn.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("EveryTime")]
         public global::SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen ShowExceptions {
             get {
                 return ((global::SuiteCRMAddIn.BusinessLogic.ErrorHandler.PopupWhen)(this["ShowExceptions"]));
@@ -404,6 +405,7 @@ namespace SuiteCRMAddIn.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Strict")]
         public global::SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy CrmIdValidationPolicy {
             get {
                 return ((global::SuiteCRMAddIn.BusinessLogic.CrmIdValidationPolicy.Policy)(this["CrmIdValidationPolicy"]));
@@ -470,6 +472,18 @@ namespace SuiteCRMAddIn.Properties {
             }
             set {
                 this["LVSDisable"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("SEntryID")]
+        public string CurrentCrmIdPropertyName {
+            get {
+                return ((string)(this["CurrentCrmIdPropertyName"]));
+            }
+            set {
+                this["CurrentCrmIdPropertyName"] = value;
             }
         }
     }

@@ -462,16 +462,19 @@ namespace SuiteCRMAddIn.BusinessLogic
                         {
                             result = base.AddOrUpdateItemFromOutlookToCrm(syncState);
 
-                            if (CrmId.IsInvalid(result))
-                                Log.Warn(
-                                    "AppointmentSyncing.AddOrUpdateItemFromOutlookToCrm: Invalid CRM Id returned; item may not have been stored.");
-                            else if (CrmId.IsValid(olItem.GetCrmId()))
+                            if (CrmId.IsValid(result) && CrmId.IsValid(olItem.GetCrmId()))
+                            {
                                 if (syncState is CallSyncState)
+                                {
                                     SetCrmRelationshipFromOutlook(Globals.ThisAddIn.CallsSynchroniser, result, "Users",
                                         CrmId.Get(RestAPIWrapper.GetUserId()));
+                                }
                                 else
+                                {
                                     SetCrmRelationshipFromOutlook(Globals.ThisAddIn.MeetingsSynchroniser, result, "Users",
                                         CrmId.Get(RestAPIWrapper.GetUserId()));
+                                }
+                            }
                         }
                         else
                         {
@@ -543,7 +546,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                             {
                                 var olPropertyModified = olItem.UserProperties[SyncStateManager.ModifiedDatePropertyName];
                                 var olPropertyType = olItem.UserProperties[SyncStateManager.TypePropertyName];
-                                var olPropertyEntryId = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+                                var olPropertyEntryId = olItem.GetCrmId();
                                 if (olPropertyModified != null &&
                                     olPropertyType != null &&
                                     olPropertyEntryId != null)

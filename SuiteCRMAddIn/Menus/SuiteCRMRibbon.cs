@@ -147,7 +147,7 @@ namespace SuiteCRMAddIn
         {
             return Globals.ThisAddIn.HasCrmUserSession &&
 //                Globals.ThisAddIn.Application.ActiveInspector().CurrentItem is Outlook.MailItem &&
-                Globals.ThisAddIn.SelectedEmails.Select(x => x.UserProperties[MailItemExtensions.CrmIdPropertyName] == null).Any();
+                Globals.ThisAddIn.SelectedEmails.Select(x => x.UserProperties[SyncStateManager.CrmIdPropertyName] == null).Any();
         }
 
         public bool manualSyncButton_Enabled(IRibbonControl control)

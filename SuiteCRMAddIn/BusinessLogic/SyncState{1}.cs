@@ -129,9 +129,24 @@ namespace SuiteCRMAddIn.BusinessLogic
         }
 
         /// <remarks>
-        /// The state transition engine.
+        /// The state transition engine. If we're building a DEBUG build, log all state transitions;
+        /// OBVIOUSLY, the semantics of this, apart from the side effect, must be identical between
+        /// DEBUG and non DEBUG builds.
         /// </remarks>
+#if DEBUG
+        private TransmissionState ts = TransmissionState.NewFromOutlook;
+        internal TransmissionState TxState 
+        { 
+            get { return this.ts; } 
+            private set {
+                Globals.ThisAddIn.Log.Debug(
+                    $"{this.GetType().Name} '{this.Cache?.Description}': transition {this.ts} => {value}");
+                this.ts = value;
+            }
+        }
+#else
         internal TransmissionState TxState { get; private set; } = TransmissionState.NewFromOutlook;
+#endif
 
 
         /// <summary>
@@ -227,11 +242,13 @@ namespace SuiteCRMAddIn.BusinessLogic
         /// </remarks>
         /// <returns>True if this item should be synced with CRM, there has been a real change,
         /// and some time has elapsed.</returns>
-        internal bool ShouldPerformSyncNow()
+        internal virtual bool ShouldPerformSyncNow()
         {
             DateTime utcNow = DateTime.UtcNow;
             double modifiedSinceSeconds = Math.Abs((utcNow - OModifiedDate).TotalSeconds);
             ILogger log = Globals.ThisAddIn.Log;
+
+            bool result;
             bool reallyChanged = this.ReallyChanged();
             bool isSyncable = this.ShouldSyncWithCrm;
             string prefix = $"SyncState.ShouldPerformSyncNow: {this.CrmType} {this.CrmEntryId}";
@@ -239,8 +256,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             log.Debug(reallyChanged ? $"{prefix} has changed." : $"{prefix} has not changed.");
             log.Debug(isSyncable ? $"{prefix} is syncable." : $"{ prefix} is not syncable.");
             log.Debug(IsManualOverride ? $"{prefix} is on manual override." : $"{prefix} is not on manual override.");
-
-            bool result;
 
             lock (this.txStateLock)
             {
@@ -328,7 +343,7 @@ namespace SuiteCRMAddIn.BusinessLogic
                         case TransmissionState.PresentAtStartup:
                         /* any new item may, and often will, be set to 'Pending'. */
                         case TransmissionState.Pending:
-                        /* If 'Pending', may remain 'Pending'. */
+                            /* If 'Pending', may remain 'Pending'. */
                         case TransmissionState.Queued:
                         /* If it's in the queue and is modified, it's probably best to
                          * go back to pending, because other modifications are likely */
@@ -513,7 +528,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private void LogAndSetTxState(TransmissionState newState)
         {
-#if DEBUG
             try
             {
                 if (this.Cache == null)
@@ -527,7 +541,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 // ignore. It doesn't matter. Although TODO: I'd love to know what happens.
             }
-#endif
             this.TxState = newState;
         }
     }

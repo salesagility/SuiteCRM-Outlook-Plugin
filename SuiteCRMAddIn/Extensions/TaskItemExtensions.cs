@@ -73,18 +73,18 @@ namespace SuiteCRMAddIn.Extensions
         /// <returns>the CRM id for this item, if known, else the empty string.</returns>
         public static CrmId GetCrmId(this Outlook.TaskItem olItem)
         {
-            string result;
             Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
-            if (property != null)
+
+            if (property == null)
             {
-                result = property.Value;
-            }
-            else
-            {
-                result = string.Empty;
+                /* #6661: fail over to legacy property name if current property 
+                 * name not found */
+                property = olItem.UserProperties[SyncStateManager.LegacyCrmIdPropertyName];
             }
 
-            return CrmId.Get(result);
+            CrmId result = property != null ? CrmId.Get(property.Value) : CrmId.Empty;
+
+            return result;
         }
 
 

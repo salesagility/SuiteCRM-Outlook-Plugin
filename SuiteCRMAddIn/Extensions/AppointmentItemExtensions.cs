@@ -82,6 +82,14 @@ namespace SuiteCRMAddIn.Extensions
                 try
                 {
                     Outlook.UserProperty property = olItem.UserProperties[SyncStateManager.CrmIdPropertyName];
+
+                    if (property == null)
+                    {
+                        /* #6661: fail over to legacy property name if current property 
+                         * name not found */
+                        property = olItem.UserProperties[SyncStateManager.LegacyCrmIdPropertyName];
+                    }
+                    
                     if (property != null && !string.IsNullOrEmpty(property.Value))
                     {
                         result = property.Value;
