@@ -528,7 +528,6 @@ namespace SuiteCRMAddIn.BusinessLogic
 
         private void LogAndSetTxState(TransmissionState newState)
         {
-#if DEBUGxxx
             try
             {
                 if (this.Cache == null)
@@ -542,7 +541,6 @@ namespace SuiteCRMAddIn.BusinessLogic
             {
                 // ignore. It doesn't matter. Although TODO: I'd love to know what happens.
             }
-#endif
             this.TxState = newState;
         }
     }
