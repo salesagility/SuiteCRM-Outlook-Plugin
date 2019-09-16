@@ -14,7 +14,7 @@ For release notes and documentation on the plug-in, please [visit suitecrm.com][
 
 Please read, print, sign, scan and email the following [contributor agreement][cont_agrmt]
 
-[cont_agrmt]: http://suitecrm.com/git/suitecrmcontributorlicenseagreement.pdf
+[cont_agrmt]: https://suitecrm.com/suitecrm/git/suitecrmcontributorlicenseagreement.pdf
 
 The Contributor Agreement only needs to be signed once for all pull requests and contributions. 
 
